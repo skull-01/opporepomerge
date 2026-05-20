@@ -1,0 +1,100 @@
+name: Bug report
+description: Report a reproducible software issue in the Kodi add-on.
+title: '[Bug]: '
+labels:
+- bug
+- triage
+body:
+- type: markdown
+  attributes:
+    value: Thanks for reporting a bug. Please include enough detail for maintainers to reproduce the issue without assuming hardware validation.
+- type: checkboxes
+  id: preflight
+  attributes:
+    label: Preflight checks
+    options:
+    - label: I am using a released or clearly identified development build.
+      required: true
+    - label: I understand this project is software-verified and hardware validation is recorded only when real tester evidence is supplied.
+      required: true
+    - label: I removed or redacted credentials, tokens, network secrets, and private paths from logs.
+      required: true
+- type: input
+  id: addon_version
+  attributes:
+    label: Add-on version / build
+    description: 'Example: v2.9.10 Final or GitHub Readiness G4.'
+    placeholder: v2.9.10 Final
+  validations:
+    required: true
+- type: input
+  id: kodi_version
+  attributes:
+    label: Kodi version
+    placeholder: Kodi 20.x / Kodi 21.x
+  validations:
+    required: true
+- type: input
+  id: platform
+  attributes:
+    label: Platform / OS
+    placeholder: Windows, CoreELEC, LibreELEC, Android TV, Linux, macOS
+  validations:
+    required: true
+- type: dropdown
+  id: media_type
+  attributes:
+    label: Media type
+    options:
+    - 4K UHD ISO
+    - Blu-ray ISO
+    - Disc folder / BDMV
+    - MKV / MP4
+    - Other
+  validations:
+    required: true
+- type: dropdown
+  id: route
+  attributes:
+    label: Expected routing path
+    options:
+    - OPPO / compatible external player
+    - Kodi native playback
+    - NAS / AutoScript path
+    - Unknown
+  validations:
+    required: true
+- type: textarea
+  id: steps
+  attributes:
+    label: Steps to reproduce
+    description: List exact steps, selected file/media type, and relevant settings.
+    placeholder: '1. Open Kodi...
+
+      2. Select...
+
+      3. Observe...'
+  validations:
+    required: true
+- type: textarea
+  id: expected
+  attributes:
+    label: Expected behavior
+  validations:
+    required: true
+- type: textarea
+  id: actual
+  attributes:
+    label: Actual behavior
+  validations:
+    required: true
+- type: textarea
+  id: logs
+  attributes:
+    label: Logs or diagnostic output
+    description: Paste relevant redacted logs. Do not include credentials, SmartThings tokens, Sony PSKs, private IP secrets, or personal paths.
+    render: text
+- type: textarea
+  id: notes
+  attributes:
+    label: Additional notes

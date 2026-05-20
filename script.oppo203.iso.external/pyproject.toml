@@ -1,0 +1,110 @@
+[build-system]
+requires = []
+build-backend = "_kodi_addon_no_build_backend"
+
+[project]
+name = "script-oppo203-iso-external"
+version = "2.9.10"
+description = "Kodi add-on for OPPO 203/205-compatible external-player handoff workflows."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Kodi OPPO 203 ISO External Player maintainers" }
+]
+keywords = [
+  "kodi",
+  "oppo",
+  "external-player",
+  "uhd",
+  "blu-ray",
+  "home-theater"
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Plugins",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Topic :: Multimedia :: Video",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "coverage[toml]>=7,<8",
+  "PyYAML>=6,<7",
+  "ruff>=0.5,<1",
+  "black>=24,<26",
+  "mypy>=1,<2",
+  "typing-extensions>=4.12,<5",
+]
+
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+include = "\\.pyi?$"
+extend-exclude = '''
+/(
+  \.git
+  | \.pytest_cache
+  | __pycache__
+  | dist
+  | output
+)/
+'''
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+exclude = [
+  ".git",
+  ".pytest_cache",
+  "__pycache__",
+  "dist",
+  "output",
+  "tools",
+  "tests",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+  "E501",   # line length handled by formatter
+  "E402",   # module-level imports not at top; existing tests use sys.path setup
+  "UP015",  # preserve explicit open() mode for Python 3.9 compatibility
+]
+
+[tool.ruff.lint.per-file-ignores]
+"resources/lib/*.py" = ["B008"]
+
+[tool.coverage.run]
+branch = true
+source = ["resources/lib"]
+
+[tool.coverage.report]
+fail_under = 99
+show_missing = true
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_configs = true
+namespace_packages = true
+explicit_package_bases = true
+show_error_codes = true
+pretty = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[tool.github-readiness]
+baseline = "v2.9.10 Final"
+build = "G8 GitHub Ready Final Packaging"
+runtime_behavior_changed = false
+hardware_validation = "not_performed_not_claimed"
+notes = "G8 finalizes the GitHub-ready source layout, publication checklist, final packaging, checksums, and AI handoff/reconstruction package without changing runtime behavior."

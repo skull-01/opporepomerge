@@ -1,0 +1,31 @@
+name: Documentation fix
+description: Report unclear, missing, stale, or incorrect documentation.
+title: '[Docs]: '
+labels:
+- documentation
+- triage
+body:
+- type: input
+  id: page
+  attributes:
+    label: Page or file
+    placeholder: README.md, docs/user-guide/INSTALLATION.md, etc.
+  validations:
+    required: true
+- type: textarea
+  id: issue
+  attributes:
+    label: What is wrong or unclear?
+  validations:
+    required: true
+- type: textarea
+  id: suggestion
+  attributes:
+    label: Suggested wording or fix
+- type: checkboxes
+  id: claims
+  attributes:
+    label: Claim safety
+    options:
+    - label: The proposed documentation change does not claim hardware validation unless real evidence is linked.
+      required: true

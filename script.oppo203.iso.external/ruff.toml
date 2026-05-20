@@ -1,0 +1,17 @@
+# Ruff config (PEP 621 pyproject.toml style, but standalone)
+target-version = "py39"
+line-length = 100
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+  "E501",   # line length handled by formatter
+  "E402",   # module-level imports not at top (sys.path tweaks)
+  "UP015",  # open() default mode (Python 3.9 compat)
+]
+exclude = [
+  "output/", "__pycache__/", "tools/", "tests/",
+]
+
+[lint.per-file-ignores]
+"resources/lib/*.py" = ["B008"]   # default-arg factory pattern

@@ -1,0 +1,27 @@
+# Shared documentation metadata for generated reference blocks.
+# This file is intentionally dependency-free and parsed by tools/render_docs.py.
+release:
+  version: 2.9.10
+  build_number: 19
+  build_id: v2.9.10 Final
+  title: Final software-verified release packaging
+  package_suffix: final
+  hardware_validation_claimed: false
+  runtime_behavior_changed: false
+  source_recommendation: v2.9.10 unified hardware ecosystem expansion roadmap
+protected_behavior:
+  - 4K/UHD/2160p disc-style interception only
+  - loose/raw video files stay with Kodi
+  - Option 4 conservative playercorefactory.xml behavior
+  - canonical 76-key OPPO command map
+  - no forbidden OPPO command tokens #SIS #PGU #PGD
+  - Reavon warning-only behavior
+  - Chinoppo/M9702 wake rewrite behavior
+  - stock OPPO pass-through behavior
+  - Kodi startup auto-power guard behavior
+  - NAS adapter behavior
+  - runtime-only installable ZIP policy
+managed_documents:
+  - README.md
+  - reference.md
+  - web-references.md

@@ -1,0 +1,808 @@
+# Kodi strings for Oppo UDP-203 ISO External Player
+msgctxt "#30000"
+msgid "General"
+msgstr "General"
+
+msgctxt "#30001"
+msgid "Python executable path for external player"
+msgstr "Python executable path for external player"
+
+msgctxt "#30002"
+msgid "Use python3 on Linux, or the full Python path on Windows/macOS."
+msgstr "Use python3 on Linux, or the full Python path on Windows/macOS."
+
+msgctxt "#30003"
+msgid "Generate snippet only"
+msgstr "Generate snippet only"
+
+msgctxt "#30004"
+msgid "This add-on generates a mergeable playercorefactory snippet and does not overwrite Kodi files."
+msgstr "This add-on generates a mergeable playercorefactory snippet and does not overwrite Kodi files."
+
+msgctxt "#30100"
+msgid "Oppo UDP-203"
+msgstr "Oppo UDP-203"
+
+msgctxt "#30101"
+msgid "Oppo IP address"
+msgstr "Oppo IP address"
+
+msgctxt "#30102"
+msgid "Oppo IP-control port"
+msgstr "Oppo IP-control port"
+
+msgctxt "#30103"
+msgid "Oppo socket timeout"
+msgstr "Oppo socket timeout"
+
+msgctxt "#30104"
+msgid "Oppo start commands, one per line"
+msgstr "Oppo start commands, one per line"
+
+msgctxt "#30105"
+msgid "Commands are sent over TCP and terminated with carriage return."
+msgstr "Commands are sent over TCP and terminated with carriage return."
+
+msgctxt "#30106"
+msgid "Oppo stop commands, one per line"
+msgstr "Oppo stop commands, one per line"
+
+msgctxt "#30107"
+msgid "Delay between Oppo commands"
+msgstr "Delay between Oppo commands"
+
+msgctxt "#30108"
+msgid "Oppo already-on mode"
+msgstr "Oppo already-on mode"
+
+msgctxt "#30109"
+msgid "Skip Oppo power-on commands for the fastest startup when the player is already awake."
+msgstr "Skip Oppo power-on commands for the fastest startup when the player is already awake."
+
+msgctxt "#30110"
+msgid "Forward Kodi remote only during Oppo ISO session"
+msgstr "Forward Kodi remote only during Oppo ISO session"
+
+msgctxt "#30111"
+msgid "Ignore mapped key presses unless the external-player wrapper has marked an Oppo ISO session active."
+msgstr "Ignore mapped key presses unless the external-player wrapper has marked an Oppo ISO session active."
+
+msgctxt "#30112"
+msgid "Oppo remote command map JSON"
+msgstr "Oppo remote command map JSON"
+
+msgctxt "#30113"
+msgid "Map Kodi bridge keys to Oppo IP commands. Edit this if your Oppo firmware expects different command names."
+msgstr "Map Kodi bridge keys to Oppo IP commands. Edit this if your Oppo firmware expects different command names."
+
+msgctxt "#30114"
+msgid "Oppo start mode"
+msgstr "Oppo start mode"
+
+msgctxt "#30115"
+msgid "Use TCP commands only, Oppo HTTP file handoff only, or TCP commands followed by HTTP file handoff."
+msgstr "Use TCP commands only, Oppo HTTP file handoff only, or TCP commands followed by HTTP file handoff."
+
+msgctxt "#30116"
+msgid "Oppo MAC address"
+msgstr "Oppo MAC address"
+
+msgctxt "#30117"
+msgid "Required only when Wake-on-LAN is enabled."
+msgstr "Required only when Wake-on-LAN is enabled."
+
+msgctxt "#30118"
+msgid "Use Wake-on-LAN before start"
+msgstr "Use Wake-on-LAN before start"
+
+msgctxt "#30119"
+msgid "Wake-on-LAN broadcast address"
+msgstr "Wake-on-LAN broadcast address"
+
+msgctxt "#30120"
+msgid "Oppo HTTP API port"
+msgstr "Oppo HTTP API port"
+
+msgctxt "#30121"
+msgid "Activate Oppo HTTP API by UDP broadcast"
+msgstr "Activate Oppo HTTP API by UDP broadcast"
+
+msgctxt "#30122"
+msgid "Sends the Oppo HTTP activation packet before signin and playnormalfile."
+msgstr "Sends the Oppo HTTP activation packet before signin and playnormalfile."
+
+msgctxt "#30123"
+msgid "Oppo HTTP activation broadcast address"
+msgstr "Oppo HTTP activation broadcast address"
+
+msgctxt "#30124"
+msgid "Kodi path prefix to replace for Oppo HTTP"
+msgstr "Kodi path prefix to replace for Oppo HTTP"
+
+msgctxt "#30125"
+msgid "Optional. Replace this prefix from Kodi's ISO path before sending it to the Oppo."
+msgstr "Optional. Replace this prefix from Kodi's ISO path before sending it to the Oppo."
+
+msgctxt "#30126"
+msgid "Oppo-visible replacement path prefix"
+msgstr "Oppo-visible replacement path prefix"
+
+msgctxt "#30127"
+msgid "Optional. Replacement prefix that the Oppo can access over the network."
+msgstr "Optional. Replacement prefix that the Oppo can access over the network."
+
+msgctxt "#30128"
+msgid "URL-encode Oppo HTTP media path"
+msgstr "URL-encode Oppo HTTP media path"
+
+msgctxt "#30129"
+msgid "Send disc folder root to Oppo HTTP API"
+msgstr "Send disc folder root to Oppo HTTP API"
+
+msgctxt "#30130"
+msgid "For BDMV, VIDEO_TS, MPEGAV, VCD, and SVCD paths, send the parent disc folder rather than the marker file."
+msgstr "For BDMV, VIDEO_TS, MPEGAV, VCD, and SVCD paths, send the parent disc folder rather than the marker file."
+
+msgctxt "#30131"
+msgid "Enable Oppo preflight queries"
+msgstr "Enable Oppo preflight queries"
+
+msgctxt "#30132"
+msgid "Before start, send #QPW and #QIS to check power and input state. Avoids sending PON when already on. Disabled by default for fastest startup."
+msgstr "Before start, send #QPW and #QIS to check power and input state. Avoids sending PON when already on. Disabled by default for fastest startup."
+
+msgctxt "#30133"
+msgid "Oppo verbose mode (#SVM)"
+msgstr "Oppo verbose mode (#SVM)"
+
+msgctxt "#30134"
+msgid "Sets Oppo #SVM level: 0=off (default), 2=verbose mode 2, 3=verbose mode 3. Useful for debugging TCP responses."
+msgstr "Sets Oppo #SVM level: 0=off (default), 2=verbose mode 2, 3=verbose mode 3. Useful for debugging TCP responses."
+
+msgctxt "#30135"
+msgid "Oppo HTTP payload mode"
+msgstr "Oppo HTTP payload mode"
+
+msgctxt "#30136"
+msgid "raw_path sends path as query string (original). json_payload sends JSON with path, type, appDeviceType to /playnormalfile?payload=..."
+msgstr "raw_path sends path as query string (original). json_payload sends JSON with path, type, appDeviceType to /playnormalfile?payload=..."
+
+msgctxt "#30137"
+msgid "HTTP JSON payload appDeviceType"
+msgstr "HTTP JSON payload appDeviceType"
+
+msgctxt "#30138"
+msgid "appDeviceType field in JSON payload: 2=network (default). Only used when payload mode is json_payload."
+msgstr "appDeviceType field in JSON payload: 2=network (default). Only used when payload mode is json_payload."
+
+msgctxt "#30139"
+msgid "HTTP JSON payload type"
+msgstr "HTTP JSON payload type"
+
+msgctxt "#30140"
+msgid "type field in JSON payload: 1=video (default). Only used when payload mode is json_payload."
+msgstr "type field in JSON payload: 1=video (default). Only used when payload mode is json_payload."
+
+msgctxt "#30200"
+msgid "TV input switching"
+msgstr "TV input switching"
+
+msgctxt "#30201"
+msgid "ADB executable path"
+msgstr "ADB executable path"
+
+msgctxt "#30202"
+msgid "TV IP address"
+msgstr "TV IP address"
+
+msgctxt "#30203"
+msgid "TV ADB port"
+msgstr "TV ADB port"
+
+msgctxt "#30204"
+msgid "Run adb connect before switching inputs"
+msgstr "Run adb connect before switching inputs"
+
+msgctxt "#30205"
+msgid "ADB shell command for Oppo HDMI input"
+msgstr "ADB shell command for Oppo HDMI input"
+
+msgctxt "#30206"
+msgid "Android TV firmware varies. Use adb logcat while switching inputs manually to find the exact content URI."
+msgstr "Android TV firmware varies. Use adb logcat while switching inputs manually to find the exact content URI."
+
+msgctxt "#30207"
+msgid "ADB shell command for Kodi HDMI input"
+msgstr "ADB shell command for Kodi HDMI input"
+
+msgctxt "#30208"
+msgid "Set this to the Android TV input that shows your Kodi box."
+msgstr "Set this to the Android TV input that shows your Kodi box."
+
+msgctxt "#30209"
+msgid "TV backend"
+msgstr "TV backend"
+
+msgctxt "#30210"
+msgid "Choose ADB for TCL/Android TV, Sony Bravia IP control, LG command, Samsung command, or a custom command."
+msgstr "Choose ADB for TCL/Android TV, Sony Bravia IP control, LG command, Samsung command, or a custom command."
+
+msgctxt "#30211"
+msgid "Sony Bravia pre-shared key"
+msgstr "Sony Bravia pre-shared key"
+
+msgctxt "#30212"
+msgid "Sony HDMI port for Oppo"
+msgstr "Sony HDMI port for Oppo"
+
+msgctxt "#30213"
+msgid "Sony HDMI port for Kodi"
+msgstr "Sony HDMI port for Kodi"
+
+msgctxt "#30214"
+msgid "LG command for Oppo input"
+msgstr "LG command for Oppo input"
+
+msgctxt "#30215"
+msgid "LG command for Kodi input"
+msgstr "LG command for Kodi input"
+
+msgctxt "#30216"
+msgid "Samsung command for Oppo input"
+msgstr "Samsung command for Oppo input"
+
+msgctxt "#30217"
+msgid "Samsung command for Kodi input"
+msgstr "Samsung command for Kodi input"
+
+msgctxt "#30218"
+msgid "Custom command for Oppo input"
+msgstr "Custom command for Oppo input"
+
+msgctxt "#30219"
+msgid "Custom command for Kodi input"
+msgstr "Custom command for Kodi input"
+
+msgctxt "#30220"
+msgid "TCL ADB preset (informational)"
+msgstr "TCL ADB preset (informational)"
+
+msgctxt "#30221"
+msgid "Hint for which TCL ADB preset applies. Use the TCL preset helper in the installer menu to fill in the ADB shell commands."
+msgstr "Hint for which TCL ADB preset applies. Use the TCL preset helper in the installer menu to fill in the ADB shell commands."
+
+msgctxt "#30224"
+msgid "Roku ECP port"
+msgstr "Roku ECP port"
+
+msgctxt "#30225"
+msgid "Local Roku ECP HTTP port. The default is 8060."
+msgstr "Local Roku ECP HTTP port. The default is 8060."
+
+msgctxt "#30226"
+msgid "Roku ECP key for OPPO input"
+msgstr "Roku ECP key for OPPO input"
+
+msgctxt "#30227"
+msgid "Roku ECP key for Kodi input"
+msgstr "Roku ECP key for Kodi input"
+
+msgctxt "#30228"
+msgid "Use only allowlisted Roku TV input keys such as InputHDMI1 or InputHDMI2. Local control must be enabled on the TV; failures remain non-fatal."
+msgstr "Use only allowlisted Roku TV input keys such as InputHDMI1 or InputHDMI2. Local control must be enabled on the TV; failures remain non-fatal."
+
+msgctxt "#30229"
+msgid "Acknowledge experimental SmartThings TV support"
+msgstr "Acknowledge experimental SmartThings TV support"
+
+msgctxt "#30230"
+msgid "SmartThings support is experimental, metadata-only in Build 9A, and requires a future backend build plus real hardware validation before live API use."
+msgstr "SmartThings support is experimental, metadata-only in Build 9A, and requires a future backend build plus real hardware validation before live API use."
+
+msgctxt "#30231"
+msgid "SmartThings token"
+msgstr "SmartThings token"
+
+msgctxt "#30232"
+msgid "Personal access token placeholder for a future SmartThings backend. Tokens must be redacted from logs and diagnostics."
+msgstr "Personal access token placeholder for a future SmartThings backend. Tokens must be redacted from logs and diagnostics."
+
+msgctxt "#30233"
+msgid "SmartThings device ID"
+msgstr "SmartThings device ID"
+
+msgctxt "#30234"
+msgid "Device ID placeholder for a future SmartThings backend. Build 9A does not perform live API calls."
+msgstr "Device ID placeholder for a future SmartThings backend. Build 9A does not perform live API calls."
+
+msgctxt "#30235"
+msgid "SmartThings OPPO input ID"
+msgstr "SmartThings OPPO input ID"
+
+msgctxt "#30236"
+msgid "Input ID placeholder for future SmartThings API testing. No live SmartThings request is performed in Build 9A."
+msgstr "Input ID placeholder for future SmartThings API testing. No live SmartThings request is performed in Build 9A."
+
+msgctxt "#30237"
+msgid "SmartThings Kodi input ID"
+msgstr "SmartThings Kodi input ID"
+
+msgctxt "#30300"
+msgid "Playback"
+msgstr "Playback"
+
+msgctxt "#30301"
+msgid "Seconds to wait after switching to Oppo input"
+msgstr "Seconds to wait after switching to Oppo input"
+
+msgctxt "#30302"
+msgid "Playback hold mode"
+msgstr "Playback hold mode"
+
+msgctxt "#30303"
+msgid "fixed_timeout uses a set time, manual_file exits when a stop file exists, and http_poll watches Oppo playback status."
+msgstr "fixed_timeout uses a set time, manual_file exits when a stop file exists, and http_poll watches Oppo playback status."
+
+msgctxt "#30304"
+msgid "Fixed timeout in minutes"
+msgstr "Fixed timeout in minutes"
+
+msgctxt "#30305"
+msgid "Manual stop file path"
+msgstr "Manual stop file path"
+
+msgctxt "#30306"
+msgid "Switch TV back to Kodi input on exit"
+msgstr "Switch TV back to Kodi input on exit"
+
+msgctxt "#30307"
+msgid "Fast changeover"
+msgstr "Fast changeover"
+
+msgctxt "#30308"
+msgid "Run TV input switching and Oppo commands in parallel for the least delay."
+msgstr "Run TV input switching and Oppo commands in parallel for the least delay."
+
+msgctxt "#30309"
+msgid "HTTP poll interval in seconds"
+msgstr "HTTP poll interval in seconds"
+
+msgctxt "#30310"
+msgid "HTTP poll timeout in minutes"
+msgstr "HTTP poll timeout in minutes"
+
+msgctxt "#30311"
+msgid "HTTP idle confirmations before exit"
+msgstr "HTTP idle confirmations before exit"
+
+msgctxt "#30312"
+msgid "Include video disc folder rules"
+msgstr "Include video disc folder rules"
+
+msgctxt "#30313"
+msgid "Route UHD/Blu-ray BDMV, DVD VIDEO_TS, and VCD/SVCD folder files to the Oppo external player. Also adds dvdimage and dvdfile rules (v0.8.0)."
+msgstr "Route UHD/Blu-ray BDMV, DVD VIDEO_TS, and VCD/SVCD folder files to the Oppo external player. Also adds dvdimage and dvdfile rules (v0.8.0)."
+
+msgctxt "#30314"
+msgid "TCP QPL poll interval in seconds"
+msgstr "TCP QPL poll interval in seconds"
+
+msgctxt "#30315"
+msgid "How often to send #QPL over TCP when using tcp_qpl_poll hold mode."
+msgstr "How often to send #QPL over TCP when using tcp_qpl_poll hold mode."
+
+msgctxt "#30316"
+msgid "TCP QPL poll timeout in minutes"
+msgstr "TCP QPL poll timeout in minutes"
+
+msgctxt "#30317"
+msgid "TCP QPL idle confirmations before exit"
+msgstr "TCP QPL idle confirmations before exit"
+
+msgctxt "#30318"
+msgid "Trick-play suppress window (seconds)"
+msgstr "Trick-play suppress window (seconds)"
+
+msgctxt "#30319"
+msgid "During HTTP poll mode, ignore idle status for this many seconds after any play/trick-play response. Prevents spurious stop detection during FF/REW. Default 45 (from OppofromAVS reference)."
+msgstr "During HTTP poll mode, ignore idle status for this many seconds after any play/trick-play response. Prevents spurious stop detection during FF/REW. Default 45 (from OppofromAVS reference)."
+
+msgctxt "#30320"
+msgid "Verbose push timeout in minutes"
+msgstr "Verbose push timeout in minutes"
+
+msgctxt "#30321"
+msgid "Maximum hold time for verbose_push mode before giving up and ending the session. Defaults to qpl_poll_timeout_minutes if not set."
+msgstr "Maximum hold time for verbose_push mode before giving up and ending the session. Defaults to qpl_poll_timeout_minutes if not set."
+
+msgctxt "#30400"
+msgid "Playback architecture"
+msgstr "Playback architecture"
+
+msgctxt "#30401"
+msgid "external_player uses the official Kodi playercorefactory path. service_interception monitors Kodi playback and intercepts disc files."
+msgstr "external_player uses the official Kodi playercorefactory path. service_interception monitors Kodi playback and intercepts disc files."
+
+msgctxt "#30402"
+msgid "Architecture choice made"
+msgstr "Architecture choice made"
+
+msgctxt "#30403"
+msgid "Set automatically on first run when you choose External Player or Service Interception."
+msgstr "Set automatically on first run when you choose External Player or Service Interception."
+
+msgctxt "#30500"
+msgid "Experimental"
+msgstr "Experimental"
+
+msgctxt "#30501"
+msgid "Enable file-list diagnostic (experimental, opt-in)"
+msgstr "Enable file-list diagnostic (experimental, opt-in)"
+
+msgctxt "#30502"
+msgid "EXPERIMENTAL: Enables the /getfilelist diagnostic in the installer menu. This endpoint is undocumented and its response format is firmware-dependent and may include binary data. Disabled by default. Do not enable in production."
+msgstr "EXPERIMENTAL: Enables the /getfilelist diagnostic in the installer menu. This endpoint is undocumented and its response format is firmware-dependent and may include binary data. Disabled by default. Do not enable in production."
+
+
+msgctxt "#30900"
+msgid "Power on Oppo when Kodi starts"
+msgstr ""
+
+msgctxt "#30902"
+msgid "Power-on delay (seconds)"
+msgstr ""
+
+msgctxt "#30904"
+msgid "Power-on TCP retries"
+msgstr ""
+
+msgctxt "#30906"
+msgid "Send WoL before power-on"
+msgstr ""
+
+msgctxt "#30910"
+msgid "Generate Chinoppo AutoScript"
+msgstr ""
+
+msgctxt "#30920"
+msgid "Wizard mode (basic/full)"
+msgstr ""
+
+msgctxt "#30930"
+msgid "Architecture auto-test"
+msgstr ""
+
+msgctxt "#30940"
+msgid "Service interception (Kodi Omega hardened)"
+msgstr ""
+
+msgctxt "#30950"
+msgid "Hardware preset"
+msgstr ""
+
+
+# ---- v1.0.6 wizard / preset / auto-test localization ----
+
+msgctxt "#31000"
+msgid "Welcome"
+msgstr "Welcome"
+
+msgctxt "#31001"
+msgid "Configuration mode"
+msgstr "Configuration mode"
+
+msgctxt "#31002"
+msgid "Basic - just the essentials"
+msgstr "Basic - just the essentials"
+
+msgctxt "#31003"
+msgid "Full - configure every option"
+msgstr "Full - configure every option"
+
+msgctxt "#31010"
+msgid "Prerequisites"
+msgstr "Prerequisites"
+
+msgctxt "#31011"
+msgid "Oppo IP"
+msgstr "Oppo IP"
+
+msgctxt "#31012"
+msgid "Oppo port"
+msgstr "Oppo port"
+
+msgctxt "#31013"
+msgid "Reachable"
+msgstr "Reachable"
+
+msgctxt "#31014"
+msgid "Unreachable"
+msgstr "Unreachable"
+
+msgctxt "#31020"
+msgid "Hardware"
+msgstr "Hardware"
+
+msgctxt "#31021"
+msgid "Chinoppo preset"
+msgstr "Chinoppo preset"
+
+msgctxt "#31022"
+msgid "Apply Chinoppo #EJT/#PLA preset?"
+msgstr "Apply Chinoppo #EJT/#PLA preset?"
+
+msgctxt "#31030"
+msgid "Kodi startup auto-power"
+msgstr "Kodi startup auto-power"
+
+msgctxt "#31031"
+msgid "Do you want Kodi to automatically power on the OPPO/compatible player when Kodi starts? Choose No if you prefer to keep the player off until playback starts or you power it on manually."
+msgstr "Do you want Kodi to automatically power on the OPPO/compatible player when Kodi starts? Choose No if you prefer to keep the player off until playback starts or you power it on manually."
+
+msgctxt "#31032"
+msgid "Delay (seconds)"
+msgstr "Delay (seconds)"
+
+msgctxt "#31033"
+msgid "Retries"
+msgstr "Retries"
+
+msgctxt "#31034"
+msgid "Wake-on-LAN first?"
+msgstr "Wake-on-LAN first?"
+
+msgctxt "#31040"
+msgid "Architecture auto-test"
+msgstr "Architecture auto-test"
+
+msgctxt "#31041"
+msgid "Run quick auto-test now?"
+msgstr "Run quick auto-test now?"
+
+msgctxt "#31042"
+msgid "Apply recommendation now?"
+msgstr "Apply recommendation now?"
+
+msgctxt "#31043"
+msgid "Architecture set"
+msgstr "Architecture set"
+
+msgctxt "#31050"
+msgid "Wizard complete"
+msgstr "Wizard complete"
+
+msgctxt "#31051"
+msgid "Wizard reset"
+msgstr "Wizard reset"
+
+msgctxt "#31060"
+msgid "AutoScript generated"
+msgstr "AutoScript generated"
+
+msgctxt "#31061"
+msgid "AutoScript failed"
+msgstr "AutoScript failed"
+
+msgctxt "#30960"
+msgid "Persistent reconnect on disconnect"
+msgstr ""
+
+msgctxt "#30961"
+msgid "Max reconnect attempts"
+msgstr ""
+
+msgctxt "#30962"
+msgid "Initial backoff delay (s)"
+msgstr ""
+
+msgctxt "#30963"
+msgid "Backoff cap (s)"
+msgstr ""
+
+msgctxt "#30964"
+msgid "Backoff jitter (percent)"
+msgstr ""
+
+msgctxt "#32100"
+msgid "Connection"
+msgstr ""
+
+msgctxt "#32101"
+msgid "Hardware and commands"
+msgstr ""
+
+msgctxt "#32102"
+msgid "Auto-power-on"
+msgstr ""
+
+msgctxt "#32103"
+msgid "Wizard and playback"
+msgstr ""
+
+msgctxt "#32104"
+msgid "Diagnostics and experimental"
+msgstr ""
+
+msgctxt "#32110"
+msgid "Network endpoint and Wake-on-LAN. Sub-settings hide when WoL is off."
+msgstr ""
+
+msgctxt "#32111"
+msgid "Hardware preset, command sequences, and TV/AVR bridge."
+msgstr ""
+
+msgctxt "#32112"
+msgid "Auto-power-on settings hide when the master toggle is off."
+msgstr ""
+
+msgctxt "#32113"
+msgid "Wizard mode and playback-architecture knobs."
+msgstr ""
+
+msgctxt "#32114"
+msgid "Diagnostics dashboard and experimental flags."
+msgstr ""
+
+msgctxt "#30150"
+msgid "OPPO / Chinoppo hardware model"
+msgstr ""
+
+msgctxt "#30151"
+msgid "Choose the player family: stock OPPO uses stock power behavior, Chinoppo-style clones use clone-safe wake behavior, and Reavon/Magnetar successors remain warning-only until hardware-proven."
+msgstr ""
+
+msgctxt "#30222"
+msgid "Enable TV input switching"
+msgstr ""
+
+msgctxt "#30223"
+msgid "When enabled, the v2 MVP External Player flow switches the TV to the OPPO input before playback and optionally back to Kodi afterward. ADB/TV failures are logged as non-fatal."
+msgstr ""
+
+msgctxt "#30160"
+msgid "OPPO firmware is jailbroken"
+msgstr "OPPO firmware is jailbroken"
+
+msgctxt "#30161"
+msgid "Enable this only for UDP-203/UDP-205 units using the oppo-jb.com firmware path; it allows the compatibility preset to select JSON HTTP payload mode."
+msgstr "Enable this only for UDP-203/UDP-205 units using the oppo-jb.com firmware path; it allows the compatibility preset to select JSON HTTP payload mode."
+
+msgctxt "#30162"
+msgid "AutoScript port-23 shell handler is installed"
+msgstr "AutoScript port-23 shell handler is installed"
+
+msgctxt "#30163"
+msgid "Warns that replacing the stock OPPO port-23 protocol with a shell can break #SVM 2 verbose-push parsing."
+msgstr "Warns that replacing the stock OPPO port-23 protocol with a shell can break #SVM 2 verbose-push parsing."
+
+msgctxt "#30238"
+msgid "Enable AVR control"
+msgstr "Enable AVR control"
+
+msgctxt "#30239"
+msgid "Disabled by default. Build 11 only adds a safe AVR framework skeleton; no AVR commands are sent."
+msgstr "Disabled by default. Build 11 only adds a safe AVR framework skeleton; no AVR commands are sent."
+
+msgctxt "#30240"
+msgid "AVR backend family"
+msgstr "AVR backend family"
+
+msgctxt "#30241"
+msgid "Choose disabled, Denon/Marantz, Yamaha, Onkyo/Integra, Pioneer experimental, or Sony experimental. Build 11 keeps all drivers metadata-only."
+msgstr "Choose disabled, Denon/Marantz, Yamaha, Onkyo/Integra, Pioneer experimental, or Sony experimental. Build 11 keeps all drivers metadata-only."
+
+msgctxt "#30242"
+msgid "Selected AVR preset ID"
+msgstr "Selected AVR preset ID"
+
+msgctxt "#30243"
+msgid "AVR host or IP address"
+msgstr "AVR host or IP address"
+
+msgctxt "#30244"
+msgid "Required only when AVR control is enabled in a future driver build."
+msgstr "Required only when AVR control is enabled in a future driver build."
+
+msgctxt "#30245"
+msgid "AVR control port"
+msgstr "AVR control port"
+
+msgctxt "#30246"
+msgid "Optional metadata for future AVR drivers. Leave blank or zero while AVR control is disabled."
+msgstr "Optional metadata for future AVR drivers. Leave blank or zero while AVR control is disabled."
+
+msgctxt "#30247"
+msgid "AVR player input"
+msgstr "AVR player input"
+
+msgctxt "#30248"
+msgid "Input name/code the AVR should use for OPPO/player playback when a future driver is enabled."
+msgstr "Input name/code the AVR should use for OPPO/player playback when a future driver is enabled."
+
+msgctxt "#30249"
+msgid "Restore AVR input after playback"
+msgstr "Restore AVR input after playback"
+
+msgctxt "#30250"
+msgid "Disabled by default. Future restore actions must remain optional and non-fatal."
+msgstr "Disabled by default. Future restore actions must remain optional and non-fatal."
+
+msgctxt "#30251"
+msgid "AVR restore input"
+msgstr "AVR restore input"
+
+msgctxt "#30252"
+msgid "Optional input name/code for future post-playback AVR restore."
+msgstr "Optional input name/code for future post-playback AVR restore."
+
+msgctxt "#30253"
+msgid "Power on AVR before playback"
+msgstr "Power on AVR before playback"
+
+msgctxt "#30254"
+msgid "Disabled by default in Build 11; no AVR power command is sent."
+msgstr "Disabled by default in Build 11; no AVR power command is sent."
+
+msgctxt "#30255"
+msgid "Power off AVR after playback"
+msgstr "Power off AVR after playback"
+
+msgctxt "#30256"
+msgid "Disabled by default for safety; no AVR power-off command is sent."
+msgstr "Disabled by default for safety; no AVR power-off command is sent."
+
+msgctxt "#30257"
+msgid "AVR volume automation"
+msgstr "AVR volume automation"
+
+msgctxt "#30258"
+msgid "Disabled by default. Build 11 does not automate volume."
+msgstr "Disabled by default. Build 11 does not automate volume."
+
+msgctxt "#30259"
+msgid "AVR sound mode"
+msgstr "AVR sound mode"
+
+msgctxt "#30260"
+msgid "Optional metadata only in Build 11; no sound-mode command is sent."
+msgstr "Optional metadata only in Build 11; no sound-mode command is sent."
+
+msgctxt "#30261"
+msgid "Acknowledge experimental Sony AVR support"
+msgstr "Acknowledge experimental Sony AVR support"
+
+msgctxt "#30262"
+msgid "Required before any future Sony Audio Control API helper can run. Build 15A still performs no live Sony API calls."
+msgstr "Required before any future Sony Audio Control API helper can run. Build 15A still performs no live Sony API calls."
+
+msgctxt "#30263"
+msgid "Sony AVR PSK"
+msgstr "Sony AVR PSK"
+
+msgctxt "#30264"
+msgid "Optional Sony Audio Control API shared key. Diagnostics must redact this value."
+msgstr "Optional Sony Audio Control API shared key. Diagnostics must redact this value."
+
+msgctxt "#30265"
+msgid "Sony AVR API path"
+msgstr "Sony AVR API path"
+
+msgctxt "#30266"
+msgid "Metadata only in Build 15A. No Sony API request is sent."
+msgstr "Metadata only in Build 15A. No Sony API request is sent."
+
+msgctxt "#30267"
+msgid "Sony AVR player input URI"
+msgstr "Sony AVR player input URI"
+
+msgctxt "#30268"
+msgid "Optional metadata for a future Sony input helper. Diagnostics must sanitize sensitive values."
+msgstr "Optional metadata for a future Sony input helper. Diagnostics must sanitize sensitive values."
+
+msgctxt "#30269"
+msgid "Sony AVR restore input URI"
+msgstr "Sony AVR restore input URI"
+
+msgctxt "#30270"
+msgid "Optional metadata for a future Sony restore helper. No restore command is sent in Build 15A."
+msgstr "Optional metadata for a future Sony restore helper. No restore command is sent in Build 15A."
