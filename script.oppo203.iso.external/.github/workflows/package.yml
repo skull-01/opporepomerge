@@ -1,0 +1,149 @@
+name: Package Installable ZIP
+
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - "v*"
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      build_suffix:
+        description: "Optional filename suffix, for example beta1 or test"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+
+jobs:
+  package:
+    name: Build Kodi installable ZIP
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Read add-on version
+        id: version
+        shell: bash
+        run: |
+          version="$(python - <<'PY'
+          from resources.lib.version import ADDON_VERSION
+          print(ADDON_VERSION)
+          PY
+          )"
+          echo "value=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Choose package suffix
+        id: suffix
+        shell: bash
+        env:
+          DISPATCH_SUFFIX: ${{ github.event.inputs.build_suffix }}
+        run: |
+          suffix="${DISPATCH_SUFFIX:-}"
+          if [[ -z "$suffix" && "${GITHUB_EVENT_NAME}" != "pull_request" && "${GITHUB_REF_TYPE}" != "tag" ]]; then
+            suffix="${GITHUB_SHA::7}"
+          fi
+          echo "value=$suffix" >> "$GITHUB_OUTPUT"
+
+      - name: Build installable ZIP
+        shell: bash
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          BUILD_SUFFIX: ${{ steps.suffix.outputs.value }}
+          OUT_DIR: ${{ runner.temp }}/dist
+        run: |
+          python tools/sync_version.py --check --expected-version "$VERSION"
+          bash scripts/package_release.sh
+          rm -f "$OUT_DIR"/*-dev-source.zip
+
+      - name: Verify installable ZIP contents
+        shell: bash
+        env:
+          DIST_DIR: ${{ runner.temp }}/dist
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os
+          import zipfile
+
+          dist = Path(os.environ["DIST_DIR"])
+          zips = sorted(dist.glob("script.oppo203.iso.external-*.zip"))
+          if len(zips) != 1:
+              raise SystemExit(f"Expected exactly one installable ZIP, found {len(zips)}")
+
+          forbidden_prefixes = (
+              "script.oppo203.iso.external/.github/",
+              "script.oppo203.iso.external/docs/",
+              "script.oppo203.iso.external/release-evidence/",
+              "script.oppo203.iso.external/scripts/",
+              "script.oppo203.iso.external/tests/",
+              "script.oppo203.iso.external/tools/",
+          )
+          with zipfile.ZipFile(zips[0]) as archive:
+              names = archive.namelist()
+              bad = [name for name in names if name.startswith(forbidden_prefixes)]
+              corrupt = archive.testzip()
+
+          if corrupt:
+              raise SystemExit(f"Corrupt ZIP member: {corrupt}")
+          if bad:
+              raise SystemExit("Forbidden installable ZIP members: " + ", ".join(bad[:20]))
+          print(f"Verified {zips[0].name}: {len(names)} runtime files")
+          PY
+
+      - name: Upload installable ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: script.oppo203.iso.external-installable-${{ steps.version.outputs.value }}
+          path: |
+            ${{ runner.temp }}/dist/script.oppo203.iso.external-*.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Attach installable ZIP to tag release
+    needs: package
+    if: github.event_name == 'push' && github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download installable ZIP artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: script.oppo203.iso.external-installable-*
+          path: dist
+          merge-multiple: true
+
+      - name: Publish GitHub Release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.zip --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.zip \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$GITHUB_REF_NAME" \
+              --notes "Installable Kodi add-on ZIP."
+          fi
