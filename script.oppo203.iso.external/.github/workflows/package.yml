@@ -114,6 +114,7 @@ jobs:
           name: script.oppo203.iso.external-installable-${{ steps.version.outputs.value }}
           path: |
             ${{ runner.temp }}/dist/script.oppo203.iso.external-*.zip
+            ${{ runner.temp }}/dist/script.oppo203.iso.external-*.sha256
           if-no-files-found: error
           retention-days: 30
 
@@ -140,10 +141,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" dist/*.zip --repo "$GITHUB_REPOSITORY" --clobber
+            gh release upload "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            gh release create "$GITHUB_REF_NAME" dist/* \
               --repo "$GITHUB_REPOSITORY" \
               --title "$GITHUB_REF_NAME" \
-              --notes "Installable Kodi add-on ZIP."
+              --notes "Installable Kodi add-on ZIP and SHA256 checksum."
           fi
