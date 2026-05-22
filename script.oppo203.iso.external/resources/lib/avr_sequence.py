@@ -5,6 +5,7 @@ disabled-by-default AVR framework to the external-player handoff path without
 changing OPPO routing, service interception, playercorefactory.xml behavior,
 NAS/AutoScript behavior, or TV switching semantics.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,10 +13,13 @@ from typing import Any
 
 try:
     from .avr_control import avr_enabled, controller_factory, selected_avr_backend
-    from .avr_types import AVR_BACKEND_DISABLED, AVR_BACKEND_SONY_AUDIO_API
+    from .avr_types import AVR_BACKEND_DISABLED, AVR_BACKEND_SONY_AUDIO_API  # noqa: F401
 except ImportError:  # top-level/test compatibility
     from avr_control import avr_enabled, controller_factory, selected_avr_backend  # type: ignore
-    from avr_types import AVR_BACKEND_DISABLED, AVR_BACKEND_SONY_AUDIO_API  # type: ignore
+    from avr_types import (  # type: ignore  # noqa: F401
+        AVR_BACKEND_DISABLED,
+        AVR_BACKEND_SONY_AUDIO_API,
+    )
 
 
 @dataclass(frozen=True)
@@ -47,8 +51,8 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return {}
     if isinstance(settings, dict):
         return dict(settings)
-    if hasattr(settings, "data") and isinstance(getattr(settings, "data"), dict):
-        return dict(getattr(settings, "data"))
+    if hasattr(settings, "data") and isinstance(settings.data, dict):
+        return dict(settings.data)
     if hasattr(settings, "items"):
         try:
             return dict(settings.items())  # type: ignore[attr-defined]
@@ -75,7 +79,10 @@ def eligible_for_external_player_avr_sequence(settings: dict[str, object] | obje
     wrapper is called directly.
     """
     data = _settings_dict(settings)
-    return str(data.get("playback_architecture", "external_player") or "").strip().lower() == "external_player"
+    return (
+        str(data.get("playback_architecture", "external_player") or "").strip().lower()
+        == "external_player"
+    )
 
 
 def _result_from_exception(phase: str, exc: Exception, actions: list[str]) -> AvrSequenceResult:
@@ -102,7 +109,9 @@ def _call_controller(controller: object, action: str, *args: object) -> object:
     raise AttributeError(action)
 
 
-def pre_playback_sequence(settings: dict[str, object] | object | None, *, controller: object | None = None) -> AvrSequenceResult:
+def pre_playback_sequence(
+    settings: dict[str, object] | object | None, *, controller: object | None = None
+) -> AvrSequenceResult:
     """Run optional AVR power/input preparation before OPPO playback.
 
     Disabled, ineligible, or incomplete AVR configuration is a no-op/nonfatal
@@ -110,14 +119,18 @@ def pre_playback_sequence(settings: dict[str, object] | object | None, *, contro
     to wrap this helper to protect playback.
     """
     if not eligible_for_external_player_avr_sequence(settings):
-        return AvrSequenceResult(True, "pre", skipped=True, warnings=("avr_sequence_ineligible_external_player",))
+        return AvrSequenceResult(
+            True, "pre", skipped=True, warnings=("avr_sequence_ineligible_external_player",)
+        )
     if not avr_enabled(settings):
         return AvrSequenceResult(True, "pre", skipped=True, warnings=("avr_control_disabled",))
 
     data = _settings_dict(settings)
     active_controller = controller if controller is not None else controller_factory(settings)
     if active_controller is None:
-        return AvrSequenceResult(False, "pre", skipped=True, warnings=("avr_controller_unavailable_nonfatal",))
+        return AvrSequenceResult(
+            False, "pre", skipped=True, warnings=("avr_controller_unavailable_nonfatal",)
+        )
 
     actions: list[str] = []
     try:
@@ -140,10 +153,14 @@ def _restore_input_for(settings: dict[str, object] | object | None) -> str:
     return str(data.get("avr_restore_input", "") or "").strip()
 
 
-def post_playback_sequence(settings: dict[str, object] | object | None, *, controller: object | None = None) -> AvrSequenceResult:
+def post_playback_sequence(
+    settings: dict[str, object] | object | None, *, controller: object | None = None
+) -> AvrSequenceResult:
     """Run optional AVR restore after OPPO playback has been stopped."""
     if not eligible_for_external_player_avr_sequence(settings):
-        return AvrSequenceResult(True, "post", skipped=True, warnings=("avr_sequence_ineligible_external_player",))
+        return AvrSequenceResult(
+            True, "post", skipped=True, warnings=("avr_sequence_ineligible_external_player",)
+        )
     if not avr_enabled(settings):
         return AvrSequenceResult(True, "post", skipped=True, warnings=("avr_control_disabled",))
 
@@ -153,11 +170,15 @@ def post_playback_sequence(settings: dict[str, object] | object | None, *, contr
 
     restore_input = _restore_input_for(settings)
     if not restore_input:
-        return AvrSequenceResult(False, "post", skipped=True, warnings=("avr_restore_input_missing_nonfatal",))
+        return AvrSequenceResult(
+            False, "post", skipped=True, warnings=("avr_restore_input_missing_nonfatal",)
+        )
 
     active_controller = controller if controller is not None else controller_factory(settings)
     if active_controller is None:
-        return AvrSequenceResult(False, "post", skipped=True, warnings=("avr_controller_unavailable_nonfatal",))
+        return AvrSequenceResult(
+            False, "post", skipped=True, warnings=("avr_controller_unavailable_nonfatal",)
+        )
 
     actions: list[str] = []
     try:

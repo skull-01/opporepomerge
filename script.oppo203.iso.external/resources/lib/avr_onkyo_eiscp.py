@@ -6,6 +6,7 @@ It opens and closes a socket for each command, uses short timeouts, treats
 Pioneer as experimental/unverified metadata, and returns nonfatal ``AvrResult``
 objects instead of raising into playback/control callers.
 """
+
 from __future__ import annotations
 
 import socket
@@ -15,7 +16,11 @@ from typing import Callable, Protocol
 try:
     from .avr_types import AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AvrResult
 except ImportError:  # top-level/audit/test compatibility
-    from avr_types import AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AvrResult  # type: ignore
+    from avr_types import (  # type: ignore
+        AVR_BACKEND_ONKYO_EISCP,
+        AVR_BACKEND_PIONEER_EISCP,
+        AvrResult,
+    )
 
 DEFAULT_EISCP_PORT = 60128
 DEFAULT_EISCP_TIMEOUT = 3.0
@@ -80,7 +85,12 @@ def build_input_select_payload(input_code: object) -> str:
 
 def build_eiscp_frame(command_payload: object) -> bytes:
     payload_text = "" if command_payload is None else str(command_payload)
-    if payload_text != payload_text.strip() or not payload_text or "\r" in payload_text or "\n" in payload_text:
+    if (
+        payload_text != payload_text.strip()
+        or not payload_text
+        or "\r" in payload_text
+        or "\n" in payload_text
+    ):
         raise ValueError("invalid_eiscp_payload")
     payload = (payload_text + EISCP_LINE_ENDING).encode("ascii", errors="strict")
     header = (
@@ -106,7 +116,9 @@ def parse_eiscp_response(frame: bytes | str) -> str:
     if header_size < EISCP_HEADER_SIZE or len(raw) < header_size + data_size:
         raise ValueError("malformed_eiscp_response_size")
     payload = raw[header_size : header_size + data_size]
-    return payload.decode("ascii", errors="replace").replace("\r", "").replace("\n", "").strip()[:160]
+    return (
+        payload.decode("ascii", errors="replace").replace("\r", "").replace("\n", "").strip()[:160]
+    )
 
 
 def _close_socket(sock: object) -> None:
@@ -136,11 +148,29 @@ def send_eiscp_command(
     backend = _backend_for(experimental_pioneer)
     host_text = _clean_text(host)
     if not host_text:
-        return AvrResult(False, "eiscp_command", backend, "avr_host_missing", ("avr_config_incomplete",), True, False, False)
+        return AvrResult(
+            False,
+            "eiscp_command",
+            backend,
+            "avr_host_missing",
+            ("avr_config_incomplete",),
+            True,
+            False,
+            False,
+        )
     try:
         frame = build_eiscp_frame(command_payload)
     except (UnicodeEncodeError, ValueError):
-        return AvrResult(False, "eiscp_command", backend, "invalid_eiscp_payload", ("invalid_eiscp_payload",), True, False, False)
+        return AvrResult(
+            False,
+            "eiscp_command",
+            backend,
+            "invalid_eiscp_payload",
+            ("invalid_eiscp_payload",),
+            True,
+            False,
+            False,
+        )
 
     parsed_port = eiscp_port(port)
     parsed_timeout = eiscp_timeout(timeout)
@@ -151,11 +181,11 @@ def send_eiscp_command(
         settimeout = getattr(sock, "settimeout", None)
         if callable(settimeout):
             settimeout(parsed_timeout)
-        getattr(sock, "sendall")(frame)
+        sock.sendall(frame)
         response_text = ""
         if read_response:
             try:
-                response_text = parse_eiscp_response(getattr(sock, "recv")(1024))
+                response_text = parse_eiscp_response(sock.recv(1024))
             except socket.timeout:
                 return AvrResult(
                     ok=True,
@@ -252,7 +282,9 @@ class OnkyoEiscpAvrController:
 
     def select_input(self, input_code: object | None = None) -> AvrResult:
         try:
-            payload = build_input_select_payload(self.player_input if input_code is None else input_code)
+            payload = build_input_select_payload(
+                self.player_input if input_code is None else input_code
+            )
         except ValueError:
             return AvrResult(
                 ok=False,

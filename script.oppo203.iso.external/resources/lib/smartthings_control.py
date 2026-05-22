@@ -5,6 +5,7 @@ tests. It remains experimental: requests require explicit acknowledgement,
 results are non-fatal, tokens are never returned in diagnostics, and hardware
 validation is not claimed.
 """
+
 from __future__ import annotations
 
 import json
@@ -65,7 +66,9 @@ def sanitized_settings(settings: dict[str, object]) -> dict[str, object]:
     """Return a copy with SmartThings token redacted for diagnostics."""
     sanitized = dict(settings)
     if SMARTTHINGS_TOKEN_SETTING in sanitized:
-        sanitized[SMARTTHINGS_TOKEN_SETTING] = redact_token(sanitized.get(SMARTTHINGS_TOKEN_SETTING))
+        sanitized[SMARTTHINGS_TOKEN_SETTING] = redact_token(
+            sanitized.get(SMARTTHINGS_TOKEN_SETTING)
+        )
     return sanitized
 
 
@@ -129,7 +132,10 @@ def _build_command_payload(input_id: str) -> bytes:
 def _build_request(settings: dict[str, object], input_id: str) -> urllib.request.Request:
     token = str(settings.get(SMARTTHINGS_TOKEN_SETTING, "") or "")
     device_id = str(settings.get(SMARTTHINGS_DEVICE_ID_SETTING, "") or "")
-    base_url = str(settings.get(SMARTTHINGS_API_BASE_URL_SETTING, SMARTTHINGS_API_BASE_URL) or SMARTTHINGS_API_BASE_URL).rstrip("/")
+    base_url = str(
+        settings.get(SMARTTHINGS_API_BASE_URL_SETTING, SMARTTHINGS_API_BASE_URL)
+        or SMARTTHINGS_API_BASE_URL
+    ).rstrip("/")
     safe_device_id = urllib.parse.quote(device_id, safe="")
     url = f"{base_url}/devices/{safe_device_id}/commands"
     return urllib.request.Request(
@@ -162,16 +168,33 @@ def switch_input(
     device_id = str(settings.get(SMARTTHINGS_DEVICE_ID_SETTING, "") or "")
 
     if not is_acknowledged(settings):
-        result.update({"error_code": "experimental_acknowledgement_required", "detail": "SmartThings experimental acknowledgement is required."})
+        result.update(
+            {
+                "error_code": "experimental_acknowledgement_required",
+                "detail": "SmartThings experimental acknowledgement is required.",
+            }
+        )
         return result
     if not token:
-        result.update({"error_code": "smartthings_token_missing", "detail": "SmartThings token is required."})
+        result.update(
+            {"error_code": "smartthings_token_missing", "detail": "SmartThings token is required."}
+        )
         return result
     if not device_id:
-        result.update({"error_code": "smartthings_device_id_missing", "detail": "SmartThings device ID is required."})
+        result.update(
+            {
+                "error_code": "smartthings_device_id_missing",
+                "detail": "SmartThings device ID is required.",
+            }
+        )
         return result
     if not input_text:
-        result.update({"error_code": "smartthings_input_id_missing", "detail": "SmartThings input ID is required."})
+        result.update(
+            {
+                "error_code": "smartthings_input_id_missing",
+                "detail": "SmartThings input ID is required.",
+            }
+        )
         return result
 
     request = _build_request(settings, input_text)
@@ -183,12 +206,14 @@ def switch_input(
         with urlopen(request, timeout=timeout) as response:  # type: ignore[misc]
             body = response.read().decode("utf-8", errors="replace")
             status = int(getattr(response, "status", getattr(response, "code", 200)))
-            result.update({
-                "ok": 200 <= status < 300,
-                "status_code": status,
-                "detail": redact_secret_in_text(body, token),
-                "network_called": True,
-            })
+            result.update(
+                {
+                    "ok": 200 <= status < 300,
+                    "status_code": status,
+                    "detail": redact_secret_in_text(body, token),
+                    "network_called": True,
+                }
+            )
             if not result["ok"]:
                 result["error_code"] = "smartthings_http_error"
             return result
@@ -196,21 +221,27 @@ def switch_input(
         status = int(getattr(exc, "code", 0) or 0)
         code = "smartthings_auth_failed" if status in (401, 403) else "smartthings_http_error"
         detail = redact_secret_in_text(getattr(exc, "reason", "") or str(exc), token)
-        result.update({"status_code": status, "error_code": code, "detail": detail, "network_called": True})
+        result.update(
+            {"status_code": status, "error_code": code, "detail": detail, "network_called": True}
+        )
         return result
     except urllib.error.URLError as exc:
-        result.update({
-            "error_code": "smartthings_network_error",
-            "detail": redact_secret_in_text(getattr(exc, "reason", "") or str(exc), token),
-            "network_called": True,
-        })
+        result.update(
+            {
+                "error_code": "smartthings_network_error",
+                "detail": redact_secret_in_text(getattr(exc, "reason", "") or str(exc), token),
+                "network_called": True,
+            }
+        )
         return result
     except Exception as exc:  # pragma: no cover - defensive for unusual opener failures
-        result.update({
-            "error_code": "smartthings_request_failed",
-            "detail": redact_secret_in_text(str(exc), token),
-            "network_called": True,
-        })
+        result.update(
+            {
+                "error_code": "smartthings_request_failed",
+                "detail": redact_secret_in_text(str(exc), token),
+                "network_called": True,
+            }
+        )
         return result
 
 

@@ -422,6 +422,13 @@ class TestBuild7RawCoverageBranches(unittest.TestCase):
     def test_external_player_http_poll_nondict_and_tcp_confirmation_branch(self):
         import external_player as ep
 
+        # log() falls back to stdlib logging (which calls time.time()) when xbmc is
+        # absent; suppress it so the patched time.time sequence reaches only the code
+        # under test instead of being consumed by the logging fallback.
+        _logp = mock.patch.object(ep, "log", lambda *a, **k: None)
+        _logp.start()
+        self.addCleanup(_logp.stop)
+
         settings = FakeSettings({
             "hold_mode": "http_poll",
             "http_poll_interval": "1",

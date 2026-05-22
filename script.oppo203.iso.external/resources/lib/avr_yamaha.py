@@ -7,6 +7,7 @@ validation claims.  Every network/API failure is represented as a nonfatal
 ``AvrResult`` so future optional AVR sequencing cannot destabilize OPPO/Kodi
 playback routing.
 """
+
 from __future__ import annotations
 
 import json
@@ -75,12 +76,24 @@ def build_yamaha_base_url(host: object, port: object = DEFAULT_YAMAHA_YXC_PORT) 
 
 
 def build_power_on_url(host: object, *, port: object = DEFAULT_YAMAHA_YXC_PORT) -> str:
-    return build_yamaha_base_url(host, port) + YAMAHA_YXC_SET_POWER_PATH + "?" + parse.urlencode({"power": "on"})
+    return (
+        build_yamaha_base_url(host, port)
+        + YAMAHA_YXC_SET_POWER_PATH
+        + "?"
+        + parse.urlencode({"power": "on"})
+    )
 
 
-def build_input_select_url(host: object, input_name: object, *, port: object = DEFAULT_YAMAHA_YXC_PORT) -> str:
+def build_input_select_url(
+    host: object, input_name: object, *, port: object = DEFAULT_YAMAHA_YXC_PORT
+) -> str:
     safe_input = validate_yamaha_input(input_name)
-    return build_yamaha_base_url(host, port) + YAMAHA_YXC_SET_INPUT_PATH + "?" + parse.urlencode({"input": safe_input})
+    return (
+        build_yamaha_base_url(host, port)
+        + YAMAHA_YXC_SET_INPUT_PATH
+        + "?"
+        + parse.urlencode({"input": safe_input})
+    )
 
 
 def build_status_url(host: object, *, port: object = DEFAULT_YAMAHA_YXC_PORT) -> str:
@@ -88,7 +101,9 @@ def build_status_url(host: object, *, port: object = DEFAULT_YAMAHA_YXC_PORT) ->
 
 
 def _default_http_get(url: str, timeout: float) -> bytes:
-    with request.urlopen(url, timeout=timeout) as response:  # nosec B310 - user-configured local AVR endpoint; guarded/optional.
+    with request.urlopen(
+        url, timeout=timeout
+    ) as response:  # nosec B310 - user-configured local AVR endpoint; guarded/optional.
         return response.read()
 
 
@@ -123,7 +138,11 @@ def send_yamaha_get(
     parsed_timeout = yamaha_timeout(timeout)
     getter = http_get or _default_http_get
     try:
-        url = path_url if path_url.startswith(("http://", "https://")) else build_yamaha_base_url(host, port) + path_url
+        url = (
+            path_url
+            if path_url.startswith(("http://", "https://"))
+            else build_yamaha_base_url(host, port) + path_url
+        )
     except ValueError as exc:
         return AvrResult(
             ok=False,
@@ -218,12 +237,23 @@ class YamahaYxcAvrController:
         try:
             url = build_power_on_url(self.host, port=self.port)
         except ValueError as exc:
-            return AvrResult(False, "yamaha_yxc_power_on", AVR_BACKEND_YAMAHA_YXC, str(exc), ("avr_config_incomplete",), True, False, False)
+            return AvrResult(
+                False,
+                "yamaha_yxc_power_on",
+                AVR_BACKEND_YAMAHA_YXC,
+                str(exc),
+                ("avr_config_incomplete",),
+                True,
+                False,
+                False,
+            )
         return self.send_url(url)
 
     def select_input(self, input_name: object | None = None) -> AvrResult:
         try:
-            url = build_input_select_url(self.host, self.player_input if input_name is None else input_name, port=self.port)
+            url = build_input_select_url(
+                self.host, self.player_input if input_name is None else input_name, port=self.port
+            )
         except ValueError:
             return AvrResult(
                 ok=False,
@@ -241,7 +271,16 @@ class YamahaYxcAvrController:
         try:
             url = build_status_url(self.host, port=self.port)
         except ValueError as exc:
-            return AvrResult(False, "yamaha_yxc_get_status", AVR_BACKEND_YAMAHA_YXC, str(exc), ("avr_config_incomplete",), True, False, False)
+            return AvrResult(
+                False,
+                "yamaha_yxc_get_status",
+                AVR_BACKEND_YAMAHA_YXC,
+                str(exc),
+                ("avr_config_incomplete",),
+                True,
+                False,
+                False,
+            )
         return self.send_url(url)
 
     def run(self, action: str, **kwargs: object) -> AvrResult:

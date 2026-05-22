@@ -5,13 +5,14 @@ roadmap.  It intentionally performs no hardware control and no playback launch;
 it only translates a Kodi-visible path into the path expected inside a player
 that has mounted the same NAS media tree through AutoScript/NFS.
 """
+
 from __future__ import annotations
 
-from dataclasses import dataclass
 import posixpath
-from typing import Any, Iterable
+from collections.abc import Iterable
+from dataclasses import dataclass
+from typing import Any
 from urllib.parse import unquote, urlsplit
-
 
 DEFAULT_RULE_SEPARATOR = "=>"
 
@@ -117,7 +118,7 @@ def _has_prefix_boundary(path: str, prefix: str) -> bool:
         return True
     if prefix.endswith(("/", "://")):
         return True
-    return path[len(prefix):len(prefix) + 1] in {"/", ""}
+    return path[len(prefix) : len(prefix) + 1] in {"/", ""}
 
 
 def _relative_suffix(path: str, prefix: str, *, case_sensitive: bool) -> str | None:
@@ -127,7 +128,7 @@ def _relative_suffix(path: str, prefix: str, *, case_sensitive: bool) -> str | N
         return None
     if not _has_prefix_boundary(comparable_path, comparable_prefix):
         return None
-    suffix = path[len(prefix):]
+    suffix = path[len(prefix) :]
     return suffix.lstrip("/")
 
 
@@ -181,7 +182,9 @@ def explain_path_mapping(
     for index, rule in enumerate(candidate_rules):
         normalized_path = normalize_kodi_path(raw_kodi_path, decode_url=rule.decode_url)
         normalized_prefix = normalize_kodi_path(rule.kodi_prefix, decode_url=rule.decode_url)
-        suffix = _relative_suffix(normalized_path, normalized_prefix, case_sensitive=rule.case_sensitive)
+        suffix = _relative_suffix(
+            normalized_path, normalized_prefix, case_sensitive=rule.case_sensitive
+        )
         if suffix is None:
             continue
         player_path = _join_player_prefix(rule.player_prefix, suffix)
@@ -224,7 +227,9 @@ def parse_mapping_rule(line: str, *, separator: str = DEFAULT_RULE_SEPARATOR) ->
     return PathMappingRule(left.strip(), right.strip())
 
 
-def parse_mapping_rules(text: str, *, separator: str = DEFAULT_RULE_SEPARATOR) -> list[PathMappingRule]:
+def parse_mapping_rules(
+    text: str, *, separator: str = DEFAULT_RULE_SEPARATOR
+) -> list[PathMappingRule]:
     """Parse newline-separated path-mapping rules, ignoring blank/comments."""
     rules: list[PathMappingRule] = []
     for line in str(text or "").splitlines():
@@ -250,4 +255,3 @@ def rules_from_settings(settings: Any) -> list[PathMappingRule]:
     if kodi_prefix or player_prefix:
         parsed.append(PathMappingRule(kodi_prefix, player_prefix, label="settings_prefix"))
     return parsed
-

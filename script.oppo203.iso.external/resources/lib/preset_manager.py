@@ -40,14 +40,21 @@ BUILTIN_PRESETS = dict(_pcf.PRESETS)
 # Filesystem injection (mirrors discovery / pcf style)
 # ---------------------------------------------------------------------
 
-class _RealFS(object):
-    def exists(self, p): return os.path.exists(p)
+
+class _RealFS:
+    def exists(self, p):
+        return os.path.exists(p)
+
     def read(self, p):
-        with open(p, "r", encoding="utf-8") as f: return f.read()
+        with open(p, "r", encoding="utf-8") as f:
+            return f.read()
+
     def write(self, p, t):
         d = os.path.dirname(p)
-        if d: os.makedirs(d, exist_ok=True)
-        with open(p, "w", encoding="utf-8") as f: f.write(t)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(t)
 
 
 # ---------------------------------------------------------------------
@@ -103,6 +110,7 @@ def load_custom(path, fs=None):
 # merged_presets
 # ---------------------------------------------------------------------
 
+
 def merged_presets(custom_path=None, fs=None):
     """Return BUILTIN_PRESETS overlaid with valid custom presets.
 
@@ -122,8 +130,7 @@ def merged_presets(custom_path=None, fs=None):
 SUBMISSION_SCHEMA_VERSION = 1
 
 
-def export_submission(preset_id, ip=None, quirks=None, contact=None,
-                      user_preset=None):
+def export_submission(preset_id, ip=None, quirks=None, contact=None, user_preset=None):
     """Build a JSON-ready submission dict for upstream contribution.
 
     `user_preset` is required for new presets (preset_id not in
@@ -134,8 +141,7 @@ def export_submission(preset_id, ip=None, quirks=None, contact=None,
         raise ValueError("preset_id is required")
     base = BUILTIN_PRESETS.get(preset_id)
     if base is None and not user_preset:
-        raise ValueError("user_preset is required for new preset_id "
-                         + repr(preset_id))
+        raise ValueError("user_preset is required for new preset_id " + repr(preset_id))
     body = dict(base) if base else {}
     if user_preset:
         if not _validate_preset(user_preset):
@@ -168,8 +174,7 @@ def save_submission(submission, root_dir, *, now=None, fs=None):
     fs = fs if fs is not None else _RealFS()
     pid = submission.get("preset_id", "preset")
     safe = _re.sub(r"[^A-Za-z0-9_.-]+", "_", str(pid))
-    path = os.path.join(root_dir,
-                        "preset-submission-" + safe + "-" + _ts(now) + ".json")
+    path = os.path.join(root_dir, "preset-submission-" + safe + "-" + _ts(now) + ".json")
     fs.write(path, json.dumps(submission, sort_keys=True, indent=2))
     return path
 
@@ -182,9 +187,11 @@ _VERSION_RE = _re.compile(r"^[vV]?(\d+(?:\.\d+)*)")
 
 
 def _parse_version(v):
-    if not v: return None
+    if not v:
+        return None
     m = _VERSION_RE.match(str(v).strip())
-    if not m: return None
+    if not m:
+        return None
     try:
         return tuple(int(x) for x in m.group(1).split("."))
     except Exception:
@@ -193,7 +200,8 @@ def _parse_version(v):
 
 def compare_versions(a, b):
     """Return -1 if a<b, 0 if a==b, 1 if a>b, None on parse failure."""
-    pa = _parse_version(a); pb = _parse_version(b)
+    pa = _parse_version(a)
+    pb = _parse_version(b)
     if pa is None or pb is None:
         return None
     # Pad to equal length
@@ -222,7 +230,11 @@ def firmware_warning(preset, device_firmware):
     if cmp is None:
         return None
     if cmp < 0:
-        return ("Device firmware " + str(device_firmware)
-                + " is older than the preset minimum "
-                + str(minimum) + ". Some commands may not work.")
+        return (
+            "Device firmware "
+            + str(device_firmware)
+            + " is older than the preset minimum "
+            + str(minimum)
+            + ". Some commands may not work."
+        )
     return None

@@ -30,7 +30,6 @@ in-memory stub; production passes None to use real `os`/`shutil`.
 """
 
 import os
-import re
 import shutil as _shutil
 import time as _time
 import xml.etree.ElementTree as ET
@@ -39,13 +38,13 @@ try:
     from .disc_classification import (
         XML_4K_TAG_FILENAME_PATTERN,
         XML_DISC_FILETYPES,
-        XML_LOOSE_VIDEO_FILETYPES,
+        XML_LOOSE_VIDEO_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
     )
 except ImportError:  # pragma: no cover - top-level test import compatibility
     from disc_classification import (  # type: ignore
         XML_4K_TAG_FILENAME_PATTERN,
         XML_DISC_FILETYPES,
-        XML_LOOSE_VIDEO_FILETYPES,
+        XML_LOOSE_VIDEO_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
     )
 
 
@@ -54,9 +53,10 @@ except ImportError:  # pragma: no cover - top-level test import compatibility
 # naming-convention driven and must not route loose/raw video files. The shared
 # constants are imported from disc_classification.py.
 
+
 def _option4_rule_xml(player_name, filetype):
     return (
-        '    <rule name="' + player_name + '_rule_' + filetype + '" '
+        '    <rule name="' + player_name + "_rule_" + filetype + '" '
         'filetypes="' + filetype + '" '
         'filename="' + XML_4K_TAG_FILENAME_PATTERN + '" '
         'player="' + player_name + '"/>\n'
@@ -70,32 +70,32 @@ PRESETS = {
     "oppo203": {
         "label": "OPPO 203/205",
         "start_commands": "#PLA",
-        "stop_commands":  "#STP",
+        "stop_commands": "#STP",
     },
     "oppo103": {
         "label": "OPPO 103/105",
         "start_commands": "#PLA",
-        "stop_commands":  "#STP",
+        "stop_commands": "#STP",
     },
     "chinoppo": {
         "label": "Chinoppo (UDP-203/205 clones)",
         "start_commands": "#EJT,#PLA",
-        "stop_commands":  "#STP",
+        "stop_commands": "#STP",
     },
     "reavon_x200": {
         "label": "Reavon UBR-X200",
         "start_commands": "#PON,#PLA",
-        "stop_commands":  "#STP",
+        "stop_commands": "#STP",
     },
     "zappiti_reference": {
         "label": "Zappiti Reference",
         "start_commands": "#PLA",
-        "stop_commands":  "#STP",
+        "stop_commands": "#STP",
     },
     "magnetar": {
         "label": "Magnetar UDP800",
         "start_commands": "#PLA",
-        "stop_commands":  "#STP",
+        "stop_commands": "#STP",
     },
 }
 
@@ -123,8 +123,7 @@ def backup_path(target_path, *, now=None):
 _PLAYER_NAME_TMPL = "OPPO_External_{preset}"
 
 
-def snippet_for(preset_id, *, player_path,
-                addon_id="script.oppo203.iso.external"):
+def snippet_for(preset_id, *, player_path, addon_id="script.oppo203.iso.external"):
     """Generate a self-contained <playercorefactory> XML fragment
     for the given preset.  The fragment contains exactly one <player>
     and conservative Option 4 matching <rule> entries.
@@ -135,21 +134,26 @@ def snippet_for(preset_id, *, player_path,
     name = _PLAYER_NAME_TMPL.format(preset=preset_id)
     cmds = p["start_commands"]
     return (
-        '<playercorefactory>\n'
-        '  <players>\n'
+        "<playercorefactory>\n"
+        "  <players>\n"
         '    <player name="' + name + '" type="ExternalPlayer" audio="false" video="true">\n'
-        '      <filename>' + player_path + '</filename>\n'
-        '      <args>"{0}" --preset=' + preset_id
-        + ' --start="' + cmds + '" --addon=' + addon_id + '</args>\n'
-        '      <hidexbmc>true</hidexbmc>\n'
-        '      <hideconsole>true</hideconsole>\n'
-        '      <forceontop>false</forceontop>\n'
-        '    </player>\n'
-        '  </players>\n'
+        "      <filename>" + player_path + "</filename>\n"
+        '      <args>"{0}" --preset='
+        + preset_id
+        + ' --start="'
+        + cmds
+        + '" --addon='
+        + addon_id
+        + "</args>\n"
+        "      <hidexbmc>true</hidexbmc>\n"
+        "      <hideconsole>true</hideconsole>\n"
+        "      <forceontop>false</forceontop>\n"
+        "    </player>\n"
+        "  </players>\n"
         '  <rules action="prepend">\n'
-        + ''.join(_option4_rule_xml(name, filetype) for filetype in XML_DISC_FILETYPES)
-        + '  </rules>\n'
-        '</playercorefactory>\n'
+        + "".join(_option4_rule_xml(name, filetype) for filetype in XML_DISC_FILETYPES)
+        + "  </rules>\n"
+        "</playercorefactory>\n"
     )
 
 
@@ -162,17 +166,26 @@ def generate(preset_id, **kwargs):
 # Filesystem injection
 # ---------------------------------------------------------------------
 
-class _RealFS(object):
-    def exists(self, p): return os.path.exists(p)
+
+class _RealFS:
+    def exists(self, p):
+        return os.path.exists(p)
+
     def read(self, p):
-        with open(p, "r", encoding="utf-8") as f: return f.read()
+        with open(p, "r", encoding="utf-8") as f:
+            return f.read()
+
     def write(self, p, text):
         d = os.path.dirname(p)
-        if d: os.makedirs(d, exist_ok=True)
-        with open(p, "w", encoding="utf-8") as f: f.write(text)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(text)
+
     def copy(self, src, dst):
         d = os.path.dirname(dst)
-        if d: os.makedirs(d, exist_ok=True)
+        if d:
+            os.makedirs(d, exist_ok=True)
         _shutil.copy2(src, dst)
 
 
@@ -189,8 +202,7 @@ def _merge_xml(existing_text, snippet_text):
     new = ET.fromstring(snippet_text)
     if base.tag != "playercorefactory":
         # If the file isn't a playercorefactory document, refuse to merge.
-        raise ValueError("existing root is <" + base.tag + ">, "
-                         "expected <playercorefactory>")
+        raise ValueError("existing root is <" + base.tag + ">, " "expected <playercorefactory>")
     base_players = base.find("players")
     if base_players is None:
         base_players = ET.SubElement(base, "players")
@@ -200,7 +212,7 @@ def _merge_xml(existing_text, snippet_text):
         base_rules.set("action", "prepend")
 
     existing_player_names = {p.get("name") for p in base_players.findall("player")}
-    existing_rule_names   = {r.get("name") for r in base_rules.findall("rule")}
+    existing_rule_names = {r.get("name") for r in base_rules.findall("rule")}
 
     added = 0
     new_players = new.find("players")
@@ -263,8 +275,10 @@ def merge(target_path, snippet_xml, *, fs=None, now=None):
 
     existing = fs.read(target_path) if fs.exists(target_path) else None
     if existing is not None and not is_well_formed(existing):
-        raise ValueError("existing playercorefactory.xml is malformed; "
-                         "refusing to merge. Fix or move the file first.")
+        raise ValueError(
+            "existing playercorefactory.xml is malformed; "
+            "refusing to merge. Fix or move the file first."
+        )
 
     backup = None
     if existing is not None and existing.strip():
@@ -291,4 +305,3 @@ def merge(target_path, snippet_xml, *, fs=None, now=None):
         "rolled_back": False,
         "added_players": added,
     }
-

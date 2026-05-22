@@ -24,7 +24,6 @@ historically more deterministic path on Chinoppo-class hardware.
 import statistics
 import time as _time
 
-
 TRIALS = 3
 DEFAULT_EPS = 0.020  # 20 ms - inside this margin the result is considered a tie
 
@@ -93,12 +92,13 @@ def validate_playercorefactory(path):
     try:
         with open(path, "rb") as f:
             data = f.read()
-    except (OSError, IOError) as exc:
+    except OSError as exc:
         return (False, "read error: " + str(exc))
     if not data.strip():
         return (False, "empty file")
     try:
         import xml.etree.ElementTree as ET
+
         root = ET.fromstring(data)
     except Exception as exc:
         return (False, "not well-formed XML: " + str(exc))
@@ -113,18 +113,24 @@ def validate_playercorefactory(path):
     return (True, "ok")
 
 
-def run_full(probe_external, probe_service, trials=TRIALS,
-             timer=None, eps=DEFAULT_EPS, playercorefactory_path=None):
+def run_full(
+    probe_external,
+    probe_service,
+    trials=TRIALS,
+    timer=None,
+    eps=DEFAULT_EPS,
+    playercorefactory_path=None,
+):
     """Run a full benchmark for both architectures and pick a winner.
 
     Both probes are injected so production callers can wire them to
     real OPPO interactions while tests pass in deterministic stubs.
     """
     ext = benchmark("external", trials=trials, probe=probe_external, timer=timer)
-    svc = benchmark("service",  trials=trials, probe=probe_service,  timer=timer)
-    rec = recommend(ext["median"] if ext["all_ok"] else None,
-                    svc["median"] if svc["all_ok"] else None,
-                    eps=eps)
+    svc = benchmark("service", trials=trials, probe=probe_service, timer=timer)
+    rec = recommend(
+        ext["median"] if ext["all_ok"] else None, svc["median"] if svc["all_ok"] else None, eps=eps
+    )
     pcf_ok, pcf_reason = (True, "skipped")
     if playercorefactory_path:
         pcf_ok, pcf_reason = validate_playercorefactory(playercorefactory_path)

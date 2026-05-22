@@ -5,6 +5,7 @@ class guidance on top of the Build 3 safety gates: stock OPPO models, Chinoppo-s
 OPPO-like successors have separate capability decisions.  This module does not
 call hardware, mutate settings, route playback, or change command-map data.
 """
+
 from __future__ import annotations
 
 try:
@@ -17,9 +18,9 @@ try:
         HARDWARE_ROLE_PLAYER,
         HARDWARE_ROLE_TV,
         get_profile,
-        normalize_profile_key,
         list_profiles,
         list_roles,
+        normalize_profile_key,
         profiles_by_role,
     )
 except ImportError:  # top-level/audit import compatibility
@@ -32,9 +33,9 @@ except ImportError:  # top-level/audit import compatibility
         HARDWARE_ROLE_PLAYER,
         HARDWARE_ROLE_TV,
         get_profile,
-        normalize_profile_key,
         list_profiles,
         list_roles,
+        normalize_profile_key,
         profiles_by_role,
     )
 
@@ -122,12 +123,17 @@ def is_clone_family(key: str) -> bool:
 
 
 def is_warning_only_successor(key: str) -> bool:
-    return normalize_hardware_key(key) in OPPO_LIKE_SUCCESSOR_WARNING_MODELS or profile_class(key) == HARDWARE_CLASS_OPPO_LIKE_SUCCESSOR
+    return (
+        normalize_hardware_key(key) in OPPO_LIKE_SUCCESSOR_WARNING_MODELS
+        or profile_class(key) == HARDWARE_CLASS_OPPO_LIKE_SUCCESSOR
+    )
 
 
 def supports_clone_safe_wake(key: str) -> bool:
     """Return True only for clone-family devices that may use #EJT wake."""
-    return normalize_hardware_key(key) in CHINOPPO_NAS_PLAYBACK_MODELS and not is_warning_only_successor(key)
+    return normalize_hardware_key(
+        key
+    ) in CHINOPPO_NAS_PLAYBACK_MODELS and not is_warning_only_successor(key)
 
 
 def allows_automatic_oppo_commands(key: str) -> bool:
@@ -166,8 +172,6 @@ def nas_direct_playback_gate(key: str) -> dict[str, object]:
         "requires_real_hardware_validation": True,
         "hardware_validation_claimed": False,
     }
-
-
 
 
 def player_setup_guidance(key: str) -> dict[str, object]:
@@ -242,12 +246,15 @@ def format_player_setup_guidance(key: str) -> str:
         "Readiness notes:",
         "- Hardware class: " + str(guidance.get("hardware_class", "unknown")),
         "- Protocol stance: " + str(guidance.get("protocol_stance", "unknown")),
-        "- Automatic OPPO command-map behavior: " + ("allowed" if guidance.get("automatic_oppo_command_map_allowed") else "disabled"),
-        "- Clone-safe wake: " + ("allowed" if guidance.get("clone_safe_wake_allowed") else "not used"),
+        "- Automatic OPPO command-map behavior: "
+        + ("allowed" if guidance.get("automatic_oppo_command_map_allowed") else "disabled"),
+        "- Clone-safe wake: "
+        + ("allowed" if guidance.get("clone_safe_wake_allowed") else "not used"),
         "- Hardware validation claimed: no",
         "- " + str(guidance.get("nas_mount_guidance", "")),
     ]
     return "\n".join(lines)
+
 
 def supported_profile_keys() -> tuple[str, ...]:
     """Return all registry keys for audit-style smoke checks."""

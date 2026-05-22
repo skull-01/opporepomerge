@@ -5,6 +5,7 @@ helper prepares a consistent checklist and compact diagnostic report before
 real OPPO/Chinoppo/Kodi/NAS/TV/ADB testing.  It does not contact hardware,
 launch playback, mutate settings, or claim validation has passed.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -17,7 +18,10 @@ try:  # pragma: no cover - import style differs under Kodi and pytest
     from .settings_reader import Settings, nas_playback_capability
 except Exception:  # pragma: no cover
     from diagnostic_summary import build_summary, format_summary  # type: ignore
-    from hardware_capabilities import nas_direct_playback_gate, player_setup_guidance  # type: ignore
+    from hardware_capabilities import (  # type: ignore
+        nas_direct_playback_gate,
+        player_setup_guidance,
+    )
     from hardware_profiles import get_profile, normalize_profile_key  # type: ignore
     from settings_reader import Settings, nas_playback_capability  # type: ignore
 
@@ -92,7 +96,9 @@ def _as_settings(settings=None, addon_data_dir=None) -> Settings:
     return Settings({})
 
 
-def build_readiness_report(settings=None, *, addon_data_dir=None, root_dir=None, path_exists=None) -> dict:
+def build_readiness_report(
+    settings=None, *, addon_data_dir=None, root_dir=None, path_exists=None
+) -> dict:
     """Return a non-invasive hardware-validation readiness report.
 
     The report combines the existing diagnostic summary with NAS/AutoScript
@@ -132,12 +138,18 @@ def build_readiness_report(settings=None, *, addon_data_dir=None, root_dir=None,
             "protocol_stance": player_profile.get("protocol_stance", "unknown"),
             "wake_behavior": player_profile.get("wake_behavior", "unknown"),
             "warning_only_successor": bool(gate.get("warning_only_successor")),
-            "automatic_oppo_command_map_allowed": bool(gate.get("automatic_oppo_command_map_allowed")),
-            "hardware_validation_required": bool(player_profile.get("hardware_validation_required", True)),
+            "automatic_oppo_command_map_allowed": bool(
+                gate.get("automatic_oppo_command_map_allowed")
+            ),
+            "hardware_validation_required": bool(
+                player_profile.get("hardware_validation_required", True)
+            ),
             "hardware_validation_claimed": False,
         },
         "player_setup_guidance": guidance,
-        "nas_mount_question_status": guidance.get("nas_mount_question_status", "documented_readiness_gate"),
+        "nas_mount_question_status": guidance.get(
+            "nas_mount_question_status", "documented_readiness_gate"
+        ),
         "nas_direct_playback_gate": gate,
         "nas_playback_capability": capability,
         "option4_xml_mode": option4,
@@ -172,8 +184,8 @@ def format_readiness_report(report: dict) -> str:
         f"- Hardware validation claimed: {'yes' if (report.get('player_hardware') or {}).get('hardware_validation_claimed') else 'no'}",
         "",
         "Player setup guidance:",
-        "- " + str((report.get('player_setup_guidance') or {}).get('summary', '')),
-        "- " + str((report.get('player_setup_guidance') or {}).get('nas_mount_guidance', '')),
+        "- " + str((report.get("player_setup_guidance") or {}).get("summary", "")),
+        "- " + str((report.get("player_setup_guidance") or {}).get("nas_mount_guidance", "")),
         "",
         "NAS / AutoScript capability gate:",
         f"- Model: {cap.get('model', 'unknown')}",

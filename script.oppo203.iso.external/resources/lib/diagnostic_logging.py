@@ -5,6 +5,7 @@ the old direct-print fallback with a small Python logging fallback. The public
 ``log_to_xbmc`` helper still returns the formatted message for tests and
 callers, and stdout capture remains supported through a StreamHandler fallback.
 """
+
 from __future__ import annotations
 
 import logging

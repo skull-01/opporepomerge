@@ -6,13 +6,14 @@ preserves the existing behavior: filename/path tag matching remains a simple
 case-insensitive substring check for 4K, UHD, or 2160p; XML mode remains
 filename/path driven; and loose/raw video extensions stay with Kodi.
 """
+
 from __future__ import annotations
 
 import os
 
 try:  # package import during normal use
     from .constants import (
-        DISC_STYLE_EXTENSIONS_4K,
+        DISC_STYLE_EXTENSIONS_4K,  # noqa: F401  # re-exported via shared-constants hub
         LOOSE_VIDEO_EXTENSIONS,
         UHD_DISC_TAGS,
         XML_4K_TAG_FILENAME_PATTERN,
@@ -21,7 +22,7 @@ try:  # package import during normal use
     )
 except ImportError:  # pragma: no cover - top-level test import compatibility
     from constants import (  # type: ignore
-        DISC_STYLE_EXTENSIONS_4K,
+        DISC_STYLE_EXTENSIONS_4K,  # noqa: F401  # re-exported via shared-constants hub
         LOOSE_VIDEO_EXTENSIONS,
         UHD_DISC_TAGS,
         XML_4K_TAG_FILENAME_PATTERN,

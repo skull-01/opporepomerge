@@ -5,6 +5,7 @@ socket command helper behind the disabled-by-default AVR framework.  It opens
 and closes a socket for each command, uses short timeouts, and returns nonfatal
 ``AvrResult`` objects instead of raising into playback/control callers.
 """
+
 from __future__ import annotations
 
 import re
@@ -143,11 +144,11 @@ def send_denon_command(
         settimeout = getattr(sock, "settimeout", None)
         if callable(settimeout):
             settimeout(parsed_timeout)
-        getattr(sock, "sendall")(payload)
+        sock.sendall(payload)
         response_text = ""
         if read_response:
             try:
-                response_text = _sanitize_response(getattr(sock, "recv")(256))
+                response_text = _sanitize_response(sock.recv(256))
             except socket.timeout:
                 return AvrResult(
                     ok=True,
@@ -231,7 +232,9 @@ class DenonMarantzAvrController:
 
     def select_input(self, input_name: object | None = None) -> AvrResult:
         try:
-            command = build_input_select_command(self.player_input if input_name is None else input_name)
+            command = build_input_select_command(
+                self.player_input if input_name is None else input_name
+            )
         except ValueError:
             return AvrResult(
                 ok=False,

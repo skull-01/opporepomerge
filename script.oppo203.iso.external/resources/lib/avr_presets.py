@@ -4,6 +4,7 @@ The registry describes AVR families while keeping control disabled by default.
 Denon/Marantz, Yamaha MusicCast/YXC, and Onkyo/Integra/Pioneer eISCP have guarded
 software drivers; Sony now has an experimental acknowledgement-gated request helper; hardware evidence is still required before claiming validation.
 """
+
 from __future__ import annotations
 
 try:
@@ -111,7 +112,11 @@ AVR_PRESETS: dict[str, dict[str, object]] = {
         "request_helper_available": True,
         "protocol": "json_http_experimental",
         "requires_experimental_acknowledgement": True,
-        "sensitive_fields": ("sony_avr_psk", "sony_avr_player_input_uri", "sony_avr_restore_input_uri"),
+        "sensitive_fields": (
+            "sony_avr_psk",
+            "sony_avr_player_input_uri",
+            "sony_avr_restore_input_uri",
+        ),
         "hardware_validation_claimed": False,
         "experimental_skeleton_families": (),
         "experimental_request_helper_families": (AVR_BACKEND_SONY_AUDIO_API,),
@@ -148,7 +153,9 @@ def list_avr_presets() -> tuple[str, ...]:
     return tuple(sorted(AVR_PRESETS))
 
 
-def get_avr_preset(preset_id: object, default: dict[str, object] | None = None) -> dict[str, object]:
+def get_avr_preset(
+    preset_id: object, default: dict[str, object] | None = None
+) -> dict[str, object]:
     preset = AVR_PRESETS.get(normalize_avr_backend(preset_id))
     if preset is None:
         return dict(default or {})
@@ -162,7 +169,13 @@ def avr_support_summary() -> dict[str, object]:
         "power_off_enabled_by_default": False,
         "volume_automation_enabled_by_default": False,
         "driver_execution_added": True,
-        "driver_execution_families": (AVR_BACKEND_DENON_MARANTZ, AVR_BACKEND_YAMAHA_YXC, AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AVR_BACKEND_SONY_AUDIO_API),
+        "driver_execution_families": (
+            AVR_BACKEND_DENON_MARANTZ,
+            AVR_BACKEND_YAMAHA_YXC,
+            AVR_BACKEND_ONKYO_EISCP,
+            AVR_BACKEND_PIONEER_EISCP,
+            AVR_BACKEND_SONY_AUDIO_API,
+        ),
         "playback_sequencing_hooked": True,
         "hardware_validation_claimed": False,
         "experimental_skeleton_families": (),

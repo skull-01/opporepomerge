@@ -27,16 +27,15 @@ import json
 import re as _re
 import time as _time
 
-
 # Vendor -> preset mapping. Case-insensitive substring match.
 _VENDOR_PRESETS = (
-    ("oppo",      "oppo203"),
-    ("reavon",    "reavon_x200"),
-    ("magnetar",  "magnetar"),
-    ("zappiti",   "zappiti_reference"),
-    ("chinoppo",  "chinoppo"),
-    ("udp-203",   "chinoppo"),
-    ("udp-205",   "chinoppo"),
+    ("oppo", "oppo203"),
+    ("reavon", "reavon_x200"),
+    ("magnetar", "magnetar"),
+    ("zappiti", "zappiti_reference"),
+    ("chinoppo", "chinoppo"),
+    ("udp-203", "chinoppo"),
+    ("udp-205", "chinoppo"),
 )
 
 
@@ -57,10 +56,7 @@ def apply_preset_for(device):
         return None
     if device.get("preset"):
         return device["preset"]
-    return vendor_to_preset(
-        " ".join([str(device.get("vendor","")),
-                  str(device.get("model",""))])
-    )
+    return vendor_to_preset(" ".join([str(device.get("vendor", "")), str(device.get("model", ""))]))
 
 
 # ---------------------------------------------------------------------
@@ -102,7 +98,7 @@ def parse_ssdp_response(text):
     server = headers.get("server", "")
     return {
         "ip": ip,
-        "port": 23,                      # control port; SSDP advertises HTTP
+        "port": 23,  # control port; SSDP advertises HTTP
         "vendor": server,
         "model": headers.get("st", "") or headers.get("nt", ""),
         "source": "ssdp",
@@ -114,6 +110,7 @@ def parse_ssdp_response(text):
 # mDNS: tests pass a simplified record dict with name/type/addresses/
 # properties; production wiring (e.g. zeroconf) builds the same shape.
 # ---------------------------------------------------------------------
+
 
 def parse_mdns_record(record):
     """Parse a normalised mDNS record into a Device dict, or None."""
@@ -128,7 +125,7 @@ def parse_mdns_record(record):
         "ip": addrs[0],
         "port": int(record.get("port") or 23),
         "vendor": props.get("vendor") or props.get("manufacturer") or name,
-        "model":  props.get("model")  or record.get("type", ""),
+        "model": props.get("model") or record.get("type", ""),
         "source": "mdns",
         "name": name,
     }
@@ -138,7 +135,9 @@ def parse_mdns_record(record):
 # discover(): orchestrates all three probes via injection
 # ---------------------------------------------------------------------
 
-def _now_fn(now): return now() if callable(now) else (now if now else _time.time())
+
+def _now_fn(now):
+    return now() if callable(now) else (now if now else _time.time())
 
 
 def discover(*, ssdp=None, mdns=None, udp=None, timeout=2.0, now=None):
@@ -167,21 +166,20 @@ def discover(*, ssdp=None, mdns=None, udp=None, timeout=2.0, now=None):
 
     if ssdp:
         try:
-            for resp in (ssdp() or []):
+            for resp in ssdp() or []:
                 _add(parse_ssdp_response(resp))
         except Exception:
             pass
     if mdns:
         try:
-            for rec in (mdns() or []):
+            for rec in mdns() or []:
                 _add(parse_mdns_record(rec))
         except Exception:
             pass
     if udp:
         try:
-            for ip, vendor in (udp() or []):
-                _add({"ip": ip, "port": 23, "vendor": vendor or "",
-                      "model": "", "source": "udp"})
+            for ip, vendor in udp() or []:
+                _add({"ip": ip, "port": 23, "vendor": vendor or "", "model": "", "source": "udp"})
         except Exception:
             pass
 
@@ -192,26 +190,35 @@ def discover(*, ssdp=None, mdns=None, udp=None, timeout=2.0, now=None):
 # DeviceCache: persistent JSON cache for the wizard's IP step
 # ---------------------------------------------------------------------
 
-class _RealFS(object):
+
+class _RealFS:
     def exists(self, p):
-        import os; return os.path.exists(p)
+        import os
+
+        return os.path.exists(p)
+
     def read(self, p):
-        with open(p, "r", encoding="utf-8") as f: return f.read()
+        with open(p, "r", encoding="utf-8") as f:
+            return f.read()
+
     def write(self, p, t):
         import os
+
         d = os.path.dirname(p)
-        if d: os.makedirs(d, exist_ok=True)
-        with open(p, "w", encoding="utf-8") as f: f.write(t)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        with open(p, "w", encoding="utf-8") as f:
+            f.write(t)
 
 
-class DeviceCache(object):
+class DeviceCache:
     """Keeps the most recent observation per (ip, port) pair."""
 
     def __init__(self, path=None, fs=None, clock=None):
         self.path = path
         self.fs = fs if fs is not None else _RealFS()
         self.clock = clock if clock is not None else _time.time
-        self._items = {}    # (ip,port) -> dev
+        self._items = {}  # (ip,port) -> dev
 
     def add(self, device):
         if not isinstance(device, dict) or not device.get("ip"):
@@ -224,15 +231,15 @@ class DeviceCache(object):
         return d
 
     def add_many(self, devices):
-        for d in (devices or []): self.add(d)
+        for d in devices or []:
+            self.add(d)
 
     def all(self):
         return sorted(self._items.values(), key=lambda d: d["ip"])
 
     def recent(self, max_age_s=86400):
         now = self.clock()
-        return [d for d in self.all()
-                if (now - float(d.get("last_seen", 0))) <= max_age_s]
+        return [d for d in self.all() if (now - float(d.get("last_seen", 0))) <= max_age_s]
 
     def clear(self):
         self._items = {}
@@ -243,8 +250,11 @@ class DeviceCache(object):
         payload = {
             "version": 1,
             "items": [
-                {"ip": k[0], "port": k[1], **{kk: vv for kk, vv in v.items()
-                                              if kk not in ("ip","port")}}
+                {
+                    "ip": k[0],
+                    "port": k[1],
+                    **{kk: vv for kk, vv in v.items() if kk not in ("ip", "port")},
+                }
                 for k, v in self._items.items()
             ],
         }
@@ -263,8 +273,11 @@ class DeviceCache(object):
             return False
         self._items = {}
         for it in items:
-            if not isinstance(it, dict): continue
-            ip = it.get("ip"); port = int(it.get("port") or 23)
-            if not ip: continue
+            if not isinstance(it, dict):
+                continue
+            ip = it.get("ip")
+            port = int(it.get("port") or 23)
+            if not ip:
+                continue
             self._items[(ip, port)] = it
         return True

@@ -22,29 +22,28 @@ Public API
 
 import xml.etree.ElementTree as ET
 
-
 SKINS = ("estuary", "confluence", "arctic")
 
 # Base keys -> remote action.  These are the addon's bridged actions.
 _BINDINGS = (
     # key            action
-    ("play",        "RunPlugin(plugin://script.oppo203.iso.external/?action=play)"),
-    ("stop",        "RunPlugin(plugin://script.oppo203.iso.external/?action=stop)"),
-    ("eject",       "RunPlugin(plugin://script.oppo203.iso.external/?action=eject)"),
-    ("info",        "RunPlugin(plugin://script.oppo203.iso.external/?action=info)"),
-    ("menu",        "RunPlugin(plugin://script.oppo203.iso.external/?action=menu)"),
-    ("pause",       "RunPlugin(plugin://script.oppo203.iso.external/?action=pause)"),
-    ("skipnext",    "RunPlugin(plugin://script.oppo203.iso.external/?action=next)"),
-    ("skipprevious","RunPlugin(plugin://script.oppo203.iso.external/?action=prev)"),
+    ("play", "RunPlugin(plugin://script.oppo203.iso.external/?action=play)"),
+    ("stop", "RunPlugin(plugin://script.oppo203.iso.external/?action=stop)"),
+    ("eject", "RunPlugin(plugin://script.oppo203.iso.external/?action=eject)"),
+    ("info", "RunPlugin(plugin://script.oppo203.iso.external/?action=info)"),
+    ("menu", "RunPlugin(plugin://script.oppo203.iso.external/?action=menu)"),
+    ("pause", "RunPlugin(plugin://script.oppo203.iso.external/?action=pause)"),
+    ("skipnext", "RunPlugin(plugin://script.oppo203.iso.external/?action=next)"),
+    ("skipprevious", "RunPlugin(plugin://script.oppo203.iso.external/?action=prev)"),
 )
 
 # Window id used for "FullscreenVideo" in each skin.  All three modern
 # skins use the same global window name; the per-skin entry exists so
 # future skin-specific overrides slot in cleanly.
 _SKIN_WINDOWS = {
-    "estuary":    "FullscreenVideo",
+    "estuary": "FullscreenVideo",
     "confluence": "FullscreenVideo",
-    "arctic":     "FullscreenVideo",
+    "arctic": "FullscreenVideo",
 }
 
 
@@ -55,21 +54,21 @@ def generate(skin):
     window = _SKIN_WINDOWS[skin]
     parts = []
     parts.append('<?xml version="1.0" encoding="utf-8"?>')
-    parts.append('<keymap>')
-    parts.append('  <!-- skin profile: ' + skin + ' -->')
-    parts.append('  <global>')
-    parts.append('    <keyboard>')
+    parts.append("<keymap>")
+    parts.append("  <!-- skin profile: " + skin + " -->")
+    parts.append("  <global>")
+    parts.append("    <keyboard>")
     for key, act in _BINDINGS:
-        parts.append('      <' + key + '>' + act + '</' + key + '>')
-    parts.append('    </keyboard>')
-    parts.append('  </global>')
-    parts.append('  <' + window + '>')
-    parts.append('    <keyboard>')
+        parts.append("      <" + key + ">" + act + "</" + key + ">")
+    parts.append("    </keyboard>")
+    parts.append("  </global>")
+    parts.append("  <" + window + ">")
+    parts.append("    <keyboard>")
     for key, act in _BINDINGS:
-        parts.append('      <' + key + '>' + act + '</' + key + '>')
-    parts.append('    </keyboard>')
-    parts.append('  </' + window + '>')
-    parts.append('</keymap>')
+        parts.append("      <" + key + ">" + act + "</" + key + ">")
+    parts.append("    </keyboard>")
+    parts.append("  </" + window + ">")
+    parts.append("</keymap>")
     return "\n".join(parts) + "\n"
 
 

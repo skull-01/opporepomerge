@@ -7,15 +7,15 @@ and time.
 
 import random
 
+DEFAULT_BASE_DELAY = 1.0  # seconds
+DEFAULT_CAP_DELAY = 30.0  # seconds (per-step cap)
+DEFAULT_MAX_RETRIES = 8  # 0 means "do not retry"
+DEFAULT_JITTER = 0.25  # +/- 25 percent jitter on each delay
 
-DEFAULT_BASE_DELAY = 1.0       # seconds
-DEFAULT_CAP_DELAY  = 30.0      # seconds (per-step cap)
-DEFAULT_MAX_RETRIES = 8        # 0 means "do not retry"
-DEFAULT_JITTER = 0.25          # +/- 25 percent jitter on each delay
 
-
-def compute_delay(attempt, base=DEFAULT_BASE_DELAY, cap=DEFAULT_CAP_DELAY,
-                  jitter=DEFAULT_JITTER, rng=None):
+def compute_delay(
+    attempt, base=DEFAULT_BASE_DELAY, cap=DEFAULT_CAP_DELAY, jitter=DEFAULT_JITTER, rng=None
+):
     """Return the delay (seconds, float) before retry attempt N (1-based).
 
     Uses exponential backoff: base * 2**(attempt-1), capped at `cap`,
@@ -43,8 +43,13 @@ def compute_delay(attempt, base=DEFAULT_BASE_DELAY, cap=DEFAULT_CAP_DELAY,
     return val
 
 
-def schedule(max_retries=DEFAULT_MAX_RETRIES, base=DEFAULT_BASE_DELAY,
-             cap=DEFAULT_CAP_DELAY, jitter=0.0, rng=None):
+def schedule(
+    max_retries=DEFAULT_MAX_RETRIES,
+    base=DEFAULT_BASE_DELAY,
+    cap=DEFAULT_CAP_DELAY,
+    jitter=0.0,
+    rng=None,
+):
     """Return the full deterministic delay schedule [d1, d2, ..., dN].
 
     Defaults to jitter=0 so callers (and tests) get the exact exponential

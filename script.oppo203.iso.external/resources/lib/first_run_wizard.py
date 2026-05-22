@@ -5,6 +5,7 @@ This module is intentionally narrow in the v2.2 merge line.  The existing
 preset/reapply/logging behavior needed by the service settings watcher and by
 future full superset-merge slices.
 """
+
 from __future__ import annotations
 
 
@@ -21,7 +22,7 @@ def _setting_set(settings, key, value):
         return True
     except Exception:
         try:
-            data = getattr(settings, "data")
+            data = settings.data
             data[key] = value
             return True
         except Exception:
@@ -51,10 +52,10 @@ def apply_compatibility_preset(settings, model, jailbreak=False, _log=None):
     """
     try:
         from settings_reader import (
+            QUICK_START_PREREQUISITE_TEXT,
+            REAVON_WARNING_TEXT,
             compatibility_preset,
             hardware_profile,
-            REAVON_WARNING_TEXT,
-            QUICK_START_PREREQUISITE_TEXT,
         )
     except Exception:
         return ([], [])
@@ -78,7 +79,7 @@ def apply_compatibility_preset(settings, model, jailbreak=False, _log=None):
             applied.append((key, old, value))
             if _log:
                 try:
-                    _log("[v0.9.12-preset] %s: %r -> %r" % (key, old, value))
+                    _log(f"[v0.9.12-preset] {key}: {old!r} -> {value!r}")
                 except Exception:
                     pass
     return (applied, warnings)
@@ -88,6 +89,7 @@ def quick_start_required(model):
     """Return True when the selected model relies on OPPO-compatible IP wake."""
     try:
         from settings_reader import hardware_profile
+
         return bool(hardware_profile(model).get("protocol_compatible"))
     except Exception:
         return True
@@ -99,6 +101,7 @@ def autoscript_verbose_push_warning(uses_autoscript_shell):
         return None
     try:
         from settings_reader import AUTOSCRIPT_VERBOSE_PUSH_WARNING
+
         return AUTOSCRIPT_VERBOSE_PUSH_WARNING
     except Exception:
         return (
@@ -123,15 +126,18 @@ def reapply_preset_on_model_change(settings, prev_model, new_model, jailbreak=No
     )
     if _log:
         try:
-            _log("[v0.9.14-model-change] %s -> %s applied=%d warnings=%d" % (
-                prev_model, new_model, len(applied), len(warnings)
-            ))
+            _log(
+                f"[v0.9.14-model-change] {prev_model} -> {new_model} "
+                f"applied={len(applied)} warnings={len(warnings)}"
+            )
         except Exception:
             pass
     return (applied, warnings)
 
 
-def collect_compatibility_warnings(settings=None, model=None, jailbreak=None, uses_autoscript_shell=None):
+def collect_compatibility_warnings(
+    settings=None, model=None, jailbreak=None, uses_autoscript_shell=None
+):
     """Collect v0.9.14 compatibility warnings for support logging.
 
     This helper is intentionally side-effect free.  It lets the service watcher
@@ -143,16 +149,19 @@ def collect_compatibility_warnings(settings=None, model=None, jailbreak=None, us
     if jailbreak is None and settings is not None:
         jailbreak = _bool(_setting_get(settings, "oppo_jailbreak_enabled", "false"))
     if uses_autoscript_shell is None and settings is not None:
-        uses_autoscript_shell = _bool(_setting_get(settings, "oppo_autoscript_shell_handler", "false"))
+        uses_autoscript_shell = _bool(
+            _setting_get(settings, "oppo_autoscript_shell_handler", "false")
+        )
 
     warnings = []
     try:
         from settings_reader import (
+            QUICK_START_PREREQUISITE_TEXT,
+            REAVON_WARNING_TEXT,
             compatibility_preset,
             hardware_profile,
-            REAVON_WARNING_TEXT,
-            QUICK_START_PREREQUISITE_TEXT,
         )
+
         preset = dict(compatibility_preset(model or "UDP-203", jailbreak=bool(jailbreak)))
         if preset.get("__reavon_warning__"):
             warnings.append(REAVON_WARNING_TEXT)
@@ -185,9 +194,11 @@ def log_compatibility_warnings(warnings, _log=None):
             pass
     return count
 
+
 # ---------------------------------------------------------------------------
 # v2.2.0 Build 5: wizard/UI compatibility-warning surfacing helpers
 # ---------------------------------------------------------------------------
+
 
 def _ui_call(ui, name, *args):
     """Call an optional wizard UI method without making Kodi a test dependency."""
@@ -210,6 +221,7 @@ def _ui_call(ui, name, *args):
     except Exception:
         return False
 
+
 def surface_compatibility_warnings(ui, warnings, _log=None, title="Compatibility warning"):
     """Surface v0.9.14 compatibility warnings through a wizard-style UI.
 
@@ -230,11 +242,14 @@ def surface_compatibility_warnings(ui, warnings, _log=None, title="Compatibility
                 _log("[v0.9.14-warning] " + message)
             except Exception:
                 pass
-        if (_ui_call(ui, "ok", title, message) or
-                _ui_call(ui, "notify", message) or
-                _ui_call(ui, "show_text", message)):
+        if (
+            _ui_call(ui, "ok", title, message)
+            or _ui_call(ui, "notify", message)
+            or _ui_call(ui, "show_text", message)
+        ):
             surfaced += 1
     return surfaced
+
 
 def ask_choice(ui, prompt, choices, default=None):
     """Use a v0.9.14-style UI choice method with validation and fallback."""
@@ -251,7 +266,10 @@ def ask_choice(ui, prompt, choices, default=None):
         return default
     return answer if answer in choices else default
 
-def apply_and_surface_compatibility(settings, model, jailbreak=False, uses_autoscript_shell=False, ui=None, _log=None):
+
+def apply_and_surface_compatibility(
+    settings, model, jailbreak=False, uses_autoscript_shell=False, ui=None, _log=None
+):
     """Apply compatibility presets, collect warnings, and surface them.
 
     This is a bridge helper for the gradual superset merge: it keeps Reavon
@@ -264,8 +282,11 @@ def apply_and_surface_compatibility(settings, model, jailbreak=False, uses_autos
     )
     merged = list(warnings)
     for warning in collect_compatibility_warnings(
-            settings=settings, model=model, jailbreak=jailbreak,
-            uses_autoscript_shell=uses_autoscript_shell):
+        settings=settings,
+        model=model,
+        jailbreak=jailbreak,
+        uses_autoscript_shell=uses_autoscript_shell,
+    ):
         if warning not in merged:
             merged.append(warning)
     surfaced = surface_compatibility_warnings(ui, merged, _log=_log)

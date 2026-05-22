@@ -6,6 +6,7 @@ preserving the Build 12 Denon/Marantz, Build 13 Yamaha, and Build 14
 eISCP drivers. All failures are represented as non-fatal warnings so future
 playback sequencing can opt in without destabilizing OPPO/Kodi routing.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -13,17 +14,39 @@ from typing import Any
 try:
     from .avr_denon_marantz import DenonMarantzAvrController
     from .avr_onkyo_eiscp import OnkyoEiscpAvrController
-    from .avr_sony_audio import SonyAudioApiAvrController, validation_metadata as sony_validation_metadata
-    from .avr_yamaha import YamahaYxcAvrController
     from .avr_presets import get_avr_preset, normalize_avr_backend
-    from .avr_types import AVR_BACKEND_DENON_MARANTZ, AVR_BACKEND_DISABLED, AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AVR_BACKEND_SONY_AUDIO_API, AVR_BACKEND_YAMAHA_YXC, AVR_BACKENDS, AvrResult, AvrValidation
+    from .avr_sony_audio import SonyAudioApiAvrController
+    from .avr_sony_audio import validation_metadata as sony_validation_metadata
+    from .avr_types import (
+        AVR_BACKEND_DENON_MARANTZ,
+        AVR_BACKEND_DISABLED,
+        AVR_BACKEND_ONKYO_EISCP,
+        AVR_BACKEND_PIONEER_EISCP,
+        AVR_BACKEND_SONY_AUDIO_API,
+        AVR_BACKEND_YAMAHA_YXC,
+        AVR_BACKENDS,
+        AvrResult,
+        AvrValidation,
+    )
+    from .avr_yamaha import YamahaYxcAvrController
 except ImportError:  # top-level/audit/test compatibility
     from avr_denon_marantz import DenonMarantzAvrController  # type: ignore
     from avr_onkyo_eiscp import OnkyoEiscpAvrController  # type: ignore
-    from avr_sony_audio import SonyAudioApiAvrController, validation_metadata as sony_validation_metadata  # type: ignore
-    from avr_yamaha import YamahaYxcAvrController  # type: ignore
     from avr_presets import get_avr_preset, normalize_avr_backend  # type: ignore
-    from avr_types import AVR_BACKEND_DENON_MARANTZ, AVR_BACKEND_DISABLED, AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AVR_BACKEND_SONY_AUDIO_API, AVR_BACKEND_YAMAHA_YXC, AVR_BACKENDS, AvrResult, AvrValidation  # type: ignore
+    from avr_sony_audio import SonyAudioApiAvrController  # type: ignore
+    from avr_sony_audio import validation_metadata as sony_validation_metadata
+    from avr_types import (  # type: ignore
+        AVR_BACKEND_DENON_MARANTZ,
+        AVR_BACKEND_DISABLED,
+        AVR_BACKEND_ONKYO_EISCP,
+        AVR_BACKEND_PIONEER_EISCP,
+        AVR_BACKEND_SONY_AUDIO_API,
+        AVR_BACKEND_YAMAHA_YXC,
+        AVR_BACKENDS,
+        AvrResult,
+        AvrValidation,
+    )
+    from avr_yamaha import YamahaYxcAvrController  # type: ignore
 
 REQUIRED_ENABLED_FIELDS = ("avr_host", "avr_backend", "avr_player_input")
 NO_DRIVER_WARNING = "avr_driver_not_implemented_build11"
@@ -36,8 +59,8 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return {}
     if isinstance(settings, dict):
         return dict(settings)
-    if hasattr(settings, "data") and isinstance(getattr(settings, "data"), dict):
-        return dict(getattr(settings, "data"))
+    if hasattr(settings, "data") and isinstance(settings.data, dict):
+        return dict(settings.data)
     if hasattr(settings, "items"):
         try:
             return dict(settings.items())  # type: ignore[attr-defined]
@@ -77,9 +100,17 @@ def avr_settings_summary(settings: dict[str, object] | object | None) -> dict[st
         "avr_restore_enabled": _truthy(data.get("avr_restore_enabled", "false"), False),
         "avr_restore_input_configured": bool(str(data.get("avr_restore_input", "")).strip()),
         "avr_power_off_enabled": _truthy(data.get("avr_power_off_enabled", "false"), False),
-        "avr_volume_automation_enabled": _truthy(data.get("avr_volume_automation_enabled", "false"), False),
+        "avr_volume_automation_enabled": _truthy(
+            data.get("avr_volume_automation_enabled", "false"), False
+        ),
         "driver_execution_added": True,
-        "driver_execution_families": (AVR_BACKEND_DENON_MARANTZ, AVR_BACKEND_YAMAHA_YXC, AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AVR_BACKEND_SONY_AUDIO_API),
+        "driver_execution_families": (
+            AVR_BACKEND_DENON_MARANTZ,
+            AVR_BACKEND_YAMAHA_YXC,
+            AVR_BACKEND_ONKYO_EISCP,
+            AVR_BACKEND_PIONEER_EISCP,
+            AVR_BACKEND_SONY_AUDIO_API,
+        ),
         "experimental_skeleton_families": (),
         "sony_live_api_calls_enabled": True,
         "playback_sequencing_hooked": True,
@@ -215,7 +246,9 @@ def controller_factory(
     return None
 
 
-def build_nonfatal_result(action: str, settings: dict[str, object] | object | None, message: str = "") -> AvrResult:
+def build_nonfatal_result(
+    action: str, settings: dict[str, object] | object | None, message: str = ""
+) -> AvrResult:
     validation = validate_avr_settings(settings)
     warning_list = list(validation.warnings)
     if message:

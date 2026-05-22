@@ -1,4 +1,5 @@
 """Tiny i18n facade with safe fallback for tests/headless (v1.0.6)."""
+
 try:
     import xbmcaddon
 except ImportError:
