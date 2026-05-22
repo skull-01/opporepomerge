@@ -83,7 +83,12 @@ def _paths():
     return script_path, addon_data, snippet_path
 
 
-def build_external_player_xml():
+def _player_element_xml():
+    """Return the bare <player> element (no merge-instruction comment).
+
+    Shared by the manual-merge snippet and the ready-to-transfer
+    playercorefactory.xml file so both stay byte-for-byte aligned.
+    """
     script_path, addon_data, _ = _paths()
 
     python_path = get_setting("python_path", "/usr/bin/python3")
@@ -92,8 +97,7 @@ def build_external_player_xml():
     escaped_script = xml_escape.escape(script_path)
     escaped_data = xml_escape.escape(addon_data)
 
-    return f"""<!-- Add this inside the existing <players> element. -->
-<player name="Oppo203ISO" type="ExternalPlayer" audio="false" video="true">
+    return f"""<player name="Oppo203ISO" type="ExternalPlayer" audio="false" video="true">
       <filename>{escaped_python}</filename>
       <args>"{escaped_script}" --addon-data "{escaped_data}" --file "{{1}}"</args>
       <hidexbmc>false</hidexbmc>
@@ -102,6 +106,10 @@ def build_external_player_xml():
       <playcountminimumtime>1</playcountminimumtime>
 </player>
 """
+
+
+def build_external_player_xml():
+    return "<!-- Add this inside the existing <players> element. -->\n" + _player_element_xml()
 
 
 # v2.5.3 Build 2 / v2.9.1 Build 2: Option 4 conservative tag-aware XML routing.
@@ -135,14 +143,18 @@ def _option4_rule(filetype):
     )
 
 
-def build_rule_xml():
-    rules = [
-        "<!-- Add this inside the existing <rules> element. -->",
-        "<!-- v2.5.3 Build 2 Option 4: conservative 4K/UHD/2160p tag-aware routing. -->",
-        "<!-- XML mode is filename/path driven; it cannot inspect metadata, NFO files, stream resolution, or ISO internals. -->",
-        "<!-- Only tagged disc-style sources are routed to the OPPO/Chinoppo external player. -->",
-        _option4_rule("iso"),
-    ]
+def build_rule_xml(include_merge_comment=True):
+    rules = []
+    if include_merge_comment:
+        rules.append("<!-- Add this inside the existing <rules> element. -->")
+    rules.extend(
+        [
+            "<!-- v2.5.3 Build 2 Option 4: conservative 4K/UHD/2160p tag-aware routing. -->",
+            "<!-- XML mode is filename/path driven; it cannot inspect metadata, NFO files, stream resolution, or ISO internals. -->",
+            "<!-- Only tagged disc-style sources are routed to the OPPO/Chinoppo external player. -->",
+            _option4_rule("iso"),
+        ]
+    )
     if bool_setting("include_disc_folder_rules", True):
         rules.extend(
             [
@@ -155,8 +167,7 @@ def build_rule_xml():
     return "\n".join(rules).rstrip() + "\n"
 
 
-def build_keymap_snippet_xml():
-    return """<!--
+_KEYMAP_MERGE_HEADER = """<!--
 Oppo UDP-203 Kodi remote bridge snippet.
 
 Manual merge instructions:
@@ -179,7 +190,23 @@ v0.9.0 additions:
   page_up/down    -> #PGU/#PGD (mapped to keyboard pageup/pagedown)
   red/green/blue/yellow -> #RED/#GRN/#BLU/#YLW (no standard Kodi remote key; keyboard only)
 -->
-<keymap>
+"""
+
+_KEYMAP_FILE_HEADER = """<!--
+  Oppo UDP-203 remote-bridge keymap, generated ready to use.
+  Copy this file into your Kodi userdata/keymaps folder (any *.xml name works),
+  then restart Kodi or run the built-in ReloadKeymaps action.
+
+  The mappings only take effect while remote events still reach Kodi (Kodi app
+  remotes, RF/USB receivers, keyboards, most Bluetooth remotes). TV CEC remotes
+  may follow the active HDMI source to the Oppo instead of the Kodi box.
+-->
+"""
+
+
+def _keymap_document_xml():
+    """Return the bare <keymap> document shared by the snippet and the file."""
+    return """<keymap>
   <FullscreenVideo>
     <keyboard>
       <up>RunScript(script.oppo203.iso.external,oppo_key,up)</up>
@@ -246,6 +273,15 @@ v0.9.0 additions:
 """
 
 
+def build_keymap_snippet_xml():
+    return _KEYMAP_MERGE_HEADER + _keymap_document_xml()
+
+
+def build_keymap_file_xml():
+    """Return a complete, ready-to-transfer keymap document (no merge comments)."""
+    return _KEYMAP_FILE_HEADER + _keymap_document_xml()
+
+
 def build_snippet_xml():
     arch = get_setting("playback_architecture", "external_player")
     if arch == "service_interception":
@@ -302,6 +338,118 @@ def _indent(text, prefix):
     return "\n".join(prefix + line if line else line for line in text.rstrip().splitlines())
 
 
+def build_playercorefactory_file_xml():
+    """Return a complete, ready-to-transfer playercorefactory.xml.
+
+    Unlike build_snippet_xml(), this is a drop-in file: it omits the
+    "add this inside the existing element" merge instructions so the user can
+    copy it straight into Kodi's userdata folder. A short header documents the
+    transfer step (and notes when the file is optional in service-interception
+    mode).
+    """
+    arch = get_setting("playback_architecture", "external_player")
+    optional_note = ""
+    if arch == "service_interception":
+        optional_note = (
+            "  NOTE: playback_architecture is service_interception, so service.py\n"
+            "  intercepts disc playback automatically and this file is optional.\n"
+        )
+    header = (
+        "<!--\n"
+        "  playercorefactory.xml generated by Oppo UDP-203 ISO External Player.\n"
+        "  Ready to use: copy this file into your Kodi userdata folder (next to\n"
+        "  advancedsettings.xml), then restart Kodi. If you already have a\n"
+        "  playercorefactory.xml, merge the <player> and <rule> entries instead.\n"
+        + optional_note
+        + "-->\n"
+    )
+    return (
+        header
+        + "<playercorefactory>\n"
+        + "  <players>\n"
+        + _indent(_player_element_xml(), "    ")
+        + "\n  </players>\n"
+        + '  <rules action="prepend">\n'
+        + _indent(build_rule_xml(include_merge_comment=False), "    ")
+        + "\n  </rules>\n"
+        + "</playercorefactory>\n"
+    )
+
+
+def _generated_paths():
+    """Return (generated_dir, playercorefactory_path, keymap_path).
+
+    The output mirrors Kodi's userdata layout so the user can copy the whole
+    'generated' folder's contents straight across:
+        generated/playercorefactory.xml      -> userdata/playercorefactory.xml
+        generated/keymaps/oppo203iso.xml     -> userdata/keymaps/oppo203iso.xml
+    """
+    _, addon_data, _ = _paths()
+    generated_dir = os.path.join(addon_data, "generated")
+    pcf_path = os.path.join(generated_dir, "playercorefactory.xml")
+    keymap_path = os.path.join(generated_dir, "keymaps", "oppo203iso.xml")
+    return generated_dir, pcf_path, keymap_path
+
+
+def _write_text_file(path, text):
+    parent = os.path.dirname(path)
+    if parent:
+        xbmcvfs.mkdirs(parent)
+    handle = xbmcvfs.File(path, "w")
+    try:
+        handle.write(text)
+    finally:
+        handle.close()
+    return path
+
+
+def write_playercorefactory_file(announce=True):
+    """Write a ready-to-transfer playercorefactory.xml and return its path.
+
+    With announce=True (menu use) the user is shown the 4K naming reminder and
+    the saved location. With announce=False (wizard use) the file is written
+    silently so the wizard can report all generated files together.
+    """
+    _, pcf_path, _ = _generated_paths()
+    _write_text_file(pcf_path, build_playercorefactory_file_xml())
+    if announce:
+        if get_setting("playback_architecture", "external_player") != "service_interception":
+            xbmcgui.Dialog().ok("4K XML naming requirement", build_xml_naming_warning_text())
+        xbmcgui.Dialog().ok(
+            "Oppo UDP-203 ISO External Player",
+            "playercorefactory.xml written to:\n"
+            + pcf_path
+            + "\n\nCopy it into your Kodi userdata folder (next to advancedsettings.xml), "
+            "then restart Kodi.",
+        )
+    return pcf_path
+
+
+def write_keymap_file(announce=True):
+    """Write a ready-to-transfer remote-bridge keymap and return its path."""
+    _, _, keymap_path = _generated_paths()
+    _write_text_file(keymap_path, build_keymap_file_xml())
+    if announce:
+        xbmcgui.Dialog().ok(
+            "Oppo UDP-203 ISO External Player",
+            "Remote-bridge keymap written to:\n"
+            + keymap_path
+            + "\n\nCopy it into your Kodi userdata/keymaps folder, then restart Kodi "
+            "(or run the ReloadKeymaps action).",
+        )
+    return keymap_path
+
+
+def generate_transfer_files(include_playercorefactory=True, include_keymap=True, announce=True):
+    """Write the ready-to-transfer files and return a dict of {kind: path}."""
+    paths = {}
+    if include_playercorefactory:
+        paths["playercorefactory"] = write_playercorefactory_file(announce=announce)
+    if include_keymap:
+        paths["keymap"] = write_keymap_file(announce=announce)
+    return paths
+
+
 def write_snippet():
     _, _, snippet_path = _paths()
     xml = build_snippet_xml()
@@ -341,15 +489,15 @@ def write_keymap_snippet():
 
 def show_generated_xml():
     xbmcgui.Dialog().textviewer(
-        "Generated playercorefactory snippet",
-        build_snippet_xml(),
+        "playercorefactory.xml (ready to copy)",
+        build_playercorefactory_file_xml(),
     )
 
 
 def show_generated_keymap_xml():
     xbmcgui.Dialog().textviewer(
-        "Kodi remote bridge keymap snippet",
-        build_keymap_snippet_xml(),
+        "Remote bridge keymap (ready to copy)",
+        build_keymap_file_xml(),
     )
 
 
@@ -637,11 +785,11 @@ def main():
             show_architecture_choice_dialog()
 
     actions = [
-        "Generate playercorefactory snippet",
-        "Generate Kodi remote bridge keymap snippet",
+        "Generate playercorefactory.xml file (ready to copy)",
+        "Generate remote bridge keymap file (ready to copy)",
         "Open add-on settings",
-        "Preview generated snippet",
-        "Preview remote bridge keymap snippet",
+        "Preview playercorefactory.xml file",
+        "Preview remote bridge keymap file",
         "Architecture setup (first-run dialog)",
         "Discover Oppo on network (UDP multicast)",
         "TCL ADB preset helper",
@@ -655,9 +803,9 @@ def main():
     ]
     choice = xbmcgui.Dialog().select("Oppo UDP-203 ISO External Player", actions)
     if choice == 0:
-        write_snippet()
+        write_playercorefactory_file()
     elif choice == 1:
-        write_keymap_snippet()
+        write_keymap_file()
     elif choice == 2:
         ADDON.openSettings()
     elif choice == 3:
