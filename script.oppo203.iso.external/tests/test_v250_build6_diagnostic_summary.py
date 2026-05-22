@@ -27,7 +27,7 @@ class TestV250Build6DiagnosticSummary(unittest.TestCase):
             root_dir=ROOT,
             path_exists=lambda path: False,
         )
-        self.assertEqual(summary["addon_version"], "2.9.11")
+        self.assertEqual(summary["addon_version"], "2.9.12")
         self.assertFalse(summary["ok"])
         self.assertIn("python_path_not_found", summary["warnings"])
         self.assertEqual(summary["paths"]["python_path"]["name"], "python3")

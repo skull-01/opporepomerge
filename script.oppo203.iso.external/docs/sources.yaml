@@ -1,14 +1,14 @@
 # Shared documentation metadata for generated reference blocks.
 # This file is intentionally dependency-free and parsed by tools/render_docs.py.
 release:
-  version: 2.9.11
-  build_number: 20
-  build_id: v2.9.11 Final
-  title: Cross-platform portability and CI maintenance release
+  version: 2.9.12
+  build_number: 21
+  build_id: v2.9.12 Final
+  title: Ready-to-transfer setup file generation and add-on icon
   package_suffix: final
   hardware_validation_claimed: false
   runtime_behavior_changed: false
-  source_recommendation: v2.9.11 cross-platform portability and CI maintenance roadmap
+  source_recommendation: v2.9.12 ready-to-transfer setup file generation roadmap
 protected_behavior:
   - 4K/UHD/2160p disc-style interception only
   - loose/raw video files stay with Kodi

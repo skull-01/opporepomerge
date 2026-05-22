@@ -178,8 +178,8 @@ def test_build16_wizard_module_exposes_avr_setup_metadata_without_side_effects()
 
 
 def test_build16_metadata_and_documentation_identity():
-    assert version.BUILD_ID == "v2.9.11 Final"
-    assert version.BUILD_NUMBER == 20
+    assert version.BUILD_ID == "v2.9.12 Final"
+    assert version.BUILD_NUMBER == 21
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 18" in addon
     assert "Unified TV + AVR playback sequencing" in addon

@@ -28,7 +28,7 @@ def test_ci_workflow_is_valid_yaml_and_has_expected_triggers() -> None:
     assert "pull_request" in workflow[True]
     assert "workflow_dispatch" in workflow[True]
     assert workflow["permissions"] == {"contents": "read"}
-    assert workflow["env"]["EXPECTED_VERSION"] == "2.9.11"
+    assert workflow["env"]["EXPECTED_VERSION"] == "2.9.12"
     assert workflow["env"]["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] == "1"
 
 
@@ -50,7 +50,7 @@ def test_ci_workflow_runs_release_gate_commands() -> None:
         "python tools/audit_release.py --expected-version",
         "bash scripts/package_release.sh",
         "Forbidden runtime ZIP members",
-        "script.oppo203.iso.external-2.9.11-ci-dev-source.zip",
+        "script.oppo203.iso.external-2.9.12-ci-dev-source.zip",
     ]
     for snippet in required_snippets:
         assert snippet in text
@@ -82,7 +82,7 @@ def test_dependabot_config_covers_actions_and_python_dev_dependencies() -> None:
 
 def test_verify_script_defaults_to_current_release_version() -> None:
     text = _read("scripts/verify.sh")
-    assert 'EXPECTED_VERSION="${EXPECTED_VERSION:-2.9.11}"' in text
+    assert 'EXPECTED_VERSION="${EXPECTED_VERSION:-2.9.12}"' in text
     assert 'EXPECTED_VERSION="${EXPECTED_VERSION:-2.9.1}"' not in text
 
 
