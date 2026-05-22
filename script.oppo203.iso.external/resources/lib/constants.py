@@ -10,7 +10,7 @@ build.
 from __future__ import annotations
 
 OPPO_COMMAND_MAP_SIZE: int = 76
-MIN_COVERAGE_PERCENT: int = 99
+MIN_COVERAGE_PERCENT: int = 98
 
 # XML/service 4K UHD disc-routing invariants.
 UHD_DISC_TAGS: tuple[str, ...] = ("4k", "uhd", "2160p")

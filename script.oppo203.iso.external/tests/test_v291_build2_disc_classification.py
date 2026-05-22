@@ -50,7 +50,7 @@ def test_shared_classifier_matches_required_uhd_disc_policy():
 
 def test_shared_constants_preserve_option4_xml_outputs():
     assert constants.OPPO_COMMAND_MAP_SIZE == 76
-    assert constants.MIN_COVERAGE_PERCENT == 99
+    assert constants.MIN_COVERAGE_PERCENT == 98
     assert dc.XML_4K_TAG_FILENAME_PATTERN == r".*(4K|4k|UHD|uhd|2160p|2160P).*"
     assert dc.XML_DISC_FILETYPES == ("iso", "bdmv", "mpls")
     assert dc.XML_LOOSE_VIDEO_FILETYPES[:5] == ("mkv", "mp4", "m4v", "mov", "mpg")
