@@ -91,7 +91,7 @@ mypy.ini
 .coveragerc
 ```
 
-The `pyproject.toml` file centralizes future-facing tool settings for Black, Ruff, Coverage, and MyPy. During the GitHub-readiness phase, these tools should be introduced in check-only mode first. Formatting or lint fixes should happen in a separate build so code changes remain easy to review.
+The `pyproject.toml` file centralizes tool settings for Ruff (lint and format), Coverage, and MyPy. Formatting is handled by `ruff format`; Black was retired per `docs/testing-strategy.md`. During the GitHub-readiness phase, these tools should be introduced in check-only mode first. Formatting or lint fixes should happen in a separate build so code changes remain easy to review.
 
 `requirements-dev.txt` is development-only. It must not be required by Kodi runtime users and must never be packaged into the installable runtime ZIP.
 

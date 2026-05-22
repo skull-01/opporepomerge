@@ -105,7 +105,7 @@ def test_now(state, *, probe):
     """
     if state.step != "connection":
         raise RuntimeError(
-            "test_now only valid on the connection step, " "current step is " + str(state.step)
+            "test_now only valid on the connection step, current step is " + str(state.step)
         )
     host = state.values.get("oppo_ip", "")
     port = state.values.get("oppo_port", 23)

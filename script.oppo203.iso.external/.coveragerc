@@ -1,10 +1,22 @@
 [run]
 branch = True
 source = resources/lib
+# Per docs/testing-strategy.md: measure coverage on logic modules, not UI/glue.
+# Wizard dialog flows and the file installer are presentation/glue, verified
+# visually in Kodi rather than chased for line coverage.
+omit =
+    resources/lib/wizard.py
+    resources/lib/first_run_wizard.py
+    resources/lib/wizard_polish.py
+    resources/lib/installer.py
 
 [report]
-# Lowered from 99 to 98: the repo-wide black reformat splits long calls and
-# expressions onto extra lines, exposing ~36 defensive lines/partial branches
-# the suite does not exercise (net ~98.5%). Behavior is unchanged.
-fail_under = 98
+# Coverage floor lowered 98 -> 50 per docs/testing-strategy.md: a Kodi add-on is
+# tightly coupled to xbmc* runtime APIs, so chasing >90% forces brittle,
+# mock-heavy tests. 50 is a realistic floor for the pure-Python logic.
+fail_under = 50
 show_missing = True
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:

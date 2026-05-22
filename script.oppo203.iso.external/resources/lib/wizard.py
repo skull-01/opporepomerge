@@ -504,9 +504,7 @@ def auto_test_architecture(addon, ip, port):
             "External Player is recommended for Chinoppo-class devices."
         )
     else:
-        msg = (
-            "Player reachable.\n" "External Player is the recommended architecture for most setups."
-        )
+        msg = "Player reachable.\nExternal Player is the recommended architecture for most setups."
     return _ArchTestResult(True, rec, msg)
 
 

@@ -27,7 +27,6 @@ def test_pyproject_declares_non_runtime_tooling_baseline() -> None:
 
 def test_pyproject_carries_quality_tool_configuration() -> None:
     text = _read("pyproject.toml")
-    assert "[tool.black]" in text
     assert "[tool.ruff]" in text
     assert "[tool.ruff.lint]" in text
     assert "[tool.coverage.run]" in text
@@ -35,7 +34,7 @@ def test_pyproject_carries_quality_tool_configuration() -> None:
     assert "[tool.mypy]" in text
     assert "line-length = 100" in text
     assert 'target-version = "py39"' in text
-    assert "fail_under = 98" in text
+    assert "fail_under = 50" in text
 
 
 def test_legacy_config_files_remain_for_existing_tools() -> None:
@@ -46,7 +45,7 @@ def test_legacy_config_files_remain_for_existing_tools() -> None:
 def test_requirements_dev_lists_development_only_tools() -> None:
     text = _read("requirements-dev.txt")
     assert "Kodi runtime users do not need to install this file" in text
-    for package in ("pytest", "coverage", "PyYAML", "ruff", "black", "mypy"):
+    for package in ("pytest", "coverage", "PyYAML", "ruff", "mypy"):
         assert package in text
     assert "script.oppo" not in text
 
