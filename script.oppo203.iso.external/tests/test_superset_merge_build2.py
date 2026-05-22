@@ -132,11 +132,11 @@ class TestBuild2AuditHardening(unittest.TestCase):
         import xml.etree.ElementTree as ET
         text = (ROOT / "addon.xml").read_text(encoding="utf-8")
         self.assertTrue(text.startswith('<?xml version="1.0"'))
-        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.11")
+        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.12")
 
     def test_release_audit_rejects_version_in_xml_declaration_only(self):
         import tools.audit_release as audit
-        result_names = {item["name"]: item for item in audit.run_audit(ROOT, expected_version="2.9.11")}
+        result_names = {item["name"]: item for item in audit.run_audit(ROOT, expected_version="2.9.12")}
         self.assertEqual(result_names["addon_xml_declaration"]["status"], "ok")
         self.assertEqual(result_names["addon_version"]["status"], "ok")
 

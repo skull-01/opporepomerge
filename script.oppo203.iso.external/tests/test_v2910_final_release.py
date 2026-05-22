@@ -1,4 +1,4 @@
-"""Current final-release identity and evidence (v2.9.11 Final)."""
+"""Current final-release identity and evidence (v2.9.12 Final)."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -21,25 +21,25 @@ def _release_doc(name: str) -> str:
 
 
 def test_final_release_identity_and_artifact_names():
-    assert version.ADDON_VERSION == "2.9.11"
-    assert version.BUILD_ID == "v2.9.11 Final"
-    assert version.BUILD_NUMBER == 20
+    assert version.ADDON_VERSION == "2.9.12"
+    assert version.BUILD_ID == "v2.9.12 Final"
+    assert version.BUILD_NUMBER == 21
 
     docs = (ROOT / "docs" / "sources.yaml").read_text(encoding="utf-8")
-    assert "build_id: v2.9.11 Final" in docs
+    assert "build_id: v2.9.12 Final" in docs
     assert "package_suffix: final" in docs
 
-    manifest = _release_doc("RELEASE_MANIFEST_v2.9.11.md")
-    assert "script.oppo203.iso.external-2.9.11.zip" in manifest
-    assert "script.oppo203.iso.external-2.9.11-dev-source.zip" in manifest
-    assert "script.oppo203.iso.external-2.9.11-artifacts-bundle.zip" in manifest
-    assert "script.oppo203.iso.external-2.9.11.sha256" in manifest
+    manifest = _release_doc("RELEASE_MANIFEST_v2.9.12.md")
+    assert "script.oppo203.iso.external-2.9.12.zip" in manifest
+    assert "script.oppo203.iso.external-2.9.12-dev-source.zip" in manifest
+    assert "script.oppo203.iso.external-2.9.12-artifacts-bundle.zip" in manifest
+    assert "script.oppo203.iso.external-2.9.12.sha256" in manifest
 
 
 def test_final_release_wording_separates_software_from_hardware_validation():
-    hardware = _release_doc("HARDWARE_VALIDATION_v2.9.11.md")
-    notes = _release_doc("RELEASE_NOTES_v2.9.11.md")
-    matrix = _release_doc("HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.11.md")
+    hardware = _release_doc("HARDWARE_VALIDATION_v2.9.12.md")
+    notes = _release_doc("RELEASE_NOTES_v2.9.12.md")
+    matrix = _release_doc("HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.12.md")
     for text in (hardware, notes, matrix):
         assert "software-verified" in text.lower()
         assert "not performed" in text.lower()
@@ -47,8 +47,8 @@ def test_final_release_wording_separates_software_from_hardware_validation():
 
 
 def test_final_release_manifest_is_discovered_by_audit():
-    manifest = ROOT / "release-evidence" / "v2.9.11-final" / "MANIFEST.txt"
+    manifest = ROOT / "release-evidence" / "v2.9.12-final" / "MANIFEST.txt"
     listed = set(manifest.read_text(encoding="utf-8").splitlines())
-    assert "BUILD_NOTES_v2.9.11_FINAL.md" in listed
-    assert "RELEASE_MANIFEST_v2.9.11.md" in listed
-    assert "HARDWARE_VALIDATION_v2.9.11.md" in listed
+    assert "BUILD_NOTES_v2.9.12_FINAL.md" in listed
+    assert "RELEASE_MANIFEST_v2.9.12.md" in listed
+    assert "HARDWARE_VALIDATION_v2.9.12.md" in listed

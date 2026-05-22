@@ -87,7 +87,7 @@ def test_runtime_packaging_excludes_type_check_dev_files():
 
 def test_release_audit_requires_build13_manifest_and_type_check_evidence():
     audit = _load_audit()
-    results = audit.run_audit(ROOT, expected_version="2.9.11")
+    results = audit.run_audit(ROOT, expected_version="2.9.12")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -101,7 +101,7 @@ def test_addon_metadata_and_version_source_identify_build13():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.11 Final"
-    assert version.BUILD_NUMBER == 20
+    assert version.BUILD_ID == "v2.9.12 Final"
+    assert version.BUILD_NUMBER == 21
     assert "Version 2.9.10 Build 2" in addon_text
     assert "type hints and non-blocking mypy baseline" in addon_text

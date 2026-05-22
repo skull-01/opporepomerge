@@ -87,7 +87,7 @@ def test_build7_docs_warn_presets_are_not_universal_hardware_claims():
 
 def test_build7_release_audit_requires_build7_evidence():
     audit = _load("audit_release_build7", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.11")
+    results = audit.run_audit(ROOT, expected_version="2.9.12")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

@@ -625,13 +625,13 @@ Balanced Gate verification is used for this feature build. Full legacy pytest, f
 Build 16 adds AVR setup UI helpers, query-only AVR test actions, explicit user-action gates for power/input tests, sanitized AVR diagnostic export, and safety wording. AVR support remains disabled by default, AVR power-off and volume automation remain disabled by default, no AVR playback sequencing hook is added, diagnostics sanitize credentials and state `hardware_validation_claimed=false`, and hardware validation is not claimed.
 
 <!-- BEGIN GENERATED DOCS METADATA -->
-### Generated documentation metadata — v2.9.11 Final
+### Generated documentation metadata — v2.9.12 Final
 
 - Target document: `web-references.md`
-- Cleanup scope: Cross-platform portability and CI maintenance release
+- Cleanup scope: Ready-to-transfer setup file generation and add-on icon
 - Runtime behavior changed: `false`
 - Hardware validation claimed: `false`
-- Source recommendation: v2.9.11 cross-platform portability and CI maintenance roadmap
+- Source recommendation: v2.9.12 ready-to-transfer setup file generation roadmap
 - Managed documents: `README.md`, `reference.md`, `web-references.md`
 
 Protected behavior preserved:

@@ -24,7 +24,7 @@ class TestV250Build7PackagingCandidate(unittest.TestCase):
 
     def test_addon_metadata_preserves_version_after_build7_candidate(self):
         root = ET.parse(ROOT / "addon.xml").getroot()
-        self.assertEqual(root.attrib["version"], "2.9.11")
+        self.assertEqual(root.attrib["version"], "2.9.12")
         xml_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
         self.assertTrue(
             ("Build 7" in xml_text and "combined regression" in xml_text)

@@ -27,7 +27,7 @@ def test_build4_metadata_and_release_evidence():
     spec = importlib.util.spec_from_file_location("audit_release_v252_build4", ROOT / "tools" / "audit_release.py")
     audit = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.11")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.12")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

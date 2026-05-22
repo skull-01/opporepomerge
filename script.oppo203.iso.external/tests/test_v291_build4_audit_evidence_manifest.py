@@ -42,7 +42,7 @@ def test_manifest_discovery_finds_build4_release_evidence():
 
 def test_release_audit_uses_manifest_entries_and_legacy_fallback():
     audit = _load_audit()
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.11")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.12")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

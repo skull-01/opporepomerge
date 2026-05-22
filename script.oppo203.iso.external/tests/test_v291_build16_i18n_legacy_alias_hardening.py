@@ -85,7 +85,7 @@ def test_runtime_zip_still_excludes_i18n_development_tooling(tmp_path):
 
 def test_release_audit_discovers_build16_manifest_and_evidence():
     audit = _load("audit_release_build16", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.11")
+    results = audit.run_audit(ROOT, expected_version="2.9.12")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -102,8 +102,8 @@ def test_addon_metadata_and_version_source_identify_build16():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.11 Final"
-    assert version.BUILD_NUMBER == 20
+    assert version.BUILD_ID == "v2.9.12 Final"
+    assert version.BUILD_NUMBER == 21
     assert "Version 2.9.10 Build 2" in addon_text
     assert "legacy compatibility alias" in addon_text
     assert "Version 2.9.1 Build 15" in addon_text

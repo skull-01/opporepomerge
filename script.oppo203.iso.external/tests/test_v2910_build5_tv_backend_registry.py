@@ -85,14 +85,14 @@ def test_build5_settings_default_records_selected_tv_preset_without_changing_bac
 
 def test_build5_version_docs_and_audit_evidence_identity():
     version = _load("version_build5", "resources/lib/version.py")
-    assert version.BUILD_ID == "v2.9.11 Final"
-    assert version.BUILD_NUMBER == 20
+    assert version.BUILD_ID == "v2.9.12 Final"
+    assert version.BUILD_NUMBER == 21
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 11" in addon
     assert "switch_to_oppo(settings)" in addon
     assert "Version 2.9.10 Build 4" in addon
     audit = _load("audit_release_build5", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.11")
+    results = audit.run_audit(ROOT, expected_version="2.9.12")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
