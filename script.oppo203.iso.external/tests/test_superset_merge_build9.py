@@ -20,7 +20,7 @@ class TestBuild9MergeParityAudit(unittest.TestCase):
         return read_project_file(ROOT, rel)
 
     def test_addon_version_is_build9(self):
-        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.10")
+        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.11")
 
     def test_build9_parity_audit_records_protected_and_remaining_behavior(self):
         text = self.read("MERGE_PARITY_AUDIT_v2.2.0_BUILD9.md")
@@ -46,7 +46,7 @@ class TestBuild9MergeParityAudit(unittest.TestCase):
         mod = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(ROOT)), expected_version="2.9.10")
+        results = mod.run_audit(mod.project_root(mod.Path(ROOT)), expected_version="2.9.11")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}

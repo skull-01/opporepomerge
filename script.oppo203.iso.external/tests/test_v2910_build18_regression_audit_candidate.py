@@ -26,12 +26,12 @@ def _settings(**overrides):
 
 
 def test_final_active_identity_and_release_candidate_docs():
-    assert version.ADDON_VERSION == "2.9.10"
-    assert version.BUILD_ID == "v2.9.10 Final"
-    assert version.BUILD_NUMBER == 19
+    assert version.ADDON_VERSION == "2.9.11"
+    assert version.BUILD_ID == "v2.9.11 Final"
+    assert version.BUILD_NUMBER == 20
 
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert "Version 2.9.10 Final: Software-verified release packaging." in addon
+    assert "Version 2.9.11 Final: Cross-platform portability and CI maintenance release." in addon
     assert "Version 2.9.10 Build 17 safely hooks optional TV and AVR" in addon
     assert "real hardware validation was not performed or claimed" in addon.lower()
 
@@ -82,8 +82,8 @@ def test_build18_preserves_build17_sequencing_contract_noop_and_restore_guards()
 
 def test_final_docs_sources_and_package_suffix_are_current():
     docs = (ROOT / "docs" / "sources.yaml").read_text(encoding="utf-8")
-    assert "build_number: 19" in docs
-    assert "build_id: v2.9.10 Final" in docs
+    assert "build_number: 20" in docs
+    assert "build_id: v2.9.11 Final" in docs
     assert "package_suffix: final" in docs
 
     package_script = (ROOT / "scripts" / "package_release.sh").read_text(encoding="utf-8")

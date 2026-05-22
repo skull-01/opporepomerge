@@ -119,8 +119,8 @@ def test_build10_save_report_uses_writer_and_default_name():
 
 
 def test_build10_metadata_and_documentation_identity():
-    assert version.BUILD_ID == "v2.9.10 Final"
-    assert version.BUILD_NUMBER == 19
+    assert version.BUILD_ID == "v2.9.11 Final"
+    assert version.BUILD_NUMBER == 20
     for rel in ("addon.xml", "README.md", "reference.md", "web-references.md"):
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 11" in text

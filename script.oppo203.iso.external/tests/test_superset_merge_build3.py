@@ -135,7 +135,7 @@ class TestServiceV0914WarningWatcher(unittest.TestCase):
 class TestBuild3ReleaseIdentity(unittest.TestCase):
     def test_addon_version_is_build3(self):
         import xml.etree.ElementTree as ET
-        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.10")
+        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.11")
 
 
 if __name__ == "__main__":

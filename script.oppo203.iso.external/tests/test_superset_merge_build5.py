@@ -145,7 +145,7 @@ class TestWizardWarningSurfacing(unittest.TestCase):
 
 class TestBuild5ReleaseIdentity(unittest.TestCase):
     def test_addon_version_is_build5(self):
-        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.10")
+        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.11")
 
 
 if __name__ == "__main__":
