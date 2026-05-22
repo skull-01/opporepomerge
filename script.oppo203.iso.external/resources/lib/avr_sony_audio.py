@@ -221,9 +221,7 @@ def build_status_payload() -> bytes:
 
 def _default_post(url: str, payload: bytes, headers: dict[str, str], timeout: float) -> bytes:
     req = request.Request(url, data=payload, headers=headers, method="POST")
-    with request.urlopen(
-        req, timeout=timeout
-    ) as response:  # nosec - explicit user-configured local API endpoint
+    with request.urlopen(req, timeout=timeout) as response:  # nosec - explicit user-configured local API endpoint
         return response.read()
 
 

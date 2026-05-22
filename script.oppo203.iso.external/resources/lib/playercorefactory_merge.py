@@ -202,7 +202,7 @@ def _merge_xml(existing_text, snippet_text):
     new = ET.fromstring(snippet_text)
     if base.tag != "playercorefactory":
         # If the file isn't a playercorefactory document, refuse to merge.
-        raise ValueError("existing root is <" + base.tag + ">, " "expected <playercorefactory>")
+        raise ValueError("existing root is <" + base.tag + ">, expected <playercorefactory>")
     base_players = base.find("players")
     if base_players is None:
         base_players = ET.SubElement(base, "players")

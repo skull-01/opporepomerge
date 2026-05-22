@@ -137,9 +137,9 @@ jobs:
         run: |
           ruff check resources default.py service.py
 
-      - name: Black check
+      - name: Ruff format check
         run: |
-          black --check resources default.py service.py
+          ruff format --check resources default.py service.py
 
 
   compatibility-smoke:

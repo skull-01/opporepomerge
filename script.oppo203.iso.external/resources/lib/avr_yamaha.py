@@ -101,9 +101,7 @@ def build_status_url(host: object, *, port: object = DEFAULT_YAMAHA_YXC_PORT) ->
 
 
 def _default_http_get(url: str, timeout: float) -> bytes:
-    with request.urlopen(
-        url, timeout=timeout
-    ) as response:  # nosec B310 - user-configured local AVR endpoint; guarded/optional.
+    with request.urlopen(url, timeout=timeout) as response:  # nosec B310 - user-configured local AVR endpoint; guarded/optional.
         return response.read()
 
 

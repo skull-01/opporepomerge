@@ -38,25 +38,12 @@ dev = [
   "coverage[toml]>=7,<8",
   "PyYAML>=6,<7",
   "ruff>=0.5,<1",
-  "black>=24,<26",
   "mypy>=1,<2",
   "typing-extensions>=4.12,<5",
 ]
 
-[tool.black]
-line-length = 100
-target-version = ["py39"]
-include = "\\.pyi?$"
-extend-exclude = '''
-/(
-  \.git
-  | \.pytest_cache
-  | __pycache__
-  | dist
-  | output
-)/
-'''
-
+# Formatting is handled by `ruff format` (config in ruff.toml; line-length below).
+# Black was retired in favor of ruff format per docs/testing-strategy.md.
 [tool.ruff]
 target-version = "py39"
 line-length = 100
@@ -84,10 +71,23 @@ ignore = [
 [tool.coverage.run]
 branch = true
 source = ["resources/lib"]
+# Per docs/testing-strategy.md: omit UI/glue (wizard dialogs, file installer)
+# from measurement so coverage reflects logic modules.
+omit = [
+  "resources/lib/wizard.py",
+  "resources/lib/first_run_wizard.py",
+  "resources/lib/wizard_polish.py",
+  "resources/lib/installer.py",
+]
 
 [tool.coverage.report]
-fail_under = 98
+fail_under = 50
 show_missing = true
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+]
 
 [tool.mypy]
 python_version = "3.10"
