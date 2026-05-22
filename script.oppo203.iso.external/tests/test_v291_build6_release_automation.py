@@ -2,12 +2,25 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import zipfile
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
+
+# The release scripts are POSIX shell tooling (bash + python3 + sha256sum) run by
+# CI on Linux. They cannot run on Windows, so skip those cases there rather than
+# failing. Pure-Python packaging policy is still covered by the other tests.
+_POSIX_SHELL_TOOLING = os.name != "nt" and shutil.which("bash") is not None
+_requires_posix_shell = pytest.mark.skipif(
+    not _POSIX_SHELL_TOOLING,
+    reason="POSIX release scripts (bash/python3/sha256sum) are unavailable on this platform",
+)
 
 
 def _load_audit():
@@ -26,6 +39,7 @@ def _load_package_tool():
     return tool
 
 
+@_requires_posix_shell
 def test_build6_scripts_are_present_executable_and_parse():
     verify = ROOT / "scripts" / "verify.sh"
     package = ROOT / "scripts" / "package_release.sh"
@@ -48,13 +62,14 @@ def test_verify_script_documents_required_release_verification_commands():
     assert "tools/audit_release.py" in text
 
 
+@_requires_posix_shell
 def test_package_release_script_creates_runtime_zip_dev_source_and_checksum(tmp_path):
     out = tmp_path / "dist"
     result = subprocess.run(
         ["bash", str(ROOT / "scripts" / "package_release.sh")],
         check=False,
         cwd=str(ROOT),
-        env={"OUT_DIR": str(out), "VERSION": "2.9.10", "BUILD_SUFFIX": "build6-test"},
+        env={**os.environ, "OUT_DIR": str(out), "VERSION": "2.9.10", "BUILD_SUFFIX": "build6-test"},
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

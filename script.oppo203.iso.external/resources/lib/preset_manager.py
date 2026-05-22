@@ -21,6 +21,7 @@ Public API
 
 import json
 import os
+import posixpath
 import re as _re
 import time as _time
 
@@ -160,7 +161,8 @@ def export_submission(preset_id, ip=None, quirks=None, contact=None, user_preset
 
 
 def _ts(now=None):
-    t = _time.localtime(now() if callable(now) else (now if now else _time.time()))
+    # UTC keeps exported submission filenames deterministic across timezones.
+    t = _time.gmtime(now() if callable(now) else (now if now else _time.time()))
     return _time.strftime("%Y%m%d-%H%M%S", t)
 
 
@@ -174,7 +176,8 @@ def save_submission(submission, root_dir, *, now=None, fs=None):
     fs = fs if fs is not None else _RealFS()
     pid = submission.get("preset_id", "preset")
     safe = _re.sub(r"[^A-Za-z0-9_.-]+", "_", str(pid))
-    path = os.path.join(root_dir, "preset-submission-" + safe + "-" + _ts(now) + ".json")
+    # Forward-slash join keeps addon-data paths portable across platforms.
+    path = posixpath.join(root_dir, "preset-submission-" + safe + "-" + _ts(now) + ".json")
     fs.write(path, json.dumps(submission, sort_keys=True, indent=2))
     return path
 
