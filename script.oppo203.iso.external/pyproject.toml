@@ -4,7 +4,7 @@ build-backend = "_kodi_addon_no_build_backend"
 
 [project]
 name = "script-oppo203-iso-external"
-version = "2.9.10"
+version = "2.9.11"
 description = "Kodi add-on for OPPO 203/205-compatible external-player handoff workflows."
 readme = "README.md"
 requires-python = ">=3.9"

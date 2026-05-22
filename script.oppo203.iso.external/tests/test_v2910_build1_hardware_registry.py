@@ -53,11 +53,11 @@ def test_build1_does_not_mutate_existing_oppo_command_map_or_settings_count():
 
 def test_build1_version_docs_and_evidence_identity():
     version = _load("version_build1", "resources/lib/version.py")
-    assert version.ADDON_VERSION == "2.9.10"
-    assert version.BUILD_ID == "v2.9.10 Final"
-    assert version.BUILD_NUMBER == 19
+    assert version.ADDON_VERSION == "2.9.11"
+    assert version.BUILD_ID == "v2.9.11 Final"
+    assert version.BUILD_NUMBER == 20
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert 'version="2.9.10"' in addon
+    assert 'version="2.9.11"' in addon
     assert "Version 2.9.10 Build 2" in addon
     assert "Version 2.9.1 Build 16" in addon
     assert "OPPO clone taxonomy and aliases" in (ROOT / "README.md").read_text(encoding="utf-8")
@@ -65,7 +65,7 @@ def test_build1_version_docs_and_evidence_identity():
 
 def test_release_audit_discovers_build1_manifest_and_evidence():
     audit = _load("audit_release_build1", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.10")
+    results = audit.run_audit(ROOT, expected_version="2.9.11")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

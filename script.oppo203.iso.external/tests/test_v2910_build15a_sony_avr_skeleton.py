@@ -152,8 +152,8 @@ def test_build16_existing_avr_drivers_and_defaults_remain_preserved():
 
 
 def test_build16_metadata_and_documentation_identity():
-    assert version.BUILD_ID == "v2.9.10 Final"
-    assert version.BUILD_NUMBER == 19
+    assert version.BUILD_ID == "v2.9.11 Final"
+    assert version.BUILD_NUMBER == 20
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 18" in addon
     assert "Sony AVR experimental request helper" in addon

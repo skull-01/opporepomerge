@@ -27,8 +27,8 @@ def test_audit_check_value_object_and_legacy_dict_api_are_both_available():
     assert check.as_dict() == {"name": "sample", "status": "ok", "detail": "detail"}
     assert audit.AuditCheck.from_mapping(check.as_dict()) == check
 
-    legacy = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.10")
-    typed = audit.collect_audit_checks(audit.project_root(audit.Path(ROOT)), expected_version="2.9.10")
+    legacy = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.11")
+    typed = audit.collect_audit_checks(audit.project_root(audit.Path(ROOT)), expected_version="2.9.11")
     assert legacy
     assert typed
     assert all(isinstance(item, dict) for item in legacy)
@@ -59,7 +59,7 @@ def test_json_reporter_preserves_json_cli_schema():
 
 def test_audit_cli_text_and_json_outputs_still_work():
     text = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "audit_release.py"), "--root", str(ROOT), "--expected-version", "2.9.10"],
+        [sys.executable, str(ROOT / "tools" / "audit_release.py"), "--root", str(ROOT), "--expected-version", "2.9.11"],
         check=False,
         text=True,
         stdout=subprocess.PIPE,
@@ -70,7 +70,7 @@ def test_audit_cli_text_and_json_outputs_still_work():
     assert "SUMMARY: PASS" in text.stdout
 
     json_result = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "audit_release.py"), "--root", str(ROOT), "--expected-version", "2.9.10", "--json"],
+        [sys.executable, str(ROOT / "tools" / "audit_release.py"), "--root", str(ROOT), "--expected-version", "2.9.11", "--json"],
         check=False,
         text=True,
         stdout=subprocess.PIPE,
@@ -84,7 +84,7 @@ def test_audit_cli_text_and_json_outputs_still_work():
 
 def test_release_audit_requires_build11_manifest_and_evidence():
     audit = _load_audit()
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.10")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.11")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -98,8 +98,8 @@ def test_addon_metadata_and_version_source_identify_build11():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.10 Final"
-    assert version.BUILD_NUMBER == 19
+    assert version.BUILD_ID == "v2.9.11 Final"
+    assert version.BUILD_NUMBER == 20
     assert "Version 2.9.1 Build 11" in addon_text
     assert "typed audit checks" in addon_text
     assert "JSON reporter" in addon_text

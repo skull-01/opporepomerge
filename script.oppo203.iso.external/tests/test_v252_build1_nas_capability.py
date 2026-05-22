@@ -8,7 +8,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 def test_current_addon_version_is_v252():
     root = ET.parse(ROOT / "addon.xml").getroot()
-    assert root.attrib["version"] == "2.9.10"
+    assert root.attrib["version"] == "2.9.11"
 
 
 def test_oppo20x_firmware_gate_minimum_and_recommended():
@@ -92,7 +92,7 @@ def test_release_audit_requires_v252_build1_evidence():
     spec = importlib.util.spec_from_file_location("audit_release_v252_build1", ROOT / "tools" / "audit_release.py")
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    results = mod.run_audit(mod.project_root(mod.Path(ROOT)), expected_version="2.9.10")
+    results = mod.run_audit(mod.project_root(mod.Path(ROOT)), expected_version="2.9.11")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
