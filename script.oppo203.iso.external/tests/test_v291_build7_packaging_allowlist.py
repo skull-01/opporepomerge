@@ -122,7 +122,7 @@ def test_created_runtime_zip_uses_allowlist_and_has_no_dev_artifacts(tmp_path):
 def test_package_release_script_defaults_to_active_build(tmp_path):
     out = tmp_path / "dist"
     env = {k: v for k, v in os.environ.items() if k != "BUILD_SUFFIX"}
-    env.update({"OUT_DIR": str(out), "VERSION": "2.9.10"})
+    env.update({"OUT_DIR": str(out), "VERSION": "2.9.11"})
     result = subprocess.run(
         ["bash", str(ROOT / "scripts" / "package_release.sh")],
         check=False,

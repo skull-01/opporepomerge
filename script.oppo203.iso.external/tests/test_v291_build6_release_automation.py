@@ -69,7 +69,7 @@ def test_package_release_script_creates_runtime_zip_dev_source_and_checksum(tmp_
         ["bash", str(ROOT / "scripts" / "package_release.sh")],
         check=False,
         cwd=str(ROOT),
-        env={**os.environ, "OUT_DIR": str(out), "VERSION": "2.9.10", "BUILD_SUFFIX": "build6-test"},
+        env={**os.environ, "OUT_DIR": str(out), "VERSION": "2.9.11", "BUILD_SUFFIX": "build6-test"},
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
