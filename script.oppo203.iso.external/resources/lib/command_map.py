@@ -5,13 +5,14 @@ v2.9.1 Build 3 moves the canonical 76-key OPPO command map out of
 This module keeps runtime callers dependency-free while validating the protected
 command-map invariants before the data is used.
 """
+
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
-from typing import Mapping
 
 try:  # package import
     from .constants import OPPO_COMMAND_MAP_SIZE
@@ -35,10 +36,21 @@ class CommandMap:
                 f"OPPO command map must contain {OPPO_COMMAND_MAP_SIZE} keys; "
                 f"found {len(normalized)}"
             )
-        non_string = [key for key, value in normalized.items() if not isinstance(key, str) or not isinstance(value, str)]
+        non_string = [
+            key
+            for key, value in normalized.items()
+            if not isinstance(key, str) or not isinstance(value, str)
+        ]
         if non_string:
             raise TypeError("OPPO command map keys and values must be strings")
-        offenders = sorted({token for value in normalized.values() for token in FORBIDDEN_COMMAND_TOKENS if token in value})
+        offenders = sorted(
+            {
+                token
+                for value in normalized.values()
+                for token in FORBIDDEN_COMMAND_TOKENS
+                if token in value
+            }
+        )
         if offenders:
             raise ValueError("Forbidden OPPO command tokens found: " + ", ".join(offenders))
         object.__setattr__(self, "entries", MappingProxyType(normalized))

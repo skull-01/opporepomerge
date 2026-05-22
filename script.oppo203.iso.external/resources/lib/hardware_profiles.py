@@ -5,6 +5,7 @@ registry foundation so later v2.9.10 builds can describe player, TV, and AVR
 hardware without changing playback, OPPO command dispatch, TV switching, or
 AVR behavior.
 """
+
 from __future__ import annotations
 
 HARDWARE_ROLE_PLAYER = "player"

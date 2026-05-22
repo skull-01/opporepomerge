@@ -4,6 +4,7 @@ Build 9B preserves SmartThings experimental preset/backend metadata and adds
 guarded request-helper metadata with fake API coverage. Presets do not perform hardware IO, do not apply
 commands automatically, and do not claim hardware validation.
 """
+
 from __future__ import annotations
 
 try:
@@ -11,10 +12,10 @@ try:
         TV_BACKEND_ADB,
         TV_BACKEND_CUSTOM_COMMAND,
         TV_BACKEND_LG_COMMAND,
-        TV_BACKEND_SAMSUNG_COMMAND,
-        TV_BACKEND_SONY_BRAVIA,
         TV_BACKEND_ROKU_ECP,
+        TV_BACKEND_SAMSUNG_COMMAND,
         TV_BACKEND_SMARTTHINGS,
+        TV_BACKEND_SONY_BRAVIA,
         is_supported_backend,
     )
 except ImportError:  # top-level/audit/test compatibility
@@ -22,10 +23,10 @@ except ImportError:  # top-level/audit/test compatibility
         TV_BACKEND_ADB,
         TV_BACKEND_CUSTOM_COMMAND,
         TV_BACKEND_LG_COMMAND,
-        TV_BACKEND_SAMSUNG_COMMAND,
-        TV_BACKEND_SONY_BRAVIA,
         TV_BACKEND_ROKU_ECP,
+        TV_BACKEND_SAMSUNG_COMMAND,
         TV_BACKEND_SMARTTHINGS,
+        TV_BACKEND_SONY_BRAVIA,
         is_supported_backend,
     )
 
@@ -69,7 +70,6 @@ SMARTTHINGS_EXPERIMENTAL_PRESET_IDS = (
 )
 
 
-
 def _command_preset(
     preset_id: str,
     label: str,
@@ -97,6 +97,7 @@ def _command_preset(
         "notes": notes,
     }
 
+
 def _smartthings_preset(preset_id: str, label: str, platform: str, notes: str) -> dict[str, object]:
     """Return software-only SmartThings experimental preset metadata."""
     return {
@@ -122,6 +123,7 @@ def _smartthings_preset(preset_id: str, label: str, platform: str, notes: str) -
         "notes": notes,
     }
 
+
 def _roku_preset(preset_id: str, label: str, platform: str, notes: str) -> dict[str, object]:
     """Return software-only Roku ECP preset metadata."""
     return {
@@ -140,6 +142,7 @@ def _roku_preset(preset_id: str, label: str, platform: str, notes: str) -> dict[
         "key_allowlist_required": True,
         "notes": notes,
     }
+
 
 def _adb_preset(preset_id: str, label: str, platform: str, notes: str) -> dict[str, object]:
     """Return software-only editable ADB preset metadata."""
@@ -228,7 +231,6 @@ TV_PRESETS = {
         "Generic Android TV / Google TV",
         "Generic editable ADB preset for unsupported Android/Google TV models; commands are intentionally user-owned.",
     ),
-
     "roku_tv": _roku_preset(
         "roku_tv",
         "Roku TV editable ECP preset",
@@ -253,7 +255,6 @@ TV_PRESETS = {
         "Generic Roku TV",
         "Generic software-only Roku ECP preset for other Roku TV brands; no hardware validation is claimed.",
     ),
-
     "samsung_smartthings_experimental": _smartthings_preset(
         "samsung_smartthings_experimental",
         "Samsung SmartThings experimental preset",
@@ -405,7 +406,11 @@ def validate_preset_registry() -> list[str]:
             if not preset.get("token_redaction_required"):
                 warnings.append(f"preset:{preset_id}:smartthings_token_redaction_not_required")
         if preset_id in COMMAND_TV_PRESET_IDS:
-            if backend not in (TV_BACKEND_LG_COMMAND, TV_BACKEND_SAMSUNG_COMMAND, TV_BACKEND_CUSTOM_COMMAND):
+            if backend not in (
+                TV_BACKEND_LG_COMMAND,
+                TV_BACKEND_SAMSUNG_COMMAND,
+                TV_BACKEND_CUSTOM_COMMAND,
+            ):
                 warnings.append(f"preset:{preset_id}:command_tv_unexpected_backend:{backend}")
             if not preset.get("command_template_editable"):
                 warnings.append(f"preset:{preset_id}:command_template_not_editable")

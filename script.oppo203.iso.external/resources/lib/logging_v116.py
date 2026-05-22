@@ -26,14 +26,14 @@ import os
 import re as _re
 import time as _time
 
-
 LEVELS = ("DEBUG", "INFO", "WARN", "ERROR")
 _LEVEL_INDEX = {n: i for i, n in enumerate(LEVELS)}
 
 
 def level_value(name):
     """Numeric value for a level name; returns -1 for unknown names."""
-    if not name: return -1
+    if not name:
+        return -1
     return _LEVEL_INDEX.get(str(name).upper(), -1)
 
 
@@ -41,7 +41,7 @@ def level_value(name):
 # Scrubber
 # ---------------------------------------------------------------------
 
-_MAC_RE  = _re.compile(r"\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b")
+_MAC_RE = _re.compile(r"\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b")
 _IPV4_RE = _re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 
@@ -68,36 +68,52 @@ def scrub(text):
 # Filesystem injection
 # ---------------------------------------------------------------------
 
-class _RealFS(object):
-    def exists(self, p): return os.path.exists(p)
+
+class _RealFS:
+    def exists(self, p):
+        return os.path.exists(p)
+
     def size(self, p):
-        try: return os.path.getsize(p)
-        except OSError: return 0
+        try:
+            return os.path.getsize(p)
+        except OSError:
+            return 0
+
     def read(self, p):
-        with open(p, "r", encoding="utf-8") as f: return f.read()
+        with open(p, "r", encoding="utf-8") as f:
+            return f.read()
+
     def append(self, p, text):
         d = os.path.dirname(p)
-        if d: os.makedirs(d, exist_ok=True)
-        with open(p, "a", encoding="utf-8") as f: f.write(text)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        with open(p, "a", encoding="utf-8") as f:
+            f.write(text)
+
     def rename(self, src, dst):
         if os.path.exists(dst):
-            try: os.remove(dst)
-            except OSError: pass
+            try:
+                os.remove(dst)
+            except OSError:
+                pass
         os.replace(src, dst)
+
     def remove(self, p):
-        try: os.remove(p)
-        except OSError: pass
+        try:
+            os.remove(p)
+        except OSError:
+            pass
 
 
 # ---------------------------------------------------------------------
 # Logger
 # ---------------------------------------------------------------------
 
-class Logger(object):
+
+class Logger:
     """Leveled, size-rotating, scrubbing logger."""
 
-    def __init__(self, path, *, level="INFO", max_bytes=131072,
-                 backups=3, fs=None, clock=None):
+    def __init__(self, path, *, level="INFO", max_bytes=131072, backups=3, fs=None, clock=None):
         self.path = path
         self.level_name = level.upper() if level else "INFO"
         self._level = level_value(self.level_name)
@@ -173,7 +189,14 @@ class Logger(object):
         self._rotate_if_needed(len(line.encode("utf-8")))
         self.fs.append(self.path, line)
 
-    def debug(self, msg, *a): self.log("DEBUG", msg, *a)
-    def info(self,  msg, *a): self.log("INFO",  msg, *a)
-    def warn(self,  msg, *a): self.log("WARN",  msg, *a)
-    def error(self, msg, *a): self.log("ERROR", msg, *a)
+    def debug(self, msg, *a):
+        self.log("DEBUG", msg, *a)
+
+    def info(self, msg, *a):
+        self.log("INFO", msg, *a)
+
+    def warn(self, msg, *a):
+        self.log("WARN", msg, *a)
+
+    def error(self, msg, *a):
+        self.log("ERROR", msg, *a)

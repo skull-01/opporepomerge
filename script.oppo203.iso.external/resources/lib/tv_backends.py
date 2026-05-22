@@ -4,6 +4,7 @@ The registry is intentionally data-oriented and side-effect free.  It describes
 existing TV switching backends so later builds can add presets, diagnostics, and
 new protocols without changing the established public TV control APIs.
 """
+
 from __future__ import annotations
 
 TV_BACKEND_ADB = "adb"

@@ -35,7 +35,6 @@ import socket
 import threading
 import time
 
-
 # Push message prefixes that signal playback has stopped or the device is idle.
 _UPL_STOP_VALUES = {
     "STOP",
@@ -116,7 +115,7 @@ class OppoTcpClient:
                             idx = buf.find(sep)
                             if idx >= 0:
                                 line_bytes = buf[:idx]
-                                buf = buf[idx + len(sep):]
+                                buf = buf[idx + len(sep) :]
                                 line = line_bytes.decode("ascii", errors="replace").strip()
                                 self._handle_line(line)
                                 break
@@ -185,11 +184,17 @@ class OppoTcpClient:
             time.sleep(0.02)
         return False
 
-
-    def wait_for_stop_persistent(self, timeout=14400, max_retries=8,
-                                 base_delay=1.0, cap_delay=30.0,
-                                 jitter=0.25, _sleep=None, _rng=None,
-                                 _connect_factory=None):
+    def wait_for_stop_persistent(
+        self,
+        timeout=14400,
+        max_retries=8,
+        base_delay=1.0,
+        cap_delay=30.0,
+        jitter=0.25,
+        _sleep=None,
+        _rng=None,
+        _connect_factory=None,
+    ):
         """Like wait_for_stop, but reconnects on transient failures.
 
         On each failure we consult `reconnect_backoff.compute_delay` for
@@ -234,8 +239,11 @@ class OppoTcpClient:
             if not rb.should_retry(attempt, max_retries):
                 return False
             delay = rb.compute_delay(
-                attempt, base=base_delay, cap=cap_delay,
-                jitter=jitter, rng=_rng,
+                attempt,
+                base=base_delay,
+                cap=cap_delay,
+                jitter=jitter,
+                rng=_rng,
             )
             if deadline is not None:
                 remaining = deadline - time.time()
@@ -255,13 +263,14 @@ class OppoTcpClient:
         """
         # Reset per-attempt state so each retry is independent
         import threading as _t
+
         self._connected = _t.Event()
-        self._stopped   = _t.Event()
+        self._stopped = _t.Event()
         self._connection_closed = _t.Event()
         self._stop_event_seen = False
-        self._error     = None
-        self._sock      = None
-        self._thread    = None
+        self._error = None
+        self._sock = None
+        self._thread = None
         return bool(self.wait_for_stop(timeout=self._per_attempt_timeout))
 
     def close(self):

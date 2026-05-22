@@ -44,7 +44,7 @@ def _base():
         "eject": "#EJT",
         "query_power": "#QPW",
         "needs_eject_before_play": False,  # Chinoppo and friends
-        "use_eject_for_power_on": False,   # Chinoppo: #EJT instead of #PON
+        "use_eject_for_power_on": False,  # Chinoppo: #EJT instead of #PON
         "supports_quick_start": True,
         "wol_recommended": True,
         "notes": "",
@@ -52,100 +52,123 @@ def _base():
 
 
 PRESETS = {
-    "udp_203": dict(_base(),
-        label="OPPO UDP-203",
-        notes="Reference OPPO UDP-203. Full IP-control support."),
-    "udp_205": dict(_base(),
-        label="OPPO UDP-205",
-        notes="Reference OPPO UDP-205. Full IP-control support."),
-    "udp_203_jailbroken": dict(_base(),
+    "udp_203": dict(
+        _base(), label="OPPO UDP-203", notes="Reference OPPO UDP-203. Full IP-control support."
+    ),
+    "udp_205": dict(
+        _base(), label="OPPO UDP-205", notes="Reference OPPO UDP-205. Full IP-control support."
+    ),
+    "udp_203_jailbroken": dict(
+        _base(),
         label="OPPO UDP-203 (Jailbroken)",
         notes="Jailbroken firmware. Same IP-control protocol as stock; "
-              "additional file-list endpoints may be exposed but are not used "
-              "by default for safety."),
-    "udp_205_jailbroken": dict(_base(),
+        "additional file-list endpoints may be exposed but are not used "
+        "by default for safety.",
+    ),
+    "udp_205_jailbroken": dict(
+        _base(),
         label="OPPO UDP-205 (Jailbroken)",
-        notes="Jailbroken firmware. Same IP-control protocol as stock."),
-
-    "chinoppo": dict(_base(),
+        notes="Jailbroken firmware. Same IP-control protocol as stock.",
+    ),
+    "chinoppo": dict(
+        _base(),
         label="Chinoppo (generic clone)",
         family="chinoppo",
         supports_http=False,
         needs_eject_before_play=True,
         use_eject_for_power_on=True,
         notes="Generic Chinese OPPO clone. Use #EJT to wake from standby; "
-              "follow with #PLA after disc detection. HTTP not reliable."),
-    "chinoppo_m9702": dict(_base(),
+        "follow with #PLA after disc detection. HTTP not reliable.",
+    ),
+    "chinoppo_m9702": dict(
+        _base(),
         label="Chinoppo M9702",
         family="chinoppo",
         supports_http=False,
         needs_eject_before_play=True,
         use_eject_for_power_on=True,
-        notes="MeCool/Magnetar-derived M9702. Same protocol as generic Chinoppo."),
-    "chinoppo_m9201": dict(_base(),
+        notes="MeCool/Magnetar-derived M9702. Same protocol as generic Chinoppo.",
+    ),
+    "chinoppo_m9201": dict(
+        _base(),
         label="Chinoppo M9201",
         family="chinoppo",
         supports_http=False,
         needs_eject_before_play=True,
         use_eject_for_power_on=True,
-        notes="M9201. Older firmware; longer settle time may be needed."),
-    "chinoppo_m9203": dict(_base(),
+        notes="M9201. Older firmware; longer settle time may be needed.",
+    ),
+    "chinoppo_m9203": dict(
+        _base(),
         label="Chinoppo M9203",
         family="chinoppo",
         supports_http=False,
         needs_eject_before_play=True,
         use_eject_for_power_on=True,
-        notes="M9203."),
-    "chinoppo_m9205c": dict(_base(),
+        notes="M9203.",
+    ),
+    "chinoppo_m9205c": dict(
+        _base(),
         label="Chinoppo M9205C",
         family="chinoppo",
         supports_http=False,
         needs_eject_before_play=True,
         use_eject_for_power_on=True,
-        notes="M9205C. Like M9203 with revised AV board."),
-
-    "reavon_ubrx100": dict(_base(),
+        notes="M9205C. Like M9203 with revised AV board.",
+    ),
+    "reavon_ubrx100": dict(
+        _base(),
         label="Reavon UBR-X100",
         family="reavon",
         supports_http=False,
         notes="Reavon UBR-X100. IP-control protocol mirrors OPPO UDP-203 with "
-              "minor differences; stock #PON/#POF/#PLA/#STP work."),
-    "reavon_ubrx110": dict(_base(),
+        "minor differences; stock #PON/#POF/#PLA/#STP work.",
+    ),
+    "reavon_ubrx110": dict(
+        _base(),
         label="Reavon UBR-X110",
         family="reavon",
         supports_http=False,
-        notes="Reavon UBR-X110."),
-    "reavon_ubrx200": dict(_base(),
+        notes="Reavon UBR-X110.",
+    ),
+    "reavon_ubrx200": dict(
+        _base(),
         label="Reavon UBR-X200",
         family="reavon",
         supports_http=False,
-        notes="Reavon UBR-X200 (4K UHD). Slower boot; recommend 8s power-on delay."),
-
-    "magnetar_udp800": dict(_base(),
+        notes="Reavon UBR-X200 (4K UHD). Slower boot; recommend 8s power-on delay.",
+    ),
+    "magnetar_udp800": dict(
+        _base(),
         label="Magnetar UDP800",
         family="magnetar",
         supports_http=False,
-        notes="Magnetar UDP800. Compatible with OPPO IP-control set."),
-    "magnetar_udp900": dict(_base(),
+        notes="Magnetar UDP800. Compatible with OPPO IP-control set.",
+    ),
+    "magnetar_udp900": dict(
+        _base(),
         label="Magnetar UDP900",
         family="magnetar",
         supports_http=False,
-        notes="Magnetar UDP900."),
-
-    "zappiti_reference": dict(_base(),
+        notes="Magnetar UDP900.",
+    ),
+    "zappiti_reference": dict(
+        _base(),
         label="Zappiti Reference",
         family="zappiti",
         control_port=23,
         supports_http=True,
         supports_quick_start=False,
         notes="Zappiti Reference. Different control flow; only the OPPO-style "
-              "IP-control subset is used here. Quick Start not applicable."),
-
-    "generic_oppo_clone": dict(_base(),
+        "IP-control subset is used here. Quick Start not applicable.",
+    ),
+    "generic_oppo_clone": dict(
+        _base(),
         label="Generic OPPO clone",
         family="generic",
         supports_http=False,
-        notes="Catch-all for unknown OPPO-protocol clones."),
+        notes="Catch-all for unknown OPPO-protocol clones.",
+    ),
 }
 
 

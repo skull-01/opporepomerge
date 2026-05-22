@@ -6,23 +6,21 @@ import threading
 import time
 import traceback
 
+from avr_sequence import post_playback_sequence, pre_playback_sequence
+from diagnostic_logging import log_to_xbmc
 from oppo_control import (
     get_playback_info,
-    get_playback_status,
-    http_info_is_definitive_stop,
     http_info_indicates_playing,
+    http_info_is_definitive_stop,
     http_status_is_idle,
     query_playback_status,
     run_configured_commands,
     run_preflight,
     run_start,
-    set_play_time,
     tcp_qpl_is_idle,
 )
 from settings_reader import read_settings
 from tv_control import switch_to_kodi, switch_to_oppo
-from avr_sequence import post_playback_sequence, pre_playback_sequence
-from diagnostic_logging import format_log_message, log_to_xbmc
 
 
 def log(message):
@@ -57,8 +55,7 @@ def run_parallel(tasks):
             errors.append((name, exc, traceback.format_exc()))
 
     threads = [
-        threading.Thread(target=runner, args=(name, func), daemon=True)
-        for name, func in tasks
+        threading.Thread(target=runner, args=(name, func), daemon=True) for name, func in tasks
     ]
     for thread in threads:
         thread.start()
@@ -152,8 +149,8 @@ def hold_playback(settings):
         idle_confirmations = 0
         ignore_until = 0.0  # v0.9.0: ignore idle readings until this time
         log(
-            "HTTP polling hold active: interval={}s, timeout={}s, idle confirmations={}, "
-            "trickplay_suppress={}s.".format(interval, timeout, confirmations_needed, trickplay_suppress)
+            f"HTTP polling hold active: interval={interval}s, timeout={timeout}s, idle confirmations={confirmations_needed}, "
+            f"trickplay_suppress={trickplay_suppress}s."
         )
         while time.time() - started_at < timeout:
             try:
@@ -161,6 +158,7 @@ def hold_playback(settings):
                 status = ""
                 if isinstance(info, dict):
                     from oppo_control import _info_containers
+
                     for container in _info_containers(info):
                         if isinstance(container, dict):
                             for key in ("e_play_status", "play_status", "status", "state"):
@@ -220,9 +218,7 @@ def hold_playback(settings):
         started_at = time.time()
         idle_confirmations = 0
         log(
-            "TCP QPL polling hold active: interval={}s, timeout={}s, idle confirmations={}.".format(
-                interval, max_seconds, confirmations_needed
-            )
+            f"TCP QPL polling hold active: interval={interval}s, timeout={max_seconds}s, idle confirmations={confirmations_needed}."
         )
         while time.time() - started_at < max_seconds:
             try:
@@ -246,13 +242,22 @@ def hold_playback(settings):
         # v0.9.0: Persistent TCP verbose-push hold mode.
         # Uses oppo_tcp_client.py to listen for @UPW/@UPL push messages.
         # Falls back to tcp_qpl_poll on connection failure.
-        vp_timeout = max(1, int(settings.get(
-            "verbose_push_timeout_minutes",
-            settings.get("qpl_poll_timeout_minutes", "240")
-        ))) * 60
+        vp_timeout = (
+            max(
+                1,
+                int(
+                    settings.get(
+                        "verbose_push_timeout_minutes",
+                        settings.get("qpl_poll_timeout_minutes", "240"),
+                    )
+                ),
+            )
+            * 60
+        )
         log(f"Verbose push hold mode: timeout={vp_timeout}s.")
         try:
             from oppo_tcp_client import OppoTcpClient  # noqa: PLC0415
+
             host = settings["oppo_ip"]
             port = int(settings.get("oppo_port", "23"))
             client = OppoTcpClient(host, port)
@@ -286,8 +291,12 @@ def hold_playback(settings):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Kodi external-player wrapper for Oppo UDP-203 ISO playback.")
-    parser.add_argument("--addon-data", required=True, help="Kodi addon_data directory for this add-on.")
+    parser = argparse.ArgumentParser(
+        description="Kodi external-player wrapper for Oppo UDP-203 ISO playback."
+    )
+    parser.add_argument(
+        "--addon-data", required=True, help="Kodi addon_data directory for this add-on."
+    )
     parser.add_argument("--file", required=True, help="ISO file path passed by Kodi.")
     args = parser.parse_args()
 

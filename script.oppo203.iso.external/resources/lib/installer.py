@@ -14,14 +14,14 @@ except ImportError:  # pragma: no cover - top-level Kodi import compatibility
 try:
     from .disc_classification import (
         XML_4K_TAG_FILENAME_PATTERN,
-        XML_DISC_FILETYPES,
-        XML_LOOSE_VIDEO_FILETYPES,
+        XML_DISC_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
+        XML_LOOSE_VIDEO_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
     )
 except ImportError:  # pragma: no cover - top-level Kodi import compatibility
     from disc_classification import (  # type: ignore
         XML_4K_TAG_FILENAME_PATTERN,
-        XML_DISC_FILETYPES,
-        XML_LOOSE_VIDEO_FILETYPES,
+        XML_DISC_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
+        XML_LOOSE_VIDEO_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
     )
 
 
@@ -110,6 +110,7 @@ def build_external_player_xml():
 # must require an explicit 4K/UHD/2160p naming tag.  The constants are imported
 # from disc_classification.py so installer and merge-helper rules stay aligned.
 
+
 def build_xml_naming_warning_text():
     return (
         "4K external-player XML mode requires naming discipline.\n\n"
@@ -143,12 +144,14 @@ def build_rule_xml():
         _option4_rule("iso"),
     ]
     if bool_setting("include_disc_folder_rules", True):
-        rules.extend([
-            "",
-            "<!-- Tagged BDMV and playlist entry files, e.g. Movie 4K UHD/BDMV/index.bdmv or .../PLAYLIST/00800.mpls. -->",
-            _option4_rule("bdmv"),
-            _option4_rule("mpls"),
-        ])
+        rules.extend(
+            [
+                "",
+                "<!-- Tagged BDMV and playlist entry files, e.g. Movie 4K UHD/BDMV/index.bdmv or .../PLAYLIST/00800.mpls. -->",
+                _option4_rule("bdmv"),
+                _option4_rule("mpls"),
+            ]
+        )
     return "\n".join(rules).rstrip() + "\n"
 
 
@@ -385,8 +388,9 @@ def run_oppo_discovery():
     v0.9.0: If exactly one device is found, offer a yes/no prompt to apply
     the discovered IP and port to settings automatically.
     """
-    import sys
     import os
+    import sys
+
     # Import discover_oppo without Kodi context (runs in Kodi addon env)
     addon_path = tpath(ADDON.getAddonInfo("path"))
     lib_path = os.path.join(addon_path, "resources", "lib")
@@ -394,6 +398,7 @@ def run_oppo_discovery():
         sys.path.insert(0, lib_path)
     try:
         from oppo_control import discover_oppo
+
         xbmcgui.Dialog().ok(
             "Oppo UDP-203 Discovery",
             "Listening for Oppo devices on multicast 239.255.255.251:7624 for 5 seconds...",
@@ -500,8 +505,9 @@ def run_experimental_filelist_diagnostic():
         )
         return
 
-    import sys
     import os
+    import sys
+
     addon_path = tpath(ADDON.getAddonInfo("path"))
     lib_path = os.path.join(addon_path, "resources", "lib")
     if lib_path not in sys.path:
@@ -510,6 +516,7 @@ def run_experimental_filelist_diagnostic():
     try:
         from oppo_control import get_file_list_raw, parse_undocumented_file_list
         from settings_reader import read_settings
+
         addon_data = tpath(f"special://profile/addon_data/{ADDON_ID}")
         settings = read_settings(addon_data)
 
@@ -533,15 +540,13 @@ def run_experimental_filelist_diagnostic():
             for i, e in enumerate(entries[:50]):
                 # Compact one-line summary per entry
                 tag = "[D]" if e["is_dir"] else ("[F]" if e["is_file"] else "[?]")
-                size_str = (
-                    f"  {e['size_bytes']} B" if e["size_bytes"] is not None else ""
-                )
+                size_str = f"  {e['size_bytes']} B" if e["size_bytes"] is not None else ""
                 disc_str = f"  {e['disc_type']}" if e["disc_type"] else ""
                 ext_str = f"  .{e['extension']}" if e["extension"] else ""
-                path_str = f"\n    path: {e['path']}" if e["path"] and e["path"] != e["name"] else ""
-                lines.append(
-                    f"{i + 1}. {tag} {e['name']}{ext_str}{size_str}{disc_str}{path_str}"
+                path_str = (
+                    f"\n    path: {e['path']}" if e["path"] and e["path"] != e["name"] else ""
                 )
+                lines.append(f"{i + 1}. {tag} {e['name']}{ext_str}{size_str}{disc_str}{path_str}")
             structured += "\n" + "\n".join(lines)
             if len(entries) > 50:
                 structured += f"\n... and {len(entries) - 50} more entries."
@@ -596,11 +601,19 @@ def export_hardware_validation_readiness():
     """Export a non-invasive Build 5 hardware-validation readiness report."""
     try:
         try:
-            from .hardware_validation_readiness import build_readiness_report, export_readiness_report
+            from .hardware_validation_readiness import (
+                build_readiness_report,
+                export_readiness_report,
+            )
         except Exception:  # pragma: no cover - top-level Kodi import compatibility
-            from hardware_validation_readiness import build_readiness_report, export_readiness_report
+            from hardware_validation_readiness import (
+                build_readiness_report,
+                export_readiness_report,
+            )
         _, addon_data, _ = _paths()
-        report = build_readiness_report(addon_data_dir=addon_data, root_dir=ADDON.getAddonInfo("path"))
+        report = build_readiness_report(
+            addon_data_dir=addon_data, root_dir=ADDON.getAddonInfo("path")
+        )
         path = export_readiness_report(addon_data, report)
         xbmcgui.Dialog().ok("Hardware Validation Readiness", "Readiness report exported:\n" + path)
         return path
@@ -610,15 +623,17 @@ def export_hardware_validation_readiness():
 
 
 def main():
-    if ADDON.getSetting("wizard_completed") not in ("true","1","yes"):
+    if ADDON.getSetting("wizard_completed") not in ("true", "1", "yes"):
         try:
-            from wizard import run_wizard; run_wizard()
+            from wizard import run_wizard
+
+            run_wizard()
         except Exception as exc:
             xbmc.log(format_log_message("setup", "Wizard failed: " + str(exc)), xbmc.LOGWARNING)
-            if ADDON.getSetting("architecture_choice_made") not in ("true","1","yes"):
+            if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
                 show_architecture_choice_dialog()
     else:
-        if ADDON.getSetting("architecture_choice_made") not in ("true","1","yes"):
+        if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
             show_architecture_choice_dialog()
 
     actions = [
@@ -659,17 +674,22 @@ def main():
         run_experimental_filelist_diagnostic()
     elif choice == 9:
         try:
-            from wizard import run_wizard; run_wizard()
+            from wizard import run_wizard
+
+            run_wizard()
         except Exception as exc:
             xbmcgui.Dialog().ok("Wizard failed", str(exc))
     elif choice == 10:
         try:
-            from wizard import reset_wizard; reset_wizard()
+            from wizard import reset_wizard
+
+            reset_wizard()
         except Exception as exc:
             xbmcgui.Dialog().ok("Reset failed", str(exc))
     elif choice == 11:
         try:
             from autoscript_helper import run_autoscript_wizard
+
             run_autoscript_wizard(ADDON)
         except Exception as exc:
             xbmcgui.Dialog().ok("AutoScript failed", str(exc))

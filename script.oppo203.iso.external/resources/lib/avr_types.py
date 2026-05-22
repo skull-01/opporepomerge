@@ -4,6 +4,7 @@ Build 11 intentionally adds only a disabled-by-default framework skeleton.  It
 provides safe result/validation containers for future brand drivers without
 executing real AVR commands or hooking AVR control into playback sequencing.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

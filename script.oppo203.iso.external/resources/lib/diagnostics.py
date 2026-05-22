@@ -24,7 +24,6 @@ import os
 import re
 import time as _time
 
-
 _MAC_RE = re.compile(r"([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}")
 _IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
@@ -54,14 +53,25 @@ def _safe(call, default=None):
         return {"ok": False, "error": str(exc)} if default is None else default
 
 
-def run(host, port, mac=None, *, http_check=None, tcp_check=None,
-        svm_check=None, wol_check=None, kodi_info=None,
-        capabilities=None, now=None):
+def run(
+    host,
+    port,
+    mac=None,
+    *,
+    http_check=None,
+    tcp_check=None,
+    svm_check=None,
+    wol_check=None,
+    kodi_info=None,
+    capabilities=None,
+    now=None,
+):
     """Run the full pre-flight. All probes are injected.
 
     Each probe callable returns a dict with at least an "ok" boolean.
     Missing probes default to {"ok": None, "skipped": True}.
     """
+
     def _skip(reason="not provided"):
         return {"ok": None, "skipped": True, "reason": reason}
 

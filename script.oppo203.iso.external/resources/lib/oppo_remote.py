@@ -21,6 +21,7 @@ from .oppo_control import (
     set_subtitle_track,
 )
 from .settings_reader import DEFAULTS, Settings, read_settings
+
 try:
     from .command_map import load_default_command_map
 except ImportError:  # pragma: no cover - top-level test/import compatibility
@@ -87,7 +88,9 @@ def send_remote_key(key):
     settings = _load_settings()
     normalized_key = key.strip().lower()
 
-    if settings.get_bool("remote_bridge_only_when_active", True) and not _session_is_active(settings):
+    if settings.get_bool("remote_bridge_only_when_active", True) and not _session_is_active(
+        settings
+    ):
         _log(f"Ignoring remote key {normalized_key}: Oppo ISO session is not active.")
         return
 
@@ -96,6 +99,7 @@ def send_remote_key(key):
     if command:
         try:
             from .settings_reader import warn_if_unsupported
+
             warn = warn_if_unsupported(command, settings.get("oppo_hardware_model", "udp_203"))
             if warn:
                 _log("[hardware-gate] " + warn)
@@ -105,7 +109,9 @@ def send_remote_key(key):
     if command and normalized_key in ("power_on", "power_toggle"):
         rewritten = resolve_power_on_token(command, settings.get("oppo_hardware_model", "udp_203"))
         if rewritten != command:
-            _log(f"[wake-rewrite] {command} -> {rewritten} for model {settings.get('oppo_hardware_model', 'udp_203')}")
+            _log(
+                f"[wake-rewrite] {command} -> {rewritten} for model {settings.get('oppo_hardware_model', 'udp_203')}"
+            )
             command = rewritten
 
     if not command:
@@ -137,6 +143,7 @@ def send_remote_key(key):
 # v0.9.0: Special command handlers
 # ---------------------------------------------------------------------------
 
+
 def _cycle_audio(settings):
     """Cycle to the next audio track via the Oppo HTTP API.
 
@@ -148,9 +155,7 @@ def _cycle_audio(settings):
         tracks = get_audio_tracks(settings)
         if not tracks:
             raise ValueError("No audio tracks returned")
-        selected_idx = next(
-            (i for i, t in enumerate(tracks) if t.get("selected")), 0
-        )
+        selected_idx = next((i for i, t in enumerate(tracks) if t.get("selected")), 0)
         next_idx = (selected_idx + 1) % len(tracks)
         next_track = tracks[next_idx]
         set_audio_track(settings, next_track["index"])
@@ -175,9 +180,7 @@ def _cycle_subtitle(settings):
         tracks = get_subtitle_tracks(settings)
         if not tracks:
             raise ValueError("No subtitle tracks returned")
-        selected_idx = next(
-            (i for i, t in enumerate(tracks) if t.get("selected")), 0
-        )
+        selected_idx = next((i for i, t in enumerate(tracks) if t.get("selected")), 0)
         next_idx = (selected_idx + 1) % len(tracks)
         next_track = tracks[next_idx]
         set_subtitle_track(settings, next_track["index"])
@@ -214,6 +217,7 @@ def resolve_power_on_token(token, hardware_model):
         return token
     try:
         from .settings_reader import hardware_profile
+
         profile = hardware_profile(hardware_model)
         wake = profile.get("wake_command")
         is_clone = bool(profile.get("is_clone"))

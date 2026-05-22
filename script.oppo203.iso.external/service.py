@@ -66,7 +66,8 @@ def _read_settings():
         if lib_path and lib_path not in sys.path:
             sys.path.insert(0, lib_path)
 
-        from settings_reader import read_settings, Settings
+        from settings_reader import Settings, read_settings
+
         if addon_data:
             settings = read_settings(addon_data)
             settings.data["addon_data_dir"] = addon_data
@@ -146,7 +147,13 @@ def _run_interception(path, settings):
         if lib_path and lib_path not in sys.path:
             sys.path.insert(0, lib_path)
 
-        from external_player import fast_start, fast_return, hold_playback, mark_session_active, clear_session_active
+        from external_player import (
+            clear_session_active,
+            fast_return,
+            fast_start,
+            hold_playback,
+            mark_session_active,
+        )
 
         mark_session_active(settings)
         try:
@@ -213,7 +220,9 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
                 except Exception:
                     pass
             if not _should_intercept_4k_disc_source(path):
-                log(f"Service interception: using Kodi default player; not a tagged 4K disc-style source: {path!r}")
+                log(
+                    f"Service interception: using Kodi default player; not a tagged 4K disc-style source: {path!r}"
+                )
                 return
             if _session_is_active(self.settings):
                 log("Service interception: session already active, skipping.")
@@ -245,7 +254,6 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
             log(f"onAVStarted swallowed exception: {exc}")
 
 
-
 class Monitor(xbmc.Monitor if xbmc else object):
     """Kodi service monitor.
 
@@ -268,7 +276,9 @@ class Monitor(xbmc.Monitor if xbmc else object):
             if settings is not None:
                 self._last_model = settings.get("oppo_hardware_model", "UDP-203")
                 self._last_jailbreak = _settings_bool(settings, "oppo_jailbreak_enabled", False)
-                self._last_autoscript_shell = _settings_bool(settings, "oppo_autoscript_shell_handler", False)
+                self._last_autoscript_shell = _settings_bool(
+                    settings, "oppo_autoscript_shell_handler", False
+                )
         except Exception:
             pass
 
@@ -280,27 +290,35 @@ class Monitor(xbmc.Monitor if xbmc else object):
             new_model = settings.get("oppo_hardware_model", "UDP-203")
             new_jailbreak = _settings_bool(settings, "oppo_jailbreak_enabled", False)
             new_autoscript_shell = _settings_bool(settings, "oppo_autoscript_shell_handler", False)
-            if (new_model == self._last_model and
-                    new_jailbreak == self._last_jailbreak and
-                    new_autoscript_shell == self._last_autoscript_shell):
+            if (
+                new_model == self._last_model
+                and new_jailbreak == self._last_jailbreak
+                and new_autoscript_shell == self._last_autoscript_shell
+            ):
                 return
             try:
                 from first_run_wizard import (
-                    reapply_preset_on_model_change,
                     collect_compatibility_warnings,
                     log_compatibility_warnings,
+                    reapply_preset_on_model_change,
                 )
             except Exception as exc:
-                log("v0.9.14 model-change watcher: import failed: %r" % exc)
+                log(f"v0.9.14 model-change watcher: import failed: {exc!r}")
                 return
             applied, warnings = reapply_preset_on_model_change(
-                settings, self._last_model, new_model,
-                jailbreak=new_jailbreak, _log=log,
+                settings,
+                self._last_model,
+                new_model,
+                jailbreak=new_jailbreak,
+                _log=log,
             )
             warnings = list(warnings)
             for warning in collect_compatibility_warnings(
-                    settings, model=new_model, jailbreak=new_jailbreak,
-                    uses_autoscript_shell=new_autoscript_shell):
+                settings,
+                model=new_model,
+                jailbreak=new_jailbreak,
+                uses_autoscript_shell=new_autoscript_shell,
+            ):
                 if warning not in warnings:
                     warnings.append(warning)
             log_compatibility_warnings(warnings, _log=log)
@@ -308,19 +326,22 @@ class Monitor(xbmc.Monitor if xbmc else object):
             if applied:
                 try:
                     from settings_reader import save_settings
+
                     addon_data_dir = settings.get("addon_data_dir", "")
                     if addon_data_dir:
                         saved = bool(save_settings(addon_data_dir, settings))
                 except Exception as exc:
-                    log("v0.9.14 model-change watcher: save failed: %r" % exc)
-            log("v0.9.14 model-change: %s -> %s applied=%d warnings=%d autoscript_shell=%s saved=%s" % (
-                self._last_model, new_model, len(applied), len(warnings), new_autoscript_shell, saved
-            ))
+                    log(f"v0.9.14 model-change watcher: save failed: {exc!r}")
+            log(
+                f"v0.9.14 model-change: {self._last_model} -> {new_model} "
+                f"applied={len(applied)} warnings={len(warnings)} "
+                f"autoscript_shell={new_autoscript_shell} saved={saved}"
+            )
             self._last_model = new_model
             self._last_jailbreak = new_jailbreak
             self._last_autoscript_shell = new_autoscript_shell
         except Exception as exc:
-            log("v0.9.14 model-change watcher exception: %r" % exc)
+            log(f"v0.9.14 model-change watcher exception: {exc!r}")
 
 
 def _service_main():
@@ -347,7 +368,9 @@ def _service_main():
         except Exception:
             pass
 
-        player = InterceptionPlayer(settings)
+        # Keep a live reference: Kodi garbage-collects xbmc.Player subclasses that
+        # are not held, which would silently stop playback callbacks.
+        player = InterceptionPlayer(settings)  # noqa: F841
         log("Service interception player active.")
         while not monitor.abortRequested():
             if monitor.waitForAbort(60):
@@ -361,6 +384,7 @@ def _service_main():
             time.sleep(0.1)
 
     log("Service stopped.")
+
 
 # === v1.1.9 helpers (added to satisfy test_all.py TPower + TOmega) ===
 def _kodi_major_version():
@@ -380,6 +404,7 @@ def _kodi_major_version():
         return int(digits) if digits else 0
     except Exception:
         return 0
+
 
 def _is_omega_or_newer():
     return _kodi_major_version() >= 21
@@ -420,7 +445,9 @@ def _kodi_startup_power_on(settings):
         except Exception:
             retries = 3
         try:
-            delay = settings.get_float("kodi_startup_power_on_delay", 5.0, minimum=0.0, maximum=120.0)
+            delay = settings.get_float(
+                "kodi_startup_power_on_delay", 5.0, minimum=0.0, maximum=120.0
+            )
         except Exception:
             delay = 5.0
 
@@ -443,7 +470,9 @@ def _kodi_startup_power_on(settings):
             mac = str(settings.get("oppo_mac", "")).strip()
             if mac:
                 try:
-                    oppo_control.wake_on_lan(mac, settings.get("oppo_wol_broadcast", "255.255.255.255"))
+                    oppo_control.wake_on_lan(
+                        mac, settings.get("oppo_wol_broadcast", "255.255.255.255")
+                    )
                     log("Kodi-startup power-on: Wake-on-LAN packet sent.")
                 except Exception as exc:
                     log(f"Kodi-startup power-on: Wake-on-LAN failed: {exc}")
@@ -466,8 +495,14 @@ def _kodi_startup_power_on(settings):
 def _startup_wake_token(settings):
     model = str(settings.get("oppo_hardware_model", "udp_203") or "").lower()
     clone_markers = (
-        "chinoppo", "m9702", "m9201", "m9203", "m9205c",
-        "ipuk", "giec", "magnetar",
+        "chinoppo",
+        "m9702",
+        "m9201",
+        "m9203",
+        "m9205c",
+        "ipuk",
+        "giec",
+        "magnetar",
     )
     return "#EJT" if any(marker in model for marker in clone_markers) else "#PON"
 

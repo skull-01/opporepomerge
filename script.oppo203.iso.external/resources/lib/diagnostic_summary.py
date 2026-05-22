@@ -5,11 +5,12 @@ setup completeness, key configuration state, and obvious path/dependency
 warnings.  It intentionally does not launch players, touch hardware, mutate
 settings, or require Kodi modules.
 """
+
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 try:  # pragma: no cover - import style varies under Kodi and pytest
     from .settings_reader import Settings, read_settings
@@ -77,7 +78,11 @@ def build_summary(settings=None, *, addon_data_dir=None, root_dir=None, path_exi
     optionally checks whether configured path-like dependencies exist.
     """
     cfg = _as_settings(settings=settings, addon_data_dir=addon_data_dir)
-    validation = cfg.validation_summary() if hasattr(cfg, "validation_summary") else {"missing": [], "warnings": []}
+    validation = (
+        cfg.validation_summary()
+        if hasattr(cfg, "validation_summary")
+        else {"missing": [], "warnings": []}
+    )
     missing = list(validation.get("missing", []))
     warnings = list(validation.get("warnings", []))
     paths = _path_status(cfg, exists=path_exists)

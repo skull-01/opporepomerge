@@ -583,6 +583,12 @@ class TCoverageGateSecondPass(unittest.TestCase):
 
     def test_external_player_more_hold_and_error_paths(self):
         import external_player as ep
+
+        # Suppress log(): its stdlib-logging fallback (xbmc absent) calls time.time()
+        # and would otherwise drain the patched time sequence below.
+        _logp = mock.patch.object(ep, "log", lambda *a, **k: None)
+        _logp.start()
+        self.addCleanup(_logp.stop)
         times = iter([0, 1, 2, 1000])
         with mock.patch.object(ep.time, "time", side_effect=lambda: next(times)), \
              mock.patch.object(ep.time, "sleep", lambda *_: None), \
@@ -1015,6 +1021,12 @@ class TCoverageGateFourthPassGradual99(unittest.TestCase):
 
     def test_external_player_idle_suppression_and_disabled_tv_paths(self):
         import external_player as ep
+
+        # Suppress log(): its stdlib-logging fallback (xbmc absent) calls time.time()
+        # and would otherwise drain the patched time sequences below.
+        _logp = mock.patch.object(ep, "log", lambda *a, **k: None)
+        _logp.start()
+        self.addCleanup(_logp.stop)
         self.assertFalse(ep.tv_switching_enabled(FakeSettings({"tv_backend": "none"})))
         self.assertFalse(ep.tv_switching_enabled(FakeSettings({"tv_backend": "off"})))
         self.assertIsNone(ep.mark_session_active(FakeSettings({"addon_data_dir": ""})))
@@ -1207,6 +1219,12 @@ class TCoverageGateFifthPassGradual99(unittest.TestCase):
 
     def test_external_player_idle_confirmed_and_remote_import_edges(self):
         import external_player as ep
+
+        # Suppress log(): its stdlib-logging fallback (xbmc absent) calls time.time()
+        # and would otherwise drain the patched time sequence below.
+        _logp = mock.patch.object(ep, "log", lambda *a, **k: None)
+        _logp.start()
+        self.addCleanup(_logp.stop)
         times = iter([0, 1, 2, 3, 4])
         with mock.patch.object(ep.time, "time", side_effect=lambda: next(times)), \
              mock.patch.object(ep.time, "sleep", lambda *_: None), \
@@ -1696,6 +1714,12 @@ class TCoverageGateBuild5Gradual98(unittest.TestCase):
 
     def test_external_player_remaining_cleanup_and_reset_paths(self):
         import external_player as ep
+
+        # Suppress log(): its stdlib-logging fallback (xbmc absent) calls time.time()
+        # and would otherwise drain the patched time sequence below.
+        _logp = mock.patch.object(ep, "log", lambda *a, **k: None)
+        _logp.start()
+        self.addCleanup(_logp.stop)
         self.assertFalse(ep.tv_switching_enabled(FakeSettings({"tv_backend": ""})))
         self.assertFalse(ep.tv_switching_enabled(FakeSettings({"tv_backend": "disabled"})))
         with mock.patch.object(ep, "session_file", return_value=""):

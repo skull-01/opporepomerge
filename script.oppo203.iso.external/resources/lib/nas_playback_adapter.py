@@ -7,16 +7,22 @@ existing OPPO HTTP API surface.  The adapter is intentionally narrow: it does
 not change the canonical OPPO command map, does not alter the wizard, and keeps
 all hardware-facing calls injectable for tests and future model-specific work.
 """
+
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any, Callable, Iterable
+from typing import Any, Callable
 
 try:  # package import when running under Kodi/tests as package
     from .path_mapper import PathMappingRule, explain_path_mapping, rules_from_settings
     from .settings_reader import nas_playback_capability
 except Exception:  # pragma: no cover - top-level fallback for legacy tests
-    from path_mapper import PathMappingRule, explain_path_mapping, rules_from_settings  # type: ignore
+    from path_mapper import (  # type: ignore
+        PathMappingRule,
+        explain_path_mapping,
+        rules_from_settings,
+    )
     from settings_reader import nas_playback_capability  # type: ignore
 
 
@@ -76,7 +82,9 @@ def _capability_from_settings(settings: Any) -> dict[str, Any]:
     )
 
 
-def adapter_for_capability(capability: dict[str, Any], *, trigger_mode: str = "http_api") -> NasPlaybackAdapter:
+def adapter_for_capability(
+    capability: dict[str, Any], *, trigger_mode: str = "http_api"
+) -> NasPlaybackAdapter:
     """Return the family adapter for a capability result."""
     family = str(capability.get("family") or "unknown_oppo_compatible")
     if family == "oppo20x_jailbroken":
@@ -105,7 +113,10 @@ def build_nas_playback_plan(
     trigger mode, warnings, and blockers.
     """
     capability = _capability_from_settings(settings)
-    trigger_mode = str(_get(settings, "nas_playback_trigger_mode", "http_api") or "http_api").strip() or "http_api"
+    trigger_mode = (
+        str(_get(settings, "nas_playback_trigger_mode", "http_api") or "http_api").strip()
+        or "http_api"
+    )
     adapter = adapter_for_capability(capability, trigger_mode=trigger_mode)
     candidate_rules = list(rules) if rules is not None else rules_from_settings(settings)
     mapping = explain_path_mapping(kodi_path, candidate_rules)
@@ -154,7 +165,11 @@ def _default_playback_client(settings: Any, player_path: str) -> Any:
     try:
         from .oppo_control import activate_http_api, play_media_http_api, signin_http_api
     except Exception:  # pragma: no cover - legacy top-level fallback
-        from oppo_control import activate_http_api, play_media_http_api, signin_http_api  # type: ignore
+        from oppo_control import (  # type: ignore
+            activate_http_api,
+            play_media_http_api,
+            signin_http_api,
+        )
     activate_http_api(settings)
     signin_http_api(settings)
     return play_media_http_api(settings, player_path)
@@ -178,7 +193,9 @@ def trigger_nas_playback(
     """
     plan = build_nas_playback_plan(settings, kodi_path, rules)
     result = dict(plan)
-    result.update({"success": False, "action": "planned", "wake_result": None, "playback_result": None})
+    result.update(
+        {"success": False, "action": "planned", "wake_result": None, "playback_result": None}
+    )
 
     if dry_run or plan["trigger_mode"] == "dry_run":
         result["success"] = bool(plan["ready"])
@@ -199,4 +216,3 @@ def trigger_nas_playback(
     result["success"] = True
     result["action"] = "triggered"
     return result
-

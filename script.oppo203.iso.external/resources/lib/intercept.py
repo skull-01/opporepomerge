@@ -33,46 +33,78 @@ from collections.abc import Iterable
 
 try:
     from .disc_classification import (
-        DISC_STYLE_EXTENSIONS_4K,
-        LOOSE_VIDEO_EXTENSIONS as EXCLUDED_LOOSE_VIDEO_EXTENSIONS,
-        UHD_DISC_TAGS,
+        DISC_STYLE_EXTENSIONS_4K,  # noqa: F401  # re-exported for sibling modules
+        UHD_DISC_TAGS,  # noqa: F401  # re-exported for sibling modules
+    )
+    from .disc_classification import (
+        LOOSE_VIDEO_EXTENSIONS as EXCLUDED_LOOSE_VIDEO_EXTENSIONS,  # noqa: F401
+    )
+    from .disc_classification import (
         extension as _disc_extension,
+    )
+    from .disc_classification import (
         has_uhd_disc_tag as _shared_path_has_uhd_disc_tag,
+    )
+    from .disc_classification import (
         is_4k_disc_style_source as _shared_is_4k_disc_style_source,
+    )
+    from .disc_classification import (
         is_bdmv_navigation_path as _shared_is_bdmv_navigation_path,
+    )
+    from .disc_classification import (
         is_loose_video_path as _shared_is_loose_video_path,
+    )
+    from .disc_classification import (
         should_intercept_4k_disc_source as _shared_should_intercept_4k_disc_source,
     )
 except ImportError:  # pragma: no cover - top-level test import compatibility
     from disc_classification import (  # type: ignore
-        DISC_STYLE_EXTENSIONS_4K,
-        LOOSE_VIDEO_EXTENSIONS as EXCLUDED_LOOSE_VIDEO_EXTENSIONS,
-        UHD_DISC_TAGS,
+        DISC_STYLE_EXTENSIONS_4K,  # noqa: F401  # re-exported for sibling modules
+        UHD_DISC_TAGS,  # noqa: F401  # re-exported for sibling modules
+    )
+    from disc_classification import (
+        LOOSE_VIDEO_EXTENSIONS as EXCLUDED_LOOSE_VIDEO_EXTENSIONS,  # noqa: F401
+    )
+    from disc_classification import (
         extension as _disc_extension,
+    )
+    from disc_classification import (
         has_uhd_disc_tag as _shared_path_has_uhd_disc_tag,
+    )
+    from disc_classification import (
         is_4k_disc_style_source as _shared_is_4k_disc_style_source,
+    )
+    from disc_classification import (
         is_bdmv_navigation_path as _shared_is_bdmv_navigation_path,
+    )
+    from disc_classification import (
         is_loose_video_path as _shared_is_loose_video_path,
+    )
+    from disc_classification import (
         should_intercept_4k_disc_source as _shared_should_intercept_4k_disc_source,
     )
 
 
-DISC_KIND_ISO        = "iso"
-DISC_KIND_BDMV       = "bdmv"
-DISC_KIND_VIDEO_TS   = "video_ts"
-DISC_KIND_M2TS       = "m2ts"
-DISC_KIND_MPLS       = "mpls"
-DISC_KIND_MKV_SIBLING= "mkv_sibling"
-DISC_KIND_OTHER      = "other"
+DISC_KIND_ISO = "iso"
+DISC_KIND_BDMV = "bdmv"
+DISC_KIND_VIDEO_TS = "video_ts"
+DISC_KIND_M2TS = "m2ts"
+DISC_KIND_MPLS = "mpls"
+DISC_KIND_MKV_SIBLING = "mkv_sibling"
+DISC_KIND_OTHER = "other"
 
 
-class _RealFS(object):
-    def exists(self, p: object) -> bool: return os.path.exists(str(p))
-    def isdir(self, p: object) -> bool:  return os.path.isdir(str(p))
+class _RealFS:
+    def exists(self, p: object) -> bool:
+        return os.path.exists(str(p))
+
+    def isdir(self, p: object) -> bool:
+        return os.path.isdir(str(p))
 
 
 def _norm(p: object) -> str:
-    if p is None: return ""
+    if p is None:
+        return ""
     return str(p).replace("\\", "/")
 
 
@@ -174,6 +206,7 @@ def should_intercept_4k_disc_source(path: object) -> bool:
 # Whitelist / blacklist
 # ---------------------------------------------------------------------
 
+
 def normalise_pattern(pattern: object) -> str:
     """Lowercase + forward-slashes; strip surrounding whitespace."""
     if not pattern:
@@ -200,7 +233,13 @@ def pattern_matches(path: object, pattern: object) -> bool:
     return _re.match(regex, p) is not None
 
 
-def should_intercept(path: object, *, whitelist: Iterable[str] | None = None, blacklist: Iterable[str] | None = None, fs: object | None = None) -> bool:
+def should_intercept(
+    path: object,
+    *,
+    whitelist: Iterable[str] | None = None,
+    blacklist: Iterable[str] | None = None,
+    fs: object | None = None,
+) -> bool:
     """Return True iff the service should redirect playback for `path`.
 
     Rules (in order):
@@ -213,7 +252,7 @@ def should_intercept(path: object, *, whitelist: Iterable[str] | None = None, bl
     if not is_disc_image(path, fs=fs):
         return False
     p = path
-    for pat in (blacklist or []):
+    for pat in blacklist or []:
         if pattern_matches(p, pat):
             return False
     wl = [pat for pat in (whitelist or []) if pat and pat.strip()]

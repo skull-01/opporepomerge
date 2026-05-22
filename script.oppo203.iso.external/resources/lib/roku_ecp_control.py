@@ -5,6 +5,7 @@ allowlisted local Roku ECP keypress requests and does not perform discovery,
 polling, or credential handling.  Failures raise ``RokuEcpError`` so the
 existing TV-switching wrapper can keep playback non-fatal.
 """
+
 from __future__ import annotations
 
 import urllib.error
@@ -48,7 +49,7 @@ def _parse_port(value: object) -> int:
     try:
         port = int(str(value).strip() or DEFAULT_ROKU_ECP_PORT)
     except (TypeError, ValueError):
-        raise RokuEcpError(f"Invalid Roku ECP port: {value}")
+        raise RokuEcpError(f"Invalid Roku ECP port: {value}") from None
     if port < 1 or port > 65535:
         raise RokuEcpError(f"Invalid Roku ECP port: {port}")
     return port

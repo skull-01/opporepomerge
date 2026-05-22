@@ -16,7 +16,19 @@ HTTP_IDLE_STATUSES = {"STOP", "STOPPED", "IDLE", "END", "ENDED", "NO_MEDIA", "NO
 # v0.9.0: Explicit play-status set for documentation and quick membership tests.
 # e_play_status 0 = playing, 56 = also playing (e.g. loading/buffering during trick-play).
 # Neither "0" nor "56" is in HTTP_IDLE_STATUSES -- they must NOT end the hold.
-HTTP_PLAY_STATUSES = {"0", "PLAY", "PLAYING", "PAUSE", "PAUSED", "FFWD", "FREV", "SFWD", "SREV", "LOADING", "56"}
+HTTP_PLAY_STATUSES = {
+    "0",
+    "PLAY",
+    "PLAYING",
+    "PAUSE",
+    "PAUSED",
+    "FFWD",
+    "FREV",
+    "SFWD",
+    "SREV",
+    "LOADING",
+    "56",
+}
 
 # v0.8.0: TCP QPL responses that indicate idle/stopped playback (safe to end session).
 # PLAY, PAUSE, FFWD, FREV, SFWD, SREV, and LOADING must NOT be in this set.
@@ -167,6 +179,7 @@ def maybe_setup_verbose_mode(settings, host, port):
 # UDP discovery (v0.8.0)
 # ---------------------------------------------------------------------------
 
+
 def discover_oppo(timeout=5.0, port=OPPO_DISCOVERY_PORT, mcast_addr=OPPO_DISCOVERY_MCAST_ADDR):
     """Attempt to discover Oppo devices via multicast on 239.255.255.251:7624.
 
@@ -221,6 +234,7 @@ def discover_oppo(timeout=5.0, port=OPPO_DISCOVERY_PORT, mcast_addr=OPPO_DISCOVE
 # Preflight helpers (v0.8.0)
 # ---------------------------------------------------------------------------
 
+
 def run_preflight(settings):
     """Run optional preflight queries before starting playback.
 
@@ -243,7 +257,7 @@ def run_preflight(settings):
 
     try:
         power_status = query_power_status(host, port, timeout=timeout)
-        already_on = (power_status == "ON")
+        already_on = power_status == "ON"
     except (OppoError, OSError):
         pass
 
@@ -262,6 +276,7 @@ def run_preflight(settings):
 # ---------------------------------------------------------------------------
 # Existing helpers (unchanged from v0.7.0 except _http_play_json_payload)
 # ---------------------------------------------------------------------------
+
 
 def wake_on_lan(mac_address, broadcast="255.255.255.255", port=9):
     mac = mac_address.replace(":", "").replace("-", "").replace(".", "").strip()
@@ -296,7 +311,9 @@ def _http_get(settings, endpoint, query=None, timeout=None):
     url = _http_base(settings) + endpoint
     if query is not None:
         url += "?" + query
-    request_timeout = float(timeout if timeout is not None else settings.get("oppo_socket_timeout", "3.0"))
+    request_timeout = float(
+        timeout if timeout is not None else settings.get("oppo_socket_timeout", "3.0")
+    )
     try:
         with urllib.request.urlopen(url, timeout=request_timeout) as response:
             body = response.read().decode("utf-8", errors="replace")
@@ -324,7 +341,11 @@ def signin_http_api(settings):
 
 
 def _translate_media_path(settings, media_file):
-    translated = _disc_folder_root(media_file) if settings.get_bool("oppo_http_disc_folder_root", True) else media_file
+    translated = (
+        _disc_folder_root(media_file)
+        if settings.get_bool("oppo_http_disc_folder_root", True)
+        else media_file
+    )
     source = settings.get("oppo_http_path_from", "")
     target = settings.get("oppo_http_path_to", "")
     if source:
@@ -365,7 +386,11 @@ def _build_json_payload(settings, media_file):
       playMode        - always 0
     """
     # Build the translated path without URL encoding (the whole payload gets encoded)
-    translated = _disc_folder_root(media_file) if settings.get_bool("oppo_http_disc_folder_root", True) else media_file
+    translated = (
+        _disc_folder_root(media_file)
+        if settings.get_bool("oppo_http_disc_folder_root", True)
+        else media_file
+    )
     source = settings.get("oppo_http_path_from", "")
     target = settings.get("oppo_http_path_to", "")
     if source:
@@ -392,7 +417,9 @@ def play_media_http_api(settings, media_file):
         payload_dict = _build_json_payload(settings, media_file)
         payload_json = json.dumps(payload_dict, ensure_ascii=False)
         encoded_payload = urllib.parse.quote(payload_json, safe="")
-        return _http_get(settings, "/playnormalfile", query="payload=" + encoded_payload, timeout=10)
+        return _http_get(
+            settings, "/playnormalfile", query="payload=" + encoded_payload, timeout=10
+        )
 
     # Default: raw_path (original behavior)
     path_query = _translate_media_path(settings, media_file)
@@ -445,6 +472,7 @@ def http_status_is_idle(status):
 # ---------------------------------------------------------------------------
 # v0.9.0: HTTP info helpers
 # ---------------------------------------------------------------------------
+
 
 def http_info_is_definitive_stop(info):
     """Return True when the Oppo HTTP response signals an official, clean stop.
@@ -524,7 +552,6 @@ def _filter_commands_for_mode(settings, key, commands, preflight_result=None):
     return filtered
 
 
-
 def _resolve_hardware_wake_command(settings, command):
     """Apply v2 MVP send-time wake rewrite to configured start commands."""
     if not isinstance(command, str):
@@ -533,6 +560,7 @@ def _resolve_hardware_wake_command(settings, command):
         return command
     try:
         from .settings_reader import hardware_profile
+
         profile = hardware_profile(settings.get("oppo_hardware_model", "udp_203"))
         wake = profile.get("wake_command")
         is_clone = bool(profile.get("is_clone"))
@@ -540,6 +568,7 @@ def _resolve_hardware_wake_command(settings, command):
         wake = None
         is_clone = False
     return wake if is_clone and isinstance(wake, str) and wake else command
+
 
 def run_configured_commands(settings, key, preflight_result=None):
     host = settings["oppo_ip"]
@@ -578,6 +607,7 @@ def run_start(settings, media_file, preflight_result=None):
 # ---------------------------------------------------------------------------
 # v0.9.0: Audio/subtitle track HTTP helpers
 # ---------------------------------------------------------------------------
+
 
 def get_audio_tracks(settings):
     """Return list of audio track dicts from Oppo HTTP /getaudiomenulist.
@@ -645,6 +675,7 @@ def _normalise_track(t):
 # v0.9.0: Seek / setplaytime helper
 # ---------------------------------------------------------------------------
 
+
 def set_play_time(settings, h, m, s):
     """Seek to the given time position via Oppo HTTP /setplaytime.
 
@@ -659,6 +690,7 @@ def set_play_time(settings, h, m, s):
 # ---------------------------------------------------------------------------
 # v0.9.0: Experimental / undocumented helpers (opt-in only)
 # ---------------------------------------------------------------------------
+
 
 def get_file_list_raw(settings, path="/"):
     """Call the undocumented /getfilelist endpoint and return the raw response body.
@@ -734,11 +766,13 @@ def parse_undocumented_file_list(raw, base_path=None):
             continue
         fields = chunk.split(b"\x00")
         decoded_fields = [f.decode("utf-8", errors="replace").strip() for f in fields if f]
-        entries.append(_normalise_filelist_entry(
-            decoded_fields,
-            base_path=base_path,
-            raw_entry=chunk.decode("utf-8", errors="replace"),
-        ))
+        entries.append(
+            _normalise_filelist_entry(
+                decoded_fields,
+                base_path=base_path,
+                raw_entry=chunk.decode("utf-8", errors="replace"),
+            )
+        )
     return [e for e in entries if e["name"]]
 
 
@@ -749,11 +783,19 @@ def _normalise_filelist_entry(entry, base_path=None, raw_entry=None):
 
     if isinstance(entry, dict):
         raw_fields = [f"{k}={v}" for k, v in entry.items()]
-        name = _first_non_empty(entry, "name", "fileName", "filename", "file_name", "title", "label")
+        name = _first_non_empty(
+            entry, "name", "fileName", "filename", "file_name", "title", "label"
+        )
         path = _first_non_empty(entry, "path", "filePath", "filepath", "file_path", "url", "uri")
-        type_hint = _first_non_empty(entry, "type", "fileType", "file_type", "entryType", "entry_type", "kind")
-        size = _first_int(entry, "size", "fileSize", "file_size", "length", "bytes", "sizeBytes", "size_bytes")
-        explicit_is_dir = _first_bool(entry, "isDir", "is_dir", "isFolder", "is_folder", "directory", "folder")
+        type_hint = _first_non_empty(
+            entry, "type", "fileType", "file_type", "entryType", "entry_type", "kind"
+        )
+        size = _first_int(
+            entry, "size", "fileSize", "file_size", "length", "bytes", "sizeBytes", "size_bytes"
+        )
+        explicit_is_dir = _first_bool(
+            entry, "isDir", "is_dir", "isFolder", "is_folder", "directory", "folder"
+        )
     elif isinstance(entry, (list, tuple)):
         raw_fields = [str(x) for x in entry if str(x).strip()]
         name = _guess_name_from_fields(raw_fields)
@@ -776,7 +818,13 @@ def _normalise_filelist_entry(entry, base_path=None, raw_entry=None):
         path = _join_base_path(base_path, name) if base_path and name else ""
 
     extension = _extension_for(name or path)
-    entry_type = _infer_entry_type(name=name, path=path, extension=extension, type_hint=type_hint, explicit_is_dir=explicit_is_dir)
+    entry_type = _infer_entry_type(
+        name=name,
+        path=path,
+        extension=extension,
+        type_hint=type_hint,
+        explicit_is_dir=explicit_is_dir,
+    )
     disc_type = _infer_disc_type(name=name, path=path, extension=extension, raw_fields=raw_fields)
 
     return {
@@ -839,7 +887,12 @@ def _guess_name_from_fields(fields):
         text_field = str(field).strip()
         if not text_field:
             continue
-        if "=" in text_field and text_field.split("=", 1)[0].lower() in ("size", "type", "flag", "index"):
+        if "=" in text_field and text_field.split("=", 1)[0].lower() in (
+            "size",
+            "type",
+            "flag",
+            "index",
+        ):
             continue
         return text_field.rstrip("/\\").split("/")[-1].split("\\")[-1] or text_field
     return ""
@@ -892,7 +945,10 @@ def _infer_entry_type(name="", path="", extension="", type_hint="", explicit_is_
         return "file"
 
     combined = " ".join(str(x or "") for x in (name, path, type_hint)).lower()
-    if any(token in combined for token in ("directory", "folder", "<dir>", " dir ", "isdir=true", "isfolder=true")):
+    if any(
+        token in combined
+        for token in ("directory", "folder", "<dir>", " dir ", "isdir=true", "isfolder=true")
+    ):
         return "directory"
     if str(path).endswith(("/", "\\")) or str(name).endswith(("/", "\\")):
         return "directory"
@@ -904,7 +960,9 @@ def _infer_entry_type(name="", path="", extension="", type_hint="", explicit_is_
 
 
 def _infer_disc_type(name="", path="", extension="", raw_fields=None):
-    combined = " ".join([str(name or ""), str(path or "")] + [str(f) for f in (raw_fields or [])]).lower()
+    combined = " ".join(
+        [str(name or ""), str(path or "")] + [str(f) for f in (raw_fields or [])]
+    ).lower()
     ext = (extension or "").lower()
     if "uhbd" in combined or "uhd" in combined or "4k" in combined:
         return "uhd_bluray"

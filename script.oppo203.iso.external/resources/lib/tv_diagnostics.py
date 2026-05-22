@@ -6,6 +6,7 @@ Roku devices, ADB, Sony Bravia APIs, SmartThings, or shell commands.  Live test
 actions are exposed as explicit helpers and return sanitized, non-fatal results
 so playback/routing behavior remains untouched.
 """
+
 from __future__ import annotations
 
 import json
@@ -14,25 +15,45 @@ import time as _time
 from typing import Any, Callable
 
 try:
-    from .tv_backends import backend_target_setting, get_backend, is_supported_backend, normalize_backend_id
     from . import tv_control
+    from .tv_backends import (
+        backend_target_setting,
+        get_backend,
+        is_supported_backend,
+        normalize_backend_id,
+    )
 except ImportError:  # top-level/audit/test compatibility
-    from tv_backends import backend_target_setting, get_backend, is_supported_backend, normalize_backend_id  # type: ignore
     import tv_control  # type: ignore
+    from tv_backends import (  # type: ignore
+        backend_target_setting,
+        get_backend,
+        is_supported_backend,
+        normalize_backend_id,
+    )
 
 try:
-    from .smartthings_control import TOKEN_REDACTION, redact_secret_in_text, redact_token, validation_metadata as smartthings_validation_metadata
+    from .smartthings_control import TOKEN_REDACTION, redact_secret_in_text, redact_token
+    from .smartthings_control import validation_metadata as smartthings_validation_metadata
 except ImportError:  # top-level/audit/test compatibility
     try:
-        from smartthings_control import TOKEN_REDACTION, redact_secret_in_text, redact_token, validation_metadata as smartthings_validation_metadata  # type: ignore
+        from smartthings_control import (  # type: ignore
+            TOKEN_REDACTION,
+            redact_secret_in_text,
+            redact_token,
+        )
+        from smartthings_control import validation_metadata as smartthings_validation_metadata
     except Exception:  # pragma: no cover - defensive fallback for unusual imports
         TOKEN_REDACTION = "<redacted>"
+
         def redact_token(value: object, visible_prefix: int = 4, visible_suffix: int = 2) -> str:  # type: ignore
             return TOKEN_REDACTION if value else ""
+
         def redact_secret_in_text(text: object, token: object = "") -> str:  # type: ignore
             return "" if text is None else str(text).replace(str(token), TOKEN_REDACTION)
+
         def smartthings_validation_metadata(settings: dict[str, object]) -> dict[str, object]:  # type: ignore
             return {"warnings": (), "hardware_validation_claimed": False}
+
 
 SECRET_KEY_FRAGMENTS = ("token", "psk", "password", "credential", "secret")
 SENSITIVE_OUTPUT_KEYS = ("stdout", "stderr", "output", "command_output", "raw_output")
@@ -49,8 +70,8 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return {}
     if isinstance(settings, dict):
         return dict(settings)
-    if hasattr(settings, "data") and isinstance(getattr(settings, "data"), dict):
-        return dict(getattr(settings, "data"))
+    if hasattr(settings, "data") and isinstance(settings.data, dict):
+        return dict(settings.data)
     if hasattr(settings, "items"):
         try:
             return dict(settings.items())  # type: ignore[attr-defined]
@@ -101,7 +122,11 @@ def sanitize_payload(payload: Any, settings: dict[str, object] | object | None =
         for key, value in payload.items():
             if _is_secret_key(key):
                 value_text = "" if value is None else str(value)
-                sanitized[str(key)] = value_text if "..." in value_text or value_text == TOKEN_REDACTION else redact_token(value)
+                sanitized[str(key)] = (
+                    value_text
+                    if "..." in value_text or value_text == TOKEN_REDACTION
+                    else redact_token(value)
+                )
             elif _is_sensitive_output_key(key):
                 sanitized[str(key)] = TOKEN_REDACTION if value not in (None, "") else ""
             else:
@@ -125,7 +150,10 @@ def sanitized_settings_summary(settings: dict[str, object] | object | None) -> d
     }
     for key in sorted(data):
         key_text = str(key).lower()
-        if key == "tv_backend" or not any(token in key_text for token in ("smartthings", "sony", "roku", "command", "adb", "input", "tv_ip")):
+        if key == "tv_backend" or not any(
+            token in key_text
+            for token in ("smartthings", "sony", "roku", "command", "adb", "input", "tv_ip")
+        ):
             continue
         if _is_secret_key(key):
             summary[key] = redact_token(data.get(key))
@@ -171,7 +199,9 @@ def validate_tv_settings(settings: dict[str, object] | object | None) -> dict[st
     if not backend_supported:
         warnings.append("tv_backend_unsupported")
 
-    fields = {target: _field_status(data, key) for target, key in target_setting_keys(data).items() if key}
+    fields = {
+        target: _field_status(data, key) for target, key in target_setting_keys(data).items() if key
+    }
     for target, status in fields.items():
         if not status["configured"]:
             missing.append(str(status["setting"]))
@@ -190,21 +220,26 @@ def validate_tv_settings(settings: dict[str, object] | object | None) -> dict[st
         metadata = smartthings_validation_metadata(data)
         warnings.extend(str(item) for item in metadata.get("warnings", ()))
 
-    return sanitize_payload({
-        "backend": backend,
-        "backend_supported": backend_supported,
-        "backend_kind": backend_meta.get("kind", ""),
-        "target_fields": fields,
-        "missing": tuple(dict.fromkeys(missing)),
-        "warnings": tuple(dict.fromkeys(warnings)),
-        "ok": backend_supported and not missing and not warnings,
-        "network_called": False,
-        "dry_run_only": True,
-        "hardware_validation_claimed": False,
-    }, data)
+    return sanitize_payload(
+        {
+            "backend": backend,
+            "backend_supported": backend_supported,
+            "backend_kind": backend_meta.get("kind", ""),
+            "target_fields": fields,
+            "missing": tuple(dict.fromkeys(missing)),
+            "warnings": tuple(dict.fromkeys(warnings)),
+            "ok": backend_supported and not missing and not warnings,
+            "network_called": False,
+            "dry_run_only": True,
+            "hardware_validation_claimed": False,
+        },
+        data,
+    )
 
 
-def dry_run_selected_backend(settings: dict[str, object] | object | None, target: str = "oppo") -> dict[str, object]:
+def dry_run_selected_backend(
+    settings: dict[str, object] | object | None, target: str = "oppo"
+) -> dict[str, object]:
     """Describe the selected backend action without contacting hardware."""
     data = _settings_dict(settings)
     backend = selected_backend_id(data)
@@ -212,25 +247,32 @@ def dry_run_selected_backend(settings: dict[str, object] | object | None, target
     validation = validate_tv_settings(data)
     setting_key = target_setting_keys(data).get(target, "")
     configured = bool(setting_key and str(data.get(setting_key, "")).strip())
-    return sanitize_payload({
-        "backend": backend,
-        "target": target,
-        "target_setting": setting_key,
-        "target_configured": configured,
-        "would_call_backend": bool(validation.get("backend_supported")) and configured,
-        "network_called": False,
-        "dry_run_only": True,
-        "validation": validation,
-        "hardware_validation_claimed": False,
-    }, data)
+    return sanitize_payload(
+        {
+            "backend": backend,
+            "target": target,
+            "target_setting": setting_key,
+            "target_configured": configured,
+            "would_call_backend": bool(validation.get("backend_supported")) and configured,
+            "network_called": False,
+            "dry_run_only": True,
+            "validation": validation,
+            "hardware_validation_claimed": False,
+        },
+        data,
+    )
 
 
-def _run_switch_action(settings: dict[str, object] | object | None, target: str, switcher: Switcher | None = None) -> dict[str, object]:
+def _run_switch_action(
+    settings: dict[str, object] | object | None, target: str, switcher: Switcher | None = None
+) -> dict[str, object]:
     """Run an explicit TV switch test action and sanitize the result."""
     data = _settings_dict(settings)
     backend = selected_backend_id(data)
     action = "switch_to_kodi" if target == "kodi" else "switch_to_oppo"
-    selected_switcher = switcher or (tv_control.switch_to_kodi if target == "kodi" else tv_control.switch_to_oppo)
+    selected_switcher = switcher or (
+        tv_control.switch_to_kodi if target == "kodi" else tv_control.switch_to_oppo
+    )
     result: dict[str, object] = {
         "action": action,
         "backend": backend,
@@ -247,12 +289,16 @@ def _run_switch_action(settings: dict[str, object] | object | None, target: str,
     return sanitize_payload(result, data)
 
 
-def test_switch_to_oppo(settings: dict[str, object] | object | None, switcher: Switcher | None = None) -> dict[str, object]:
+def test_switch_to_oppo(
+    settings: dict[str, object] | object | None, switcher: Switcher | None = None
+) -> dict[str, object]:
     """Explicitly test switching to the OPPO input; failures are non-fatal."""
     return _run_switch_action(settings, "oppo", switcher=switcher)
 
 
-def test_switch_to_kodi(settings: dict[str, object] | object | None, switcher: Switcher | None = None) -> dict[str, object]:
+def test_switch_to_kodi(
+    settings: dict[str, object] | object | None, switcher: Switcher | None = None
+) -> dict[str, object]:
     """Explicitly test switching back to the Kodi input; failures are non-fatal."""
     return _run_switch_action(settings, "kodi", switcher=switcher)
 
@@ -260,18 +306,21 @@ def test_switch_to_kodi(settings: dict[str, object] | object | None, switcher: S
 def build_diagnostic_report(settings: dict[str, object] | object | None) -> dict[str, object]:
     """Build a sanitized TV switching diagnostic report without network IO."""
     data = _settings_dict(settings)
-    return sanitize_payload({
-        "title": "OPPO203 TV Switching Diagnostic Report",
-        "backend": selected_backend_id(data),
-        "settings": sanitized_settings_summary(data),
-        "validation": validate_tv_settings(data),
-        "dry_run": {
-            "oppo": dry_run_selected_backend(data, "oppo"),
-            "kodi": dry_run_selected_backend(data, "kodi"),
+    return sanitize_payload(
+        {
+            "title": "OPPO203 TV Switching Diagnostic Report",
+            "backend": selected_backend_id(data),
+            "settings": sanitized_settings_summary(data),
+            "validation": validate_tv_settings(data),
+            "dry_run": {
+                "oppo": dry_run_selected_backend(data, "oppo"),
+                "kodi": dry_run_selected_backend(data, "kodi"),
+            },
+            "network_called": False,
+            "hardware_validation_claimed": False,
         },
-        "network_called": False,
-        "hardware_validation_claimed": False,
-    }, data)
+        data,
+    )
 
 
 def format_report(report: dict[str, object]) -> str:
@@ -290,7 +339,13 @@ def default_report_path(root_dir: str, now: float | Callable[[], float] | None =
     return os.path.join(root_dir, f"tv-diagnostics-{_ts(now)}.json")
 
 
-def save_report(report: dict[str, object], root_dir: str, *, now: float | Callable[[], float] | None = None, writer: Writer | None = None) -> str:
+def save_report(
+    report: dict[str, object],
+    root_dir: str,
+    *,
+    now: float | Callable[[], float] | None = None,
+    writer: Writer | None = None,
+) -> str:
     """Save a sanitized TV switching diagnostic report and return the path."""
     path = default_report_path(root_dir, now=now)
     text = format_report(report)
@@ -303,6 +358,12 @@ def save_report(report: dict[str, object], root_dir: str, *, now: float | Callab
     return path
 
 
-def export_tv_diagnostic_report(settings: dict[str, object] | object | None, root_dir: str, *, now: float | Callable[[], float] | None = None, writer: Writer | None = None) -> str:
+def export_tv_diagnostic_report(
+    settings: dict[str, object] | object | None,
+    root_dir: str,
+    *,
+    now: float | Callable[[], float] | None = None,
+    writer: Writer | None = None,
+) -> str:
     """Build and save a sanitized TV diagnostic report."""
     return save_report(build_diagnostic_report(settings), root_dir, now=now, writer=writer)

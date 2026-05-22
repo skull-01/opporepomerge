@@ -4,6 +4,7 @@ Kodi reads the runtime version from addon.xml, so this module is paired with
 ``tools/sync_version.py`` and release-audit checks that keep the XML metadata,
 expected audit version, and Python version source aligned.
 """
+
 from __future__ import annotations
 
 ADDON_ID = "script.oppo203.iso.external"

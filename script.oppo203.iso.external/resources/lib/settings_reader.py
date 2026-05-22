@@ -125,20 +125,51 @@ DEFAULTS = {
 
 ENUM_VALUES = {
     "oppo_start_mode": ["tcp_commands", "http_api", "tcp_then_http"],
-    "tv_backend": ["adb", "sony_bravia", "lg_command", "samsung_command", "custom_command", "roku_ecp", "smartthings"],
-    "avr_backend": ["disabled", "denon_marantz", "yamaha_yxc", "onkyo_eiscp", "pioneer_eiscp", "sony_audio_api"],
+    "tv_backend": [
+        "adb",
+        "sony_bravia",
+        "lg_command",
+        "samsung_command",
+        "custom_command",
+        "roku_ecp",
+        "smartthings",
+    ],
+    "avr_backend": [
+        "disabled",
+        "denon_marantz",
+        "yamaha_yxc",
+        "onkyo_eiscp",
+        "pioneer_eiscp",
+        "sony_audio_api",
+    ],
     "hold_mode": ["fixed_timeout", "manual_file", "http_poll", "tcp_qpl_poll", "verbose_push"],
     "oppo_verbose_mode": ["0", "2", "3"],
     "oppo_http_payload_mode": ["raw_path", "json_payload"],
     "playback_architecture": ["external_player", "service_interception"],
-    "oppo_hardware_model": ["udp_203", "udp_205", "chinoppo_m9201", "chinoppo_m9203", "chinoppo_m9205c", "chinoppo_m9702", "ipuk_uhd8592", "giec_bdp_g5300", "magnetar_udp800", "reavon_ubrx100", "reavon_ubrx110", "reavon_ubrx200", "chinoppo_m9200", "chinoppo_m9205", "cineultra_v203", "cineultra_v204", "magnetar_udp900"],
+    "oppo_hardware_model": [
+        "udp_203",
+        "udp_205",
+        "chinoppo_m9201",
+        "chinoppo_m9203",
+        "chinoppo_m9205c",
+        "chinoppo_m9702",
+        "ipuk_uhd8592",
+        "giec_bdp_g5300",
+        "magnetar_udp800",
+        "reavon_ubrx100",
+        "reavon_ubrx110",
+        "reavon_ubrx200",
+        "chinoppo_m9200",
+        "chinoppo_m9205",
+        "cineultra_v203",
+        "cineultra_v204",
+        "magnetar_udp900",
+    ],
 }
 
 
 # v2.9.1 Build 9: lightweight typed settings schema.
 SETTINGS_SCHEMA = build_default_schema(DEFAULTS, ENUM_VALUES)
-
-
 
 
 def _setting_text(value, default=""):
@@ -161,6 +192,7 @@ def _settings_items(data):
         return dict(data).items()
     except (TypeError, ValueError, AttributeError):
         return []
+
 
 class Settings:
     def __init__(self, data):
@@ -257,7 +289,13 @@ class Settings:
         agents detect obvious partial configuration without changing playback
         behavior or forcing a wizard rerun.
         """
-        required = ("python_path", "oppo_ip", "oppo_port", "oppo_start_mode", "playback_architecture")
+        required = (
+            "python_path",
+            "oppo_ip",
+            "oppo_port",
+            "oppo_start_mode",
+            "playback_architecture",
+        )
         missing = self.validate_required(required)
         warnings = []
         if self.get("_settings_read_error"):
@@ -378,6 +416,7 @@ def save_settings(addon_data_dir, settings):
     ET.ElementTree(root).write(settings_path, encoding="utf-8", xml_declaration=True)
     return True
 
+
 # ---------------------------------------------------------------------------
 # v2.0.0 build 1: MVP hardware compatibility layer
 # ---------------------------------------------------------------------------
@@ -447,32 +486,160 @@ def normalize_hardware_model(model):
 
 HARDWARE_COMPAT = {
     "UDP-203": {
-        "wake_command": "#PON", "protocol_compatible": True, "is_clone": False,
-        "is_reavon": False, "http_api_436": True,
+        "wake_command": "#PON",
+        "protocol_compatible": True,
+        "is_clone": False,
+        "is_reavon": False,
+        "http_api_436": True,
         "src_supported": {"#SRC 0", "#SRC 1", "#SRC 2", "#SRC 3", "#SRC 4"},
         "src_unsupported": {"#SRC 5", "#SRC 6"},
     },
     "UDP-205": {
-        "wake_command": "#PON", "protocol_compatible": True, "is_clone": False,
-        "is_reavon": False, "http_api_436": True,
+        "wake_command": "#PON",
+        "protocol_compatible": True,
+        "is_clone": False,
+        "is_reavon": False,
+        "http_api_436": True,
         "src_supported": {"#SRC 0", "#SRC 1", "#SRC 2", "#SRC 3", "#SRC 4", "#SRC 5", "#SRC 6"},
         "src_unsupported": set(),
     },
-    "M9200": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "M9201": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "M9203": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "M9205": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "M9205C": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "CineUltra-V203": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "CineUltra-V204": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "M9702": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 1", "#SRC 2", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 5", "#SRC 6"}},
-    "IPUK-UHD8592": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"}},
-    "GIEC-BDP-G5300": {"wake_command": "#EJT", "protocol_compatible": True, "is_clone": True, "is_reavon": False, "http_api_436": False, "src_supported": {"#SRC 0"}, "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 3", "#SRC 4", "#SRC 5", "#SRC 6"}},
-    "Magnetar-UDP800": {"wake_command": None, "protocol_compatible": False, "is_clone": False, "is_reavon": False, "is_successor": True, "http_api_436": False, "src_supported": set(), "src_unsupported": set()},
-    "Magnetar-UDP900": {"wake_command": None, "protocol_compatible": False, "is_clone": False, "is_reavon": False, "is_successor": True, "http_api_436": False, "src_supported": set(), "src_unsupported": set()},
-    "Reavon-UBR-X100": {"wake_command": None, "protocol_compatible": False, "is_clone": False, "is_reavon": True, "http_api_436": False, "src_supported": set(), "src_unsupported": set()},
-    "Reavon-UBR-X110": {"wake_command": None, "protocol_compatible": False, "is_clone": False, "is_reavon": True, "http_api_436": False, "src_supported": set(), "src_unsupported": set()},
-    "Reavon-UBR-X200": {"wake_command": None, "protocol_compatible": False, "is_clone": False, "is_reavon": True, "http_api_436": False, "src_supported": set(), "src_unsupported": set()},
+    "M9200": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "M9201": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "M9203": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "M9205": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "M9205C": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "CineUltra-V203": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "CineUltra-V204": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "M9702": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 1", "#SRC 2", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 5", "#SRC 6"},
+    },
+    "IPUK-UHD8592": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "GIEC-BDP-G5300": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 3", "#SRC 4", "#SRC 5", "#SRC 6"},
+    },
+    "Magnetar-UDP800": {
+        "wake_command": None,
+        "protocol_compatible": False,
+        "is_clone": False,
+        "is_reavon": False,
+        "is_successor": True,
+        "http_api_436": False,
+        "src_supported": set(),
+        "src_unsupported": set(),
+    },
+    "Magnetar-UDP900": {
+        "wake_command": None,
+        "protocol_compatible": False,
+        "is_clone": False,
+        "is_reavon": False,
+        "is_successor": True,
+        "http_api_436": False,
+        "src_supported": set(),
+        "src_unsupported": set(),
+    },
+    "Reavon-UBR-X100": {
+        "wake_command": None,
+        "protocol_compatible": False,
+        "is_clone": False,
+        "is_reavon": True,
+        "http_api_436": False,
+        "src_supported": set(),
+        "src_unsupported": set(),
+    },
+    "Reavon-UBR-X110": {
+        "wake_command": None,
+        "protocol_compatible": False,
+        "is_clone": False,
+        "is_reavon": True,
+        "http_api_436": False,
+        "src_supported": set(),
+        "src_unsupported": set(),
+    },
+    "Reavon-UBR-X200": {
+        "wake_command": None,
+        "protocol_compatible": False,
+        "is_clone": False,
+        "is_reavon": True,
+        "http_api_436": False,
+        "src_supported": set(),
+        "src_unsupported": set(),
+    },
 }
 
 
@@ -500,17 +667,29 @@ AUTOSCRIPT_VERBOSE_PUSH_WARNING = (
 
 OPPO20X_AUTOSCRIPT_MIN_FIRMWARE = "20X-56"
 OPPO20X_AUTOSCRIPT_RECOMMENDED_FIRMWARE = "20X-65-0131"
-OPPO20X_AUTOSCRIPT_UNSUPPORTED_NOTE = "20X-54-1127 and older/pre-56 firmware are not supported for AutoScript-based NAS playback."
+OPPO20X_AUTOSCRIPT_UNSUPPORTED_NOTE = (
+    "20X-54-1127 and older/pre-56 firmware are not supported for AutoScript-based NAS playback."
+)
 
 CHINOPPO_NAS_PLAYBACK_MODELS = {
-    "M9200", "M9201", "M9203", "M9205", "M9205C", "M9702",
-    "CineUltra-V203", "CineUltra-V204",
-    "IPUK-UHD8592", "GIEC-BDP-G5300",
+    "M9200",
+    "M9201",
+    "M9203",
+    "M9205",
+    "M9205C",
+    "M9702",
+    "CineUltra-V203",
+    "CineUltra-V204",
+    "IPUK-UHD8592",
+    "GIEC-BDP-G5300",
 }
 
 OPPO_LIKE_SUCCESSOR_WARNING_MODELS = {
-    "Reavon-UBR-X100", "Reavon-UBR-X110", "Reavon-UBR-X200",
-    "Magnetar-UDP800", "Magnetar-UDP900",
+    "Reavon-UBR-X100",
+    "Reavon-UBR-X110",
+    "Reavon-UBR-X200",
+    "Magnetar-UDP800",
+    "Magnetar-UDP900",
 }
 
 NAS_PLAYBACK_CAPABILITY = {
@@ -604,7 +783,9 @@ def nas_playback_capability(model, firmware="", jailbreak=False, confirmed=False
         blockers.append("reavon_warning_only_not_supported_for_oppo_chinoppo_nas_playback")
     elif profile.get("is_successor") or canonical in OPPO_LIKE_SUCCESSOR_WARNING_MODELS:
         family = "unsupported_oppo_like_successor"
-        blockers.append("oppo_like_successor_warning_only_not_supported_for_oppo_chinoppo_nas_playback")
+        blockers.append(
+            "oppo_like_successor_warning_only_not_supported_for_oppo_chinoppo_nas_playback"
+        )
     elif canonical in ("UDP-203", "UDP-205"):
         family = "oppo20x_jailbroken"
         requires_jailbreak = True
@@ -644,8 +825,11 @@ def hardware_profile(model):
     if canonical in HARDWARE_COMPAT:
         return HARDWARE_COMPAT[canonical]
     return {
-        "wake_command": "#PON", "protocol_compatible": True, "is_clone": False,
-        "is_reavon": False, "http_api_436": True,
+        "wake_command": "#PON",
+        "protocol_compatible": True,
+        "is_clone": False,
+        "is_reavon": False,
+        "http_api_436": True,
         "src_supported": {"#SRC 0", "#SRC 1", "#SRC 2", "#SRC 3", "#SRC 4"},
         "src_unsupported": {"#SRC 5", "#SRC 6"},
     }

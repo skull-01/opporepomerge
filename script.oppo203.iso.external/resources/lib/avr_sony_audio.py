@@ -5,6 +5,7 @@ Build 15A experimental acknowledgement gate. It remains disabled by default via
 the AVR framework, does not hook into playback sequencing, and never exports raw
 Sony PSKs, passwords, credentials, tokens, or secrets in helper results.
 """
+
 from __future__ import annotations
 
 import json
@@ -38,8 +39,8 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return {}
     if isinstance(settings, dict):
         return dict(settings)
-    if hasattr(settings, "data") and isinstance(getattr(settings, "data"), dict):
-        return dict(getattr(settings, "data"))
+    if hasattr(settings, "data") and isinstance(settings.data, dict):
+        return dict(settings.data)
     if hasattr(settings, "items"):
         try:
             return dict(settings.items())  # type: ignore[attr-defined]
@@ -118,7 +119,9 @@ def validation_metadata(settings: dict[str, object] | object | None) -> dict[str
     acknowledged = is_experimental_acknowledged(data)
     psk = str(data.get(SONY_AUDIO_PSK_SETTING, "") or "")
     host = str(data.get("avr_host", "") or "")
-    input_uri = str(data.get(SONY_AUDIO_PLAYER_INPUT_URI_SETTING, data.get("avr_player_input", "")) or "")
+    input_uri = str(
+        data.get(SONY_AUDIO_PLAYER_INPUT_URI_SETTING, data.get("avr_player_input", "")) or ""
+    )
     warnings: list[str] = []
     missing: list[str] = []
     if not acknowledged:
@@ -147,7 +150,9 @@ def validation_metadata(settings: dict[str, object] | object | None) -> dict[str
     }
 
 
-def build_refusal_result(action: str, settings: dict[str, object] | object | None, message: str = "") -> AvrResult:
+def build_refusal_result(
+    action: str, settings: dict[str, object] | object | None, message: str = ""
+) -> AvrResult:
     """Return a non-commanding refusal result for unacknowledged Sony AVR actions."""
     meta = validation_metadata(settings)
     warnings = list(meta.get("warnings", ()))
@@ -157,7 +162,8 @@ def build_refusal_result(action: str, settings: dict[str, object] | object | Non
         ok=False,
         action=action,
         backend=SONY_AUDIO_API_BACKEND_ID,
-        message=message or "Sony Audio Control API is experimental; no command was sent without explicit acknowledgement.",
+        message=message
+        or "Sony Audio Control API is experimental; no command was sent without explicit acknowledgement.",
         warnings=tuple(dict.fromkeys(str(item) for item in warnings)),
         nonfatal=True,
         hardware_validation_claimed=False,
@@ -179,13 +185,20 @@ def build_sony_audio_url(host: object, api_path: object = DEFAULT_SONY_AUDIO_API
     return f"http://{host_text}{path}"
 
 
-def build_sony_audio_payload(method: object, params: object | None = None, *, request_id: int = 1, version: str = "1.0") -> bytes:
+def build_sony_audio_payload(
+    method: object, params: object | None = None, *, request_id: int = 1, version: str = "1.0"
+) -> bytes:
     method_text = _clean_text(method)
     if not method_text or any(ch in method_text for ch in ("/", "\\", "\r", "\n")):
         raise ValueError("invalid_sony_audio_method")
     params_value: object = [] if params is None else params
     return json.dumps(
-        {"method": method_text, "params": params_value, "id": int(request_id), "version": str(version)},
+        {
+            "method": method_text,
+            "params": params_value,
+            "id": int(request_id),
+            "version": str(version),
+        },
         separators=(",", ":"),
         sort_keys=True,
     ).encode("utf-8")
@@ -208,11 +221,15 @@ def build_status_payload() -> bytes:
 
 def _default_post(url: str, payload: bytes, headers: dict[str, str], timeout: float) -> bytes:
     req = request.Request(url, data=payload, headers=headers, method="POST")
-    with request.urlopen(req, timeout=timeout) as response:  # nosec - explicit user-configured local API endpoint
+    with request.urlopen(
+        req, timeout=timeout
+    ) as response:  # nosec - explicit user-configured local API endpoint
         return response.read()
 
 
-def _parse_response(raw: bytes | str, settings: dict[str, object]) -> tuple[bool, str, tuple[str, ...]]:
+def _parse_response(
+    raw: bytes | str, settings: dict[str, object]
+) -> tuple[bool, str, tuple[str, ...]]:
     text = raw.decode("utf-8", errors="replace") if isinstance(raw, bytes) else str(raw)
     redacted = redact_secret_in_text(text, settings)
     try:
@@ -220,14 +237,22 @@ def _parse_response(raw: bytes | str, settings: dict[str, object]) -> tuple[bool
     except Exception:
         return False, "invalid_json", ("sony_audio_api_invalid_json_nonfatal",)
     if isinstance(parsed, dict) and "error" in parsed:
-        return False, redact_secret_in_text(parsed.get("error", "sony_audio_api_error"), settings), ("sony_audio_api_error_nonfatal",)
+        return (
+            False,
+            redact_secret_in_text(parsed.get("error", "sony_audio_api_error"), settings),
+            ("sony_audio_api_error_nonfatal",),
+        )
     if isinstance(parsed, dict) and "result" in parsed:
         return True, "sony_audio_api_command_sent", ()
     if isinstance(parsed, dict) and parsed.get("status") in {"ok", "OK", "success"}:
         return True, "sony_audio_api_command_sent", ()
     if isinstance(parsed, dict) and parsed == {}:
         return True, "sony_audio_api_command_sent", ()
-    return False, redacted[:120] or "sony_audio_api_unexpected_response", ("sony_audio_api_unexpected_response_nonfatal",)
+    return (
+        False,
+        redacted[:120] or "sony_audio_api_unexpected_response",
+        ("sony_audio_api_unexpected_response_nonfatal",),
+    )
 
 
 def send_sony_audio_request(
@@ -248,27 +273,36 @@ def send_sony_audio_request(
     meta = validation_metadata(data)
     if not meta.get("acknowledged", False):
         return build_refusal_result(action, data)
-    missing = [item for item in meta.get("missing", ()) if item not in {"sony_avr_player_input_uri"}]
+    missing = [
+        item for item in meta.get("missing", ()) if item not in {"sony_avr_player_input_uri"}
+    ]
     if missing:
         return AvrResult(
             ok=False,
             action=action,
             backend=SONY_AUDIO_API_BACKEND_ID,
             message="sony_audio_api_config_incomplete",
-            warnings=tuple(dict.fromkeys([*map(str, meta.get("warnings", ())), "avr_config_incomplete"])),
+            warnings=tuple(
+                dict.fromkeys([*map(str, meta.get("warnings", ())), "avr_config_incomplete"])
+            ),
             nonfatal=True,
             hardware_validation_claimed=False,
             command_sent=False,
         )
     try:
-        url = build_sony_audio_url(data.get("avr_host", ""), data.get(SONY_AUDIO_API_PATH_SETTING, DEFAULT_SONY_AUDIO_API_PATH))
+        url = build_sony_audio_url(
+            data.get("avr_host", ""),
+            data.get(SONY_AUDIO_API_PATH_SETTING, DEFAULT_SONY_AUDIO_API_PATH),
+        )
         payload = build_sony_audio_payload(method, params)
         psk = _clean_text(data.get(SONY_AUDIO_PSK_SETTING, ""))
         headers = {"Content-Type": "application/json; charset=UTF-8"}
         if psk:
             headers["X-Auth-PSK"] = psk
         sender = post or _default_post
-        raw = sender(url, payload, headers, _timeout(data.get("avr_timeout", DEFAULT_SONY_AUDIO_TIMEOUT)))
+        raw = sender(
+            url, payload, headers, _timeout(data.get("avr_timeout", DEFAULT_SONY_AUDIO_TIMEOUT))
+        )
         ok, message, warnings = _parse_response(raw, data)
         return AvrResult(
             ok=ok,
@@ -281,12 +315,36 @@ def send_sony_audio_request(
             command_sent=ok,
         )
     except error.HTTPError as exc:
-        warning = "sony_audio_api_auth_error_nonfatal" if exc.code in {401, 403} else "sony_audio_api_http_error_nonfatal"
-        return AvrResult(False, action, SONY_AUDIO_API_BACKEND_ID, warning, (warning,), True, False, False)
+        warning = (
+            "sony_audio_api_auth_error_nonfatal"
+            if exc.code in {401, 403}
+            else "sony_audio_api_http_error_nonfatal"
+        )
+        return AvrResult(
+            False, action, SONY_AUDIO_API_BACKEND_ID, warning, (warning,), True, False, False
+        )
     except (TimeoutError, OSError) as exc:
-        return AvrResult(False, action, SONY_AUDIO_API_BACKEND_ID, exc.__class__.__name__, ("avr_network_error_nonfatal",), True, False, False)
+        return AvrResult(
+            False,
+            action,
+            SONY_AUDIO_API_BACKEND_ID,
+            exc.__class__.__name__,
+            ("avr_network_error_nonfatal",),
+            True,
+            False,
+            False,
+        )
     except Exception as exc:
-        return AvrResult(False, action, SONY_AUDIO_API_BACKEND_ID, exc.__class__.__name__, ("avr_driver_error_nonfatal",), True, False, False)
+        return AvrResult(
+            False,
+            action,
+            SONY_AUDIO_API_BACKEND_ID,
+            exc.__class__.__name__,
+            ("avr_driver_error_nonfatal",),
+            True,
+            False,
+            False,
+        )
 
 
 class SonyAudioApiAvrController:
@@ -294,7 +352,9 @@ class SonyAudioApiAvrController:
 
     backend = SONY_AUDIO_API_BACKEND_ID
 
-    def __init__(self, settings: dict[str, object] | object | None = None, *, post: SonyPost | None = None):
+    def __init__(
+        self, settings: dict[str, object] | object | None = None, *, post: SonyPost | None = None
+    ):
         self.settings = _settings_dict(settings)
         self.post = post
 
@@ -305,9 +365,24 @@ class SonyAudioApiAvrController:
         return self.run("power_on", "setPowerStatus", [{"status": "active"}])
 
     def select_input(self, input_uri: object | None = None) -> AvrResult:
-        uri = _clean_text(input_uri if input_uri is not None else self.settings.get(SONY_AUDIO_PLAYER_INPUT_URI_SETTING, self.settings.get("avr_player_input", "")))
+        uri = _clean_text(
+            input_uri
+            if input_uri is not None
+            else self.settings.get(
+                SONY_AUDIO_PLAYER_INPUT_URI_SETTING, self.settings.get("avr_player_input", "")
+            )
+        )
         if not uri:
-            return AvrResult(False, "input_select", self.backend, "invalid_sony_audio_input_uri", ("avr_config_incomplete",), True, False, False)
+            return AvrResult(
+                False,
+                "input_select",
+                self.backend,
+                "invalid_sony_audio_input_uri",
+                ("avr_config_incomplete",),
+                True,
+                False,
+                False,
+            )
         return self.run("input_select", "setPlayContent", [{"uri": uri}])
 
     def query_power(self) -> AvrResult:
