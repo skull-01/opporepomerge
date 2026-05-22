@@ -92,13 +92,13 @@ def test_build4_settings_help_text_explains_player_classes():
 
 def test_build4_version_docs_and_audit_evidence_identity():
     version = _load("version_build4", "resources/lib/version.py")
-    assert version.BUILD_ID == "v2.9.12 Final"
-    assert version.BUILD_NUMBER == 21
+    assert version.BUILD_ID == "v2.9.13 Final"
+    assert version.BUILD_NUMBER == 22
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 4" in addon
     assert "Version 2.9.10 Build 3" in addon
     audit = _load("audit_release_build4", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.12")
+    results = audit.run_audit(ROOT, expected_version="2.9.13")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

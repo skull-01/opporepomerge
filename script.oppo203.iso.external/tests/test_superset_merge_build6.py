@@ -97,7 +97,7 @@ class TestActiveWizardWarningIntegration(unittest.TestCase):
 
 class TestBuild6ReleaseIdentity(unittest.TestCase):
     def test_addon_version_is_build6(self):
-        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.12")
+        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.13")
 
 
 if __name__ == "__main__":

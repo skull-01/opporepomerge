@@ -33,32 +33,32 @@ def _load_sync_version():
 
 def test_version_module_is_active_source_for_addon_identity():
     assert version.ADDON_ID == "script.oppo203.iso.external"
-    assert version.ADDON_VERSION == "2.9.12"
-    assert version.addon_version() == "2.9.12"
-    assert version.BUILD_ID == "v2.9.12 Final"
-    assert version.build_id() == "v2.9.12 Final"
+    assert version.ADDON_VERSION == "2.9.13"
+    assert version.addon_version() == "2.9.13"
+    assert version.BUILD_ID == "v2.9.13 Final"
+    assert version.build_id() == "v2.9.13 Final"
 
 
 def test_addon_xml_matches_version_source():
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
     addon_version = ET.parse(ROOT / "addon.xml").getroot().attrib["version"]
     assert addon_version == version.ADDON_VERSION
-    assert 'version="2.9.12"' in addon_text
+    assert 'version="2.9.13"' in addon_text
     assert "Version 2.9.1 Build 11" in addon_text
 
 
 def test_sync_version_check_reports_consistency():
     tool = _load_sync_version()
-    ok, detail = tool.check_version_consistency(ROOT, expected_version="2.9.12")
+    ok, detail = tool.check_version_consistency(ROOT, expected_version="2.9.13")
     assert ok is True
-    assert "addon.xml and version.py agree on 2.9.12" in detail
-    assert tool.version_source(ROOT) == "2.9.12"
-    assert tool.addon_xml_version(ROOT) == "2.9.12"
+    assert "addon.xml and version.py agree on 2.9.13" in detail
+    assert tool.version_source(ROOT) == "2.9.13"
+    assert tool.addon_xml_version(ROOT) == "2.9.13"
 
 
 def test_sync_version_cli_check_passes():
     result = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "sync_version.py"), "--root", str(ROOT), "--check", "--expected-version", "2.9.12"],
+        [sys.executable, str(ROOT / "tools" / "sync_version.py"), "--root", str(ROOT), "--check", "--expected-version", "2.9.13"],
         check=False,
         text=True,
         stdout=subprocess.PIPE,
@@ -70,7 +70,7 @@ def test_sync_version_cli_check_passes():
 
 def test_release_audit_checks_version_source_and_build5_evidence():
     audit = _load_audit()
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.12")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -104,6 +104,6 @@ def test_sync_version_write_only_changes_addon_attribute_in_copy(tmp_path):
     (sandbox / "resources" / "lib" / "version.py").write_text('ADDON_VERSION = "2.9.10"\n', encoding="utf-8")
 
     written = tool.write_addon_xml_version(sandbox)
-    assert written == "2.9.12"
-    assert ET.parse(sandbox / "addon.xml").getroot().attrib["version"] == "2.9.12"
+    assert written == "2.9.13"
+    assert ET.parse(sandbox / "addon.xml").getroot().attrib["version"] == "2.9.13"
     assert (sandbox / "addon.xml").read_text(encoding="utf-8").splitlines()[0].startswith('<?xml version="1.0"')
