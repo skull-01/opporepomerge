@@ -25,7 +25,7 @@ class TestV250FinalPackaging(unittest.TestCase):
 
     def test_addon_metadata_identifies_final_without_version_drift(self):
         root = ET.parse(ROOT / "addon.xml").getroot()
-        self.assertEqual(root.attrib["version"], "2.9.12")
+        self.assertEqual(root.attrib["version"], "2.9.13")
         xml_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
         self.assertIn("final", xml_text.lower())
         self.assertNotIn("Build 7: combined regression and packaging candidate", xml_text)

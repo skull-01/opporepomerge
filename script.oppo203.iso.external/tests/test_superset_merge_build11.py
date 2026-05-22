@@ -103,7 +103,7 @@ class TestActiveWizardCompatibilityFlags(unittest.TestCase):
 
 class TestBuild11ReleaseIdentity(unittest.TestCase):
     def test_addon_version_is_build11(self):
-        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.12")
+        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.13")
 
     def test_build11_evidence_files_exist(self):
         for rel in (

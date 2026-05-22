@@ -21,7 +21,7 @@ def _read(name: str) -> str:
 
 def test_v290_addon_metadata_declares_release_without_runtime_behavior_change():
     addon = _read("addon.xml")
-    assert 'version="2.9.12"' in addon
+    assert 'version="2.9.13"' in addon
     assert "Version 2.9 release" in addon
     assert "v2.5.3 Build 6" in addon
     assert "No playback" in addon
@@ -55,7 +55,7 @@ def test_v290_release_audit_requires_release_evidence():
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.12")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -89,5 +89,5 @@ def test_v290_runtime_zip_excludes_release_evidence(tmp_path):
         assert f"script.oppo203.iso.external/{suffix}" not in names
     with zipfile.ZipFile(out) as zf:
         addon_text = zf.read("script.oppo203.iso.external/addon.xml").decode("utf-8")
-    assert 'version="2.9.12"' in addon_text
+    assert 'version="2.9.13"' in addon_text
     assert "Version 2.9 release" in addon_text

@@ -151,7 +151,7 @@ def test_v291_evidence_and_runtime_package_policy(tmp_path):
         "PRE_HARDWARE_AUDIT_REPORT_v2.9.1_BUILD1.md",
     ):
         assert find_project_file(ROOT, name).exists(), name
-    assert 'version="2.9.12"' in _read("addon.xml")
+    assert 'version="2.9.13"' in _read("addon.xml")
     assert "Kodi startup auto-power" in _read("addon.xml")
     assert "runtime_behavior_changed: wizard_wording_only" in _read("BUILD_NOTES_v2.9.1_BUILD1.md")
 
@@ -170,7 +170,7 @@ def test_v291_evidence_and_runtime_package_policy(tmp_path):
         assert f"script.oppo203.iso.external/{suffix}" not in names
     with zipfile.ZipFile(out) as zf:
         addon_text = zf.read("script.oppo203.iso.external/addon.xml").decode("utf-8")
-    assert 'version="2.9.12"' in addon_text
+    assert 'version="2.9.13"' in addon_text
 
 
 def test_v291_release_audit_requires_build1_evidence():
@@ -178,7 +178,7 @@ def test_v291_release_audit_requires_build1_evidence():
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.12")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
