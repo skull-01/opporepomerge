@@ -12,7 +12,9 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 
 FORBIDDEN_COMMAND_TOKENS = ("#SIS", "#PGU", "#PGD")
@@ -104,8 +106,27 @@ def fail(name: str, detail: str) -> dict[str, str]:
 
 
 def audit_compile(root: Path) -> dict[str, str]:
-    passed = compileall.compile_dir(str(root), quiet=1, force=True)
-    return ok("python_compile", "compileall passed") if passed else fail("python_compile", "compileall reported at least one failure")
+    # Validate that all *project* sources byte-compile. Skip the local virtualenv
+    # and build/VCS dirs (not our code), and direct throwaway bytecode to a private
+    # temp dir so concurrent runs (e.g. pytest-xdist) do not race on shared
+    # __pycache__ files (Windows .pyc rename collisions, WinError 5).
+    skip_rx = re.compile(
+        r"[\\/](?:\.venv|venv|env|build|dist|output|\.git|\.pytest_cache|"
+        r"__pycache__|node_modules)(?:[\\/]|$)"
+    )
+    prev_prefix = sys.pycache_prefix
+    pyc_tmp = tempfile.mkdtemp(prefix="audit_pyc_")
+    sys.pycache_prefix = pyc_tmp
+    try:
+        passed = compileall.compile_dir(str(root), quiet=1, force=True, rx=skip_rx)
+    finally:
+        sys.pycache_prefix = prev_prefix
+        shutil.rmtree(pyc_tmp, ignore_errors=True)
+    return (
+        ok("python_compile", "compileall passed")
+        if passed
+        else fail("python_compile", "compileall reported at least one failure")
+    )
 
 
 def audit_xml(root: Path) -> list[dict[str, str]]:
