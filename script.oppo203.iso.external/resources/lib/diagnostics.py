@@ -21,6 +21,7 @@ Public API
 """
 
 import os
+import posixpath
 import re
 import time as _time
 
@@ -38,12 +39,15 @@ def redact(text):
 
 
 def _ts(now=None):
-    t = _time.localtime(now() if callable(now) else (now if now else _time.time()))
+    # UTC keeps exported support-report filenames deterministic across timezones.
+    t = _time.gmtime(now() if callable(now) else (now if now else _time.time()))
     return _time.strftime("%Y%m%d-%H%M%S", t)
 
 
 def default_path(root_dir, now=None):
-    return os.path.join(root_dir, "diagnostics-" + _ts(now) + ".txt")
+    # Forward-slash join keeps addon-data paths portable; os.path.join would emit
+    # "\" on Windows, which Kodi add-on paths do not use.
+    return posixpath.join(root_dir, "diagnostics-" + _ts(now) + ".txt")
 
 
 def _safe(call, default=None):

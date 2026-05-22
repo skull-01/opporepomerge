@@ -2,12 +2,24 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import zipfile
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
+
+# package_release.sh is POSIX shell tooling (bash/python3/sha256sum) run by CI on
+# Linux; skip it on platforms that cannot run it rather than failing.
+_POSIX_SHELL_TOOLING = os.name != "nt" and shutil.which("bash") is not None
+_requires_posix_shell = pytest.mark.skipif(
+    not _POSIX_SHELL_TOOLING,
+    reason="POSIX release scripts (bash/python3/sha256sum) are unavailable on this platform",
+)
 
 
 def _load_package_tool():
@@ -106,13 +118,16 @@ def test_created_runtime_zip_uses_allowlist_and_has_no_dev_artifacts(tmp_path):
         assert set(zf.namelist()) == names
 
 
+@_requires_posix_shell
 def test_package_release_script_defaults_to_active_build(tmp_path):
     out = tmp_path / "dist"
+    env = {k: v for k, v in os.environ.items() if k != "BUILD_SUFFIX"}
+    env.update({"OUT_DIR": str(out), "VERSION": "2.9.10"})
     result = subprocess.run(
         ["bash", str(ROOT / "scripts" / "package_release.sh")],
         check=False,
         cwd=str(ROOT),
-        env={"OUT_DIR": str(out), "VERSION": "2.9.10"},
+        env=env,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

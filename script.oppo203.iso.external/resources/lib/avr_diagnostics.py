@@ -413,7 +413,8 @@ def format_report(
 
 def _ts(now: float | Callable[[], float] | None = None) -> str:
     value = now() if callable(now) else (now if now is not None else _time.time())
-    return _time.strftime("%Y%m%d-%H%M%S", _time.localtime(value))
+    # UTC keeps exported diagnostic filenames deterministic across timezones.
+    return _time.strftime("%Y%m%d-%H%M%S", _time.gmtime(value))
 
 
 def default_report_path(root_dir: str, now: float | Callable[[], float] | None = None) -> str:
