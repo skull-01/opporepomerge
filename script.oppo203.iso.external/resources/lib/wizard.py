@@ -527,6 +527,43 @@ def _run_architecture_auto_test(addon, ip, port):
     return res
 
 
+def _maybe_generate_transfer_files(addon):
+    """Generate ready-to-transfer setup files at the end of the wizard.
+
+    Returns a short message (appended to the completion dialog) listing the
+    files written, or "" when generation is unavailable. playercorefactory.xml
+    is written only for external-player mode; the remote keymap is always
+    written. Any failure is non-fatal and simply yields no note so the wizard
+    still completes.
+    """
+    if xbmc is None:
+        return ""
+    try:
+        import installer
+    except Exception as exc:  # pragma: no cover - only when Kodi libs are absent
+        _wizard_log(f"transfer file generation skipped: {exc!r}")
+        return ""
+    try:
+        arch = _get(addon, "playback_architecture", "external_player") or "external_player"
+        is_external = arch != "service_interception"
+        paths = installer.generate_transfer_files(
+            include_playercorefactory=is_external,
+            include_keymap=True,
+            announce=False,
+        )
+    except Exception as exc:
+        _wizard_log(f"transfer file generation failed: {exc!r}")
+        return ""
+    if not paths:
+        return ""
+    lines = ["", "", "Setup files written (copy into your Kodi userdata folder):"]
+    if "playercorefactory" in paths:
+        lines.append("- " + str(paths["playercorefactory"]))
+    if "keymap" in paths:
+        lines.append("- " + str(paths["keymap"]))
+    return "\n".join(lines)
+
+
 def run_wizard():
     a = _addon()
     prior_completed = _compat_bool(_get(a, "wizard_completed", "false"))
@@ -669,7 +706,7 @@ def run_wizard():
         _mark_wizard_completed(a)
         _ok(
             "Wizard complete (" + ("Full" if is_full else "Basic") + ")",
-            _text("wizard_complete_body"),
+            _text("wizard_complete_body") + _maybe_generate_transfer_files(a),
         )
         return True
     except Exception:
