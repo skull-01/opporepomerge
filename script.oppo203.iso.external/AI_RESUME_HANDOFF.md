@@ -1,7 +1,7 @@
 # AI_RESUME_HANDOFF.md — session continuity for `script.oppo203.iso.external`
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync ≈ commit `0f56f17`** (origin/main) · **Tests on `main`: 975 passed, 3 skipped**
+**Last sync ≈ commit `d6e3470`** (origin/main) · **Tests on `main`: 975 passed, 3 skipped**
 **Latest release:** v2.9.13 · **Issue tracker:** GitHub **Pull Requests** (no GitHub Issues are used)
 
 > This is the session-continuity entry point. Read it first when starting or resuming.
@@ -56,21 +56,24 @@ volatile sections from git/PRs/tests.
 
 ## Work in progress (resume here first)
 
-- **Date:** 2026-05-23
-- **Status:** Clean stopping point on `main`. **Unshipped work staged on `wip/wizard-ux`.**
-- **In flight:** Branch **`wip/wizard-ux`** (pushed) holds the **v2.9.14 candidate** — five
-  on-device wizard fixes + the dev-iteration tooling, all committed and green
-  (981 passed, 3 skipped on that branch). It is **not yet version-bumped or released.**
-- **What's done:** wizard launch fix (`No module named 'wizard'`), PO header fix for all 12
-  locales, "Setup files saved" location dialog, opt-in auto-install into Kodi (merge +
-  backup), expanded player presets (M9205 V1 etc.), and `tools/dev_build.py`.
-- **What's left:** decide on-device UX is final, then **`/release` v2.9.14** (full version
-  bump + evidence + tag + styled notes). It DOES change runtime behavior (wizard now
-  launches + can install files), so the release notes' "Runtime behavior" section must say so.
+- **Date:** 2026-05-23 · **On:** `main` @ `d6e3470` · **Tests:** pass (975 passed, 3 skipped).
+- **Status:** Clean stopping point. The session-continuity system (this doc, `AGENTS.md`,
+  `CLAUDE.md`, `/resume` + `/done-for-the-day`) was set up and merged (PR #14). Nothing is
+  left only on this machine.
+- **In flight (next feature to ship):** branch **`wip/wizard-ux`** (pushed —
+  `origin/wip/wizard-ux`) is the **v2.9.14 candidate** — five on-device wizard fixes + the
+  dev-iteration tooling, all committed and green (981 passed, 3 skipped on that branch).
+  **Not yet version-bumped or released.**
+- **What's done there:** wizard launch fix (`No module named 'wizard'`), PO header fix for
+  all 12 locales, "Setup files saved" location dialog, opt-in auto-install into Kodi
+  (merge + backup), expanded player presets (M9205 V1 etc.), `tools/dev_build.py`.
+- **What's left:** confirm on-device UX is final, then **`/release` v2.9.14** (full bump +
+  evidence + tag + styled notes). It DOES change runtime behavior (wizard now launches +
+  can install files) — say so in the "Runtime behavior" section of the notes.
 - **Key files:** `resources/lib/wizard.py`, `resources/lib/installer.py`,
   `resources/lib/hardware_presets.py`, `resources/language/*/strings.po`,
   `tools/dev_build.py`.
-- **Related:** branch `wip/wizard-ux`; no PR opened yet. **Tests pass.**
+- **Related:** branch `wip/wizard-ux` (no PR opened yet).
 
 ---
 
@@ -253,6 +256,8 @@ $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
   `test_all.py` reads a frozen doc — do not change it.
 
 ## 12. Development journey (commit → what/why)
+- `d6e3470` Merge #14 — session-continuity system: root `AI_RESUME_HANDOFF.md`,
+  `AGENTS.md`/`CLAUDE.md` triggers, `/resume` + `/done-for-the-day` commands.
 - `0f56f17` Merge #13 — AI handoff guide on `main`; `/resume`; `/release` refreshes guide.
 - `a31e62b`/`dddb3d7` Add then relocate the AI resume guide (canonical on `main`).
 - `8f594e1` Add missing player presets (M9205 V1, M9200, CineUltra, IPUK, GIEC) — wizard
