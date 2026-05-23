@@ -51,12 +51,22 @@ def legacy_alias_notice() -> str:
     return "tools/make_pot.py is retained as a legacy compatibility alias; use tools/i18n_extract.py for new automation."
 
 
+# Vendored / generated / VCS / cache trees that never contain add-on
+# localization ids.  Skipping them keeps extraction fast and deterministic
+# regardless of a local virtualenv (.venv often holds 1000s of .py files) or
+# build output.
+_SKIP_DIRS = frozenset((
+    "__pycache__", ".git", "tests", "tools", "output",
+    ".venv", "venv", "env", ".tox", "build", "dist",
+    "node_modules", ".mypy_cache", ".pytest_cache", ".ruff_cache",
+))
+
+
 def _iter_python_files(root: str) -> Iterable[str]:
     for dirpath, dirnames, filenames in os.walk(root):
-        # Skip vendored / generated trees
-        dirnames[:] = [d for d in dirnames
-                       if d not in ("__pycache__", ".git", "tests",
-                                    "tools", "output")]
+        # Prune vendored / generated trees in place so os.walk does not
+        # descend into them.
+        dirnames[:] = [d for d in dirnames if d not in _SKIP_DIRS]
         for fn in filenames:
             if fn.endswith(".py"):
                 yield os.path.join(dirpath, fn)

@@ -1,7 +1,9 @@
 """v2.9.1 Build 16 - audit reporter refactor regression tests."""
 from __future__ import annotations
 
+import contextlib
 import importlib.util
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -57,7 +59,9 @@ def test_json_reporter_preserves_json_cli_schema():
     assert payload["results"] == [{"name": "alpha", "status": "ok", "detail": "passed"}]
 
 
-def test_audit_cli_text_and_json_outputs_still_work():
+def test_audit_cli_text_output_still_works():
+    # Real subprocess smoke kept for the CLI boundary: this verifies the actual
+    # `python tools/audit_release.py` entrypoint (argv parsing + text reporter).
     text = subprocess.run(
         [sys.executable, str(ROOT / "tools" / "audit_release.py"), "--root", str(ROOT), "--expected-version", "2.9.13"],
         check=False,
@@ -69,15 +73,16 @@ def test_audit_cli_text_and_json_outputs_still_work():
     assert "OK: python_compile - compileall passed" in text.stdout
     assert "SUMMARY: PASS" in text.stdout
 
-    json_result = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "audit_release.py"), "--root", str(ROOT), "--expected-version", "2.9.13", "--json"],
-        check=False,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    assert json_result.returncode == 0, json_result.stdout + json_result.stderr
-    payload = json.loads(json_result.stdout)
+
+def test_audit_cli_json_output_still_works():
+    # JSON path runs in-process via main() (no extra cold interpreter); the text
+    # test above already covers the real subprocess CLI entrypoint.
+    audit = _load_audit()
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = audit.main(["--root", str(ROOT), "--expected-version", "2.9.13", "--json"])
+    assert rc == 0
+    payload = json.loads(buf.getvalue())
     assert payload["ok"] is True
     assert any(item["name"] == "version_consistency" for item in payload["results"])
 
