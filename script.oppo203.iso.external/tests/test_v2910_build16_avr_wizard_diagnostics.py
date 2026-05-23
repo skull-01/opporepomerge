@@ -230,7 +230,19 @@ def test_build16_sanitizer_and_mapping_edge_paths_for_coverage(tmp_path):
     assert "supersecret" not in Path(path).read_text(encoding="utf-8")
 
 
-def test_build16_query_and_explicit_action_edge_paths_for_coverage():
+def test_build16_query_and_explicit_action_edge_paths_for_coverage(monkeypatch):
+    # The controller=None call below exercises the real path
+    # (controller_factory -> DenonMarantz send -> socket). A unit test must not
+    # perform real network I/O: previously it waited ~3s for a SYN timeout to a
+    # dead LAN host. Patch socket.create_connection to refuse instantly so the
+    # exact failure-handling path is still covered, deterministically and fast.
+    import socket as _socket
+
+    def _refuse_connection(*_args, **_kwargs):
+        raise ConnectionRefusedError("connection refused (test)")
+
+    monkeypatch.setattr(_socket, "create_connection", _refuse_connection)
+
     settings = {
         "avr_control_enabled": "true",
         "avr_backend": "denon_marantz",

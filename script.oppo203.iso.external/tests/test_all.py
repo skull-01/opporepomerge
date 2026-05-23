@@ -2390,6 +2390,24 @@ class TMakePot(unittest.TestCase):
         finally:
             import shutil; shutil.rmtree(d, ignore_errors=True)
 
+    def test_collect_ids_skips_vendored_and_build_dirs(self):
+        # Regression: the walk must not descend into a local virtualenv or
+        # build output. Before this guard, collect_ids walked .venv's 1000s of
+        # site-packages .py files, making i18n extraction (and its tests) slow.
+        import tempfile
+        d = tempfile.mkdtemp()
+        try:
+            for vendored in (".venv", "build", "node_modules", ".mypy_cache"):
+                os.makedirs(os.path.join(d, vendored, "pkg"))
+                with open(os.path.join(d, vendored, "pkg", "v.py"), "w") as f:
+                    f.write("L(32500)\n")   # vendored: must NOT be collected
+            with open(os.path.join(d, "default.py"), "w") as f:
+                f.write("L(31000)\n")       # SHOULD be collected
+            ids = self.mp.collect_ids(d)
+            self.assertEqual(ids, {31000})
+        finally:
+            import shutil; shutil.rmtree(d, ignore_errors=True)
+
 
 
 
