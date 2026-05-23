@@ -138,10 +138,12 @@ ones marked *auto* (idempotent), and **pauses** for the *manual* ones with the e
 | 4 | paramiko (local only) | `tools/dev_build.py` SSH restart | `.venv\Scripts\python.exe -c "import paramiko"` | `.venv\Scripts\python.exe -m pip install paramiko` | auto |
 | 5 | git | version control / PRs | `git --version` | install Git for Windows | manual |
 | 6 | gh CLI, authenticated | PRs, releases, resume reporting | `gh auth status` | `gh auth login` (interactive) | manual |
+| 7 | pre-push coverage hook | blocks a push if coverage drops below 99% (catch it before CI) | `git config --get core.hooksPath` → `scripts/hooks` | `git config core.hooksPath scripts/hooks` | auto |
 
-- **Auto rows (2–4)** are safe to install unattended and are idempotent — the preflight just
-  runs `python -m venv .venv` (only if absent) then
-  `.venv\Scripts\python.exe -m pip install -r requirements-dev.txt paramiko`.
+- **Auto rows (2–4, 7)** are safe to install unattended and are idempotent — the preflight
+  runs `python -m venv .venv` (only if absent), then
+  `.venv\Scripts\python.exe -m pip install -r requirements-dev.txt paramiko`, and
+  `git config core.hooksPath scripts/hooks`.
 - **Manual rows (1, 5, 6)** are system/auth changes — never auto-installed; the preflight
   prints the fix command and stops for the maintainer.
 - **Windows test note:** pytest needs the `TEMP`/`TMP` override + `--basetemp=build\_pt`
@@ -172,17 +174,19 @@ $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
 > "unrecognized arguments: -n". `--dist worksteal` rebalances the few subprocess-spawning
 > tests (the slow tail) across idle workers — a small but free win over the default `load`.
 
-**Coverage gate (parallel via pytest-cov, ~25s; floor 50%):**
+**Coverage gate (parallel via pytest-cov, ~13–25s; floor 99%, no omit):**
 ```
 $env:TEMP = (Resolve-Path "build\_tmp").Path; $env:TMP = $env:TEMP
 $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
 .venv\Scripts\python.exe -m pytest -q -p xdist -p pytest_cov -n auto --dist worksteal --cov=resources/lib --cov-report=term-missing --basetemp="build\_pt"
 ```
-> `pytest-cov` measures each xdist worker correctly — identical totals to a serial run
-> (4628 stmts / 34 missed / 98.7%) — so the gate parallelizes ~3× (≈75s → ≈25s) and the
-> floor is still enforced. Do **NOT** use plain `coverage run -m pytest -n auto`: that leaves
-> xdist workers unmeasured (reads ~0%). CI keeps the serial `coverage run` form (2-core
-> runners; pinned by `test_github_readiness_g6_ci_hardening.py`).
+> `pytest-cov` measures each xdist worker correctly (whole `resources/lib`, **no** module-level
+> omit) — currently 5593 stmts, ≈99.1%, floor `fail_under=99` enforced. A **pre-push hook**
+> (`scripts/hooks/pre-push`, enabled with `git config core.hooksPath scripts/hooks`) runs this
+> same gate automatically and blocks a push if coverage drops — bypass with `git push
+> --no-verify`. Do **NOT** use plain `coverage run -m pytest -n auto`: that leaves xdist workers
+> unmeasured (reads ~0%). CI keeps the serial `coverage run` form (2-core runners; pinned by
+> `test_github_readiness_g6_ci_hardening.py`).
 
 **Lint/format (CI scope only):**
 ```
