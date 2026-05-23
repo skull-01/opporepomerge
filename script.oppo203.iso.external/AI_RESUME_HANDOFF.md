@@ -20,15 +20,24 @@ These are natural-language triggers any agent must honor (also wired in `AGENTS.
 When the maintainer types **`resume`** (alone):
 1. Read this doc (especially **Work in progress** below) and the repo instruction files
    (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`).
-2. Report the **last 5 PRs created** and the **last 5 PRs completed (merged)** — this repo
+2. **Environment preflight** — run the **readiness checklist** in §2 so the machine can
+   actually build/test the app. Print a small readiness table, then:
+   - all rows green → one line `Environment: ready ✓` and continue;
+   - an *auto* row (`.venv` / dev deps / paramiko) missing → **install it** (idempotent:
+     `python -m venv .venv` if absent, then
+     `.venv\Scripts\python.exe -m pip install -r requirements-dev.txt paramiko`), re-check,
+     and report what was installed;
+   - a *manual* row (Python, git, gh auth) missing → print the exact fix command and **STOP**
+     for the maintainer (do not auto-install system/auth changes).
+3. Report the **last 5 PRs created** and the **last 5 PRs completed (merged)** — this repo
    tracks work as PRs, not Issues:
    - created:  `gh pr list --state all --limit 5 --json number,title,state,createdAt`
    - completed: `gh pr list --state merged --limit 5 --json number,title,mergedAt`
    - (If GitHub Issues are ever adopted, also run `gh issue list --state all --limit 5`.)
-3. Suggest what to work on next: if **Work in progress** has an unfinished task, list it
+4. Suggest what to work on next: if **Work in progress** has an unfinished task, list it
    **first** as the priority, then 1–2 more from **Open issues & next steps**, each with a
    one-line rationale.
-4. **STOP and wait** for the maintainer to choose. Keep it concise.
+5. **STOP and wait** for the maintainer to choose. Keep it concise.
 
 ### `done for the day`
 When the maintainer types **`done for the day`**:
@@ -116,6 +125,33 @@ hardware path as validated without it. (See `CONTRIBUTING.md`.)
 - On-device testing target: a **CoreELEC** box on the LAN, reachable at SMB
   `\\COREELEC\Addons` (auth in Windows Credential Manager) and SSH (`root`, key-based).
   **No credentials are committed** — they live in Credential Manager / on the device.
+
+### Environment readiness checklist (the `resume` preflight runs this)
+Before any work, confirm each row. The **resume** flow checks these, **auto-installs** the
+ones marked *auto* (idempotent), and **pauses** for the *manual* ones with the exact fix.
+
+| # | Requirement | Needed for | Check (Windows; use `.venv/bin/python` on POSIX) | Fix if missing | Mode |
+|---|---|---|---|---|---|
+| 1 | Python ≥ 3.9 (3.12 here) | runtime + all tests | `python --version` | install Python 3.12, then re-create the venv | manual |
+| 2 | repo-local `.venv` | isolated dev env | `.venv\Scripts\python.exe --version` | `python -m venv .venv` | auto |
+| 3 | dev deps (pytest, pytest-xdist, coverage, PyYAML, ruff, mypy, typing-extensions) | tests, lint, release gates | `.venv\Scripts\python.exe -c "import pytest, xdist, coverage, yaml, ruff, mypy"` | `.venv\Scripts\python.exe -m pip install -r requirements-dev.txt` | auto |
+| 4 | paramiko (local only) | `tools/dev_build.py` SSH restart | `.venv\Scripts\python.exe -c "import paramiko"` | `.venv\Scripts\python.exe -m pip install paramiko` | auto |
+| 5 | git | version control / PRs | `git --version` | install Git for Windows | manual |
+| 6 | gh CLI, authenticated | PRs, releases, resume reporting | `gh auth status` | `gh auth login` (interactive) | manual |
+
+- **Auto rows (2–4)** are safe to install unattended and are idempotent — the preflight just
+  runs `python -m venv .venv` (only if absent) then
+  `.venv\Scripts\python.exe -m pip install -r requirements-dev.txt paramiko`.
+- **Manual rows (1, 5, 6)** are system/auth changes — never auto-installed; the preflight
+  prints the fix command and stops for the maintainer.
+- **Windows test note:** pytest needs the `TEMP`/`TMP` override + `--basetemp=build\_pt`
+  (see §3) — already baked into the test commands, not a separate install.
+- **Optional (NOT required to start coding):** on-device testing needs the CoreELEC box
+  reachable via SMB `\\COREELEC\Addons` + SSH (key-based). Only `tools/dev_build.py` uses it;
+  code + the full test suite run fully offline.
+- **Last assessed:** 2026-05-23 — all rows green (Python 3.12.10, `.venv` ok, pytest 8.4.2 /
+  pytest-xdist 3.8 / coverage 7.14 / PyYAML 6.0.3 / ruff 0.15.14 / mypy 1.20.2 / paramiko
+  5.0.0, git 2.53, gh 2.92 authed as `skull-01`).
 
 ## 3. How to run / test / validate (exact commands)
 **Run the add-on on real hardware (fast dev loop):**

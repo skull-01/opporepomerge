@@ -8,9 +8,11 @@ norms: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Session commands (honor these exactly — full specs in AI_RESUME_HANDOFF.md)
 - **`resume`** — read `AI_RESUME_HANDOFF.md` (esp. "Work in progress") and these instruction
-  files; report the **last 5 PRs created** and **last 5 PRs merged**
-  (`gh pr list ...` — this repo tracks work as PRs, not Issues); suggest next steps with any
-  unfinished "Work in progress" task FIRST; then STOP for the maintainer.
+  files; run the **environment preflight** (readiness checklist in §2 — auto-install missing
+  `.venv`/dev deps/paramiko, surface missing system tools like Python/git/gh auth); report
+  the **last 5 PRs created** and **last 5 PRs merged** (`gh pr list ...` — this repo tracks
+  work as PRs, not Issues); suggest next steps with any unfinished "Work in progress" task
+  FIRST; then STOP for the maintainer.
 - **`done for the day`** — push ALL current work (a normal commit if green, else a `wip:`
   checkpoint; then `git push` — nothing left only on this machine); overwrite "Work in
   progress"; run the doc's maintenance recipe; commit & push the doc; give an end-of-day
