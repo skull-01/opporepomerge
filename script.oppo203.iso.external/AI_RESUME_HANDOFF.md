@@ -165,17 +165,24 @@ CoreELEC addons dir, and restarts Kodi over SSH. Dev-only — never publish thos
 ```
 $env:TEMP = (Resolve-Path "build\_tmp").Path; $env:TMP = $env:TEMP
 $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
-.venv\Scripts\python.exe -m pytest -q -n auto -p xdist --basetemp="build\_pt"
+.venv\Scripts\python.exe -m pytest -q -n auto -p xdist --dist worksteal --basetemp="build\_pt"
 ```
 > `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` matches CI's deterministic plugin set, so xdist is **not**
 > autoloaded — pass `-p xdist` to load it explicitly, otherwise `-n auto` errors with
-> "unrecognized arguments: -n".
+> "unrecognized arguments: -n". `--dist worksteal` rebalances the few subprocess-spawning
+> tests (the slow tail) across idle workers — a small but free win over the default `load`.
 
-**Coverage gate (serial — never `-n auto`; floor 50%):**
+**Coverage gate (parallel via pytest-cov, ~25s; floor 50%):**
 ```
-.venv\Scripts\python.exe -m coverage run -m pytest -q --basetemp="build\_pt"
-.venv\Scripts\python.exe -m coverage report
+$env:TEMP = (Resolve-Path "build\_tmp").Path; $env:TMP = $env:TEMP
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
+.venv\Scripts\python.exe -m pytest -q -p xdist -p pytest_cov -n auto --dist worksteal --cov=resources/lib --cov-report=term-missing --basetemp="build\_pt"
 ```
+> `pytest-cov` measures each xdist worker correctly — identical totals to a serial run
+> (4628 stmts / 34 missed / 98.7%) — so the gate parallelizes ~3× (≈75s → ≈25s) and the
+> floor is still enforced. Do **NOT** use plain `coverage run -m pytest -n auto`: that leaves
+> xdist workers unmeasured (reads ~0%). CI keeps the serial `coverage run` form (2-core
+> runners; pinned by `test_github_readiness_g6_ci_hardening.py`).
 
 **Lint/format (CI scope only):**
 ```
@@ -334,7 +341,7 @@ Refresh with `gh pr list --state all --limit 10` and `gh release list --limit 3`
 | Stop cleanly | type `done for the day` (or `/done-for-the-day`) |
 | Fast on-device build | `.venv\Scripts\python.exe tools\dev_build.py` |
 | Test (parallel) | `pytest -n auto` (+ Windows temp workaround) |
-| Coverage gate | `coverage run -m pytest` then `coverage report` (serial) |
+| Coverage gate | `pytest -p xdist -p pytest_cov -n auto --dist worksteal --cov=resources/lib` (~25s) |
 | Lint/format | `ruff check`/`ruff format --check` on `resources default.py service.py` |
 | Cut a release | `/release` (or `/release <ver>`) |
 | Update this doc | `update AI_RESUME_HANDOFF.md` (recipe below) |

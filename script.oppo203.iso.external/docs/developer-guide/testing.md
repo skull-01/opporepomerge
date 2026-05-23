@@ -33,7 +33,15 @@ CI failures should be treated as blockers unless an environmental limitation is 
 
 The protected v2.9.10 Final release evidence recorded 99% coverage. GitHub-readiness documentation-only builds may inherit that baseline only when no runtime code changed and the coverage run times out. Do not claim a new coverage result unless coverage actually ran to completion.
 
-Suggested command:
+Suggested command (fast, parallel via pytest-cov — measures each xdist worker correctly, so
+totals match a serial run and the run is ~3× faster):
+
+```bash
+pytest -n auto --dist worksteal --cov=resources/lib --cov-report=term-missing
+```
+
+Serial fallback (do **not** combine a plain `coverage run` with `-n auto` — the xdist worker
+subprocesses go unmeasured and coverage reads ~0%):
 
 ```bash
 coverage run -m pytest
