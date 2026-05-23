@@ -516,6 +516,23 @@ release notes' "Runtime behavior" section should say so (unlike v2.9.13).
 4. For on-device work, use `tools/dev_build.py` (§5). For shipping, use `/release` (§3.6).
 5. Honor the two-tier version pinning (§3.2) and the software-verified wording (§1, §3.3).
 
+### Resuming with `resume` / `/resume`
+
+When the maintainer types **`resume`** (or runs the `/resume` slash command —
+`.claude/commands/resume.md`), produce a short, scannable briefing — do NOT start changing
+code until they pick a direction:
+1. `git fetch` to refresh.
+2. **Last 5 completed items** — the 5 most recently merged pull requests
+   (`gh pr list --state merged --limit 5 --json number,title,mergedAt`), each summarized in
+   one line (what it delivered). Also check closed Issues
+   (`gh issue list --state closed --limit 5`) in case GitHub Issues are in use. (This repo
+   has tracked work via PRs rather than Issues, so merged PRs are the "completed" signal.)
+3. **In flight** — open PRs (`gh pr list --state open`), unmerged work branches
+   (`git branch -r --no-merged origin/main`), and the latest release
+   (`gh release list --limit 1`).
+4. **Suggest what to work on next** — 2-4 concrete options grounded in the above and in
+   "§9 Current state & next steps" / "Known issues", and recommend one.
+
 ---
 
 ## 10. Conventions cheat-sheet

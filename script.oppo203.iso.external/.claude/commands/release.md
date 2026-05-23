@@ -65,7 +65,10 @@ from arguments (if given): $ARGUMENTS
    release. Watch that run, then set the title and styled body:
    `gh release edit v<new> --title "v<new> Final" --notes-file <file>` (use `--notes-file`
    to avoid shell-quoting issues — bodies often contain apostrophes).
-9. **Update memory** and report the published release URL.
+9. **Update the handoff guide & memory.** Refresh `docs/ai-handoff/AI_RESUME_GUIDE.md` so
+   it never goes stale — update the "Latest release" facts (§0, §1), the "Development
+   journey" list (§8) with this release, and "Current state & next steps" (§9). Update the
+   maintainer memory with the new latest version. Then report the published release URL.
 
 ## Release-notes style (GitHub release body)
 Match this structure (modeled on the v2.9.10 release):
