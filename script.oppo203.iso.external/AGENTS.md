@@ -23,7 +23,9 @@ Slash-command equivalents: `/resume`, `/done-for-the-day`, `/release`.
 
 ## Working norms (see CONTRIBUTING.md + the handoff doc)
 - Pull before work. Make changes on a branch and open a PR to `main` (merge commit); don't
-  commit code directly to `main`.
+  commit code directly to `main`. **Always purge branches once merged** — merge with
+  `gh pr merge --merge --delete-branch`, then prune any leftover merged local branches
+  (`git branch -d <name>` and `git fetch --prune`). Never leave merged branches lying around.
 - Validate with the project's tests before committing: `pytest -n auto` (Windows: set
   `TEMP`/`TMP` to a repo-local dir and pass `--basetemp=build\_pt`). The coverage gate runs
   **serial** (never `-n auto`).

@@ -194,8 +194,10 @@ $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
 - **Releases are tag-driven:** push a `v*` tag → `.github/workflows/package.yml` builds the
   ZIP + SHA256 and creates the GitHub Release. Use the **`/release`** runbook
   (`.claude/commands/release.md`).
-- **Branch + PR to `main`**, merge with a merge commit (`gh pr merge --merge`). No direct
-  commits to `main` for code.
+- **Branch + PR to `main`**, merge with a merge commit and **always delete the branch**
+  (`gh pr merge --merge --delete-branch`); then prune any leftover merged local branches
+  (`git branch -d <name>`, `git fetch --prune`). No direct commits to `main` for code, and
+  never leave merged branches lying around.
 - **Two-tier version pinning (~78 files):** "active" locations change every release;
   "frozen evidence" (`docs/release-history/`, `release-evidence/`, `docs/github-readiness/`,
   `docs/ai-handoff/`, historical `addon.xml` narrative sentences, historical test
