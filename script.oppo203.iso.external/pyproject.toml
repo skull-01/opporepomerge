@@ -71,17 +71,12 @@ ignore = [
 [tool.coverage.run]
 branch = true
 source = ["resources/lib"]
-# Per docs/testing-strategy.md: omit UI/glue (wizard dialogs, file installer)
-# from measurement so coverage reflects logic modules.
-omit = [
-  "resources/lib/wizard.py",
-  "resources/lib/first_run_wizard.py",
-  "resources/lib/wizard_polish.py",
-  "resources/lib/installer.py",
-]
+# Floor restored to 99% with the UI/glue modules back in measurement; kept in
+# sync with .coveragerc (which is the config coverage actually loads). See
+# docs/testing-strategy.md.
 
 [tool.coverage.report]
-fail_under = 50
+fail_under = 99
 show_missing = true
 exclude_lines = [
   "pragma: no cover",

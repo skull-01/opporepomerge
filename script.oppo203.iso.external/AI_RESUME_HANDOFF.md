@@ -283,8 +283,9 @@ $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
   `tests/_stubs`. No `conftest.py`; each test sets up `sys.path`.
 - CI (`.github/workflows/ci.yml`): Release gate (full suite + coverage + audit),
   Lint/format, Compatibility smoke (3.9/3.10/3.12). `package.yml` builds the ZIP.
-- Coverage floor **50%** (omits UI/glue: `wizard.py`, `first_run_wizard.py`,
-  `wizard_polish.py`, `installer.py`). Restore-to-99% is planned for "v5".
+- Coverage floor **99%** across all of `resources/lib` (no module-level omit; UI/glue
+  modules are back in measurement). Actual ≈99.2%; a few on-device package-import shims are
+  `# pragma: no cover`. See `docs/testing-strategy.md`.
 - **`claude-review` CI check is broken** (bot/secret) and always fails — not a blocker.
 
 ## 11. Critical gotchas & learnings
@@ -332,7 +333,8 @@ Refresh with `gh pr list --state all --limit 10` and `gh release list --limit 3`
 1. **Ship v2.9.14** — `wip/wizard-ux` is staged, green, and pushed. Confirm on-device UX,
    then run `/release` (it changes runtime behavior; note that in the release notes).
 2. **Fix the broken `claude-review` CI workflow** (bot/secret) so automated review returns.
-3. **Restore 99% coverage** for "v5" (test-writing effort; see the guide — not a perf change).
+3. ~~Restore 99% coverage~~ — **done**: floor restored to 99% with UI modules re-measured
+   (no omit); see `docs/testing-strategy.md`.
 
 ## 15. Cheat sheet
 | Action | Command |
