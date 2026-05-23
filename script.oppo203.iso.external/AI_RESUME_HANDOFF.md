@@ -1,7 +1,7 @@
 # AI_RESUME_HANDOFF.md — session continuity for `script.oppo203.iso.external`
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync ≈ commit `d6e3470`** (origin/main) · **Tests on `main`: 975 passed, 3 skipped**
+**Last sync ≈ commit `6428900`** (origin/main) · **Tests on `main`: 987 passed, 3 skipped**
 **Latest release:** v2.9.13 · **Issue tracker:** GitHub **Pull Requests** (no GitHub Issues are used)
 
 > This is the session-continuity entry point. Read it first when starting or resuming.
@@ -65,23 +65,37 @@ volatile sections from git/PRs/tests.
 
 ## Work in progress (resume here first)
 
-- **Date:** 2026-05-23 · **On:** `main` @ `d6e3470` · **Tests:** pass (975 passed, 3 skipped).
-- **Status:** Clean stopping point. The session-continuity system (this doc, `AGENTS.md`,
-  `CLAUDE.md`, `/resume` + `/done-for-the-day`) was set up and merged (PR #14). Nothing is
-  left only on this machine.
+- **Date:** 2026-05-23 · **On:** `main` @ `6428900` · **Tests:** pass (987 passed, 3 skipped).
+- **Status:** Clean stopping point. A test-infrastructure session shipped five merged PRs
+  (#16–#21): the test pipeline is now much faster and the **99% coverage gate is restored**
+  (no module-level omit), enforced locally by a new **pre-push hook**. Nothing is left only
+  on this machine; no open PRs.
+- **What shipped today (all merged to `main`):**
+  - **Coverage gate parallelized** via `pytest-cov` (#18): ~75s → ~25s; added `pytest-cov`
+    to `requirements-dev.txt`; `--dist worksteal` is now the documented default.
+  - **Test-loop floor cut** (#19): `tools/make_pot.py` no longer walks `.venv` (the real
+    bottleneck, not subprocess spawns); avr diagnostics test no longer makes a real TCP
+    call. Fast loop ~17.9s → ~10s.
+  - **99% coverage gate restored** (#20): removed the `omit` list, `fail_under` 50→99 in all
+    4 config spots + 3 test assertions; added `tests/test_coverage_gate_99_restore.py`.
+    Actual ≈99.1% across all of `resources/lib`.
+  - **Pre-push hook** (#21): `scripts/hooks/pre-push` runs the coverage gate and blocks a
+    push if coverage drops; enabled via `git config core.hooksPath scripts/hooks` (now an
+    auto-row of the §2 readiness checklist, so `resume` sets it).
+  - Earlier: #16 (fix the `-n auto`/autoload-disable conflict), #17 (norm: always purge
+    merged branches).
 - **In flight (next feature to ship):** branch **`wip/wizard-ux`** (pushed —
   `origin/wip/wizard-ux`) is the **v2.9.14 candidate** — five on-device wizard fixes + the
-  dev-iteration tooling, all committed and green (981 passed, 3 skipped on that branch).
-  **Not yet version-bumped or released.**
-- **What's done there:** wizard launch fix (`No module named 'wizard'`), PO header fix for
-  all 12 locales, "Setup files saved" location dialog, opt-in auto-install into Kodi
-  (merge + backup), expanded player presets (M9205 V1 etc.), `tools/dev_build.py`.
-- **What's left:** confirm on-device UX is final, then **`/release` v2.9.14** (full bump +
-  evidence + tag + styled notes). It DOES change runtime behavior (wizard now launches +
-  can install files) — say so in the "Runtime behavior" section of the notes.
-- **Key files:** `resources/lib/wizard.py`, `resources/lib/installer.py`,
-  `resources/lib/hardware_presets.py`, `resources/language/*/strings.po`,
-  `tools/dev_build.py`.
+  dev-iteration tooling, all committed and green. **Not yet version-bumped or released.**
+  NOTE: that branch predates today's test-infra PRs; rebase it on `main` (or expect the
+  pre-push hook to enforce the 99% gate) before opening its PR.
+  - *What's done there:* wizard launch fix (`No module named 'wizard'`), PO header fix for
+    all 12 locales, "Setup files saved" dialog, opt-in auto-install into Kodi, expanded
+    player presets, `tools/dev_build.py`.
+  - *What's left:* confirm on-device UX, then **`/release` v2.9.14** (it changes runtime
+    behavior — say so in the "Runtime behavior" notes).
+- **Key files (wizard-ux):** `resources/lib/wizard.py`, `resources/lib/installer.py`,
+  `resources/lib/hardware_presets.py`, `resources/language/*/strings.po`, `tools/dev_build.py`.
 - **Related:** branch `wip/wizard-ux` (no PR opened yet).
 
 ---
@@ -309,6 +323,17 @@ $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
   `test_all.py` reads a frozen doc — do not change it.
 
 ## 12. Development journey (commit → what/why)
+- `6428900` Merge #21 — pre-push hook (`scripts/hooks/pre-push`) enforcing the 99% gate
+  locally; `core.hooksPath` is auto-set by the `resume` preflight.
+- `b05726b` Merge #20 — **restore 99% coverage gate** (remove `omit`, `fail_under` 50→99 in
+  4 config spots + 3 test assertions; add `tests/test_coverage_gate_99_restore.py`). ~99.1%.
+- `095f761` Merge #19 — cut the test-loop floor: `make_pot` stops walking `.venv` (real
+  bottleneck), avr test no longer makes a real TCP call. Fast loop ~17.9s→~10s.
+- `efaaa4d` Merge #18 — parallel coverage gate via `pytest-cov` (~75s→~25s); `--dist
+  worksteal` default; add `pytest-cov` to dev deps.
+- `2909eb6` Merge #17 — norm: always purge merged branches (AGENTS/CLAUDE/handoff).
+- `…` Merge #16 — fix the documented parallel command (`-n auto` needs `-p xdist` when
+  plugin autoload is disabled).
 - `d6e3470` Merge #14 — session-continuity system: root `AI_RESUME_HANDOFF.md`,
   `AGENTS.md`/`CLAUDE.md` triggers, `/resume` + `/done-for-the-day` commands.
 - `0f56f17` Merge #13 — AI handoff guide on `main`; `/resume`; `/release` refreshes guide.
@@ -329,8 +354,9 @@ $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
 - (Full detail + rationale: `docs/ai-handoff/AI_RESUME_GUIDE.md` §8.)
 
 ## 13. Issue-tracker state
-No GitHub **Issues** are used; work is tracked as **Pull Requests**. As of last sync the 5
-most recent PRs (#9–#13) are all **merged** (see journey). Latest release: **v2.9.13**.
+No GitHub **Issues** are used; work is tracked as **Pull Requests**. As of last sync the 6
+most recent PRs (#16–#21) are all **merged** (see journey); no open PRs. Latest release:
+**v2.9.13**. One unmerged feature branch: `origin/wip/wizard-ux` (v2.9.14 candidate).
 Refresh with `gh pr list --state all --limit 10` and `gh release list --limit 3`.
 
 ## 14. Open issues & recommended next steps
