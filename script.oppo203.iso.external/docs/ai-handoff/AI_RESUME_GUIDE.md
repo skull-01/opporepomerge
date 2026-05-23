@@ -324,9 +324,11 @@ Dev tools are not global. Use a repo-local `.venv` (gitignored):
 ```powershell
 $env:TEMP = (Resolve-Path "build\_tmp").Path; $env:TMP = $env:TEMP
 $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
-.venv\Scripts\python.exe -m pytest -q -n auto --basetemp="build\_pt"
+.venv\Scripts\python.exe -m pytest -q -n auto -p xdist --basetemp="build\_pt"
 ```
 ~16s for the full suite (vs ~229s serial). 8 logical cores on this machine.
+With autoload disabled (to match CI), xdist must be loaded explicitly via `-p xdist`;
+without it, `-n auto` fails with "unrecognized arguments: -n".
 
 ### 6.3 Windows pytest temp workaround (REQUIRED)
 `pytest` fails creating `C:\Users\...\AppData\Local\Temp\pytest-of-...` (`WinError 5`,

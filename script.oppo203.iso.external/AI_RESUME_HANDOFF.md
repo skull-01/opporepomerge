@@ -165,8 +165,11 @@ CoreELEC addons dir, and restarts Kodi over SSH. Dev-only — never publish thos
 ```
 $env:TEMP = (Resolve-Path "build\_tmp").Path; $env:TMP = $env:TEMP
 $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
-.venv\Scripts\python.exe -m pytest -q -n auto --basetemp="build\_pt"
+.venv\Scripts\python.exe -m pytest -q -n auto -p xdist --basetemp="build\_pt"
 ```
+> `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` matches CI's deterministic plugin set, so xdist is **not**
+> autoloaded — pass `-p xdist` to load it explicitly, otherwise `-n auto` errors with
+> "unrecognized arguments: -n".
 
 **Coverage gate (serial — never `-n auto`; floor 50%):**
 ```
