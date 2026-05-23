@@ -324,11 +324,16 @@ Dev tools are not global. Use a repo-local `.venv` (gitignored):
 ```powershell
 $env:TEMP = (Resolve-Path "build\_tmp").Path; $env:TMP = $env:TEMP
 $env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
-.venv\Scripts\python.exe -m pytest -q -n auto -p xdist --basetemp="build\_pt"
+.venv\Scripts\python.exe -m pytest -q -n auto -p xdist --dist worksteal --basetemp="build\_pt"
 ```
-~16s for the full suite (vs ~229s serial). 8 logical cores on this machine.
+~16s for the full suite (vs ~229s serial). Ryzen 7 9800X3D, 8 cores (SMT off → 8 logical;
+enabling SMT in BIOS would give 16 threads to absorb the subprocess-spawning tests).
 With autoload disabled (to match CI), xdist must be loaded explicitly via `-p xdist`;
-without it, `-n auto` fails with "unrecognized arguments: -n".
+without it, `-n auto` fails with "unrecognized arguments: -n". `--dist worksteal` rebalances
+the slow tail (a few tests that spawn cold `python tools/*.py` subprocesses; the worst is
+~9s) across idle workers. Worker count above 8 doesn't help — those tests oversubscribe the
+cores no matter what, so ~17s is the practical parallel floor until they're refactored to
+call the tool `main()` in-process.
 
 ### 6.3 Windows pytest temp workaround (REQUIRED)
 `pytest` fails creating `C:\Users\...\AppData\Local\Temp\pytest-of-...` (`WinError 5`,
@@ -336,10 +341,20 @@ likely AV/locked handle). Always override `TEMP`/`TMP` to a repo-local dir and p
 `--basetemp=build\_pt`. `build/` is gitignored. Clean up `build/_tmp` and `build/_pt`
 afterward.
 
-### 6.4 Coverage gate runs SERIAL
-`coverage run -m pytest` + `coverage report`. Do **not** add `-n auto` here — xdist worker
-subprocesses aren't measured by a plain `coverage run`, so coverage would read as ~0%.
-Serial coverage gate is ~70s.
+### 6.4 Coverage gate — parallel via pytest-cov (~25s)
+Run it parallel with **pytest-cov**, which starts coverage inside each xdist worker and
+combines the results — identical totals to a serial run (4628 stmts / 34 missed / 98.7%),
+floor still enforced:
+```powershell
+$env:TEMP = (Resolve-Path "build\_tmp").Path; $env:TMP = $env:TEMP
+$env:PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1"
+.venv\Scripts\python.exe -m pytest -q -p xdist -p pytest_cov -n auto --dist worksteal --cov=resources/lib --cov-report=term-missing --basetemp="build\_pt"
+```
+~25s (vs ~75s serial) — measured ~3× on this machine.
+**Do NOT** add `-n auto` to a plain `coverage run -m pytest`: xdist worker subprocesses
+aren't measured by plain `coverage run`, so it would read ~0%. That caveat is *only* about
+plain `coverage run`; **pytest-cov** is the correct way to parallelize. CI keeps the serial
+`coverage run` form (2-core runners; pinned by `test_github_readiness_g6_ci_hardening.py`).
 
 **Restoring 99% in v5 (planned) is a test-writing effort, not a perf change.** The gate
 number has zero runtime cost. The old slowness came from serial execution + the audit
@@ -540,7 +555,8 @@ code until they pick a direction:
 ## 10. Conventions cheat-sheet
 
 - **Run tests:** `pytest -n auto` (parallel, ~16s) with the Windows temp workaround.
-- **Coverage gate:** serial, floor 50% (`coverage run -m pytest` + `coverage report`).
+- **Coverage gate:** parallel via pytest-cov, floor 50%, ~25s
+  (`pytest -p xdist -p pytest_cov -n auto --dist worksteal --cov=resources/lib`).
 - **Lint/format:** `ruff check` + `ruff format` on `resources default.py service.py` only.
 - **Release:** `/release` (or `/release <ver>`); tag-driven; styled notes; 8 evidence docs.
 - **Version bump:** active vs frozen — never edit historical evidence; regenerate docs via
