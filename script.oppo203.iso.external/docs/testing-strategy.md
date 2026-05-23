@@ -1,12 +1,12 @@
 # Kodi Addon Testing Strategy
 
-## Coverage Target: 50%
+## Coverage Target: 99%
 
-Coverage target lowered from **98% → 50%**.
+Coverage floor is **99%**, with every `resources/lib` module measured (no module-level omit).
 
-Rationale: Kodi addons are tightly coupled to the `xbmc*` runtime APIs, which only exist inside Kodi itself. Pushing for >90% coverage forces heavy mocking of those APIs, which produces brittle tests that exercise mocks rather than real behavior. 50% is a realistic floor that keeps the pure-Python logic well-covered without wasting effort on test theater around UI and Kodi glue code.
+History: the floor was briefly lowered to 50% with the wizard/installer UI modules omitted, on the assumption that UI/glue can't be tested without brittle mocks. For this add-on that assumption turned out to be wrong — those modules were already exercised by the suite at 94–100%, because the project's fakes (`tests/_stubs`) model the `xbmc*` surface well enough to drive real behavior rather than mock theater. So the floor was restored to 99% with the UI modules back in measurement.
 
-The number is a floor, not a ceiling — if a module naturally reaches 80% with meaningful tests, great. The goal is **test what matters**, not chase a percentage.
+The handful of lines that genuinely can't run outside Kodi (on-device package-import fallbacks, `__main__` guards) are marked `# pragma: no cover` rather than wrapped in contrived tests. The goal is still **test what matters** — 99% here reflects that the logic is genuinely covered, not a number chased with mocks.
 
 ---
 
@@ -115,27 +115,27 @@ Or use [Kodistubs](https://pypi.org/project/Kodistubs/) for typed stand-ins.
 
 ## Coverage Measurement
 
-Measure coverage **only on the modules that contain testable logic**, not the whole addon.
+Measure coverage across **all** of `resources/lib` (no module-level omit). Exclude only
+individual lines that can't run outside Kodi, via `# pragma: no cover`.
 
-Example `.coveragerc`:
+Actual `.coveragerc`:
 
 ```ini
 [run]
+branch = True
 source = resources/lib
-omit =
-    resources/lib/gui/*
-    resources/lib/service.py
-    resources/lib/default.py
-    */tests/*
 
 [report]
+fail_under = 99
+show_missing = True
 exclude_lines =
     pragma: no cover
     raise NotImplementedError
     if __name__ == .__main__.:
 ```
 
-This way the 50% target reflects *meaningful* coverage of logic modules, not a diluted average across UI glue.
+This keeps the 99% floor honest: whole-package coverage with only genuinely
+unreachable-in-tests lines excluded — not a diluted average that hides untested UI.
 
 ---
 
@@ -144,14 +144,13 @@ This way the 50% target reflects *meaningful* coverage of logic modules, not a d
 - **ruff check** — cheap, catches real bugs
 - **ruff format --check** — consistent style
 - **pytest** — run the test suite
-- **coverage ≥ 50%** — the new floor
+- **coverage ≥ 99%** — the floor, across all of `resources/lib`
 - **addon.xml validity** — make sure the manifest parses
 
 ## CI Gates to Drop
 
-- Strict 90%+ coverage requirements
-- Per-file coverage minimums (too noisy with UI files)
-- Mutation testing (overkill for a hobby addon)
+- Per-file coverage minimums (gate on the whole-package total instead)
+- Mutation testing (overkill for this addon)
 
 ---
 
@@ -170,4 +169,4 @@ This way the 50% target reflects *meaningful* coverage of logic modules, not a d
 | Playback handoff | No | One-line passthrough |
 | Service loops | No | Test the logic inside, not the loop |
 
-**Target: 50% overall, ~80% on logic modules, ~0% on UI/glue. Quality > number.**
+**Target: 99% overall across `resources/lib`, with genuinely Kodi-only lines pragma'd. Quality > number — and here the number reflects real coverage.**

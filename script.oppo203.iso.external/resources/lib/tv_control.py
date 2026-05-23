@@ -10,7 +10,7 @@ from roku_ecp_control import switch_input as roku_switch_input
 try:
     from smartthings_control import switch_input as smartthings_switch_input
     from smartthings_control import validation_metadata as smartthings_validation_metadata
-except ImportError:  # package import compatibility
+except ImportError:  # pragma: no cover - package-import fallback (only taken on-device)
     from .smartthings_control import switch_input as smartthings_switch_input  # type: ignore
     from .smartthings_control import validation_metadata as smartthings_validation_metadata
 

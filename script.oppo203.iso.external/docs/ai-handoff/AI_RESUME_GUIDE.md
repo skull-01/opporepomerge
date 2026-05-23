@@ -21,8 +21,8 @@
 - **Releases are tag-driven:** push a `v*` tag → `.github/workflows/package.yml` builds the
   installable ZIP + SHA256 and creates the GitHub Release. There is a canonical runbook:
   the **`/release`** slash command (`.claude/commands/release.md`).
-- **Tests:** run them in **parallel** — `pytest -n auto` (~16s). Coverage gate is **50%**
-  (deliberately; see §4). Formatter is **`ruff format`** (not Black). On Windows you need a
+- **Tests:** run them in **parallel** — `pytest -n auto` (~16s). Coverage gate is **99%**
+  (whole `resources/lib`; see §4). Formatter is **`ruff format`** (not Black). On Windows you need a
   temp-dir workaround (see §6.3).
 - **The #1 gotcha:** Kodi loads modules as the package `resources.lib.*`, but several
   helpers historically used **bare imports** (`from wizard import ...`). That fails
@@ -111,7 +111,7 @@ scripts/
 
 docs/
   sources.yaml                 single source of doc/release metadata (version, build_id, title, ...)
-  testing-strategy.md          the testing philosophy (coverage 50%, test logic not glue)
+  testing-strategy.md          the testing philosophy (coverage 99%, whole resources/lib)
   release-history/             FROZEN per-release evidence (BUILD_NOTES/RELEASE_NOTES/COVERAGE_REPORT/... per version)
   github-readiness/            FROZEN historical build records (G1..G8 "GitHub readiness")
   ai-handoff/                  FROZEN historical AI handoff/reconstruction docs + THIS living guide
@@ -209,7 +209,7 @@ not a copy of the prior release's frozen numbers.
 - `ruff check resources default.py service.py` + `ruff format --check resources default.py service.py`
   (CI lints **only** this scope — not `tests/` or `tools/`).
 - full test suite (`pytest -n auto`) — currently 981 passing, 3 skipped (POSIX-only).
-- coverage gate (serial): `coverage run -m pytest` then `coverage report` (must meet 50%).
+- coverage gate: `pytest --cov=resources/lib` (pytest-cov, parallel) — must meet 99%.
 
 ### 3.5 Release-notes style (the documentation approach the maintainer wants)
 GitHub release bodies and `RELEASE_NOTES_v<ver>.md` follow this structure (modeled on the
@@ -248,23 +248,24 @@ confirms the real gates before merging/tagging).
 
 ## 4. Testing strategy (see `docs/testing-strategy.md`)
 
-**Philosophy:** test the pure-Python logic that matters; do not chase high coverage on
-`xbmc*`-coupled UI/glue (that just tests mocks). Coverage **floor is 50%** (a realistic
-number for a Kodi add-on), measured on logic modules.
+**Philosophy:** test the pure-Python logic that matters and avoid mock theater — but in
+practice the `tests/_stubs` fakes drive the UI/glue modules for real, so they ARE measured.
+Coverage **floor is 99%** across all of `resources/lib` (no module-level omit); actual ≈99.2%.
 
-- Gate value `50` lives in 4 active spots — `.coveragerc`, `pyproject.toml`
+- Gate value `99` lives in 4 active spots — `.coveragerc`, `pyproject.toml`
   `[tool.coverage.report]`, `resources/lib/constants.py` `MIN_COVERAGE_PERCENT`,
   `tools/audit_release.py` `DEFAULT_MIN_COVERAGE_PERCENT` — plus 3 active test assertions
   (`test_all.py`, `test_github_readiness_g5_tooling_config.py`,
-  `test_v291_build2_disc_classification.py`).
-- **Coverage `omit`** (in `.coveragerc` + `pyproject.toml`): `wizard.py`,
-  `first_run_wizard.py`, `wizard_polish.py`, `installer.py` are excluded from measurement
-  (UI/glue). So changes to those files don't need coverage; logic-module coverage sits ~99%.
+  `test_v291_build2_disc_classification.py`). (The historical `fail_under = 92..98`
+  assertions in `test_all.py` read frozen `COVERAGE_REPORT` evidence — do NOT touch those.)
+- **No module-level `omit`** — `wizard.py`, `first_run_wizard.py`, `wizard_polish.py`,
+  `installer.py` are measured again (they were already ~94-100% covered).
 - `[report] exclude_lines`: `pragma: no cover`, `raise NotImplementedError`,
-  `if __name__ == .__main__.:`.
+  `if __name__ == .__main__.:`. A few on-device package-import shims are `# pragma: no cover`.
 - **Formatter:** `ruff format` (Black was retired). `[tool.black]` removed; CI runs
   `ruff format --check`.
-- **Restore-to-99% is PLANNED for "v5".** It is NOT a performance rollback — see §6.4.
+- **99% restored** (was planned for "v5") — done; see `docs/testing-strategy.md` and
+  `tests/test_coverage_gate_99_restore.py`.
 
 **Test harness conventions:**
 - No `conftest.py`. Each test file sets up `sys.path` to include `tests/_stubs` (Kodi
@@ -356,11 +357,10 @@ aren't measured by plain `coverage run`, so it would read ~0%. That caveat is *o
 plain `coverage run`; **pytest-cov** is the correct way to parallelize. CI keeps the serial
 `coverage run` form (2-core runners; pinned by `test_github_readiness_g6_ci_hardening.py`).
 
-**Restoring 99% in v5 (planned) is a test-writing effort, not a perf change.** The gate
-number has zero runtime cost. The old slowness came from serial execution + the audit
-recompiling the venv (both fixed). To restore 99%: set the gate to 99 in the 4 active
-spots + 3 test assertions, remove the `omit` list (so UI/glue is measured again), and add
-tests to cover the re-included modules.
+**99% has been restored** (was planned for "v5") — a test-writing effort, not a perf change.
+The gate number has zero runtime cost. The gate was set to 99 in the 4 active spots + 3 test
+assertions, the `omit` list removed (so UI/glue is measured again), and
+`tests/test_coverage_gate_99_restore.py` added to close the gaps. Actual ≈99.2%.
 
 ---
 
@@ -555,7 +555,7 @@ code until they pick a direction:
 ## 10. Conventions cheat-sheet
 
 - **Run tests:** `pytest -n auto` (parallel, ~16s) with the Windows temp workaround.
-- **Coverage gate:** parallel via pytest-cov, floor 50%, ~25s
+- **Coverage gate:** parallel via pytest-cov, floor 99%, ~25s
   (`pytest -p xdist -p pytest_cov -n auto --dist worksteal --cov=resources/lib`).
 - **Lint/format:** `ruff check` + `ruff format` on `resources default.py service.py` only.
 - **Release:** `/release` (or `/release <ver>`); tag-driven; styled notes; 8 evidence docs.

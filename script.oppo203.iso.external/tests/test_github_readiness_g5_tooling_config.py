@@ -34,7 +34,7 @@ def test_pyproject_carries_quality_tool_configuration() -> None:
     assert "[tool.mypy]" in text
     assert "line-length = 100" in text
     assert 'target-version = "py39"' in text
-    assert "fail_under = 50" in text
+    assert "fail_under = 99" in text
 
 
 def test_legacy_config_files_remain_for_existing_tools() -> None:

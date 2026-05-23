@@ -1,20 +1,13 @@
 [run]
 branch = True
 source = resources/lib
-# Per docs/testing-strategy.md: measure coverage on logic modules, not UI/glue.
-# Wizard dialog flows and the file installer are presentation/glue, verified
-# visually in Kodi rather than chased for line coverage.
-omit =
-    resources/lib/wizard.py
-    resources/lib/first_run_wizard.py
-    resources/lib/wizard_polish.py
-    resources/lib/installer.py
 
 [report]
-# Coverage floor lowered 98 -> 50 per docs/testing-strategy.md: a Kodi add-on is
-# tightly coupled to xbmc* runtime APIs, so chasing >90% forces brittle,
-# mock-heavy tests. 50 is a realistic floor for the pure-Python logic.
-fail_under = 50
+# Coverage floor restored to 99% with the UI/glue modules back in measurement
+# (wizard*/installer were already exercised by the suite; only a handful of
+# on-device package-import shims remain uncovered via `# pragma: no cover`).
+# See docs/testing-strategy.md.
+fail_under = 99
 show_missing = True
 exclude_lines =
     pragma: no cover
