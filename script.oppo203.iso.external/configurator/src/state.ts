@@ -29,6 +29,7 @@ export type WizardState = {
   tvBrand: string | null;
   tvModel: string | null;
   tvBackend: TvBackend | null;
+  tvPlatform: string | null;
   tvVerified: boolean;
   tvAdbWeak: boolean;
   tvManualSwitch: boolean;
@@ -51,6 +52,7 @@ export const INITIAL_STATE: WizardState = {
   tvBrand: null,
   tvModel: null,
   tvBackend: null,
+  tvPlatform: null,
   tvVerified: false,
   tvAdbWeak: false,
   tvManualSwitch: false,

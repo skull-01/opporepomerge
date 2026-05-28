@@ -13,11 +13,8 @@ import {
 } from "./steps";
 import { Step0Gate } from "./screens/Step0Gate";
 import { Step0Exit } from "./screens/Step0Exit";
+import { Step1Intro, Step1TierA, Step1TierB, Step1TierC } from "./screens/step1";
 import {
-  Step1Intro,
-  Step1TierA,
-  Step1TierB,
-  Step1TierC,
   Step2Brand,
   Step2Model,
   Step2NotFound,
@@ -25,17 +22,10 @@ import {
   Step2AdbWarn,
   Step2Test,
   Step2Fail,
-  Step3Brand,
-  Step3Test,
-  Step3Fail,
-  Step35Intro,
-  Step35Ask,
-  Step35Fallback,
-  Step35Done,
-  TestSetup,
-  TestConfirm,
-  TestSuccess,
-} from "./screens/stubs";
+} from "./screens/step2";
+import { Step3Brand, Step3Test, Step3Fail } from "./screens/step3";
+import { Step35Intro, Step35Ask, Step35Fallback, Step35Done } from "./screens/step35";
+import { TestSetup, TestConfirm, TestSuccess } from "./screens/test";
 import type { ScreenProps } from "./screens/types";
 
 // Picking the progress variant in production — change here, not at runtime.
