@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `61aa18e` (origin/main, 2026-05-28) · **Tests on `main`:** 990 passed, 12 subtests passed
+**Last sync:** commit `4e54c5d` (origin/main, 2026-05-29) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~8.5s)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery.
 
@@ -110,21 +110,36 @@ There is no database; no external services to verify.
 > **Read this FIRST on `resume`.** Maintained by `done for the day`. If empty, the last
 > session ended clean; offer the operator a fresh theme.
 
-**As of 2026-05-28 (end of day):**
+**As of 2026-05-29 (end of day):**
 
-- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** — **draft, all
-  work pushed, awaiting operator review.** Branch `claude/windows-installer-ui-gfv4m` at
-  `edba3d1`. The Tauri 2 + Vite + React + TS shell under `configurator/` is up; Direction
-  A (Warm Paper) tokens ported; persistent shell (title bar, chain diagram, stepper)
-  functional; **all 23 wizard screens ported** from
-  `docs/installuidraft/design_handoff_oppo_installer/prototype/`. `tsc --noEmit` + `vite
-  build` clean (47 modules / 215 KB JS / 25 KB CSS), 990 pytest pass on `main` too.
-  Naming aligned: `installer/` → `configurator/`, "OppoKodiAddon Configurator" everywhere.
+- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** — **still draft,
+  awaiting operator review.** Branch `claude/windows-installer-ui-gfv4m` at `edba3d1`.
+  Unchanged this session. State described in the 2026-05-28 EOD still applies: Tauri 2 +
+  Vite + React + TS shell under `configurator/`, Direction A tokens, persistent shell, all
+  23 wizard screens ported, `tsc --noEmit` + `vite build` clean.
 
-- **`main` is at `636ae35`** — bootstrap commit landed today
-  (`docs: bootstrap AI handoff + agent norms`).
+- **`main` is at the SHA committed by this EOD** (the previous tip was `4e54c5d` from
+  yesterday's EOD; today's commit is a handoff-doc-only update — no code change).
 
-- **Clean stopping points for next session** (pick one theme, per §4):
+- **This session was verification + cleanup, no new feature work:**
+  - **claude-review CI fix verified.** [#29](https://github.com/skull-01/script.oppo203.iso.external/pull/29)
+    set `allowed_bots: 'dependabot'` in `.github/workflows/claude-code-review.yml`. The
+    workflow runs cleanly on human PRs ([#30](https://github.com/skull-01/script.oppo203.iso.external/pull/30) — 3/3 green).
+    The actual dependabot-actor path will be exercised on the next weekly batch
+    (~2026-06-03 per `.github/dependabot.yml`); until then the fix is "config correct,
+    awaiting first real bot run."
+  - **Memory hygiene.** Deleted the obsolete `claude-review-workflow-reminder` memory
+    (its own "How to apply" instructed deletion once fixed) and corrected the stale
+    "No GitHub Issues" line in the Session-continuity memory entry to reflect the
+    2026-05-28 switch to the hybrid issue model.
+  - **Environmental cleanup.** Moved a leftover `build\_tmp` tree (locked Windows tmp
+    dirs from earlier sessions) out of the repo to `~/build_tmp_LOCKED_delete_after_reboot/`
+    so `tools/audit_release.py` stops walking it; the 2 audit JSON-CLI tests went
+    green. The full suite was run **without** the historical `$env:TEMP=build\_tmp`
+    workaround and passed in ~8.5s — the workaround may no longer be needed; see §14.
+
+- **Clean stopping points for next session** (unchanged from yesterday; pick one theme,
+  per §4):
   1. **Promote / merge PR #30** once the operator reviews the draft. The two follow-up
      PRs that naturally chain off it (window-control IPC, state persistence) need it
      merged first.
@@ -217,7 +232,29 @@ service.py + resources/ ship); how `configurator/` stays excluded; release evide
 
 _Format: `### YYYY-MM-DD — short title` · what bit us · how we recovered · how to prevent._
 
-(none yet)
+### 2026-05-29 — `build\_tmp` from the Windows pytest TEMP workaround can leave OS-locked dirs that break `audit_release.py`
+
+- **What bit us:** an earlier session had used the historical Windows workaround
+  (`$env:TEMP = build\_tmp; $env:TMP = $env:TEMP`) before running pytest. A handful of
+  `build\_tmp\tmpXXXXXXXX\` subdirs ended up with ACLs that denied `Remove-Item`, `cmd
+  rmdir /s/q`, `takeown /f`, and `icacls /grant` even from a normal user shell — likely
+  Defender / a file-indexer holding handles. `tools/audit_release.py` walks the repo and
+  prints `Can't list 'C:\…\build\_tmp\tmpXXX'` to stdout when it hits one; that line
+  precedes the JSON payload and breaks two tests that call the audit CLI with `--json`:
+  `tests/test_v291_build10_audit_reporter_refactor.py::test_audit_cli_json_output_still_works`
+  and `tests/test_all.py::TBuild5ReleaseAuditArtifacts::test_release_audit_cli_json`.
+- **How we recovered:** since the lock could not be cleared without admin/reboot,
+  `Move-Item build\_tmp $env:USERPROFILE\build_tmp_LOCKED_delete_after_reboot` (rename
+  only needs parent write access, not contents access) moved it out of the repo; the two
+  tests then passed. Locked tree can be deleted with `rmdir /s/q` after the next reboot
+  frees the handles.
+- **How to prevent:** the full suite passed this session in ~8.5s **without** the
+  `$env:TEMP=build\_tmp` override (just `--basetemp="build\_pt"` and
+  `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1`). The override may no longer be necessary on this
+  machine. Try without it first; only reach for it if `WinError 5` (or a similar
+  permission-denied) actually appears, and prefer routing TEMP to a path **outside the
+  repo** (e.g. a freshly created `$env:USERPROFILE\.pytest-tmp`) so the audit walker
+  cannot reach it.
 
 ---
 
@@ -290,6 +327,12 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   awaiting review + the chain of follow-up themes; both branches confirmed pushed and in
   sync with origin (`main`@`636ae35`, `claude/windows-installer-ui-gfv4m`@`edba3d1`). No
   issues opened/closed/retitled — §17a cache remains empty.
+- **2026-05-29 (EOD)** — Verification + cleanup session, no code changes. Refreshed §3
+  to record today's work (claude-review CI fix verified to the limit of what can be
+  proven before the next dependabot batch; memory hygiene); added the first §14 Gotcha
+  (`build\_tmp` Windows-locked tmpdirs vs. `audit_release.py`); updated the header
+  "Last sync" / "Tests on `main`" to `4e54c5d` / 987 passed, 3 skipped. PR #30 unchanged.
+  §17a still empty (no issues opened/closed/retitled).
 
 ---
 
