@@ -161,26 +161,46 @@ known blocker tracked in `configurator-icon-files-missing`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-29 (end of day):** (none in flight)
+**As of 2026-05-29 (end of day):** v2.9.14 audit-ready on `wip/wizard-ux`; no
+in-flight code.
 
-- Last addon release: **v2.9.13** on `main`. Next staged release is **v2.9.14** on branch
-  `wip/wizard-ux` (first-run wizard fixes, PO headers, one-click setup-file install,
-  expanded player presets) — operator needs to verify on the CoreELEC box per
-  [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md), then
-  `/release 2.9.14`.
-- **Recent activity:** issue [#22](https://github.com/skull-01/script.oppo203.iso.external/issues/22)
-  ([Bug]: wizard launch failure, `No module named 'wizard'`, `type:bug`) was closed
-  2026-05-28 — that's the bare-import gotcha (§7.1 in
-  [`docs/ai-handoff/AI_RESUME_GUIDE.md`](docs/ai-handoff/AI_RESUME_GUIDE.md)) whose fix
-  lives on `wip/wizard-ux`. **#22 has no `area:` label yet** — needs `area:addon`
-  back-applied on next `resume` (or as part of cutting v2.9.14).
+- **This session — v2.9.14 release prep** on `wip/wizard-ux` (tip `9d633de`):
+  - Back-applied `area:addon` label to issue
+    [#22](https://github.com/skull-01/script.oppo203.iso.external/issues/22)
+    (the sole repo Issue; sweep complete).
+  - Audited `wip/wizard-ux`: `py_compile` + the four `tools/*.py --check` gates
+    (`render_docs`, `sync_version`, `test_layout`, `i18n_extract`) all green;
+    `pytest -n auto` = **999 passed, 3 skipped in 11.83s** (+12 vs main's 987);
+    coverage **99.10%** (pre-push hook enforces 99% floor).
+  - Found a single +1 ruff `I001` in
+    [`tools/dev_build.py`](tools/dev_build.py); fixed via `ruff check --fix` and
+    pushed as commit `9d633de` (*style: sort imports in tools/dev_build.py*).
+    Branch ruff count now matches main's 336 baseline (+0 net contribution).
+  - Filed issue
+    [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
+    (`ENH-: clear ruff backlog on main`, `area:addon`) for the pre-existing 336
+    ruff errors on main — surfaced by the audit, **not** a v2.9.14 blocker;
+    3-PR incremental plan documented in the issue body.
+
+- **Outstanding before `/release 2.9.14` can run** (operator decides):
+  - **Main-side drift reconciliation** — `main` is 13 commits ahead of
+    `wip/wizard-ux` with PR #30 (configurator scaffold), PR #29 (CI fix), PR #28
+    (pytest-cov bump), and today's spine/EOD docs. Cleanest path: open
+    `wip/wizard-ux` → `main` PR, merge via GitHub, then `/release 2.9.14` from
+    `main`.
+  - **On-device verification** of the wizard fixes per
+    [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md).
+
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **Cut v2.9.14** — run `/release 2.9.14` once `wip/wizard-ux` is operator-verified
-     on-device. Tag-driven via `package.yml`; 8-doc evidence set; styled notes.
-  2. **Fix the broken `claude-review` CI check** — partially done via PR #29 (allowed_bots
-     config); next real-bot run lands ~2026-06-03 with the weekly dependabot batch.
-  3. **Back-apply `area:addon` to #22** and any future bug issues, so the per-area
-     reporting in §1 stays honest.
+  1. **Open `wip/wizard-ux` → `main` PR** so v2.9.14 can be tagged from `main`
+     after operator merge. Smallest possible diff to unblock the release.
+  2. **Cut v2.9.14** — `/release 2.9.14` once #1 lands and operator verifies on
+     device.
+  3. **Work issue #38 — PR 1 (auto-fix sweep)** — `ruff check --fix .`, ~172
+     mechanical fixes, 336 → ~164 errors. Independent of the release.
+  4. **Fix the broken `claude-review` CI check** — partially done via PR #29
+     (allowed_bots config); next real-bot run lands ~2026-06-03 with the weekly
+     dependabot batch.
 
 ## §3b Configurator work — in progress
 
@@ -390,11 +410,12 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **never** (no issues yet).
+Last refreshed: **2026-05-29 (EOD #3)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
-| _empty_ | | | | | | |
+| 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` | closed by operator |
+| 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not yet started |
 
 ---
 
@@ -446,6 +467,30 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   as the next-`resume` triage step. §1, §2, §2a, §4–§17a, §19, §20–§21 unchanged
   beyond this entry. `docs/ai-handoff/AI_RESUME_GUIDE.md` §9 also updated to point at
   this spine and stop describing the old single-list `resume` flow.
+- **2026-05-29 (EOD #3 — done for the day)** — First session under the revised
+  two-area `resume` spine. Worked **addon** themes 1 + 3 (small enough to bundle):
+  back-applied `area:addon` to issue #22, then audited `wip/wizard-ux` for v2.9.14
+  release prep. All release-gate `tools/*.py --check` ran clean; `py_compile` OK;
+  `pytest -n auto` = **999 passed, 3 skipped in 11.83s** on the branch (+12 vs
+  main's 987); coverage 99.10% via pre-push hook. Single +1 ruff `I001` in
+  `tools/dev_build.py` fixed and pushed as commit `9d633de` *style: sort imports
+  in tools/dev_build.py* — branch ruff count now matches main's 336 baseline
+  (+0 net contribution). Filed issue
+  [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
+  (`ENH-: clear ruff backlog on main`, `area:addon`) for the pre-existing 336-error
+  ruff backlog on main — out-of-scope for v2.9.14, 3-PR incremental plan in the
+  issue body. **§3a** rewritten to record this session's work + the v2.9.14
+  next-steps gating (main-side drift reconciliation + on-device verification).
+  **§3b** unchanged (configurator not touched this session). **§17a** backlog
+  audit cache populated for the first time — entries: #22 (closed, `area:addon`,
+  implementing SHA `b7471db` on `wip/wizard-ux`) and #38 (open, `area:addon`).
+  Header "Last sync" stays at `394f9fc` (no merge to main this session; the only
+  push was commit `9d633de` to `wip/wizard-ux`). Tests on `main` unchanged at
+  **987 passed, 3 skipped in 11.23s** (re-confirmed on the docs branch which is
+  docs-only-diff from main). EOD #3 itself rides on top of EOD #2's still-open
+  PR [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37) on
+  `docs/eod-handoff-2026-05-29-pm` — one coherent PR covering the spine revision
+  + the first session under the new spine.
 
 ---
 
