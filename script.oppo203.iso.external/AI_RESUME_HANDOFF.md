@@ -5,9 +5,9 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `4e54c5d` (origin/main, 2026-05-29) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~8.5s)
+**Last sync:** commit `394f9fc` (origin/main, 2026-05-29 — Merge PR #30 configurator scaffold) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~11s)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
-tracking, PRs for delivery.
+tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
 **What this is:** A Python 3.9+ Kodi add-on (`script.oppo203.iso.external`) for OPPO 203/205
 and compatible-clone external-player handoff, plus a new Tauri 2 + React/TS Windows
@@ -23,21 +23,53 @@ inputs).
 
 # §1 The `resume` command
 
+Work in this repo is split into **two areas** that share one machine and one git history:
+
+- **Addon** — the Kodi add-on (Python under `resources/`, entry points `default.py` /
+  `service.py`, release tooling under `tools/`, tests under `tests/`).
+- **Configurator** — the Windows configurator app (Tauri 2 + React/TS under
+  `configurator/`).
+
+Issues are tagged with **`area:addon`** or **`area:configurator`** labels so the resume
+command can summarize each area independently. Both areas live on `main`; one environment
+serves both (see §2a).
+
 When the operator types **`resume`** (alone), do exactly this:
 
-1. **Read this file** (especially §3 "Work in progress") and the repo instruction files
+1. **Read this file** (especially §3a "Addon work in progress" and §3b "Configurator work
+   in progress") and the repo instruction files
    ([`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md), [`CONTRIBUTING.md`](CONTRIBUTING.md)).
-2. **Run the environment readiness check** in §2a. Print a small readiness table.
-   - All rows green → one line `Environment: ready ✓` and continue.
-   - An *auto* row missing → install it (idempotent), re-check, report what was installed.
+2. **Run the unified environment readiness check** in §2a — it covers prerequisites for
+   **both** areas (Python venv + dev deps for addon; Node + Rust + Tauri + WebView2 for
+   configurator; plus the `area:addon` / `area:configurator` GitHub labels). Print a small
+   readiness table.
+   - All rows green → one line `Environment: ready ✓ (addon + configurator)` and continue.
+   - An *auto-repo* row missing → install it (idempotent: `venv`, `pip install`, `npm
+     install`, `gh label create --force`), re-check, report what was installed.
+   - An *auto-system* row missing → attempt `winget install ... --silent
+     --accept-source-agreements --accept-package-agreements` (per row), re-check; on
+     success continue, on failure print the manual fix and **STOP**.
    - A *manual* row missing → print the exact fix command and **STOP**.
-3. **Report recent backlog activity** — *last 5 issues created* and *last 5 issues closed*,
-   each shown as `#N <short title snippet>` per the operator's "list issues with titles"
-   norm. Use `gh issue list --limit 5 --state all --sort created` and
-   `gh issue list --limit 5 --state closed --sort updated`.
-4. **Suggest 1–3 themes** (one theme = one session, per the session-shape rule in §4). Lead
-   with any unfinished entry in §3 "Work in progress". **STOP and wait** for the operator
-   to pick a theme before doing any new work.
+3. **Report recent backlog activity per area.** Two parallel blocks, **Addon** then
+   **Configurator**, each with:
+   - *Last 5 issues created* — `gh issue list --label area:<area> --limit 5 --state all
+     --sort created` — one line each as `#N <short title snippet>` (operator's "list
+     issues with titles" norm).
+   - *Last 5 issues closed* — `gh issue list --label area:<area> --limit 5 --state closed
+     --sort updated` — same formatting.
+   - *Work in progress* — paraphrase §3a (for addon) or §3b (for configurator) in 2–4
+     lines: the in-flight branch/PR, what's done, what's left, blockers.
+
+   If any issues exist that carry neither `area:addon` nor `area:configurator`, list them
+   under a short **Unclassified** tail (≤5 rows) so they can be triaged.
+4. **Suggest themes per area, separately** (still one theme = one session per §4).
+   - **Addon — 1–3 candidate themes**, each one line, leading with any unfinished §3a
+     entry.
+   - **Configurator — 1–3 candidate themes**, each one line, leading with any unfinished
+     §3b entry.
+
+   **STOP and wait** for the operator to pick **one area and one theme** before doing any
+   new work. Do not start work in both areas in the same session (§4 session-shape rule).
 
 ## Other natural-language triggers any agent must honor
 
@@ -65,8 +97,11 @@ When the operator types **`done for the day`**, do exactly this:
    - Tests green → normal commit + `git push -u origin <branch>`.
    - Tests red or work mid-flight → `wip: <short summary>` checkpoint commit + push. Note
      the wip status in §3 so next session knows it's not done.
-2. **Update §3 "Work in progress"** — overwrite with the current state: what's in flight,
-   the clean stopping point for tomorrow, any blockers.
+2. **Update §3 "Work in progress" — overwrite §3a and §3b independently.** Touch only the
+   area(s) you actually worked in this session. For each touched area: current state,
+   what's in flight, the clean stopping point for tomorrow, any blockers. If you didn't
+   touch an area, leave its subsection unchanged. If an area ended clean, write `(none)`
+   in its subsection so next `resume` reports it as a fresh slate.
 3. **Append a dated entry to §19** "Updates to this document" — one bullet per material
    change (this entry, plus anything new added during the session).
 4. **Refresh the §17a backlog audit cache** if any issues were opened, closed, or
@@ -83,77 +118,130 @@ substantive Q&A happened, append §21; verify §2a still matches the actual read
 
 # §2a Environment readiness
 
-The readiness check verifies the operator's machine can edit, test, and build both the
-add-on (Python) and the Windows configurator (Node + Rust + Tauri 2).
+The readiness check verifies the **single Windows machine** can edit, test, and build
+**both** areas — the Kodi add-on (Python) **and** the Tauri 2 configurator (Node + Rust +
+WebView2). One pass covers both.
 
-| Row | Prereq | How to check | Auto-installable? | Fix command if missing |
+**Tiers.** `auto-repo` = idempotent and runs in user scope, the resume command does it
+without prompting. `auto-system` = the resume command attempts `winget install` (best
+effort, no admin elevation requested; user-scope installs don't need it); on success it
+re-checks and continues, on failure it prints the manual fix and **STOPS**. `manual` = an
+operator action the resume command will not perform (auth flows, browser-redirect installs).
+
+| Row | Prereq | How to check (PowerShell) | Tier | Install command |
 |---|---|---|---|---|
-| 1 | **git** ≥ 2.30 | `git --version` | manual | install from package manager |
-| 2 | **`gh` CLI** authenticated | `gh auth status` | manual | `gh auth login` (operator) |
-| 3 | **Python** 3.9+ | `python3 --version` | manual | install from python.org / pyenv |
-| 4 | Repo **`.venv`** | `test -d .venv` | **auto** | `cd /home/user/script.oppo203.iso.external; python3 -m venv .venv` |
-| 5 | **Python dev deps** | `.venv/bin/python -m pytest --version` | **auto** | `cd /home/user/script.oppo203.iso.external; .venv/bin/python -m pip install -r requirements-dev.txt paramiko` |
-| 6 | **paramiko** (SSH probes) | `.venv/bin/python -c "import paramiko"` | **auto** | covered by row 5 |
-| 7 | **Node** 20+ | `node -v` | manual | install from nodejs.org / nvm |
-| 8 | **npm** 10+ | `npm -v` | manual | bundled with Node |
-| 9 | configurator **`node_modules`** | `test -d configurator/node_modules` | **auto** | `cd /home/user/script.oppo203.iso.external/configurator; npm install` |
-| 10 | **Rust toolchain** 1.77+ | `cargo --version && rustc --version` | manual | `curl https://sh.rustup.rs -sSf \| sh` |
-| 11 | (Windows host only) **WebView2 + MSVC Build Tools** for Tauri 2 | `npm run tauri info` in `configurator/` | manual | follow [Tauri 2 Windows prereqs](https://v2.tauri.app/start/prerequisites/#windows) |
+| 1 | **git** ≥ 2.30 | `git --version` | auto-system | `winget install --id Git.Git -e --silent --accept-source-agreements --accept-package-agreements` |
+| 2 | **`gh` CLI** authenticated | `gh auth status` | manual | `gh auth login` (operator approves the browser flow) |
+| 3 | **Python** 3.9+ on PATH | `python --version` | auto-system | `winget install --id Python.Python.3.12 -e --silent --accept-source-agreements --accept-package-agreements` |
+| 4 | Repo **`.venv`** | `Test-Path .venv` | auto-repo | `cd C:\Users\rigel\Documents\gitrepo\script.oppo203.iso.external; python -m venv .venv` |
+| 5 | **Python dev deps** | `.venv\Scripts\python.exe -m pytest --version` | auto-repo | `cd C:\Users\rigel\Documents\gitrepo\script.oppo203.iso.external; .venv\Scripts\python.exe -m pip install -r requirements-dev.txt paramiko` |
+| 6 | **paramiko** (SSH probes) | `.venv\Scripts\python.exe -c "import paramiko"` | auto-repo | covered by row 5 |
+| 7 | **Node** 20+ | `node -v` | auto-system | `winget install --id OpenJS.NodeJS.LTS -e --silent --accept-source-agreements --accept-package-agreements` |
+| 8 | **npm** 10+ | `npm -v` | bundled | comes with Node row 7 |
+| 9 | configurator **`node_modules`** | `Test-Path configurator\node_modules` | auto-repo | `cd C:\Users\rigel\Documents\gitrepo\script.oppo203.iso.external\configurator; npm install` |
+| 10 | **Rust toolchain** 1.77+ | `cargo --version; rustc --version` | auto-system | `winget install --id Rustlang.Rustup -e --silent --accept-source-agreements --accept-package-agreements; rustup default stable` |
+| 11 | **MSVC Build Tools** (Tauri linker) | `(Get-Command link.exe -ErrorAction SilentlyContinue) -ne $null` or `cd configurator; npm run tauri info` | auto-system | `winget install --id Microsoft.VisualStudio.2022.BuildTools -e --silent --accept-source-agreements --accept-package-agreements --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"` (multi-GB; first run is slow) |
+| 12 | **WebView2 runtime** | `Test-Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'` | bundled-w11 | bundled with Windows 11; if absent: `winget install --id Microsoft.EdgeWebView2Runtime -e --silent --accept-source-agreements --accept-package-agreements` |
+| 13 | **Configurator icon** (placeholder OK) | `Test-Path configurator\src-tauri\icons\icon.ico` | auto-repo | generate from a placeholder PNG via `cd configurator; npm run tauri icon -- ../docs/installuidraft/.../placeholder.png` (or commit a stub `icon.ico`); blocks `cargo build` otherwise |
+| 14 | Repo has **`area:addon`** and **`area:configurator`** labels | `gh label list --json name --jq '.[].name' \| Select-String '^area:(addon\|configurator)$'` returns both | auto-repo | `gh label create area:addon --color 0E8A16 --description "Kodi add-on (Python)" --force; gh label create area:configurator --color 5319E7 --description "Windows configurator (Tauri 2)" --force` |
 
-Auto rows install on `resume` if missing. Manual rows print their fix command and STOP.
-There is no database; no external services to verify.
+Rows are checked in order; a missing row at any tier is acted on per its tier rule
+described above. There is no database; no external services to verify. (Memory note
+`tauri-env-installed` records that rows 10/11 already passed on 2026-05-29; row 13 is the
+known blocker tracked in `configurator-icon-files-missing`.)
 
 ---
 
 # §3 Work in progress (resume here first)
 
-> **Read this FIRST on `resume`.** Maintained by `done for the day`. If empty, the last
-> session ended clean; offer the operator a fresh theme.
+> **Read this FIRST on `resume`.** §3a covers Addon work, §3b covers Configurator work.
+> Maintained by `done for the day` — each subsection is overwritten independently. If a
+> subsection is empty (`(none)`), that area ended clean; offer the operator a fresh theme
+> in that area.
+
+## §3a Addon work — in progress
+
+**As of 2026-05-29 (end of day):** (none in flight)
+
+- Last addon release: **v2.9.13** on `main`. Next staged release is **v2.9.14** on branch
+  `wip/wizard-ux` (first-run wizard fixes, PO headers, one-click setup-file install,
+  expanded player presets) — operator needs to verify on the CoreELEC box per
+  [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md), then
+  `/release 2.9.14`.
+- **Recent activity:** issue [#22](https://github.com/skull-01/script.oppo203.iso.external/issues/22)
+  ([Bug]: wizard launch failure, `No module named 'wizard'`, `type:bug`) was closed
+  2026-05-28 — that's the bare-import gotcha (§7.1 in
+  [`docs/ai-handoff/AI_RESUME_GUIDE.md`](docs/ai-handoff/AI_RESUME_GUIDE.md)) whose fix
+  lives on `wip/wizard-ux`. **#22 has no `area:` label yet** — needs `area:addon`
+  back-applied on next `resume` (or as part of cutting v2.9.14).
+- **Candidate themes for next addon session** (pick one, per §4):
+  1. **Cut v2.9.14** — run `/release 2.9.14` once `wip/wizard-ux` is operator-verified
+     on-device. Tag-driven via `package.yml`; 8-doc evidence set; styled notes.
+  2. **Fix the broken `claude-review` CI check** — partially done via PR #29 (allowed_bots
+     config); next real-bot run lands ~2026-06-03 with the weekly dependabot batch.
+  3. **Back-apply `area:addon` to #22** and any future bug issues, so the per-area
+     reporting in §1 stays honest.
+
+## §3b Configurator work — in progress
 
 **As of 2026-05-29 (end of day):**
 
-- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** — **still draft,
-  awaiting operator review.** Branch `claude/windows-installer-ui-gfv4m` at `edba3d1`.
-  Unchanged this session. State described in the 2026-05-28 EOD still applies: Tauri 2 +
-  Vite + React + TS shell under `configurator/`, Direction A tokens, persistent shell, all
-  23 wizard screens ported, `tsc --noEmit` + `vite build` clean.
+- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** — **MERGED** at
+  `394f9fc` on `main`. Tauri 2 + Vite + React + TS shell under `configurator/`, Direction
+  A "Warm Paper" tokens, persistent shell, all 23 wizard screens ported, `tsc --noEmit` +
+  `vite build` clean. The scaffold theme is done.
 
-- **`main` is at the SHA committed by this EOD** (the previous tip was `4e54c5d` from
-  yesterday's EOD; today's commit is a handoff-doc-only update — no code change).
+- **Four follow-up PRs are open and need triage** (all draft, all created 2026-05-28
+  before today's spine revision — none carry `area:configurator` labels yet, back-apply
+  on next `resume`):
+  - [#33 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/33)
+    `configurator: wire window-control IPC on custom title bar` —
+    `claude/window-control-ipc-7q3xt`. Implements what was the §3b candidate-theme #2.
+  - [#34 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/34)
+    `configurator: persist WizardState to %APPDATA% across restarts` —
+    `claude/state-persistence-n3p2w`. Implements what was the §3b candidate-theme #3.
+  - [#35 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/35)
+    `configurator: unblock first-time cargo build (icon + lockfile + winget docs)` —
+    `claude/configurator-build-setup-k8m2x`. Addresses §2a row 13 (icon stub) and the
+    `configurator-icon-files-missing` memory.
+  - [#32 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/32)
+    `docs: align AGENTS.md ruff target with CI; refresh handoff §3 for #30 merge` —
+    `claude/doc-cleanup-r8m1d`. **Overlaps today's spine revision** — the §3 refresh
+    part is now redundant; the AGENTS.md ruff-target alignment may still be useful.
+    Reviewer should cherry-pick or close.
+  - [#36 OPEN](https://github.com/skull-01/script.oppo203.iso.external/pull/36)
+    `docs: end-of-day handoff 2026-05-29 (mid-day continuation)` —
+    `claude/eod-handoff-q9p2r`. A stale mid-day EOD that didn't account for today's
+    spine revision. Likely close in favor of today's EOD commit.
 
-- **This session was verification + cleanup, no new feature work:**
-  - **claude-review CI fix verified.** [#29](https://github.com/skull-01/script.oppo203.iso.external/pull/29)
-    set `allowed_bots: 'dependabot'` in `.github/workflows/claude-code-review.yml`. The
-    workflow runs cleanly on human PRs ([#30](https://github.com/skull-01/script.oppo203.iso.external/pull/30) — 3/3 green).
-    The actual dependabot-actor path will be exercised on the next weekly batch
-    (~2026-06-03 per `.github/dependabot.yml`); until then the fix is "config correct,
-    awaiting first real bot run."
-  - **Memory hygiene.** Deleted the obsolete `claude-review-workflow-reminder` memory
-    (its own "How to apply" instructed deletion once fixed) and corrected the stale
-    "No GitHub Issues" line in the Session-continuity memory entry to reflect the
-    2026-05-28 switch to the hybrid issue model.
-  - **Environmental cleanup.** Moved a leftover `build\_tmp` tree (locked Windows tmp
-    dirs from earlier sessions) out of the repo to `~/build_tmp_LOCKED_delete_after_reboot/`
-    so `tools/audit_release.py` stops walking it; the 2 audit JSON-CLI tests went
-    green. The full suite was run **without** the historical `$env:TEMP=build\_tmp`
-    workaround and passed in ~8.5s — the workaround may no longer be needed; see §14.
+- **This session revised the `resume` procedure for two work areas** (no configurator
+  code touched):
+  - Split §1 into addon + configurator parallel reporting; added `area:addon` /
+    `area:configurator` labels (auto-created by §2a row 14).
+  - Rewrote §2a for Windows with `auto-system` winget installs for rows 1, 3, 7, 10, 11,
+    12; added row 13 (icon stub — overlaps with PR #35) and row 14 (area labels).
+  - Split §3 into §3a (addon) / §3b (configurator) so `done for the day` overwrites each
+    independently.
+  - Updated [`AGENTS.md`](AGENTS.md), [`docs/ai-handoff/AI_RESUME_GUIDE.md`](docs/ai-handoff/AI_RESUME_GUIDE.md)
+    §9, [`.claude/commands/resume.md`](.claude/commands/resume.md), and the project memory
+    (`tauri-env-installed`, `MEMORY.md` session-continuity bullet) for consistency.
 
-- **Clean stopping points for next session** (unchanged from yesterday; pick one theme,
-  per §4):
-  1. **Promote / merge PR #30** once the operator reviews the draft. The two follow-up
-     PRs that naturally chain off it (window-control IPC, state persistence) need it
-     merged first.
-  2. **Wire window-control IPC** so the custom title bar's min/max/close actually do
-     something. Small, ~1 PR. Branches off `main` once #30 is merged.
-  3. **State persistence** to `%APPDATA%/OppoKodiAddonConfigurator/state.json`.
-  4. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
-     Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over port 23).
-     Multi-PR theme — would be its own session.
-  5. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
-  6. **App icon + bundling** before any release build.
+- **Candidate themes for next configurator session** (pick one, per §4):
+  1. **Triage the four open draft PRs** (#32, #33, #34, #35) — close #32's §3-refresh
+     portion as redundant; decide whether #33/#34/#35 are ready to be promoted out of
+     draft. Likely the cleanest first move now that #30 is in.
+  2. **Promote one of #33/#34/#35 to ready** after spot-checking the diff and applying
+     the `area:configurator` label.
+  3. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
+     Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over port 23) —
+     multi-PR theme, its own session, blocked on #33 (IPC) and #34 (state) landing first.
+  4. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
+  5. **App icon + bundling** before any release build — covered by #35.
 
-- **No active blockers.** No issues open under the hybrid model yet (none were filed this
-  session); the §17a cache remains empty.
+- **Blockers:** none. §17a cache remains empty; the four open configurator PRs are not
+  in §17a because they're PRs, not Issues. **No `area:` labels are applied to anything
+  yet** (#22, #32-#36 all unlabeled) — next `resume` will auto-create the labels via §2a
+  row 14, but back-applying them to existing items is a manual triage step.
 
 ---
 
@@ -299,13 +387,14 @@ the hybrid model._
 # §17a Backlog audit cache
 
 _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from here first
-before re-scanning live GitHub state (operator norm #10)._
+before re-scanning live GitHub state (operator norm #10). The `Area` column is the
+`area:addon` / `area:configurator` label that drives the per-area split in §1._
 
 Last refreshed: **never** (no issues yet).
 
-| # | Title | Labels | State | Implementing SHA(s) | Operator-verified? |
-|---|---|---|---|---|---|
-| _empty_ | | | | | |
+| # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
+|---|---|---|---|---|---|---|
+| _empty_ | | | | | | |
 
 ---
 
@@ -333,6 +422,30 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (`build\_tmp` Windows-locked tmpdirs vs. `audit_release.py`); updated the header
   "Last sync" / "Tests on `main`" to `4e54c5d` / 987 passed, 3 skipped. PR #30 unchanged.
   §17a still empty (no issues opened/closed/retitled).
+- **2026-05-29** — **Revised `resume` procedure for two work areas.** §1 now reports
+  *Addon* and *Configurator* independently (last-5-created, last-5-closed, WIP, theme
+  recommendations); driven by new `area:addon` / `area:configurator` GitHub labels
+  filtered via `gh issue list --label area:<area>`. §2a was rewritten for Windows
+  (PowerShell checks + `winget install` for `auto-system` rows: git, Python, Node, Rust,
+  MSVC Build Tools, WebView2) and gained two new rows: 13 (configurator icon placeholder
+  — already tracked by `configurator-icon-files-missing` memory) and 14 (the two area
+  labels). §3 was split into §3a (addon) and §3b (configurator); today's configurator-
+  only WIP moved into §3b verbatim, §3a seeded with the v2.9.14 candidate theme so the
+  next `resume` has both branches populated. §17a cache gained an `Area` column. AGENTS.md
+  updated with a one-line area-label norm.
+- **2026-05-29 (EOD #2 — done for the day)** — End-of-day after the spine revision
+  above. Header "Last sync" updated from `4e54c5d` to `394f9fc` (origin/main; the merge
+  of PR #30 configurator scaffold which landed mid-day between today's first EOD and
+  this one). Tests `pytest -n auto`: **987 passed, 3 skipped in 11.07s** (parallel; no
+  TEMP override needed per §14). Refreshed §3a to record closure of issue #22 (the
+  wizard `No module named 'wizard'` bug; fix on `wip/wizard-ux` staged for v2.9.14).
+  Rewrote §3b for the new world: PR #30 is **merged**; four follow-up draft PRs
+  (#32, #33, #34, #35) and one stale EOD continuation (#36) are now open and need
+  triage — #32 overlaps today's §3 refresh, #33/#34/#35 implement what were §3b's
+  candidate themes 2/3/6. No `area:` labels back-applied yet to #22/#32-#36 — flagged
+  as the next-`resume` triage step. §1, §2, §2a, §4–§17a, §19, §20–§21 unchanged
+  beyond this entry. `docs/ai-handoff/AI_RESUME_GUIDE.md` §9 also updated to point at
+  this spine and stop describing the old single-list `resume` flow.
 
 ---
 
