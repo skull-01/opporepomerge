@@ -10,7 +10,7 @@ ignore = [
   "UP015",  # open() default mode (Python 3.9 compat)
 ]
 exclude = [
-  "output/", "__pycache__/", "tools/", "tests/",
+  "output/", "__pycache__/", "tools/", "tests/", "configurator/",
 ]
 
 [lint.per-file-ignores]

@@ -29,3 +29,9 @@ Thumbs.db
 .env
 .venv/
 venv/
+
+# Windows configurator (Tauri 2 + Vite + React)
+configurator/node_modules/
+configurator/dist/
+configurator/src-tauri/target/
+configurator/src-tauri/gen/schemas/
