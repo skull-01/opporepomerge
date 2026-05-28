@@ -6,7 +6,7 @@ type Props = {
   children: ReactNode;
 };
 
-export function WinShell({ title = "OPPO Installer", children }: Props) {
+export function WinShell({ title = "OppoKodiAddon Configurator", children }: Props) {
   return (
     <div className="win">
       <div className="titlebar">

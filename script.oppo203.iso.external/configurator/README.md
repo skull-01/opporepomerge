@@ -1,14 +1,17 @@
-# OPPO Installer (Windows companion app)
+# OppoKodiAddon Configurator (Windows companion app)
 
-A Windows desktop wizard that sets up the [`script.oppo203.iso.external`](../README.md)
-Kodi add-on. Walks the user through configuring the Kodi → TV → OPPO/clone playback
-handoff, writes `playercorefactory.xml` + the remote-bridge keymap into Kodi's
-`userdata/`, and runs honest connectivity probes against the user's TV and player.
+A Windows desktop app that **configures** the
+[`script.oppo203.iso.external`](../README.md) Kodi add-on after it has been
+installed in Kodi. Walks the user through setting up the Kodi → TV →
+OPPO/clone playback handoff: writes `playercorefactory.xml` + the
+remote-bridge keymap into Kodi's `userdata/`, captures HDMI input topology,
+and runs honest connectivity probes against the user's TV and player.
 
-This directory is **not** part of the Kodi add-on package. The add-on's
+It does **not** install the add-on itself — that goes through Kodi's normal
+add-on mechanism. The add-on's
 [allowlist-driven packager](../tools/package_installable_zip.py) only ships
-`addon.xml`, `default.py`, `service.py`, and `resources/` — `installer/` is
-excluded by default.
+`addon.xml`, `default.py`, `service.py`, and `resources/`; `configurator/` is
+excluded from the Kodi-installable zip by default.
 
 ## Status
 
@@ -32,7 +35,7 @@ for the authoritative design.
 ## Layout
 
 ```
-installer/
+configurator/
 ├── README.md                ← you are here
 ├── package.json             ← frontend deps + npm scripts
 ├── vite.config.ts
@@ -77,7 +80,7 @@ C++ Build Tools + WebView2). On Linux/macOS you can run the frontend bits but
 the Tauri shell targets Windows.
 
 ```bash
-cd installer
+cd configurator
 npm install
 npm run tauri dev    # launches the native window with hot-reload
 ```
@@ -94,6 +97,14 @@ Build a release `.msi` / `.exe`:
 npm run tauri build  # outputs to src-tauri/target/release/bundle/
 ```
 
+## A note on terminology
+
+The design handoff folder still uses the legacy word "installer" in its
+filenames and prose (`design_handoff_oppo_installer/`, `OPPO Installer
+Wizard.html`) because it was authored before this distinction was settled.
+The product is a **configurator**: the Kodi add-on is installed by Kodi; this
+app sets it up.
+
 ## Next milestones
 
 1. **Port the remaining 21 screens** from `prototype/screens-1.jsx` and
@@ -101,11 +112,11 @@ npm run tauri build  # outputs to src-tauri/target/release/bundle/
 2. **Wire side effects** behind the diag logs — replace mocked checks with
    real probes (SFTP via `ssh2-sftp-client`-equivalent, SMB probes, TCP
    port knocks for backend detection, ADB / Roku ECP / Sony / etc.).
-3. **State persistence** to `%APPDATA%/OPPOInstaller/state.json` so the
-   wizard resumes after a crash or restart.
+3. **State persistence** to `%APPDATA%/OppoKodiAddonConfigurator/state.json`
+   so the wizard resumes after a crash or restart.
 4. **File generation** for `playercorefactory.xml` + the remote-bridge
    keymap. The add-on's Python side already has the generation logic — the
-   installer either calls into the add-on's tooling over SSH/SMB or
+   configurator either calls into the add-on's tooling over SSH/SMB or
    reimplements the small bits in Rust.
 5. **App icon + bundling.** The placeholder `O`-on-gradient title-bar icon
    should be replaced before any release build.

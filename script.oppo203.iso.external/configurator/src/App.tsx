@@ -95,7 +95,7 @@ export default function App() {
   const Screen = SCREEN_RENDERERS[screen];
 
   return (
-    <WinShell title="OPPO Installer · setup wizard">
+    <WinShell title="OppoKodiAddon Configurator · setup wizard">
       <div className="app-header">
         {!useSidebar && PROGRESS_VARIANT === "stepper" && (
           <Progress variant="stepper" current={stepId} onJump={onJumpStep} />

@@ -1,14 +1,14 @@
 [package]
-name = "oppo-installer"
+name = "oppokodiaddon-configurator"
 version = "0.1.0"
-description = "Windows companion app for the script.oppo203.iso.external Kodi add-on"
+description = "Windows configurator for the script.oppo203.iso.external Kodi add-on"
 authors = ["Kodi OPPO 203 ISO External Player maintainers"]
 license = "MIT"
 edition = "2021"
 rust-version = "1.77"
 
 [lib]
-name = "oppo_installer_lib"
+name = "oppokodiaddon_configurator_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
