@@ -4,7 +4,7 @@
 
 Coverage floor is **99%**, with every `resources/lib` module measured (no module-level omit).
 
-History: the floor was briefly lowered to 50% with the wizard/installer UI modules omitted, on the assumption that UI/glue can't be tested without brittle mocks. For this add-on that assumption turned out to be wrong — those modules were already exercised by the suite at 94–100%, because the project's fakes (`tests/_stubs`) model the `xbmc*` surface well enough to drive real behavior rather than mock theater. So the floor was restored to 99% with the UI modules back in measurement.
+History: the floor was briefly lowered to 50% with the installer UI module omitted, on the assumption that UI/glue can't be tested without brittle mocks. For this add-on that assumption turned out to be wrong — those modules were already exercised by the suite at 94–100%, because the project's fakes (`tests/_stubs`) model the `xbmc*` surface well enough to drive real behavior rather than mock theater. So the floor was restored to 99% with the UI modules back in measurement.
 
 The handful of lines that genuinely can't run outside Kodi (on-device package-import fallbacks, `__main__` guards) are marked `# pragma: no cover` rather than wrapped in contrived tests. The goal is still **test what matters** — 99% here reflects that the logic is genuinely covered, not a number chased with mocks.
 

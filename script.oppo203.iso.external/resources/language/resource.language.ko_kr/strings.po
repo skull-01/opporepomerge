@@ -460,128 +460,6 @@ msgctxt "#30906"
 msgid "Send WoL before power-on"
 msgstr ""
 
-msgctxt "#30910"
-msgid "Generate Chinoppo AutoScript"
-msgstr ""
-
-msgctxt "#30920"
-msgid "Wizard mode (basic/full)"
-msgstr ""
-
-msgctxt "#30930"
-msgid "Architecture auto-test"
-msgstr ""
-
-msgctxt "#30940"
-msgid "Service interception (Kodi Omega hardened)"
-msgstr ""
-
-msgctxt "#30950"
-msgid "Hardware preset"
-msgstr ""
-
-
-# ---- v1.0.6 wizard / preset / auto-test localization ----
-
-msgctxt "#31000"
-msgid "Welcome"
-msgstr "환영합니다"
-
-msgctxt "#31001"
-msgid "Configuration mode"
-msgstr "Configuration mode"
-
-msgctxt "#31002"
-msgid "Basic - just the essentials"
-msgstr "Basic - just the essentials"
-
-msgctxt "#31003"
-msgid "Full - configure every option"
-msgstr "Full - configure every option"
-
-msgctxt "#31010"
-msgid "Prerequisites"
-msgstr "Prerequisites"
-
-msgctxt "#31011"
-msgid "Oppo IP"
-msgstr "Oppo IP"
-
-msgctxt "#31012"
-msgid "Oppo port"
-msgstr "Oppo port"
-
-msgctxt "#31013"
-msgid "Reachable"
-msgstr "연결 가능"
-
-msgctxt "#31014"
-msgid "Unreachable"
-msgstr "Unreachable"
-
-msgctxt "#31020"
-msgid "Hardware"
-msgstr "Hardware"
-
-msgctxt "#31021"
-msgid "Chinoppo preset"
-msgstr "Chinoppo preset"
-
-msgctxt "#31022"
-msgid "Apply Chinoppo #EJT/#PLA preset?"
-msgstr "Apply Chinoppo #EJT/#PLA preset?"
-
-msgctxt "#31030"
-msgid "Kodi startup auto-power"
-msgstr "Kodi startup auto-power"
-
-msgctxt "#31031"
-msgid "Do you want Kodi to automatically power on the OPPO/compatible player when Kodi starts? Choose No if you prefer to keep the player off until playback starts or you power it on manually."
-msgstr "Do you want Kodi to automatically power on the OPPO/compatible player when Kodi starts? Choose No if you prefer to keep the player off until playback starts or you power it on manually."
-
-msgctxt "#31032"
-msgid "Delay (seconds)"
-msgstr "Delay (seconds)"
-
-msgctxt "#31033"
-msgid "Retries"
-msgstr "Retries"
-
-msgctxt "#31034"
-msgid "Wake-on-LAN first?"
-msgstr "Wake-on-LAN first?"
-
-msgctxt "#31040"
-msgid "Architecture auto-test"
-msgstr "Architecture auto-test"
-
-msgctxt "#31041"
-msgid "Run quick auto-test now?"
-msgstr "Run quick auto-test now?"
-
-msgctxt "#31042"
-msgid "Apply recommendation now?"
-msgstr "Apply recommendation now?"
-
-msgctxt "#31043"
-msgid "Architecture set"
-msgstr "Architecture set"
-
-msgctxt "#31050"
-msgid "Wizard complete"
-msgstr "Wizard complete"
-
-msgctxt "#31051"
-msgid "Wizard reset"
-msgstr "Wizard reset"
-
-msgctxt "#31060"
-msgid "AutoScript generated"
-msgstr "AutoScript generated"
-
-msgctxt "#31061"
-msgid "AutoScript failed"
-msgstr "AutoScript failed"
 
 msgctxt "#30960"
 msgid "Persistent reconnect on disconnect"
@@ -616,7 +494,7 @@ msgid "Auto-power-on"
 msgstr ""
 
 msgctxt "#32103"
-msgid "Wizard and playback"
+msgid "Playback"
 msgstr ""
 
 msgctxt "#32104"
@@ -636,7 +514,7 @@ msgid "Auto-power-on settings hide when the master toggle is off."
 msgstr ""
 
 msgctxt "#32113"
-msgid "Wizard mode and playback-architecture knobs."
+msgid "Playback-architecture knobs."
 msgstr ""
 
 msgctxt "#32114"

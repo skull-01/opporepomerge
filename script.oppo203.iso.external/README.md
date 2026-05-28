@@ -70,8 +70,8 @@ Do not write that a device path is hardware-validated unless a real tester repor
 1. Download the installable runtime ZIP for the release.
 2. In Kodi, enable installation from ZIP files if required by your Kodi setup.
 3. Install the ZIP from Kodi using **Add-ons > Install from zip file**.
-4. Open the add-on settings and complete the setup/wizard flow.
-5. Configure player address, routing policy, NAS/path mapping, and optional TV/AVR behavior only as needed.
+4. Configure the add-on with the Windows configurator (see [`configurator/`](configurator/)), which writes the `playercorefactory.xml` and remote-bridge keymap into Kodi's userdata and seeds the add-on's settings.
+5. Open the add-on settings to review player address, routing policy, NAS/path mapping, and optional TV/AVR behavior. Adjust only as needed.
 
 ## Basic configuration checklist
 

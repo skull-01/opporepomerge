@@ -46,7 +46,7 @@ class FakeSettings(dict):
 def kodi_stubs(*targets):
     names = {
         "xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "xbmcplugin", "xbmcdrm",
-        "resources.lib.installer", "resources.lib.oppo_remote", "wizard", "autoscript_helper",
+        "resources.lib.installer", "resources.lib.oppo_remote", "autoscript_helper",
     }
     names.update(targets)
     old_path = list(sys.path)
@@ -471,26 +471,249 @@ class TKodiBoundCoverageHardening(unittest.TestCase):
             self.assertEqual(installer.ADDON.getSetting("oppo_ip"), "192.0.2.44")
             self.assertTrue(any(call[0] == "textviewer" for call in xbmcgui.calls()))
 
-    def test_autoscript_and_wizard_with_kodi_stubs(self):
+    def test_installer_main_menu_dispatches_each_choice(self):
+        """Strip-wizard: installer.main() menu has 11 choices (0-10) + Cancel.
+
+        Exercise every dispatch + the architecture-choice gate to lock the
+        post-strip menu shape.
+        """
+        with kodi_stubs("oppo_control", "settings_reader"):
+            import xbmcaddon, xbmcgui
+            xbmcaddon.reset(
+                settings={
+                    "architecture_choice_made": "true",
+                    "playback_architecture": "external_player",
+                    "python_path": "/usr/bin/python3",
+                    "include_disc_folder_rules": "true",
+                    "oppo_experimental_filelist_enabled": "false",  # exercises the disabled-warning branch
+                    "avr_control_enabled": "false",
+                },
+                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
+            )
+            installer = importlib.import_module("resources.lib.installer")
+            installer.ADDON.openSettings = lambda: None
+            fake_oc = types.ModuleType("oppo_control")
+            fake_oc.discover_oppo = lambda timeout=0: []  # no-results branch
+            sys.modules["oppo_control"] = fake_oc
+
+            # Each menu choice 0..10, then Cancel (-1).
+            for choice in range(11):
+                xbmcgui.reset()
+                xbmcgui.push_select(choice)
+                # show_tcl_presets needs a sub-select + yesno; filelist asks no
+                # extra prompts in the disabled branch.
+                xbmcgui.push_select(-1)   # tcl preset cancel
+                xbmcgui.push_yesno(False)
+                installer.main()
+
+            # Architecture-not-chosen gate triggers the first-run dialog.
+            installer.ADDON.setSetting("architecture_choice_made", "false")
+            xbmcgui.reset()
+            xbmcgui.push_select(-1)   # cancel arch dialog
+            xbmcgui.push_select(-1)   # cancel menu
+            installer.main()
+
+    def test_installer_discovery_multiple_results_and_exceptions(self):
+        """Strip-wizard: discovery multi-result branch + exception path."""
+        with kodi_stubs("oppo_control"):
+            import xbmcaddon, xbmcgui
+            xbmcaddon.reset(
+                settings={"architecture_choice_made": "true"},
+                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
+            )
+            installer = importlib.import_module("resources.lib.installer")
+            fake_oc = types.ModuleType("oppo_control")
+            fake_oc.discover_oppo = lambda timeout=0: [
+                {"ip": "192.0.2.10", "port": 23, "name": "OPPO-1"},
+                {"ip": "192.0.2.11", "port": 23, "name": "OPPO-2"},
+            ]
+            sys.modules["oppo_control"] = fake_oc
+            xbmcgui.reset()
+            installer.run_oppo_discovery()
+            self.assertTrue(any(c[0] == "textviewer" and "multiple" in c[1].lower() for c in xbmcgui.calls()))
+
+            # Single result with user declining apply -> textviewer branch.
+            fake_oc.discover_oppo = lambda timeout=0: [{"ip": "192.0.2.40", "port": 9999, "name": "OPPO"}]
+            xbmcgui.reset(); xbmcgui.push_yesno(False)
+            installer.run_oppo_discovery()
+            self.assertTrue(any(c[0] == "textviewer" for c in xbmcgui.calls()))
+
+            # Exception path inside discovery.
+            def boom(timeout=0): raise RuntimeError("net down")
+            fake_oc.discover_oppo = boom
+            xbmcgui.reset()
+            installer.run_oppo_discovery()
+            self.assertTrue(any(c[0] == "ok" and "failed" in c[2].lower() for c in xbmcgui.calls()))
+
+    def test_installer_filelist_diagnostic_large_listing_truncates(self):
+        """Strip-wizard: file-list diagnostic with >50 entries truncates."""
+        with kodi_stubs("oppo_control", "settings_reader"):
+            import xbmcaddon, xbmcgui
+            xbmcaddon.reset(
+                settings={"oppo_experimental_filelist_enabled": "true"},
+                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
+            )
+            installer = importlib.import_module("resources.lib.installer")
+            entries = [
+                {"name": f"item{i}.iso", "entry_type": "file", "is_dir": False,
+                 "is_file": True, "size_bytes": 1000 + i, "disc_type": "iso",
+                 "extension": "iso", "path": f"/m/item{i}.iso"}
+                for i in range(60)
+            ]
+            fake_oc = types.ModuleType("oppo_control")
+            fake_oc.get_file_list_raw = lambda settings, path="/": "raw"
+            fake_oc.parse_undocumented_file_list = lambda raw, base_path=None: entries
+            sys.modules["oppo_control"] = fake_oc
+            fake_sr = types.ModuleType("settings_reader")
+            fake_sr.read_settings = lambda addon_data: FakeSettings({})
+            sys.modules["settings_reader"] = fake_sr
+            xbmcgui.reset()
+            installer.run_experimental_filelist_diagnostic()
+            self.assertTrue(any("and 10 more entries" in str(c) for c in xbmcgui.calls()))
+
+    def test_installer_filelist_diagnostic_empty_entries_branch(self):
+        """Strip-wizard: file-list diagnostic with 0 entries reports the empty branch."""
+        with kodi_stubs("oppo_control", "settings_reader"):
+            import xbmcaddon, xbmcgui
+            xbmcaddon.reset(
+                settings={"oppo_experimental_filelist_enabled": "true"},
+                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
+            )
+            installer = importlib.import_module("resources.lib.installer")
+            fake_oc = types.ModuleType("oppo_control")
+            fake_oc.get_file_list_raw = lambda settings, path="/": "raw"
+            fake_oc.parse_undocumented_file_list = lambda raw, base_path=None: []
+            sys.modules["oppo_control"] = fake_oc
+            fake_sr = types.ModuleType("settings_reader")
+            fake_sr.read_settings = lambda addon_data: FakeSettings({})
+            sys.modules["settings_reader"] = fake_sr
+            xbmcgui.reset()
+            installer.run_experimental_filelist_diagnostic()
+            self.assertTrue(any("No entries parsed" in str(c) for c in xbmcgui.calls()))
+
+    def test_installer_extra_branches_for_coverage(self):
+        """Service-interception snippet header + TCL apply branch + AVR export."""
         with kodi_stubs():
             import xbmcaddon, xbmcgui
-            xbmcaddon.reset(info={"profile": tempfile.mkdtemp()}, settings={"wizard_mode": "basic", "oppo_ip": "192.0.2.1", "oppo_port": "23"})
-            xbmcgui.reset()
-            # autoscript: ok, yes telnet, no passwordless, select NFS, input mount, heartbeat, no adb, final ok
-            xbmcgui.push_yesno(True); xbmcgui.push_yesno(False); xbmcgui.push_select(1)
-            xbmcgui.push_input("192.0.2.10:/movies"); xbmcgui.push_input("/tmp/heartbeat"); xbmcgui.push_yesno(False)
-            autoscript = importlib.import_module("autoscript_helper")
-            body = autoscript.generate({"mount_type": "cifs", "mount_remote": "//srv/movies", "cifs_user": "u", "cifs_pass": "p", "enable_adb": True})
-            self.assertIn("mount -t cifs", body)
-            out = autoscript.run_autoscript_wizard(xbmcaddon.Addon())
-            self.assertTrue(Path(out).exists())
-            # wizard: choose basic, prerequisites yes, keep defaults, reachable true, hardware UDP-203, quick start yes, autopower no
-            xbmcgui.reset(); xbmcgui.push_select(0); xbmcgui.push_yesno(True); xbmcgui.push_input("192.0.2.1"); xbmcgui.push_input("23"); xbmcgui.push_select(0); xbmcgui.push_yesno(True); xbmcgui.push_yesno(False)
-            wizard = importlib.import_module("wizard")
-            with mock.patch.object(wizard, "_probe", return_value=True):
-                self.assertTrue(wizard.run_wizard())
-            wizard.reset_wizard()
-            self.assertEqual(xbmcaddon.Addon().getSetting("wizard_completed"), "false")
+            xbmcaddon.reset(
+                settings={
+                    "include_disc_folder_rules": "true",
+                    "python_path": "/usr/bin/python3",
+                    "playback_architecture": "service_interception",
+                    "architecture_choice_made": "true",
+                    "avr_control_enabled": "false",
+                },
+                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
+            )
+            installer = importlib.import_module("resources.lib.installer")
+
+            # service_interception snippet header (build_snippet_xml wraps the body).
+            snippet = installer.build_snippet_xml()
+            self.assertIn("service_interception", snippet)
+
+            # show_architecture_choice_dialog choice==1 (service_interception).
+            xbmcgui.reset(); xbmcgui.push_select(1)
+            installer.show_architecture_choice_dialog()
+            self.assertEqual(installer.ADDON.getSetting("playback_architecture"), "service_interception")
+
+            # show_tcl_presets apply branch.
+            xbmcgui.reset(); xbmcgui.push_select(0); xbmcgui.push_yesno(True)
+            installer.show_tcl_presets()
+            self.assertTrue(installer.ADDON.getSetting("oppo_input_adb_shell"))
+
+            # export_avr_diagnostic_report runs through the success path.
+            installer.export_avr_diagnostic_report()
+
+
+class TStripWizardAutoscriptCoverage(unittest.TestCase):
+    """Cover the post-strip surface in autoscript_helper.py."""
+
+    def test_cifs_with_username_and_password(self):
+        autoscript = importlib.import_module("resources.lib.autoscript_helper")
+        body = autoscript.generate({
+            "mount_type": "cifs",
+            "mount_remote": "//nas/movies",
+            "cifs_user": "user",
+            "cifs_pass": "pass",
+        })
+        self.assertIn(",username=user,password=pass", body)
+
+    def test_write_script_normalizes_line_endings(self):
+        autoscript = importlib.import_module("resources.lib.autoscript_helper")
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td, "autoexec.sh")
+            autoscript.write_script(str(path), "a\r\nb\r")
+            self.assertEqual(path.read_text(encoding="utf-8"), "a\nb\n")
+
+    def test_write_script_chmod_failure_is_swallowed(self):
+        autoscript = importlib.import_module("resources.lib.autoscript_helper")
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td, "autoexec.sh")
+            with mock.patch.object(autoscript.os, "chmod", side_effect=OSError("readonly")):
+                out = autoscript.write_script(str(path), "x\n")
+            self.assertEqual(out, str(path))
+            self.assertEqual(path.read_text(encoding="utf-8"), "x\n")
+
+
+class TStripWizardSettingsReaderCoverage(unittest.TestCase):
+    """Cover settings_reader.save_settings + Settings.get_bool None branch."""
+
+    def test_save_settings_persists_keys_to_xml(self):
+        sr = importlib.import_module("resources.lib.settings_reader")
+        with tempfile.TemporaryDirectory() as td:
+            ok = sr.save_settings(td, sr.Settings({"oppo_ip": "192.0.2.5"}))
+            self.assertTrue(ok)
+            self.assertTrue(Path(td, "settings.xml").exists())
+            text = Path(td, "settings.xml").read_text(encoding="utf-8")
+            self.assertIn("oppo_ip", text)
+            self.assertIn("192.0.2.5", text)
+
+            # Second call updates existing setting + creates a new one.
+            ok = sr.save_settings(td, sr.Settings({"oppo_ip": "192.0.2.99", "oppo_port": "23"}))
+            self.assertTrue(ok)
+            text = Path(td, "settings.xml").read_text(encoding="utf-8")
+            self.assertIn("192.0.2.99", text)
+            self.assertIn("oppo_port", text)
+
+    def test_save_settings_empty_dir_returns_false(self):
+        sr = importlib.import_module("resources.lib.settings_reader")
+        self.assertFalse(sr.save_settings("", sr.Settings({"x": "y"})))
+
+    def test_settings_get_bool_none_branch_returns_default(self):
+        sr = importlib.import_module("resources.lib.settings_reader")
+
+        class RawNone:
+            data = {"x": None}
+
+            def get(self, key, default=None):
+                return self.data.get(key, default)
+
+        s = RawNone()
+        # Direct call hits the `raw is None` branch.
+        self.assertTrue(sr.Settings.get_bool(s, "x", default=True))
+        self.assertFalse(sr.Settings.get_bool(s, "x", default=False))
+
+
+class TStripWizardHardwareGuidanceCoverage(unittest.TestCase):
+    """Cover player_setup_guidance and format_player_setup_guidance.
+
+    These were exercised through wizard.py; the configurator may consume them
+    via IPC.
+    """
+
+    def test_player_setup_guidance_covers_all_hardware_classes(self):
+        hc = importlib.import_module("resources.lib.hardware_capabilities")
+        for key, expected_marker in (
+            ("UDP-203", "Stock OPPO"),
+            ("M9702", "Chinoppo-style clone"),
+            ("Magnetar-UDP800", "Magnetar"),
+            ("Reavon-UBR-X100", "Reavon"),
+            ("unknown_model_xyz", "Unknown"),
+        ):
+            guidance = hc.player_setup_guidance(key)
+            self.assertIn(expected_marker, guidance["title"])
+            rendered = hc.format_player_setup_guidance(key)
+            self.assertIn("Hardware validation claimed: no", rendered)
 
 
 if __name__ == "__main__":
@@ -629,65 +852,6 @@ class TCoverageGateSecondPass(unittest.TestCase):
              mock.patch.object(ep, "fast_return", side_effect=RuntimeError("return failed")), \
              mock.patch.object(ep, "clear_session_active", lambda s: None):
             self.assertEqual(ep.main(), 1)
-
-    def test_wizard_architecture_and_full_flow_branches(self):
-        with kodi_stubs():
-            import xbmcaddon, xbmcgui
-            xbmcaddon.reset(settings={"wizard_mode": "full", "oppo_ip": "192.0.2.1", "oppo_port": "23", "oppo_hardware_model": "chinoppo"})
-            xbmcgui.reset(); xbmcgui.push_yesno(True)
-            wizard = importlib.import_module("wizard")
-            class AddonRaises:
-                def getSetting(self, key): raise RuntimeError("bad")
-                def setSetting(self, key, value): raise RuntimeError("bad")
-            self.assertEqual(wizard._get(AddonRaises(), "x", "d"), "d")
-            wizard._set(AddonRaises(), "x", "y")
-            with mock.patch.object(wizard.socket, "create_connection", side_effect=OSError("down")):
-                self.assertFalse(wizard._probe("h", 23, to=0.01))
-            with mock.patch("arch_benchmark.run_full", return_value={"recommended": "external_player"}) as run_full:
-                self.assertEqual(wizard._run_benchmark("h", 23, probe_external=lambda _: True, probe_service=lambda _: True), {"recommended": "external_player"})
-                self.assertTrue(run_full.called)
-            # full flow: select full, continue, enter ip/port, hardware chinoppo, apply preset, generate autoscript, quick false, auto true, delay/retries, wol no, arch test yes/apply, use service no
-            xbmcgui.reset()
-            xbmcgui.push_select(1); xbmcgui.push_yesno(True); xbmcgui.push_input("192.0.2.1"); xbmcgui.push_input("23")
-            xbmcgui.push_select(4); xbmcgui.push_yesno(False); xbmcgui.push_yesno(True); xbmcgui.push_yesno(True); xbmcgui.push_yesno(False); xbmcgui.push_yesno(True)
-            xbmcgui.push_input("7"); xbmcgui.push_input("4"); xbmcgui.push_yesno(False); xbmcgui.push_yesno(True); xbmcgui.push_yesno(True); xbmcgui.push_yesno(False)
-            fake_auto = types.ModuleType("autoscript_helper"); fake_auto.run_autoscript_wizard = lambda addon: "autoexec"
-            sys.modules["autoscript_helper"] = fake_auto
-            with mock.patch.object(wizard, "_probe", return_value=True):
-                self.assertTrue(wizard.run_wizard())
-            addon = xbmcaddon.Addon()
-            self.assertEqual(addon.getSetting("oppo_start_commands"), "#EJT\n#PLA")
-            self.assertEqual(addon.getSetting("kodi_startup_power_on_delay"), "7")
-
-    def test_installer_more_ui_branches(self):
-        with kodi_stubs("oppo_control", "settings_reader", "wizard", "autoscript_helper"):
-            import xbmcaddon, xbmcgui, xbmc
-            xbmcaddon.reset(settings={"wizard_completed": "true", "architecture_choice_made": "true", "oppo_experimental_filelist_enabled": "false"}, info={"path": str(ROOT), "id": "script.oppo203.iso.external"})
-            xbmcgui.reset()
-            installer = importlib.import_module("resources.lib.installer")
-            installer.ADDON.openSettings = lambda: None
-            # Service-interception choice.
-            xbmcgui.push_select(1); self.assertEqual(installer.show_architecture_choice_dialog(), 1)
-            # Discovery no-results and multiple-results branches.
-            fake_oc = types.ModuleType("oppo_control")
-            fake_oc.discover_oppo = lambda timeout=0: []
-            sys.modules["oppo_control"] = fake_oc
-            installer.run_oppo_discovery()
-            fake_oc.discover_oppo = lambda timeout=0: [{"ip": "1", "port": 1, "name": "A"}, {"ip": "2", "port": 2, "name": "B"}]
-            installer.run_oppo_discovery()
-            # TCL preview-only and cancel branches.
-            xbmcgui.push_select(0); xbmcgui.push_yesno(False); installer.show_tcl_presets()
-            xbmcgui.push_select(999); installer.show_tcl_presets()
-            installer.run_experimental_filelist_diagnostic()
-            # Main dispatch branches 2, 5, 10, 11 with fake modules.
-            fake_w = types.ModuleType("wizard"); fake_w.run_wizard = lambda: None; fake_w.reset_wizard = lambda: None
-            fake_a = types.ModuleType("autoscript_helper"); fake_a.run_autoscript_wizard = lambda addon: None
-            sys.modules["wizard"] = fake_w; sys.modules["autoscript_helper"] = fake_a
-            for choice in (2, 5, 10, 11, 12):
-                xbmcgui.push_select(choice)
-                installer.main()
-            self.assertTrue(xbmc.get_logs() == [] or isinstance(xbmc.get_logs(), list))
-
     def test_oppo_remote_kodi_and_success_specials(self):
         with kodi_stubs():
             import xbmcaddon, xbmcgui, xbmcvfs
@@ -837,86 +1001,14 @@ class TCoverageGateThirdPass(unittest.TestCase):
             i18n = importlib.import_module("i18n")
             self.assertEqual(i18n.L(31000), "Bienvenue")
             xbmcaddon.reset(localized={})
-            self.assertEqual(i18n.L(31000), "Welcome")
+            self.assertEqual(i18n.L(31000), "")
+            self.assertEqual(i18n.L(31000, "fallback"), "fallback")
             class BadAddon:
                 def getLocalizedString(self, sid): raise RuntimeError("bad")
             i18n.xbmcaddon.Addon = lambda *_: BadAddon()
-            self.assertEqual(i18n.L(31001), "Configuration mode")
-
-    def test_installer_main_all_remaining_dispatches_and_failures(self):
-        with kodi_stubs("oppo_control", "settings_reader", "wizard", "autoscript_helper"):
-            import xbmcaddon, xbmcgui
-            xbmcaddon.reset(settings={"wizard_completed": "true", "architecture_choice_made": "true", "oppo_experimental_filelist_enabled": "true"}, info={"path": str(ROOT), "id": "script.oppo203.iso.external"})
-            xbmcgui.reset()
-            installer = importlib.import_module("resources.lib.installer")
-            installer.ADDON.openSettings = lambda: None
-            # main choices 0,1,3,4,6,7,8,9 plus failures in 9/10/11.
-            fake_oc = types.ModuleType("oppo_control")
-            fake_oc.discover_oppo = lambda timeout=0: (_ for _ in ()).throw(RuntimeError("discover"))
-            fake_oc.get_file_list_raw = lambda settings, path="/": (_ for _ in ()).throw(RuntimeError("filelist"))
-            fake_oc.parse_undocumented_file_list = lambda raw, base_path=None: []
-            fake_sr = types.ModuleType("settings_reader"); fake_sr.read_settings = lambda addon_data: FakeSettings({})
-            fake_w = types.ModuleType("wizard"); fake_w.run_wizard = lambda: (_ for _ in ()).throw(RuntimeError("wiz")); fake_w.reset_wizard = lambda: (_ for _ in ()).throw(RuntimeError("reset"))
-            fake_a = types.ModuleType("autoscript_helper"); fake_a.run_autoscript_wizard = lambda addon: (_ for _ in ()).throw(RuntimeError("auto"))
-            sys.modules.update({"oppo_control": fake_oc, "settings_reader": fake_sr, "wizard": fake_w, "autoscript_helper": fake_a})
-            for choice in (0, 1, 3, 4, 6, 7, 8, 9, 10, 11):
-                xbmcgui.push_select(choice)
-                if choice == 7: xbmcgui.push_select(-1)
-                installer.main()
-            self.assertTrue(any(call[0] == "ok" for call in xbmcgui.calls()))
-            # wizard_completed false path logs wizard failure and falls back to architecture dialog.
-            installer.ADDON.setSetting("wizard_completed", "false")
-            installer.ADDON.setSetting("architecture_choice_made", "false")
-            xbmcgui.push_select(-1); xbmcgui.push_select(12)
-            installer.main()
-
-    def test_wizard_abort_unreachable_fallback_and_no_gui_paths(self):
-        with kodi_stubs("hardware_presets", "autoscript_helper"):
-            import xbmcgui
-            wizard = importlib.import_module("wizard")
-            xbmcgui.reset(); xbmcgui.push_select(0); xbmcgui.push_yesno(False)
-            self.assertFalse(wizard.run_wizard())
-            xbmcgui.reset(); xbmcgui.push_select(0); xbmcgui.push_yesno(True); xbmcgui.push_input("h"); xbmcgui.push_input("23"); xbmcgui.push_yesno(False)
-            with mock.patch.object(wizard, "_probe", return_value=False):
-                self.assertFalse(wizard.run_wizard())
-            # Import fallback path when hardware_presets import fails.
-            sys.modules["hardware_presets"] = None
-            xbmcgui.reset(); xbmcgui.push_select(0); xbmcgui.push_yesno(True); xbmcgui.push_input("h"); xbmcgui.push_input("23"); xbmcgui.push_yesno(True); xbmcgui.push_select(2); xbmcgui.push_yesno(True); xbmcgui.push_yesno(False)
-            with mock.patch.object(wizard, "_probe", return_value=False):
-                self.assertTrue(wizard.run_wizard())
-            # no xbmcgui branch in architecture application.
-            old_gui = wizard.xbmcgui
-            try:
-                wizard.xbmcgui = None
-                addon = FakeSettings({"oppo_hardware_model": "udp_203"})
-                addon.setSetting = lambda k, v: addon.__setitem__(k, v)
-                addon.getSetting = lambda k: addon.get(k, "")
-                with mock.patch.object(wizard, "auto_test_architecture", return_value=wizard._ArchTestResult(True, "external_player", "ok")):
-                    wizard._run_architecture_auto_test(addon, "h", 23)
-                self.assertEqual(addon["architecture_choice_made"], "true")
-            finally:
-                wizard.xbmcgui = old_gui
-
-    def test_autoscript_helper_remaining_edges(self):
-        with kodi_stubs("autoscript_helper"):
-            import xbmcgui, xbmcaddon
-            autoscript = importlib.import_module("autoscript_helper")
-            old_vfs = autoscript.xbmcvfs
-            try:
-                autoscript.xbmcvfs = None
-                self.assertIn(".kodi-script.oppo203.iso.external", autoscript._profile(None))
-            finally:
-                autoscript.xbmcvfs = old_vfs
-            self.assertEqual(autoscript._safe_int("bad", 9), 9)
-            with tempfile.TemporaryDirectory() as td:
-                out = Path(td, "autoexec.sh")
-                autoscript.write_script(out, "a\r\nb\r")
-                self.assertEqual(out.read_text(encoding="utf-8"), "a\nb\n")
-            xbmcgui.reset(); xbmcgui.push_input(""); self.assertEqual(autoscript._in("prompt", "d"), "d")
-            xbmcgui.push_select(-1); self.assertEqual(autoscript._sel("p", ["a"]), 0)
-
+            self.assertEqual(i18n.L(31001), "")
 class TCoverageGateFourthPassGradual99(unittest.TestCase):
-    def test_autoscript_generation_profiles_and_wizard_paths(self):
+    def test_autoscript_generation_profiles(self):
         with kodi_stubs("autoscript_helper"):
             import xbmcgui, xbmcaddon
             autoscript = importlib.import_module("autoscript_helper")
@@ -949,34 +1041,6 @@ class TCoverageGateFourthPassGradual99(unittest.TestCase):
                 "cifs_pass": "p",
             })
             self.assertIn(",username=u,password=p", cifs_pass)
-
-            with tempfile.TemporaryDirectory() as td:
-                xbmcaddon.reset(info={"profile": td})
-                xbmcgui.reset()
-                xbmcgui.push_yesno(False)  # telnet
-                xbmcgui.push_yesno(False)  # root
-                xbmcgui.push_select(1)     # NFS
-                xbmcgui.push_input("192.0.2.5:/srv")
-                xbmcgui.push_input("/tmp/heartbeat")
-                xbmcgui.push_yesno(True)   # ADB
-                out = autoscript.run_autoscript_wizard()
-                self.assertTrue(Path(out).exists())
-                self.assertIn("mount -t nfs", Path(out).read_text(encoding="utf-8"))
-
-            with tempfile.TemporaryDirectory() as td:
-                xbmcaddon.reset(info={"profile": td})
-                xbmcgui.reset()
-                xbmcgui.push_yesno(True)
-                xbmcgui.push_yesno(True)
-                xbmcgui.push_select(2)     # CIFS
-                xbmcgui.push_input("//192.0.2.5/share")
-                xbmcgui.push_input("user")
-                xbmcgui.push_input("secret")
-                xbmcgui.push_input("")
-                xbmcgui.push_yesno(False)
-                with mock.patch.object(autoscript.os, "makedirs", side_effect=OSError("readonly")):
-                    out = autoscript.run_autoscript_wizard(xbmcaddon.Addon())
-                self.assertTrue(out.endswith("autoexec.sh"))
 
     def test_discovery_cache_and_probe_edge_paths(self):
         import discovery
@@ -1128,95 +1192,6 @@ class TCoverageGateFourthPassGradual99(unittest.TestCase):
         self.assertIn("unsafe_id", path)
 
 class TCoverageGateFifthPassGradual99(unittest.TestCase):
-    def test_wizard_ui_no_gui_benchmark_and_branch_edges(self):
-        with kodi_stubs("wizard", "arch_benchmark", "hardware_presets", "autoscript_helper"):
-            import xbmcaddon, xbmcgui
-            wizard = importlib.import_module("wizard")
-            old_gui = wizard.xbmcgui
-            try:
-                wizard.xbmcgui = None
-                self.assertFalse(wizard._yn("h", "m"))
-                self.assertEqual(wizard._in("h", "default"), "default")
-                self.assertEqual(wizard._sel("h", ["a"], preselect=0), 0)
-                wizard._ok("h", "m")
-            finally:
-                wizard.xbmcgui = old_gui
-
-            class GuiTypeError:
-                class Dialog:
-                    def select(self, heading, options): return 0
-            old_gui = wizard.xbmcgui
-            try:
-                wizard.xbmcgui = GuiTypeError
-                self.assertEqual(wizard._sel("h", ["a"], preselect=0), 0)
-            finally:
-                wizard.xbmcgui = old_gui
-
-            fake_ab = types.ModuleType("arch_benchmark")
-            def run_full(probe_external=None, probe_service=None, **kwargs):
-                for probe in (probe_external, probe_service):
-                    try:
-                        probe(None)
-                    except Exception:
-                        pass
-                return {"recommended": "external_player", "kwargs": kwargs}
-            fake_ab.run_full = run_full
-            sys.modules["arch_benchmark"] = fake_ab
-            with mock.patch.object(wizard, "_probe", return_value=True):
-                result = wizard._run_benchmark("h", "23")
-            self.assertEqual(result["recommended"], "external_player")
-
-            with mock.patch.dict(sys.modules, {"hardware_presets": None}):
-                with mock.patch.object(wizard, "_probe", return_value=True):
-                    self.assertIn("Player reachable", wizard.auto_test_architecture(FakeSettings({"oppo_hardware_model": "chinoppo"}), "h", 23).details)
-
-            xbmcgui.reset()
-            with mock.patch.object(wizard, "auto_test_architecture", return_value=wizard._ArchTestResult(False, "service_interception", "down")):
-                res = wizard._run_architecture_auto_test(xbmcaddon.Addon(), "h", 23)
-            self.assertFalse(res.reachable)
-            xbmcgui.reset(); xbmcgui.push_yesno(False)
-            with mock.patch.object(wizard, "auto_test_architecture", return_value=wizard._ArchTestResult(True, "external_player", "ok")):
-                res = wizard._run_architecture_auto_test(xbmcaddon.Addon(), "h", 23)
-            self.assertTrue(res.reachable)
-
-    def test_wizard_full_flow_wol_and_autoscript_failure(self):
-        with kodi_stubs("wizard", "hardware_presets", "autoscript_helper"):
-            import xbmcaddon, xbmcgui
-            fake_hp = types.ModuleType("hardware_presets")
-            fake_hp.list_presets = lambda: [("chinoppo", "Chinoppo")]
-            fake_hp.is_chinoppo_family = lambda key: key == "chinoppo"
-            fake_hp.select_recommended_power_delay = lambda key: 9
-            fake_auto = types.ModuleType("autoscript_helper")
-            fake_auto.run_autoscript_wizard = lambda addon: (_ for _ in ()).throw(RuntimeError("auto failed"))
-            sys.modules["hardware_presets"] = fake_hp
-            sys.modules["autoscript_helper"] = fake_auto
-            xbmcaddon.reset(settings={"wizard_mode": "full", "oppo_ip": "h", "oppo_port": "23"})
-            xbmcgui.reset()
-            xbmcgui.push_select(1)       # full mode
-            xbmcgui.push_yesno(True)     # prerequisites
-            xbmcgui.push_input("h")
-            xbmcgui.push_input("23")
-            xbmcgui.push_select(0)       # chinoppo
-            xbmcgui.push_yesno(False)    # AutoScript shell handler disabled
-            xbmcgui.push_yesno(False)    # do not apply preset
-            xbmcgui.push_yesno(True)     # run autoscript, which fails
-            xbmcgui.push_yesno(True)     # quick start
-            xbmcgui.push_yesno(True)     # auto power
-            xbmcgui.push_input("11")
-            xbmcgui.push_input("5")
-            xbmcgui.push_yesno(True)     # wol first
-            xbmcgui.push_input("00:11:22:33:44:55")
-            xbmcgui.push_yesno(False)    # no architecture auto-test
-            xbmcgui.push_yesno(True)     # external player
-            wizard = importlib.import_module("wizard")
-            with mock.patch.object(wizard, "_probe", return_value=True):
-                self.assertTrue(wizard.run_wizard())
-            addon = xbmcaddon.Addon()
-            self.assertEqual(addon.getSetting("oppo_mac"), "00:11:22:33:44:55")
-            self.assertEqual(addon.getSetting("oppo_use_wol"), "true")
-            self.assertEqual(addon.getSetting("kodi_startup_power_on_delay"), "11")
-            self.assertEqual(addon.getSetting("playback_architecture"), "external_player")
-
     def test_external_player_idle_confirmed_and_remote_import_edges(self):
         import external_player as ep
 
@@ -1404,170 +1379,7 @@ class TCoverageGateBuild3Gradual99(unittest.TestCase):
         submission = pm.export_submission("custom", ip="192.0.2.70", quirks=["clone"], contact="tester", user_preset=valid)
         self.assertEqual(submission["preset_id"], "custom")
 
-class TCoverageGateBuild3SecondSlice(unittest.TestCase):
-    def test_arch_benchmark_autoscript_and_wizard_polish_edges(self):
-        import arch_benchmark as ab
-        with self.assertRaises(ValueError):
-            ab.benchmark("external", probe=None)
-        ticks = iter([10, 9])
-        result = ab.benchmark("external", trials=1, probe=lambda c: None, timer=lambda: next(ticks))
-        self.assertEqual(result["trials"][0]["elapsed"], 0.0)
-        self.assertEqual(ab.recommend(None, None), "tie")
-        self.assertEqual(ab.recommend(None, 1.0), "service")
-        self.assertEqual(ab.recommend(1.0, None), "external")
-        self.assertEqual(ab.validate_playercorefactory(""), (False, "no path provided"))
-        with tempfile.NamedTemporaryFile(delete=False) as fh:
-            p = fh.name
-            fh.write(b"")
-        try:
-            self.assertEqual(ab.validate_playercorefactory(p), (False, "empty file"))
-            Path(p).write_text("<notpcf/>", encoding="utf-8")
-            self.assertIn("root element", ab.validate_playercorefactory(p)[1])
-            Path(p).write_text("<playercorefactory></playercorefactory>", encoding="utf-8")
-            self.assertIn("no <players>", ab.validate_playercorefactory(p)[1])
-            Path(p).write_text("<playercorefactory><players></players></playercorefactory>", encoding="utf-8")
-            self.assertIn("no <player>", ab.validate_playercorefactory(p)[1])
-            full = ab.run_full(lambda c: None, lambda c: None, trials=1, timer=iter([0, 0.1, 0, 0.2]).__next__, playercorefactory_path=p)
-            self.assertFalse(full["playercorefactory_ok"])
-        finally:
-            os.unlink(p)
-        self.assertIn("read error", ab.validate_playercorefactory("/path/that/does/not/exist")[1])
-
-        import autoscript_helper as ah
-        self.assertIn("mount -t nfs", ah.generate({"mount_type": "nfs", "mount_remote": "host:/share"}))
-        self.assertIn("username=user,password=pass", ah.generate({"mount_type": "cifs", "mount_remote": "//host/share", "cifs_user": "user", "cifs_pass": "pass"}))
-        old_gui = ah.xbmcgui
-        try:
-            ah.xbmcgui = None
-            self.assertFalse(ah._yn("t", "m"))
-            ah._ok("t", "m")
-            self.assertEqual(ah._in("t", "d"), "d")
-            self.assertEqual(ah._sel("t", ["a"]), 0)
-        finally:
-            ah.xbmcgui = old_gui
-        with tempfile.NamedTemporaryFile(delete=False) as fh:
-            out = fh.name
-        try:
-            with mock.patch.object(ah.os, "chmod", side_effect=OSError("chmod")):
-                self.assertEqual(ah.write_script(out, "a\r\nb\r"), out)
-            self.assertEqual(Path(out).read_text(encoding="utf-8"), "a\nb\n")
-        finally:
-            os.unlink(out)
-
-        import wizard_polish as wp
-        state = wp.WizardState(step_index=len(wp.STEPS))
-        self.assertIsNone(state.step)
-        self.assertEqual(state.__eq__(object()), NotImplemented)
-        self.assertEqual(wp.next_step(wp.WizardState(step_index=len(wp.STEPS) - 1)).step_index, len(wp.STEPS) - 1)
-        back = wp.WizardState(step_index=2)
-        self.assertEqual(wp.prev_step(back).step_index, 1)
-        with self.assertRaises(RuntimeError):
-            wp.test_now(wp.WizardState(step_index=0), probe=lambda h, p: True)
-        tested = wp.test_now(wp.WizardState({"oppo_ip": "h", "oppo_port": "bad"}, step_index=1), probe=lambda h, p: True)
-        self.assertFalse(tested.last_test["ok"])
-        collected = {}
-        applied = wp.apply(wp.WizardState({"a": "b"}, dry_run=False), writer=lambda k, v: collected.update({k: v}))
-        self.assertTrue(applied["written"])
-        self.assertEqual(collected["a"], "b")
-        dry = wp.apply(wp.WizardState({"a": "b"}, dry_run=True), writer=lambda k, v: (_ for _ in ()).throw(RuntimeError("should not write")))
-        self.assertFalse(dry["written"])
-
 class TCoverageGateBuild4Gradual99(unittest.TestCase):
-    def test_installer_preview_apply_and_disabled_diagnostic_paths(self):
-        with kodi_stubs("oppo_control", "settings_reader"):
-            import xbmcaddon, xbmcgui
-            xbmcaddon.reset(
-                settings={
-                    "playback_architecture": "service_interception",
-                    "include_disc_folder_rules": "false",
-                    "oppo_experimental_filelist_enabled": "false",
-                },
-                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
-            )
-            xbmcgui.reset()
-            installer = importlib.import_module("resources.lib.installer")
-            self.assertIn("service_interception", installer.build_snippet_xml())
-            self.assertNotIn("BDMV", installer.build_rule_xml())
-
-            xbmcgui.push_select(1)
-            self.assertEqual(installer.show_architecture_choice_dialog(), 1)
-            self.assertEqual(installer.ADDON.getSetting("playback_architecture"), "service_interception")
-
-            # Single device, preview-only path: user declines auto-apply.
-            fake_oc = types.ModuleType("oppo_control")
-            fake_oc.discover_oppo = lambda timeout=0: [{"ip": "192.0.2.70", "port": 7624, "name": "OPPO"}]
-            sys.modules["oppo_control"] = fake_oc
-            xbmcgui.push_yesno(False)
-            installer.run_oppo_discovery()
-            self.assertTrue(any(call[0] == "textviewer" for call in xbmcgui.calls()))
-
-            # Single device, apply path with TCP port 23 should write both IP and port.
-            fake_oc.discover_oppo = lambda timeout=0: [{"ip": "192.0.2.71", "port": 23, "name": "OPPO"}]
-            xbmcgui.push_yesno(True)
-            installer.run_oppo_discovery()
-            self.assertEqual(installer.ADDON.getSetting("oppo_ip"), "192.0.2.71")
-            self.assertEqual(installer.ADDON.getSetting("oppo_port"), "23")
-
-            # No devices and multiple-device paths are display-only.
-            fake_oc.discover_oppo = lambda timeout=0: []
-            installer.run_oppo_discovery()
-            fake_oc.discover_oppo = lambda timeout=0: [
-                {"ip": "192.0.2.1", "port": 7624, "name": "A"},
-                {"ip": "192.0.2.2", "port": 7624, "name": "B"},
-            ]
-            installer.run_oppo_discovery()
-
-            # TCL preset apply path writes both shell commands.
-            xbmcgui.push_select(0); xbmcgui.push_yesno(True)
-            installer.show_tcl_presets()
-            self.assertTrue(installer.ADDON.getSetting("oppo_input_adb_shell"))
-            self.assertTrue(installer.ADDON.getSetting("kodi_input_adb_shell"))
-
-            # Disabled file-list diagnostic is an explicit safe no-op.
-            installer.run_experimental_filelist_diagnostic()
-            self.assertTrue(any(call[0] == "ok" for call in xbmcgui.calls()))
-
-    def test_installer_filelist_large_entry_listing_and_main_dispatch_edges(self):
-        with kodi_stubs("oppo_control", "settings_reader", "wizard", "autoscript_helper"):
-            import xbmcaddon, xbmcgui
-            xbmcaddon.reset(
-                settings={
-                    "wizard_completed": "true",
-                    "architecture_choice_made": "true",
-                    "oppo_experimental_filelist_enabled": "true",
-                },
-                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
-            )
-            xbmcgui.reset()
-            installer = importlib.import_module("resources.lib.installer")
-            entries = [
-                {"name": f"movie{i}.iso", "path": f"/movie{i}.iso", "is_file": True, "is_dir": False, "size_bytes": i, "disc_type": "iso", "extension": "iso"}
-                for i in range(55)
-            ]
-            fake_oc = types.ModuleType("oppo_control")
-            fake_oc.get_file_list_raw = lambda settings, path="/": "raw-body"
-            fake_oc.parse_undocumented_file_list = lambda raw, base_path=None: entries
-            fake_oc.discover_oppo = lambda timeout=0: []
-            fake_sr = types.ModuleType("settings_reader")
-            fake_sr.read_settings = lambda addon_data: FakeSettings({})
-            fake_w = types.ModuleType("wizard")
-            fake_w.run_wizard = lambda: True
-            fake_w.reset_wizard = lambda: True
-            fake_a = types.ModuleType("autoscript_helper")
-            fake_a.run_autoscript_wizard = lambda addon: "ok"
-            sys.modules.update({"oppo_control": fake_oc, "settings_reader": fake_sr, "wizard": fake_w, "autoscript_helper": fake_a})
-            installer.run_experimental_filelist_diagnostic()
-            text_calls = [call for call in xbmcgui.calls() if call[0] == "textviewer"]
-            self.assertTrue(any("and 5 more" in call[2] for call in text_calls))
-
-            installer.ADDON.openSettings = lambda: installer.ADDON.setSetting("opened", "true")
-            for choice in (2, 5, 12, -1):
-                xbmcgui.push_select(choice)
-                if choice == 5:
-                    xbmcgui.push_select(0)
-                installer.main()
-            self.assertEqual(installer.ADDON.getSetting("opened"), "true")
-
     def test_oppo_control_remaining_http_and_parser_edges(self):
         oc = importlib.import_module("resources.lib.oppo_control")
         settings = FakeSettings({"oppo_ip": "h", "oppo_http_port": "436"})
@@ -1765,62 +1577,6 @@ class TCoverageGateBuild5Gradual98(unittest.TestCase):
              mock.patch.object(ep, "clear_session_active", lambda s: calls.append("clear")):
             self.assertEqual(ep.main(), 0)
         self.assertIn(("fast", None), calls)
-
-    def test_installer_error_and_main_dispatch_paths(self):
-        with kodi_stubs("oppo_control", "settings_reader", "wizard", "autoscript_helper"):
-            import xbmcaddon, xbmcgui
-            xbmcaddon.reset(
-                settings={
-                    "wizard_completed": "true",
-                    "architecture_choice_made": "false",
-                    "oppo_experimental_filelist_enabled": "true",
-                    "include_disc_folder_rules": "true",
-                },
-                info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
-            )
-            xbmcgui.reset()
-            installer = importlib.import_module("resources.lib.installer")
-            # Force the discovery/filelist helpers to exercise their sys.path insertion and error/no-entry branches.
-            addon_path = installer.tpath(installer.ADDON.getAddonInfo("path"))
-            lib_path = os.path.join(addon_path, "resources", "lib")
-            old_path = list(sys.path)
-            try:
-                sys.path[:] = [p for p in sys.path if p != lib_path]
-                fake_oc = types.ModuleType("oppo_control")
-                fake_oc.discover_oppo = lambda timeout=0: (_ for _ in ()).throw(RuntimeError("discover down"))
-                fake_oc.get_file_list_raw = lambda settings, path="/": "raw"
-                fake_oc.parse_undocumented_file_list = lambda raw, base_path=None: []
-                fake_sr = types.ModuleType("settings_reader")
-                fake_sr.read_settings = lambda addon_data: FakeSettings({})
-                sys.modules.update({"oppo_control": fake_oc, "settings_reader": fake_sr})
-                installer.run_oppo_discovery()
-                installer.run_experimental_filelist_diagnostic()
-            finally:
-                sys.path[:] = old_path
-            self.assertTrue(any(call[0] == "ok" for call in xbmcgui.calls()))
-            self.assertTrue(any(call[0] == "textviewer" and "No entries parsed" in call[2] for call in xbmcgui.calls()))
-
-            # Main with architecture_choice_made=false triggers the architecture dialog from the else branch.
-            xbmcgui.push_select(0)
-            xbmcgui.push_select(-1)
-            installer.main()
-            self.assertEqual(installer.ADDON.getSetting("architecture_choice_made"), "true")
-
-            # Error handlers for wizard/reset/autoscript menu items.
-            failing_w = types.ModuleType("wizard")
-            failing_w.run_wizard = lambda: (_ for _ in ()).throw(RuntimeError("wizard fail"))
-            failing_w.reset_wizard = lambda: (_ for _ in ()).throw(RuntimeError("reset fail"))
-            failing_a = types.ModuleType("autoscript_helper")
-            failing_a.run_autoscript_wizard = lambda addon: (_ for _ in ()).throw(RuntimeError("auto fail"))
-            sys.modules.update({"wizard": failing_w, "autoscript_helper": failing_a})
-            installer.ADDON.setSetting("wizard_completed", "true")
-            installer.ADDON.setSetting("architecture_choice_made", "true")
-            for choice in (3, 4, 6, 7, 8, 9, 10, 11):
-                xbmcgui.push_select(choice)
-                if choice == 7:
-                    xbmcgui.push_select(-1)
-                installer.main()
-
     def test_settings_logger_and_merge_edge_branches(self):
         import settings_reader as sr
         class BadStr:
