@@ -5,9 +5,9 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `4e54c5d` (origin/main, 2026-05-29) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~8.5s)
+**Last sync:** commit `3967cb6` (origin/main, 2026-05-29 — docs: create BUILD_PLAN.md) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~12s)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
-tracking, PRs for delivery.
+tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
 **What this is:** A Python 3.9+ Kodi add-on (`script.oppo203.iso.external`) for OPPO 203/205
 and compatible-clone external-player handoff, plus a new Tauri 2 + React/TS Windows
@@ -110,50 +110,79 @@ There is no database; no external services to verify.
 > **Read this FIRST on `resume`.** Maintained by `done for the day`. If empty, the last
 > session ended clean; offer the operator a fresh theme.
 
-**As of 2026-05-29 (end of day):**
+**As of 2026-05-29 (end of day — strip-wizard session):**
 
-- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** — **still draft,
-  awaiting operator review.** Branch `claude/windows-installer-ui-gfv4m` at `edba3d1`.
-  Unchanged this session. State described in the 2026-05-28 EOD still applies: Tauri 2 +
-  Vite + React + TS shell under `configurator/`, Direction A tokens, persistent shell, all
-  23 wizard screens ported, `tsc --noEmit` + `vite build` clean.
+- **Addon area today — PR [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
+  *Strip the in-Kodi setup wizard from the addon*** is open as a **draft** on
+  `claude/strip-wizard-g4feovqi` (tip `92a9408`).
+  - Commit `3abf486` is the 44-file change (+313 / −5814):
+    - Deleted `resources/lib/wizard.py`, `wizard_polish.py`, `first_run_wizard.py`.
+    - Simplified `service.py.Monitor` to a no-op subclass — **headline behavioural
+      change** per operator's "total strip" choice: `onSettingsChanged` no longer
+      auto-applies compatibility presets when the user changes hardware model in
+      Kodi settings. That responsibility moves to the configurator.
+    - Gutted `installer.main()`'s wizard menu items and the auto-wizard launch.
+    - Slimmed `autoscript_helper.py` to pure `generate()` / `write_script()`.
+    - Dropped `wizard_mode` from `resources/settings.xml`; renamed
+      `<category id="wizard">` → `<category id="playback">`.
+    - Scrubbed wizard msgids from all 12 PO files (`#30910/#30920/#30930/#30940/#30950`,
+      the full `#31000-#31061` v1.0.6 block; retitled `#32103` → "Playback" and
+      `#32113` → "Playback-architecture knobs.").
+    - Updated [`README.md`](README.md) Installation step,
+      [`docs/testing-strategy.md`](docs/testing-strategy.md),
+      [`scripts/hooks/pre-push`](scripts/hooks/pre-push), and the `.coveragerc`
+      comment header.
+    - Restored `tests/test_v2910_build16_avr_wizard_diagnostics.py` with the
+      wizard-coupled halves stripped (kept the
+      `avr_diagnostics.wizard_capabilities` / `wizard_family_options` /
+      `apply_wizard_selection` pure-data API for the configurator).
+    - Added `TStripWizard*` test classes to lock the post-strip surface.
+  - Commit `92a9408` is the Phase A entry in
+    [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
+    for the operator's review of PR #40.
 
-- **`main` is at the SHA committed by this EOD** (the previous tip was `4e54c5d` from
-  yesterday's EOD; today's commit is a handoff-doc-only update — no code change).
+- **Tests on the strip branch:** `pytest -n auto` = **865 passed, 3 skipped** in
+  ~10s (vs main's 987 — the −122 delta is wizard tests that no longer exist).
+  Coverage gate (serial): **99.05%**, above the 99% floor.
 
-- **This session was verification + cleanup, no new feature work:**
-  - **claude-review CI fix verified.** [#29](https://github.com/skull-01/script.oppo203.iso.external/pull/29)
-    set `allowed_bots: 'dependabot'` in `.github/workflows/claude-code-review.yml`. The
-    workflow runs cleanly on human PRs ([#30](https://github.com/skull-01/script.oppo203.iso.external/pull/30) — 3/3 green).
-    The actual dependabot-actor path will be exercised on the next weekly batch
-    (~2026-06-03 per `.github/dependabot.yml`); until then the fix is "config correct,
-    awaiting first real bot run."
-  - **Memory hygiene.** Deleted the obsolete `claude-review-workflow-reminder` memory
-    (its own "How to apply" instructed deletion once fixed) and corrected the stale
-    "No GitHub Issues" line in the Session-continuity memory entry to reflect the
-    2026-05-28 switch to the hybrid issue model.
-  - **Environmental cleanup.** Moved a leftover `build\_tmp` tree (locked Windows tmp
-    dirs from earlier sessions) out of the repo to `~/build_tmp_LOCKED_delete_after_reboot/`
-    so `tools/audit_release.py` stops walking it; the 2 audit JSON-CLI tests went
-    green. The full suite was run **without** the historical `$env:TEMP=build\_tmp`
-    workaround and passed in ~8.5s — the workaround may no longer be needed; see §14.
+- **Four new ENH issues filed (all `area:addon`):**
+  - [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41) configurator owns add-on configuration; add-on is read-mostly
+  - [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42) minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language)
+  - [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43) split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages
+  - [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44) hardware-validation testing — lending, donations, tester reports wanted
 
-- **Clean stopping points for next session** (unchanged from yesterday; pick one theme,
-  per §4):
-  1. **Promote / merge PR #30** once the operator reviews the draft. The two follow-up
-     PRs that naturally chain off it (window-control IPC, state persistence) need it
-     merged first.
-  2. **Wire window-control IPC** so the custom title bar's min/max/close actually do
-     something. Small, ~1 PR. Branches off `main` once #30 is merged.
-  3. **State persistence** to `%APPDATA%/OppoKodiAddonConfigurator/state.json`.
-  4. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
-     Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over port 23).
-     Multi-PR theme — would be its own session.
-  5. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
-  6. **App icon + bundling** before any release build.
+- **[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) created on `main`** (commit `3967cb6`).
+  It captures the strategic direction (two areas, configurator-owns-config policy,
+  honest-signature posture) and lists every open issue + PR per area with a one-line
+  note and a suggested ordering for the next sessions.
 
-- **No active blockers.** No issues open under the hybrid model yet (none were filed this
-  session); the §17a cache remains empty.
+- **Configurator area not touched this session.** Drafts
+  [#32](https://github.com/skull-01/script.oppo203.iso.external/pull/32) /
+  [#33](https://github.com/skull-01/script.oppo203.iso.external/pull/33) /
+  [#34](https://github.com/skull-01/script.oppo203.iso.external/pull/34) /
+  [#35](https://github.com/skull-01/script.oppo203.iso.external/pull/35) and stale
+  [#36](https://github.com/skull-01/script.oppo203.iso.external/pull/36) remain in
+  their 2026-05-29 state.
+
+- **Outstanding before PR #40 can land:** operator review of the diff (especially
+  the `Monitor.onSettingsChanged` removal — that's the headline behavioural
+  change). On-device verification per the Phase A entry in
+  `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
+
+- **Candidate themes for next session** (pick one, per §4):
+  1. **Operator review + merge PR #40**, then start ENH-: #41 (policy doc +
+     in-add-on guidance dialog + settings-file ownership marker). Cheap,
+     high-leverage; sets the contract every following issue depends on.
+  2. **ENH-: #43 — split `resources/lib` into TV/Oppo/AVR/Kodi sub-packages.**
+     Best done *before* #42 so the new settings menu lands in the right layout.
+  3. **ENH-: #42 — minimal in-add-on settings menu.** Depends on #43's layout.
+  4. **#38 ruff backlog PR 1 (auto-fix sweep).** Independent; can run in a
+     parallel session.
+  5. **Configurator triage** (different area) — work through #32/#33/#34/#35.
+
+- **No active blockers.** Six addon-area issues are now in §17a; the operator's
+  spine revision PR [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37)
+  is still open and will introduce the §3a/§3b split once merged.
 
 ---
 
@@ -301,11 +330,16 @@ the hybrid model._
 _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from here first
 before re-scanning live GitHub state (operator norm #10)._
 
-Last refreshed: **never** (no issues yet).
+Last refreshed: **2026-05-29 (EOD — strip-wizard)**.
 
-| # | Title | Labels | State | Implementing SHA(s) | Operator-verified? |
-|---|---|---|---|---|---|
-| _empty_ | | | | | |
+| # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
+|---|---|---|---|---|---|---|
+| 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`) | closed by operator |
+| 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not started |
+| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | — | not started |
+| 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | — | not started |
+| 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | — | not started |
+| 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
 
 ---
 
@@ -333,6 +367,26 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (`build\_tmp` Windows-locked tmpdirs vs. `audit_release.py`); updated the header
   "Last sync" / "Tests on `main`" to `4e54c5d` / 987 passed, 3 skipped. PR #30 unchanged.
   §17a still empty (no issues opened/closed/retitled).
+- **2026-05-29 (EOD — strip-wizard session)** — End-of-day after a single-theme
+  addon session that stripped the in-Kodi setup wizard from the add-on. PR
+  [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40) on
+  `claude/strip-wizard-g4feovqi` (tip `92a9408`) is open as draft. 44 files
+  changed, +313 / −5814. Tests: **865 passed, 3 skipped** in ~10s on the strip
+  branch; coverage **99.05%** (≥ 99% floor). Filed 4 new `area:addon` ENH
+  issues — #41 configurator-owns-config policy, #42 in-add-on settings menu,
+  #43 module split (TV/Oppo/AVR/Kodi), #44 hardware-testing solicitation.
+  Created [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) on `main` (commit
+  `3967cb6`) with the strategic direction + open-issue grid + suggested
+  ordering. Header "Last sync" updated from `4e54c5d` to `3967cb6`; tests on
+  `main` re-confirmed at **987 passed, 3 skipped** in ~12s (unchanged — the
+  strip work is on a feature branch). §3 rewritten to record the strip-wizard
+  PR + new issues; §17a backlog cache populated for the first time (with
+  Area column added) — six rows: #22 (closed), #38, #41, #42, #43, #44.
+  Operator's spine revision PR
+  [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37)
+  remains open and unmerged on `main`; when it lands it will introduce the
+  §3a/§3b split and the rewritten §2a — at that point the next EOD reconciles
+  whatever drift this entry created.
 
 ---
 
