@@ -110,26 +110,35 @@ There is no database; no external services to verify.
 > **Read this FIRST on `resume`.** Maintained by `done for the day`. If empty, the last
 > session ended clean; offer the operator a fresh theme.
 
-**As of 2026-05-28:**
+**As of 2026-05-28 (end of day):**
 
-- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** —
-  draft, branch `claude/windows-installer-ui-gfv4m`. The Tauri 2 + Vite + React + TS shell
-  under `configurator/` is up; Direction A (Warm Paper) tokens ported; persistent shell
-  (title bar, chain diagram, stepper) functional; **all 23 wizard screens ported** from
-  `docs/installuidraft/design_handoff_oppo_installer/prototype/`. tsc + vite build clean,
-  990 pytest pass. Naming aligned: `installer/` → `configurator/`, "OppoKodiAddon
-  Configurator" everywhere.
+- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** — **draft, all
+  work pushed, awaiting operator review.** Branch `claude/windows-installer-ui-gfv4m` at
+  `edba3d1`. The Tauri 2 + Vite + React + TS shell under `configurator/` is up; Direction
+  A (Warm Paper) tokens ported; persistent shell (title bar, chain diagram, stepper)
+  functional; **all 23 wizard screens ported** from
+  `docs/installuidraft/design_handoff_oppo_installer/prototype/`. `tsc --noEmit` + `vite
+  build` clean (47 modules / 215 KB JS / 25 KB CSS), 990 pytest pass on `main` too.
+  Naming aligned: `installer/` → `configurator/`, "OppoKodiAddon Configurator" everywhere.
 
-- **Clean stopping point for next session:** pick the next configurator milestone:
-  1. **Wire window-control IPC** so the custom title bar min/max/close actually do
-     anything (small, ~1 PR).
-  2. **State persistence** to `%APPDATA%/OppoKodiAddonConfigurator/state.json`.
-  3. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
-     Tier B, TCP port knock for TV-backend detection, etc.) — multi-PR theme.
-  4. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
-  5. **App icon + bundling** before any release build.
+- **`main` is at `636ae35`** — bootstrap commit landed today
+  (`docs: bootstrap AI handoff + agent norms`).
 
-- **No active blockers.**
+- **Clean stopping points for next session** (pick one theme, per §4):
+  1. **Promote / merge PR #30** once the operator reviews the draft. The two follow-up
+     PRs that naturally chain off it (window-control IPC, state persistence) need it
+     merged first.
+  2. **Wire window-control IPC** so the custom title bar's min/max/close actually do
+     something. Small, ~1 PR. Branches off `main` once #30 is merged.
+  3. **State persistence** to `%APPDATA%/OppoKodiAddonConfigurator/state.json`.
+  4. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
+     Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over port 23).
+     Multi-PR theme — would be its own session.
+  5. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
+  6. **App icon + bundling** before any release build.
+
+- **No active blockers.** No issues open under the hybrid model yet (none were filed this
+  session); the §17a cache remains empty.
 
 ---
 
@@ -277,6 +286,10 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
 - **2026-05-28** — Bootstrapped from scratch per operator's job_finder_ri norms. Replaced
   the prior 397-line PR-only handoff. Sections §1 / §2 / §2a / §3 / §4 filled; §5–§17a /
   §19–§21 seeded as headers.
+- **2026-05-28 (EOD)** — First `done for the day` cycle. Refreshed §3 to point at PR #30
+  awaiting review + the chain of follow-up themes; both branches confirmed pushed and in
+  sync with origin (`main`@`636ae35`, `claude/windows-installer-ui-gfv4m`@`edba3d1`). No
+  issues opened/closed/retitled — §17a cache remains empty.
 
 ---
 
