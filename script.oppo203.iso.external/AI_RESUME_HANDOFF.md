@@ -97,11 +97,13 @@ add-on (Python) and the Windows configurator (Node + Rust + Tauri 2).
 | 7 | **Node** 20+ | `node -v` | manual | install from nodejs.org / nvm |
 | 8 | **npm** 10+ | `npm -v` | manual | bundled with Node |
 | 9 | configurator **`node_modules`** | `test -d configurator/node_modules` | **auto** | `cd /home/user/script.oppo203.iso.external/configurator; npm install` |
-| 10 | **Rust toolchain** 1.77+ | `cargo --version && rustc --version` | manual | `curl https://sh.rustup.rs -sSf \| sh` |
-| 11 | (Windows host only) **WebView2 + MSVC Build Tools** for Tauri 2 | `npm run tauri info` in `configurator/` | manual | follow [Tauri 2 Windows prereqs](https://v2.tauri.app/start/prerequisites/#windows) |
+| 10 | **Rust toolchain** 1.77+ | `cargo --version && rustc --version` (Windows: `& "$env:USERPROFILE\.cargo\bin\cargo.exe" --version`) | manual | **POSIX:** `curl https://sh.rustup.rs -sSf \| sh` · **Windows:** `winget install --id Rustlang.Rustup --silent --accept-package-agreements --accept-source-agreements` (default scope; `--scope user` fails for this package) |
+| 11 | (Windows host only) **WebView2 + MSVC Build Tools 2022** for Tauri 2 | WebView2: ships with Win 11; MSVC: `Test-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC"` | manual | `winget install --id Microsoft.VisualStudio.2022.BuildTools --silent --accept-package-agreements --accept-source-agreements --override "--quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"` (needs UAC; trigger via `Start-Process -Verb RunAs`) |
 
 Auto rows install on `resume` if missing. Manual rows print their fix command and STOP.
 There is no database; no external services to verify.
+
+**PATH gotcha on Windows after row 10 installs:** the cargo bin dir (`$env:USERPROFILE\.cargo\bin`) is NOT on the inherited PATH of fresh PowerShell tool calls until a shell restart. Prefix every cargo invocation with `$env:PATH = "$env:USERPROFILE\.cargo\bin;" + [Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [Environment]::GetEnvironmentVariable("PATH","User"); ` or call cargo by full path.
 
 ---
 
