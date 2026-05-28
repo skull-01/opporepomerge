@@ -1,0 +1,23 @@
+[package]
+name = "oppo-installer"
+version = "0.1.0"
+description = "Windows companion app for the script.oppo203.iso.external Kodi add-on"
+authors = ["Kodi OPPO 203 ISO External Player maintainers"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "oppo_installer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

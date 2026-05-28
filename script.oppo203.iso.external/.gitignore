@@ -29,3 +29,9 @@ Thumbs.db
 .env
 .venv/
 venv/
+
+# Windows installer (Tauri 2 + Vite + React)
+installer/node_modules/
+installer/dist/
+installer/src-tauri/target/
+installer/src-tauri/gen/schemas/
