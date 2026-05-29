@@ -21,10 +21,13 @@ export type PlayerBrand =
 
 export type InputAddress = number | "cec" | string | null;
 
+export type PlaybackArchitecture = "external_player" | "service_interception";
+
 export type WizardState = {
   kodiIp: string;
   tier: Tier | null;
   kodiVerified: boolean;
+  playbackArchitecture: PlaybackArchitecture;
 
   tvBrand: string | null;
   tvModel: string | null;
@@ -46,28 +49,13 @@ export type WizardState = {
 };
 
 import { invoke } from "@tauri-apps/api/core";
-
-export async function loadPersistedState(): Promise<WizardState | null> {
-  try {
-    const loaded = await invoke<WizardState | null>("load_wizard_state");
-    return loaded ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function savePersistedState(state: WizardState): Promise<void> {
-  try {
-    await invoke("save_wizard_state", { state });
-  } catch {
-    // best-effort; persistence must never block the UI
-  }
-}
+import type { ScreenId } from "./steps";
 
 export const INITIAL_STATE: WizardState = {
   kodiIp: "10.0.1.42",
   tier: null,
   kodiVerified: false,
+  playbackArchitecture: "external_player",
   tvBrand: null,
   tvModel: null,
   tvBackend: null,
@@ -83,6 +71,41 @@ export const INITIAL_STATE: WizardState = {
   kodiInput: null,
   testMode: null,
 };
+
+/** Persisted between sessions: the wizard state plus the screen to resume on. */
+export type PersistedSession = { state: WizardState; screen: ScreenId };
+
+export async function loadPersistedSession(): Promise<PersistedSession | null> {
+  try {
+    const loaded = await invoke<unknown>("load_wizard_state");
+    if (!loaded || typeof loaded !== "object") return null;
+    const obj = loaded as Record<string, unknown>;
+    // Current envelope shape: { state, screen }.
+    if (obj.state && typeof obj.state === "object") {
+      const screen =
+        typeof obj.screen === "string" ? (obj.screen as ScreenId) : "step0_gate";
+      return {
+        state: { ...INITIAL_STATE, ...(obj.state as Partial<WizardState>) },
+        screen,
+      };
+    }
+    // Legacy shape: a bare WizardState written before screen persistence existed.
+    return {
+      state: { ...INITIAL_STATE, ...(obj as Partial<WizardState>) },
+      screen: "step0_gate",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function savePersistedSession(session: PersistedSession): Promise<void> {
+  try {
+    await invoke("save_wizard_state", { state: session });
+  } catch {
+    // best-effort; persistence must never block the UI
+  }
+}
 
 export type ChainCompletion = {
   media: boolean;

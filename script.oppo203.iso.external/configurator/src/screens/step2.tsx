@@ -57,6 +57,7 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
 // ============================================================
 type Model = {
   id: string;
+  brand: string;
   name: string;
   year: string;
   size: string;
@@ -66,20 +67,22 @@ type Model = {
 };
 
 const ALL_MODELS: readonly Model[] = [
-  { id: "55q9-2023",  name: "55Q9 (2023)",   year: "2023", size: "55\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "65q9-2023",  name: "65Q9 (2023)",   year: "2023", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "75q9-2023",  name: "75Q9 (2023)",   year: "2023", size: "75\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "65q10-2024", name: "65Q10 Pro",     year: "2024", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "65q7-2022",  name: "65Q7",          year: "2022", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "55r5-2022",  name: "55R5 (Roku)",   year: "2022", size: "55\"", platform: "Roku TV",   tier: "probe", backend: "roku_ecp" },
+  { id: "55q9-2023",  brand: "tcl", name: "55Q9 (2023)",   year: "2023", size: "55\"", platform: "Google TV", tier: "probe", backend: "adb" },
+  { id: "65q9-2023",  brand: "tcl", name: "65Q9 (2023)",   year: "2023", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
+  { id: "75q9-2023",  brand: "tcl", name: "75Q9 (2023)",   year: "2023", size: "75\"", platform: "Google TV", tier: "probe", backend: "adb" },
+  { id: "65q10-2024", brand: "tcl", name: "65Q10 Pro",     year: "2024", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
+  { id: "65q7-2022",  brand: "tcl", name: "65Q7",          year: "2022", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
+  { id: "55r5-2022",  brand: "tcl", name: "55R5 (Roku)",   year: "2022", size: "55\"", platform: "Roku TV",   tier: "probe", backend: "roku_ecp" },
 ];
 
 export function Step2Model({ go, state, set }: ScreenProps) {
   const [year, setYear] = useState("2023");
   const [size, setSize] = useState('65"');
   const [search, setSearch] = useState("");
+  const brandName = TV_BRANDS.find((b) => b.id === state.tvBrand)?.name ?? "TV";
   const filtered = ALL_MODELS.filter(
     (m) =>
+      (!state.tvBrand || m.brand === state.tvBrand) &&
       (!year || m.year === year) &&
       (!size || m.size === size) &&
       m.name.toLowerCase().includes(search.toLowerCase())
@@ -88,7 +91,7 @@ export function Step2Model({ go, state, set }: ScreenProps) {
   return (
     <div className="screen">
       <div className="screen-header">
-        <h1 className="screen-title">Which TCL model?</h1>
+        <h1 className="screen-title">Which {brandName} model?</h1>
         <p className="screen-subtitle">
           Year and size are just to narrow the list — the control method comes from the
           platform.

@@ -39,6 +39,32 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
       </div>
 
       <h2 className="section-title" style={{ marginTop: 8 }}>
+        Playback architecture
+      </h2>
+      <p className="screen-subtitle" style={{ marginTop: 4, marginBottom: 10 }}>
+        How Kodi hands a disc image to your player. External Player is the standard,
+        most predictable path; Service Interception is an alternate for special setups.
+      </p>
+      <div className="row" style={{ gap: 8, marginBottom: 22 }}>
+        <button
+          className={`filter-pill ${
+            state.playbackArchitecture === "external_player" ? "selected" : ""
+          }`.trim()}
+          onClick={() => set({ playbackArchitecture: "external_player" })}
+        >
+          External Player (recommended)
+        </button>
+        <button
+          className={`filter-pill ${
+            state.playbackArchitecture === "service_interception" ? "selected" : ""
+          }`.trim()}
+          onClick={() => set({ playbackArchitecture: "service_interception" })}
+        >
+          Service Interception
+        </button>
+      </div>
+
+      <h2 className="section-title" style={{ marginTop: 8 }}>
         How should we install — and apply — your setup files?
       </h2>
       <div className="stack" style={{ marginTop: 10 }}>
