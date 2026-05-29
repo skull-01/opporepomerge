@@ -75,7 +75,7 @@ def fallback_logger() -> logging.Logger:
     logger.setLevel(logging.INFO)
     logger.propagate = False
     if not logger.handlers:
-        handler = logging.StreamHandler(sys.stdout)
+        handler: logging.Handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(logging.Formatter("%(message)s"))
         logger.addHandler(handler)
     else:
@@ -89,7 +89,9 @@ def _log_with_python_fallback(formatted: str) -> None:
     fallback_logger().info(formatted)
 
 
-def log_to_xbmc(xbmc_module, category: str | None, message: object, level=None) -> str:
+def log_to_xbmc(
+    xbmc_module: Any, category: str | None, message: object, level: int | None = None
+) -> str:
     """Write a formatted message to Kodi or the structured fallback logger.
 
     The formatted string is returned so tests and diagnostic callers can assert

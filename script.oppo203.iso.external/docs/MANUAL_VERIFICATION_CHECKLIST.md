@@ -296,6 +296,38 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** this PR changes typing config, dev tooling,
   and CI only — no runtime code paths, settings, or hardware behavior change.
 
+### ENH-#51 — mypy --strict allowlist expansion (PR 2 of N)
+
+- **Implementing SHA:** head of `claude/enh51-mypy-pr2-k3n8m2q6` on draft PR #54
+  (commented on issue #51).
+- **Scope:** PR 2 of the source-only rollout. Expands the gate `files=` allowlist
+  7 → 23 modules. No gate/tooling/CI changes — those landed in PR 1 (#53).
+- **What changed:**
+  - [`mypy.ini`](../mypy.ini) (authoritative) + [`pyproject.toml`](../pyproject.toml)
+    `[tool.mypy]` mirror: 16 modules added to `files=` (kept sorted by path).
+  - 12 already strict-clean modules locked in with **no code change**:
+    `avr_presets`, `avr_types`, `disc_classification`, `settings_schema`,
+    `version`, `command_map`, `constants`, `hardware_capabilities`,
+    `hardware_profiles`, `path_mapper`, `tv_backends`, `tv_presets`.
+  - 4 leaf modules annotated to zero strict errors — signatures + pinned locals,
+    **no logic changes**: `kodi/arch_benchmark.py`, `kodi/diagnostic_logging.py`,
+    `kodi/i18n.py`, `tv/tv_control.py`. `tv_control` hoists an identical
+    smartthings call above a no-op `acknowledged` branch to pin its
+    `dict[str, object]` return type (behaviour-preserving).
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `tools/type_check.py --gate` **23 files, 0 errors**; `pytest -n auto`
+  **933 passed / 3 skipped**; `ruff check .` + `ruff format --check .` clean;
+  `unittest discover` **551 OK**; py_compile + render_docs / sync_version /
+  test_layout / i18n_extract `--check` all green.
+- **Phase A review focus:**
+  - Confirm the 4 annotated modules are signature/typing-only (no behaviour
+    change) — especially `tv_control`'s smartthings hoist and the pinned locals
+    in `i18n.L` / `arch_benchmark.benchmark`.
+  - Confirm the 12 zero-change modules belong in the allowlist (already
+    strict-clean; the gate now prevents regressions).
+- **No Phase C / on-device step:** typing/allowlist only — no runtime code paths,
+  settings, or hardware behavior change.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_

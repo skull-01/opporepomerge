@@ -21,18 +21,27 @@ Lower median wins.  Ties (within `eps`) prefer External Player as the
 historically more deterministic path on Chinoppo-class hardware.
 """
 
+from __future__ import annotations
+
 import statistics
 import time as _time
+from collections.abc import Callable, Iterable
+from typing import Any
 
 TRIALS = 3
 DEFAULT_EPS = 0.020  # 20 ms - inside this margin the result is considered a tie
 
 
-def _median(values):
+def _median(values: Iterable[float]) -> float:
     return float(statistics.median(values))
 
 
-def benchmark(candidate, trials=TRIALS, probe=None, timer=None):
+def benchmark(
+    candidate: str,
+    trials: int = TRIALS,
+    probe: Callable[[str], object] | None = None,
+    timer: Callable[[], float] | None = None,
+) -> dict[str, Any]:
     """Run `trials` timed probes for `candidate` and return the result.
 
     `probe`  is a callable(candidate) -> None.  It is expected to perform
@@ -44,7 +53,7 @@ def benchmark(candidate, trials=TRIALS, probe=None, timer=None):
         raise ValueError("benchmark() requires a probe callable")
     if timer is None:
         timer = _time.monotonic
-    samples = []
+    samples: list[dict[str, Any]] = []
     for _ in range(int(trials)):
         t0 = timer()
         try:
@@ -67,7 +76,7 @@ def benchmark(candidate, trials=TRIALS, probe=None, timer=None):
     }
 
 
-def recommend(ext_median, svc_median, eps=DEFAULT_EPS):
+def recommend(ext_median: float | None, svc_median: float | None, eps: float = DEFAULT_EPS) -> str:
     """Return 'external', 'service', or 'tie' given two medians."""
     if ext_median is None and svc_median is None:
         return "tie"
@@ -81,7 +90,7 @@ def recommend(ext_median, svc_median, eps=DEFAULT_EPS):
     return "external" if ext_median < svc_median else "service"
 
 
-def validate_playercorefactory(path):
+def validate_playercorefactory(path: str | None) -> tuple[bool, str]:
     """Return (ok, reason).
 
     ok = True only if the file exists, is well-formed XML, and contains
@@ -114,13 +123,13 @@ def validate_playercorefactory(path):
 
 
 def run_full(
-    probe_external,
-    probe_service,
-    trials=TRIALS,
-    timer=None,
-    eps=DEFAULT_EPS,
-    playercorefactory_path=None,
-):
+    probe_external: Callable[[str], object],
+    probe_service: Callable[[str], object],
+    trials: int = TRIALS,
+    timer: Callable[[], float] | None = None,
+    eps: float = DEFAULT_EPS,
+    playercorefactory_path: str | None = None,
+) -> dict[str, object]:
     """Run a full benchmark for both architectures and pick a winner.
 
     Both probes are injected so production callers can wire them to
