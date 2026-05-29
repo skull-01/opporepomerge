@@ -8,8 +8,10 @@ launch playback, mutate settings, or claim validation has passed.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, cast
 
 try:  # pragma: no cover - import style differs under Kodi and pytest
     from ..kodi.diagnostic_summary import build_summary, format_summary
@@ -82,7 +84,7 @@ REQUIRED_TESTER_RESULTS = (
 )
 
 
-def _as_settings(settings=None, addon_data_dir=None) -> Settings:
+def _as_settings(settings: object = None, addon_data_dir: str | None = None) -> Settings:
     if isinstance(settings, Settings):
         return settings
     if isinstance(settings, dict):
@@ -97,8 +99,12 @@ def _as_settings(settings=None, addon_data_dir=None) -> Settings:
 
 
 def build_readiness_report(
-    settings=None, *, addon_data_dir=None, root_dir=None, path_exists=None
-) -> dict:
+    settings: object = None,
+    *,
+    addon_data_dir: str | None = None,
+    root_dir: str | None = None,
+    path_exists: Callable[[str], bool] | None = None,
+) -> dict[str, object]:
     """Return a non-invasive hardware-validation readiness report.
 
     The report combines the existing diagnostic summary with NAS/AutoScript
@@ -117,8 +123,12 @@ def build_readiness_report(
     )
     gate = nas_direct_playback_gate(selected_player)
     guidance = player_setup_guidance(selected_player)
-    blockers = list(summary.get("missing") or []) + list(capability.get("blockers") or [])
-    warnings = list(summary.get("warnings") or []) + list(capability.get("warnings") or [])
+    blockers = list(cast("list[object]", summary.get("missing") or [])) + list(
+        cast("list[object]", capability.get("blockers") or [])
+    )
+    warnings = list(cast("list[object]", summary.get("warnings") or [])) + list(
+        cast("list[object]", capability.get("warnings") or [])
+    )
     option4 = {
         "approved_tags": ["4K", "UHD", "2160p"],
         "disc_style_filetypes": ["iso", "bdmv", "mpls"],
@@ -160,7 +170,7 @@ def build_readiness_report(
     }
 
 
-def format_readiness_report(report: dict) -> str:
+def format_readiness_report(report: dict[str, Any]) -> str:
     """Render a readiness report as a tester-friendly text export."""
     if not isinstance(report, dict):
         return "OPPO203 hardware-validation readiness report unavailable"
@@ -217,7 +227,12 @@ def format_readiness_report(report: dict) -> str:
     return "\n".join(lines)
 
 
-def export_readiness_report(addon_data_dir, report: dict | None = None, *, now=None) -> str:
+def export_readiness_report(
+    addon_data_dir: str,
+    report: dict[str, object] | None = None,
+    *,
+    now: Callable[[], datetime] | None = None,
+) -> str:
     """Write the readiness report to addon_data and return the path.
 
     This is the only mutating helper in this module; it writes a text report

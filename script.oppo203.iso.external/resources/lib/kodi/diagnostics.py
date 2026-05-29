@@ -20,16 +20,25 @@ Public API
 - redact(text) -> str            (mask MACs and IPv4 addresses)
 """
 
+from __future__ import annotations
+
 import os
 import posixpath
 import re
 import time as _time
+from typing import Any, Callable, cast
+
+# Probe callables are injected and may take any positional args; they return a
+# result mapping with at least an "ok" key.
+Probe = Callable[..., "dict[str, Any]"]
+# writer(path, text) -> None, an optional injection point for save_report.
+Writer = Callable[[str, str], None]
 
 _MAC_RE = re.compile(r"([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}")
 _IPV4_RE = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 
-def redact(text):
+def redact(text: str | None) -> str | None:
     """Mask MAC and IPv4 addresses for shareable reports."""
     if not text:
         return text
@@ -38,19 +47,21 @@ def redact(text):
     return text
 
 
-def _ts(now=None):
+def _ts(now: float | Callable[[], float] | None = None) -> str:
     # UTC keeps exported support-report filenames deterministic across timezones.
     t = _time.gmtime(now() if callable(now) else (now if now else _time.time()))
     return _time.strftime("%Y%m%d-%H%M%S", t)
 
 
-def default_path(root_dir, now=None):
+def default_path(root_dir: str, now: float | Callable[[], float] | None = None) -> str:
     # Forward-slash join keeps addon-data paths portable; os.path.join would emit
     # "\" on Windows, which Kodi add-on paths do not use.
     return posixpath.join(root_dir, "diagnostics-" + _ts(now) + ".txt")
 
 
-def _safe(call, default=None):
+def _safe(
+    call: Callable[[], dict[str, Any]], default: dict[str, Any] | None = None
+) -> dict[str, Any]:
     try:
         return call()
     except Exception as exc:
@@ -58,28 +69,28 @@ def _safe(call, default=None):
 
 
 def run(
-    host,
-    port,
-    mac=None,
+    host: str,
+    port: int,
+    mac: str | None = None,
     *,
-    http_check=None,
-    tcp_check=None,
-    svm_check=None,
-    wol_check=None,
-    kodi_info=None,
-    capabilities=None,
-    now=None,
-):
+    http_check: Probe | None = None,
+    tcp_check: Probe | None = None,
+    svm_check: Probe | None = None,
+    wol_check: Probe | None = None,
+    kodi_info: Probe | None = None,
+    capabilities: Probe | None = None,
+    now: float | Callable[[], float] | None = None,
+) -> dict[str, object]:
     """Run the full pre-flight. All probes are injected.
 
     Each probe callable returns a dict with at least an "ok" boolean.
     Missing probes default to {"ok": None, "skipped": True}.
     """
 
-    def _skip(reason="not provided"):
+    def _skip(reason: str = "not provided") -> dict[str, object]:
         return {"ok": None, "skipped": True, "reason": reason}
 
-    result = {
+    result: dict[str, object] = {
         "host": host,
         "port": int(port) if port is not None else None,
         "mac": mac,
@@ -95,7 +106,7 @@ def run(
     overall = True
     any_run = False
     for k in ("tcp", "http", "svm", "wol", "kodi", "capabilities"):
-        v = result[k]
+        v = cast("dict[str, object]", result[k])
         if isinstance(v, dict) and v.get("skipped"):
             continue
         any_run = True
@@ -105,7 +116,7 @@ def run(
     return result
 
 
-def format_report(result):
+def format_report(result: object) -> str:
     """Render a `run()` result as a human-readable text block."""
     if not isinstance(result, dict):
         return "<invalid result>"
@@ -133,7 +144,13 @@ def format_report(result):
     return "\n".join(lines)
 
 
-def save_report(result, root_dir, *, now=None, writer=None):
+def save_report(
+    result: object,
+    root_dir: str,
+    *,
+    now: float | Callable[[], float] | None = None,
+    writer: Writer | None = None,
+) -> str:
     """Write the formatted report to addon_data/diagnostics-<ts>.txt.
 
     `writer` is an optional callable(path, text) for tests; the default

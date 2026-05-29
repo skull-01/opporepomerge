@@ -22,15 +22,19 @@ Public API
     .rotate()                      - manual force-rotate
 """
 
+from __future__ import annotations
+
 import os
 import re as _re
 import time as _time
+from collections.abc import Callable
+from typing import Protocol, overload
 
 LEVELS = ("DEBUG", "INFO", "WARN", "ERROR")
 _LEVEL_INDEX = {n: i for i, n in enumerate(LEVELS)}
 
 
-def level_value(name):
+def level_value(name: object) -> int:
     """Numeric value for a level name; returns -1 for unknown names."""
     if not name:
         return -1
@@ -45,7 +49,15 @@ _MAC_RE = _re.compile(r"\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b")
 _IPV4_RE = _re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
 
 
-def scrub(text):
+@overload
+def scrub(text: str) -> str: ...  # pragma: no cover
+
+
+@overload
+def scrub(text: None) -> None: ...  # pragma: no cover
+
+
+def scrub(text: object) -> object:
     """Mask MAC and IPv4 addresses for shareable logs.
 
     - MAC -> xx:xx:xx:xx:xx:xx (handles both colon and dash separators)
@@ -69,28 +81,40 @@ def scrub(text):
 # ---------------------------------------------------------------------
 
 
+class _FsLike(Protocol):
+    def exists(self, p: str) -> bool: ...  # pragma: no cover
+
+    def size(self, p: str) -> int: ...  # pragma: no cover
+
+    def append(self, p: str, text: str) -> None: ...  # pragma: no cover
+
+    def rename(self, src: str, dst: str) -> None: ...  # pragma: no cover
+
+    def remove(self, p: str) -> None: ...  # pragma: no cover
+
+
 class _RealFS:
-    def exists(self, p):
+    def exists(self, p: str) -> bool:
         return os.path.exists(p)
 
-    def size(self, p):
+    def size(self, p: str) -> int:
         try:
             return os.path.getsize(p)
         except OSError:
             return 0
 
-    def read(self, p):
+    def read(self, p: str) -> str:
         with open(p, "r", encoding="utf-8") as f:
             return f.read()
 
-    def append(self, p, text):
+    def append(self, p: str, text: str) -> None:
         d = os.path.dirname(p)
         if d:
             os.makedirs(d, exist_ok=True)
         with open(p, "a", encoding="utf-8") as f:
             f.write(text)
 
-    def rename(self, src, dst):
+    def rename(self, src: str, dst: str) -> None:
         if os.path.exists(dst):
             try:
                 os.remove(dst)
@@ -98,7 +122,7 @@ class _RealFS:
                 pass
         os.replace(src, dst)
 
-    def remove(self, p):
+    def remove(self, p: str) -> None:
         try:
             os.remove(p)
         except OSError:
@@ -113,7 +137,16 @@ class _RealFS:
 class Logger:
     """Leveled, size-rotating, scrubbing logger."""
 
-    def __init__(self, path, *, level="INFO", max_bytes=131072, backups=3, fs=None, clock=None):
+    def __init__(
+        self,
+        path: str,
+        *,
+        level: str = "INFO",
+        max_bytes: int = 131072,
+        backups: int = 3,
+        fs: _FsLike | None = None,
+        clock: Callable[[], float] | None = None,
+    ) -> None:
         self.path = path
         self.level_name = level.upper() if level else "INFO"
         self._level = level_value(self.level_name)
@@ -126,24 +159,24 @@ class Logger:
 
     # -- level control --
 
-    def set_level(self, name):
+    def set_level(self, name: str) -> None:
         v = level_value(name)
         if v < 0:
             raise ValueError("unknown level: " + str(name))
         self._level = v
         self.level_name = name.upper()
 
-    def is_enabled(self, name):
+    def is_enabled(self, name: object) -> bool:
         v = level_value(name)
         return v >= 0 and v >= self._level
 
     # -- formatting --
 
-    def _ts(self):
+    def _ts(self) -> str:
         t = _time.localtime(self.clock())
         return _time.strftime("%Y-%m-%d %H:%M:%S", t)
 
-    def _format(self, level_name, msg, args):
+    def _format(self, level_name: str, msg: str, args: tuple[object, ...]) -> str:
         if args:
             try:
                 msg = msg % args
@@ -154,7 +187,7 @@ class Logger:
 
     # -- rotation --
 
-    def _rotate_if_needed(self, incoming_bytes):
+    def _rotate_if_needed(self, incoming_bytes: int) -> None:
         if self.max_bytes <= 0:
             return
         cur = self.fs.size(self.path) if self.fs.exists(self.path) else 0
@@ -162,7 +195,7 @@ class Logger:
             return
         self.rotate()
 
-    def rotate(self):
+    def rotate(self) -> None:
         """Cascade .N -> .N+1, drop oldest beyond `backups`."""
         if not self.fs.exists(self.path):
             return
@@ -182,21 +215,21 @@ class Logger:
 
     # -- main --
 
-    def log(self, level_name, msg, *args):
+    def log(self, level_name: str, msg: str, *args: object) -> None:
         if not self.is_enabled(level_name):
             return
         line = self._format(level_name.upper(), msg, args)
         self._rotate_if_needed(len(line.encode("utf-8")))
         self.fs.append(self.path, line)
 
-    def debug(self, msg, *a):
+    def debug(self, msg: str, *a: object) -> None:
         self.log("DEBUG", msg, *a)
 
-    def info(self, msg, *a):
+    def info(self, msg: str, *a: object) -> None:
         self.log("INFO", msg, *a)
 
-    def warn(self, msg, *a):
+    def warn(self, msg: str, *a: object) -> None:
         self.log("WARN", msg, *a)
 
-    def error(self, msg, *a):
+    def error(self, msg: str, *a: object) -> None:
         self.log("ERROR", msg, *a)

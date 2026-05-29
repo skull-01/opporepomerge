@@ -23,9 +23,12 @@ Each Device dict has: ip, port, vendor, model, source ("ssdp"|"mdns"|
 "udp"), last_seen (epoch float), preset (mapped via vendor_to_preset).
 """
 
+from __future__ import annotations
+
 import json
 import re as _re
 import time as _time
+from typing import Any, Callable, Protocol, cast
 
 # Vendor -> preset mapping. Case-insensitive substring match.
 _VENDOR_PRESETS = (
@@ -39,7 +42,7 @@ _VENDOR_PRESETS = (
 )
 
 
-def vendor_to_preset(vendor):
+def vendor_to_preset(vendor: object) -> str | None:
     """Map a free-form vendor/model string to a known preset_id."""
     if not vendor:
         return None
@@ -50,12 +53,12 @@ def vendor_to_preset(vendor):
     return None
 
 
-def apply_preset_for(device):
+def apply_preset_for(device: object) -> str | None:
     """Return the preset_id for a device, or None if unmappable."""
     if not isinstance(device, dict):
         return None
     if device.get("preset"):
-        return device["preset"]
+        return cast("str | None", device["preset"])
     return vendor_to_preset(" ".join([str(device.get("vendor", "")), str(device.get("model", ""))]))
 
 
@@ -66,7 +69,7 @@ def apply_preset_for(device):
 _SSDP_HEADER_RE = _re.compile(r"^([A-Za-z0-9-]+)\s*:\s*(.*?)\s*$")
 
 
-def parse_ssdp_response(text):
+def parse_ssdp_response(text: object) -> dict[str, object] | None:
     """Parse an SSDP M-SEARCH response.  Returns a dict with at least
     `location`, `server`, and any other headers, or None if the text
     is not a recognisable SSDP response.
@@ -80,7 +83,7 @@ def parse_ssdp_response(text):
         # Some devices reply with NOTIFY * HTTP/1.1; accept that too.
         if not lines[0].upper().startswith("NOTIFY"):
             return None
-    headers = {}
+    headers: dict[str, str] = {}
     for line in lines[1:]:
         m = _SSDP_HEADER_RE.match(line)
         if m:
@@ -112,7 +115,7 @@ def parse_ssdp_response(text):
 # ---------------------------------------------------------------------
 
 
-def parse_mdns_record(record):
+def parse_mdns_record(record: object) -> dict[str, object] | None:
     """Parse a normalised mDNS record into a Device dict, or None."""
     if not isinstance(record, dict):
         return None
@@ -136,27 +139,34 @@ def parse_mdns_record(record):
 # ---------------------------------------------------------------------
 
 
-def _now_fn(now):
+def _now_fn(now: Callable[[], float] | float | None) -> float:
     return now() if callable(now) else (now if now else _time.time())
 
 
-def discover(*, ssdp=None, mdns=None, udp=None, timeout=2.0, now=None):
+def discover(
+    *,
+    ssdp: Callable[[], list[Any]] | None = None,
+    mdns: Callable[[], list[Any]] | None = None,
+    udp: Callable[[], list[tuple[Any, Any]]] | None = None,
+    timeout: float = 2.0,
+    now: Callable[[], float] | float | None = None,
+) -> list[dict[str, object]]:
     """Run all configured probes concurrently (here: serially, since
     each is short-lived) and return a deduped list of Device dicts.
 
     Probes are callables: ssdp() -> [text...], mdns() -> [record...],
     udp() -> [(ip, vendor)...].  Missing probes are skipped silently.
     """
-    seen = {}
+    seen: dict[tuple[object, object], dict[str, object]] = {}
     ts = _now_fn(now)
 
-    def _add(dev):
+    def _add(dev: dict[str, object] | None) -> None:
         if not dev or not dev.get("ip"):
             return
         key = (dev["ip"], dev.get("port", 23))
         prev = seen.get(key)
         # Prefer the richest source; mdns/ssdp beat udp.
-        priority = {"mdns": 3, "ssdp": 2, "udp": 1}
+        priority: dict[object, int] = {"mdns": 3, "ssdp": 2, "udp": 1}
         if prev and priority.get(prev.get("source"), 0) >= priority.get(dev.get("source"), 0):
             return
         dev = dict(dev)
@@ -183,7 +193,7 @@ def discover(*, ssdp=None, mdns=None, udp=None, timeout=2.0, now=None):
         except Exception:
             pass
 
-    return sorted(seen.values(), key=lambda d: d["ip"])
+    return sorted(seen.values(), key=lambda d: cast("str", d["ip"]))
 
 
 # ---------------------------------------------------------------------
@@ -191,17 +201,25 @@ def discover(*, ssdp=None, mdns=None, udp=None, timeout=2.0, now=None):
 # ---------------------------------------------------------------------
 
 
+class _FS(Protocol):
+    def exists(self, p: str) -> bool: ...  # pragma: no cover
+
+    def read(self, p: str) -> str: ...  # pragma: no cover
+
+    def write(self, p: str, t: str) -> None: ...  # pragma: no cover
+
+
 class _RealFS:
-    def exists(self, p):
+    def exists(self, p: str) -> bool:
         import os
 
         return os.path.exists(p)
 
-    def read(self, p):
+    def read(self, p: str) -> str:
         with open(p, "r", encoding="utf-8") as f:
             return f.read()
 
-    def write(self, p, t):
+    def write(self, p: str, t: str) -> None:
         import os
 
         d = os.path.dirname(p)
@@ -214,13 +232,18 @@ class _RealFS:
 class DeviceCache:
     """Keeps the most recent observation per (ip, port) pair."""
 
-    def __init__(self, path=None, fs=None, clock=None):
+    def __init__(
+        self,
+        path: str | None = None,
+        fs: _FS | None = None,
+        clock: Callable[[], float] | None = None,
+    ) -> None:
         self.path = path
-        self.fs = fs if fs is not None else _RealFS()
-        self.clock = clock if clock is not None else _time.time
-        self._items = {}  # (ip,port) -> dev
+        self.fs: _FS = fs if fs is not None else _RealFS()
+        self.clock: Callable[[], float] = clock if clock is not None else _time.time
+        self._items: dict[tuple[object, object], dict[str, object]] = {}  # (ip,port) -> dev
 
-    def add(self, device):
+    def add(self, device: object) -> dict[str, object] | None:
         if not isinstance(device, dict) or not device.get("ip"):
             return None
         key = (device["ip"], int(device.get("port", 23)))
@@ -230,21 +253,25 @@ class DeviceCache:
         self._items[key] = d
         return d
 
-    def add_many(self, devices):
+    def add_many(self, devices: list[Any] | None) -> None:
         for d in devices or []:
             self.add(d)
 
-    def all(self):
-        return sorted(self._items.values(), key=lambda d: d["ip"])
+    def all(self) -> list[dict[str, object]]:
+        return sorted(self._items.values(), key=lambda d: cast("str", d["ip"]))
 
-    def recent(self, max_age_s=86400):
+    def recent(self, max_age_s: float = 86400) -> list[dict[str, object]]:
         now = self.clock()
-        return [d for d in self.all() if (now - float(d.get("last_seen", 0))) <= max_age_s]
+        return [
+            d
+            for d in self.all()
+            if (now - float(cast("float", d.get("last_seen", 0)))) <= max_age_s
+        ]
 
-    def clear(self):
+    def clear(self) -> None:
         self._items = {}
 
-    def save(self):
+    def save(self) -> bool:
         if not self.path:
             return False
         payload = {
@@ -261,11 +288,11 @@ class DeviceCache:
         self.fs.write(self.path, json.dumps(payload, sort_keys=True))
         return True
 
-    def load(self):
+    def load(self) -> bool:
         if not self.path or not self.fs.exists(self.path):
             return False
         try:
-            data = json.loads(self.fs.read(self.path))
+            data: Any = json.loads(self.fs.read(self.path))
         except Exception:
             return False
         items = data.get("items") if isinstance(data, dict) else None

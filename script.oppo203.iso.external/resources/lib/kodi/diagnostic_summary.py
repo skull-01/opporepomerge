@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import os
 import xml.etree.ElementTree as ET
+from collections.abc import Callable
 from pathlib import Path
+from typing import cast
 
 try:  # pragma: no cover - import style varies under Kodi and pytest
     from .settings_reader import Settings, read_settings
@@ -28,7 +30,7 @@ REQUIRED_SETTINGS = (
 PATH_SETTINGS = ("python_path",)
 
 
-def _as_settings(settings=None, addon_data_dir=None) -> Settings:
+def _as_settings(settings: object = None, addon_data_dir: str | None = None) -> Settings:
     """Return a Settings object without mutating persistent settings."""
     if isinstance(settings, Settings):
         return settings
@@ -39,7 +41,7 @@ def _as_settings(settings=None, addon_data_dir=None) -> Settings:
     return Settings({})
 
 
-def addon_version(root_dir=None) -> str:
+def addon_version(root_dir: str | None = None) -> str:
     """Return addon.xml version when available, else ``unknown``."""
     if not root_dir:
         return "unknown"
@@ -50,9 +52,11 @@ def addon_version(root_dir=None) -> str:
         return "unknown"
 
 
-def _path_status(settings: Settings, exists=None) -> dict:
+def _path_status(
+    settings: Settings, exists: Callable[[str], object] | None = None
+) -> dict[str, dict[str, object]]:
     exists = exists or os.path.exists
-    result = {}
+    result: dict[str, dict[str, object]] = {}
     for key in PATH_SETTINGS:
         value = settings.get_path(key)
         configured = bool(value)
@@ -70,7 +74,13 @@ def _path_status(settings: Settings, exists=None) -> dict:
     return result
 
 
-def build_summary(settings=None, *, addon_data_dir=None, root_dir=None, path_exists=None) -> dict:
+def build_summary(
+    settings: object = None,
+    *,
+    addon_data_dir: str | None = None,
+    root_dir: str | None = None,
+    path_exists: Callable[[str], object] | None = None,
+) -> dict[str, object]:
     """Build a non-invasive diagnostic summary for support and AI handoff.
 
     The helper is deliberately read-only.  It only inspects supplied settings,
@@ -78,13 +88,13 @@ def build_summary(settings=None, *, addon_data_dir=None, root_dir=None, path_exi
     optionally checks whether configured path-like dependencies exist.
     """
     cfg = _as_settings(settings=settings, addon_data_dir=addon_data_dir)
-    validation = (
+    validation: dict[str, object] = (
         cfg.validation_summary()
         if hasattr(cfg, "validation_summary")
         else {"missing": [], "warnings": []}
     )
-    missing = list(validation.get("missing", []))
-    warnings = list(validation.get("warnings", []))
+    missing = list(cast("list[object]", validation.get("missing", [])))
+    warnings = list(cast("list[object]", validation.get("warnings", [])))
     paths = _path_status(cfg, exists=path_exists)
 
     if paths.get("python_path", {}).get("configured") and not paths["python_path"].get("exists"):
@@ -110,11 +120,11 @@ def build_summary(settings=None, *, addon_data_dir=None, root_dir=None, path_exi
     return summary
 
 
-def format_summary(summary: dict) -> str:
+def format_summary(summary: dict[str, object]) -> str:
     """Render a summary into a compact support-friendly text block."""
     if not isinstance(summary, dict):
         return "OPPO203 diagnostic summary unavailable"
-    cfg = summary.get("configuration", {}) or {}
+    cfg = cast("dict[str, object]", summary.get("configuration", {}) or {})
     lines = [
         "OPPO203 Diagnostic Summary",
         f"Version: {summary.get('addon_version', 'unknown')}",
@@ -125,8 +135,8 @@ def format_summary(summary: dict) -> str:
         f"OPPO IP configured: {'yes' if cfg.get('oppo_ip_configured') else 'no'}",
         f"OPPO port: {cfg.get('oppo_port', 'unknown')}",
     ]
-    missing = summary.get("missing") or []
-    warnings = summary.get("warnings") or []
+    missing = cast("list[object]", summary.get("missing") or [])
+    warnings = cast("list[object]", summary.get("warnings") or [])
     if missing:
         lines.append("Missing: " + ", ".join(str(item) for item in missing))
     if warnings:
