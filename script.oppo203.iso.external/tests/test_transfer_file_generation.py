@@ -1,10 +1,10 @@
 """Ready-to-transfer playercorefactory.xml + keymap file generation.
 
-The wizard and the installer menu now write complete, drop-in files to an
-addon-data 'generated' folder (mirroring Kodi's userdata layout) instead of
-showing snippets the user must merge by hand. These tests cover the new
-builders, the silent/announced writers, and the wizard's end-of-run hook using
-the local Kodi stubs only -- no real Kodi, OPPO, or filesystem target.
+The installer menu writes complete, drop-in files to an addon-data 'generated'
+folder (mirroring Kodi's userdata layout) instead of showing snippets the user
+must merge by hand. These tests cover the new builders and the silent/announced
+writers using the local Kodi stubs only -- no real Kodi, OPPO, or filesystem
+target.
 """
 
 from __future__ import annotations
@@ -22,17 +22,6 @@ LIB = ROOT / "resources" / "lib"
 for path in (str(STUBS), str(LIB), str(ROOT)):
     if path not in sys.path:
         sys.path.insert(0, path)
-
-
-class FakeAddon:
-    def __init__(self, initial=None):
-        self.values = dict(initial or {})
-
-    def getSetting(self, key):
-        return self.values.get(key, "")
-
-    def setSetting(self, key, value):
-        self.values[key] = str(value)
 
 
 class TestTransferFileGeneration(unittest.TestCase):
@@ -114,67 +103,6 @@ class TestTransferFileGeneration(unittest.TestCase):
             include_playercorefactory=False, include_keymap=True, announce=False
         )
         self.assertEqual(set(paths), {"keymap"})
-
-
-class TestWizardGeneratesTransferFiles(unittest.TestCase):
-    def setUp(self):
-        import xbmcaddon
-        import xbmcgui
-
-        xbmcaddon.reset(
-            settings={"python_path": "/usr/bin/python3"},
-            info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
-        )
-        xbmcgui.reset()
-        # Ensure a fresh installer so the wizard's lazy import resolves cleanly.
-        sys.modules.pop("installer", None)
-        self.installer = importlib.import_module("installer")
-        sys.modules.pop("wizard", None)
-        self.wizard = importlib.import_module("wizard")
-
-    def test_external_mode_writes_both_files_and_reports_paths(self):
-        addon = FakeAddon({"playback_architecture": "external_player"})
-        note = self.wizard._maybe_generate_transfer_files(addon)
-        self.assertIn("Setup files written", note)
-        self.assertIn("playercorefactory.xml", note)
-        self.assertIn("oppo203iso.xml", note)
-
-    def test_service_mode_writes_keymap_only(self):
-        addon = FakeAddon({"playback_architecture": "service_interception"})
-        note = self.wizard._maybe_generate_transfer_files(addon)
-        self.assertIn("oppo203iso.xml", note)
-        self.assertNotIn("playercorefactory.xml", note)
-
-    def test_generation_failure_is_non_fatal(self):
-        addon = FakeAddon({"playback_architecture": "external_player"})
-
-        def boom(*a, **k):
-            raise RuntimeError("disk full")
-
-        original = self.installer.generate_transfer_files
-        self.installer.generate_transfer_files = boom
-        try:
-            self.assertEqual(self.wizard._maybe_generate_transfer_files(addon), "")
-        finally:
-            self.installer.generate_transfer_files = original
-
-    def test_empty_result_yields_no_note(self):
-        addon = FakeAddon({"playback_architecture": "external_player"})
-        original = self.installer.generate_transfer_files
-        self.installer.generate_transfer_files = lambda *a, **k: {}
-        try:
-            self.assertEqual(self.wizard._maybe_generate_transfer_files(addon), "")
-        finally:
-            self.installer.generate_transfer_files = original
-
-    def test_skipped_when_kodi_unavailable(self):
-        addon = FakeAddon({"playback_architecture": "external_player"})
-        original = self.wizard.xbmc
-        self.wizard.xbmc = None
-        try:
-            self.assertEqual(self.wizard._maybe_generate_transfer_files(addon), "")
-        finally:
-            self.wizard.xbmc = original
 
 
 if __name__ == "__main__":

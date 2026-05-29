@@ -106,61 +106,6 @@ def test_hardware_capabilities_class_helpers_execute():
         assert isinstance(hc.requires_autoscript_for_nas_direct_playback(key), bool)
 
 
-# --- wizard._probe ------------------------------------------------------------
-
-def test_wizard_probe_success_and_failure():
-    import wizard
-
-    class FakeConn:
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *exc):
-            return False
-
-    with mock.patch.object(wizard.socket, "create_connection", return_value=FakeConn()):
-        assert wizard._probe("host", 23) is True        # line 223
-    with mock.patch.object(wizard.socket, "create_connection", side_effect=OSError):
-        assert wizard._probe("host", 23) is False
-
-
-def test_wizard_avr_support_metadata_flat_import_fallback():
-    # Imported flat, the `from .avr_diagnostics import ...` relative import in
-    # avr_wizard_support_metadata() fails and the bare-import fallback runs
-    # (wizard.py lines 719-720).
-    import wizard
-
-    data = wizard.avr_wizard_support_metadata()
-    assert isinstance(data, dict)
-    assert "options" in data
-
-
-# --- first_run_wizard._ui_call ------------------------------------------------
-
-def test_first_run_wizard_ui_call_paths():
-    import first_run_wizard as frw
-
-    assert frw._ui_call(None, "show") is False          # line 206 (ui is None)
-
-    class FallbackRaises:
-        def show(self, *args):
-            # multi-arg call raises TypeError; single-arg fallback raises too
-            raise TypeError("needs one arg") if len(args) != 1 else RuntimeError("boom")
-
-    assert frw._ui_call(FallbackRaises(), "show", "title", "msg") is False  # lines 219-220
-
-    seen = []
-
-    class FallbackSucceeds:
-        def show(self, *args):
-            if len(args) != 1:
-                raise TypeError
-            seen.append(args[0])
-
-    assert frw._ui_call(FallbackSucceeds(), "show", "title", "msg") is True
-    assert seen == ["msg"]
-
-
 # --- installer.export_avr_diagnostic_report -----------------------------------
 
 def test_installer_export_avr_diagnostic_report_success_and_failure():

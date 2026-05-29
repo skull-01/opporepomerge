@@ -48,36 +48,6 @@ class TPower(unittest.TestCase):
         self.assertIn("#EJT", src); self.assertIn("#PON", src)
 
 
-class TWiz(unittest.TestCase):
-    def setUp(self):
-        import wizard
-        self.w = wizard
-    def test_choose_mode_callable(self):
-        self.assertTrue(callable(self.w._choose_mode))
-    def test_auto_test_callable(self):
-        self.assertTrue(callable(self.w.auto_test_architecture))
-    def test_unreachable(self):
-        a = DummyAddon({"playback_architecture":"external_player"})
-        with mock.patch.object(self.w,"_probe", return_value=False):
-            res = self.w.auto_test_architecture(a,"1.2.3.4","23")
-        self.assertFalse(res.reachable)
-        self.assertIn("could not reach", res.details.lower())
-        self.assertEqual(res.recommended,"external_player")
-    def test_reachable_default(self):
-        a = DummyAddon({"oppo_hardware_model":"udp_203"})
-        with mock.patch.object(self.w,"_probe", return_value=True):
-            res = self.w.auto_test_architecture(a,"1.2.3.4","23")
-        self.assertTrue(res.reachable)
-        self.assertEqual(res.recommended,"external_player")
-    def test_reachable_chinoppo(self):
-        a = DummyAddon({"oppo_hardware_model":"chinoppo"})
-        with mock.patch.object(self.w,"_probe", return_value=True):
-            res = self.w.auto_test_architecture(a,"1.2.3.4","23")
-        self.assertTrue(res.reachable)
-        self.assertEqual(res.recommended,"external_player")
-        self.assertIn("chinoppo", res.details.lower())
-
-
 class TAuto(unittest.TestCase):
     def setUp(self):
         import autoscript_helper as h
@@ -281,10 +251,6 @@ class TI18N(unittest.TestCase):
         importlib.reload(i18n)
         self.i = i18n
 
-    def test_returns_english_fallback(self):
-        self.assertEqual(self.i.L(31000), "Welcome")
-        self.assertEqual(self.i.L(31040), "Architecture auto-test")
-
     def test_unknown_id_uses_default(self):
         self.assertEqual(self.i.L(99999, "fallback"), "fallback")
 
@@ -308,18 +274,12 @@ class TI18N(unittest.TestCase):
 
 
 class TLangFiles(unittest.TestCase):
-    """Localization-file integrity: every bundled language must define
-    every wizard string id."""
+    """Localization-file integrity: every bundled language folder must exist."""
 
     def setUp(self):
         import i18n
         self.i = i18n
         self.lang_root = os.path.join(ROOT, "resources", "language")
-
-    def _load_po(self, folder):
-        path = os.path.join(self.lang_root, folder, "strings.po")
-        with open(path, encoding="utf-8") as f:
-            return f.read()
 
     def test_all_languages_present(self):
         for folder in self.i.supported_languages():
@@ -327,35 +287,6 @@ class TLangFiles(unittest.TestCase):
                 os.path.isdir(os.path.join(self.lang_root, folder)),
                 "missing language folder: " + folder,
             )
-
-    def test_every_language_defines_all_31xxx_ids(self):
-        wanted = set(str(k) for k in (31000,31001,31002,31003,
-                                       31010,31011,31012,31013,31014,
-                                       31020,31021,31022,
-                                       31030,31031,31032,31033,31034,
-                                       31040,31041,31042,31043,
-                                       31050,31051,31060,31061))
-        for folder in self.i.supported_languages():
-            txt = self._load_po(folder)
-            missing = [w for w in wanted if ('"#' + w + '"') not in txt]
-            self.assertEqual(missing, [],
-                             "language " + folder + " missing ids: " + str(missing))
-
-    def test_no_blank_translations_in_localized(self):
-        # English may have empty msgstrs (Kodi resolves from msgid), but
-        # localized files must not have empty msgstr for the 31xxx range.
-        import re as _re
-        for folder in self.i.supported_languages():
-            if folder == "resource.language.en_gb":
-                continue
-            txt = self._load_po(folder)
-            blocks = _re.findall(
-                r'msgctxt "#(31\d{3})"\s*\nmsgid "[^"]*"\s*\nmsgstr "([^"]*)"',
-                txt,
-            )
-            for cid, ms in blocks:
-                self.assertTrue(ms.strip(),
-                                folder + " has empty msgstr for #" + cid)
 
 
 class TReconnect(unittest.TestCase):
@@ -399,15 +330,9 @@ class TBugs(unittest.TestCase):
 
     def test_i18n_unicode_safe(self):
         import i18n
-        # zh_cn translation must not crash the L() fallback path
-        self.assertEqual(i18n.L(31000), "Welcome")
-
-    def test_wizard_chinoppo_family_helper_still_works(self):
-        import wizard
-        # Verify we still expose _probe + auto_test_architecture after
-        # the preset-aware refactor.
-        self.assertTrue(callable(wizard._probe))
-        self.assertTrue(callable(wizard.auto_test_architecture))
+        # L() never crashes; empty fallback table returns "".
+        self.assertEqual(i18n.L(31000), "")
+        self.assertEqual(i18n.L(31000, "fallback"), "fallback")
 
     def test_presets_still_intact(self):
         import hardware_presets as hp
@@ -728,24 +653,6 @@ class TArchBenchmark(unittest.TestCase):
         finally:
             os.remove(path)
 
-    def test_wizard_run_benchmark_bridges(self):
-        import wizard
-        # Probes return immediately; timer is deterministic.
-        seq = iter([0.0, 0.05, 0.05, 0.10, 0.10, 0.15,
-                    0.15, 0.30, 0.30, 0.45, 0.45, 0.60])
-        r = wizard._run_benchmark(
-            "127.0.0.1", 23,
-            trials=3,
-            timer=lambda: next(seq),
-            probe_external=lambda c: None,
-            probe_service=lambda c: None,
-        )
-        self.assertEqual(r["recommendation"], "external")
-        self.assertEqual(r["trials"], 3)
-
-
-
-
 class TDiagnostics(unittest.TestCase):
     """Diagnostics dashboard tests (no sockets, no Kodi)."""
 
@@ -888,7 +795,7 @@ class TSettingsLayout(unittest.TestCase):
 
     def test_five_groups_present(self):
         cat_ids = [c.get("id") for c in self.tree.findall("category")]
-        for g in ("connection","hardware","autopoweron","wizard","diagnostics"):
+        for g in ("connection","hardware","autopoweron","playback","diagnostics"):
             self.assertIn(g, cat_ids, "missing category: " + g)
 
     def test_no_group_is_empty(self):
@@ -984,9 +891,10 @@ class TSettingsLayout(unittest.TestCase):
     def test_v2_mvp_settings_count_reflects_removed_architecture_ui(self):
         # v2 Build 2 keeps architecture-selection rows hidden/deferred, adds
         # hardware model, and adds the explicit TV-switching enable/disable
-        # control required by the MVP no-op path.
+        # control required by the MVP no-op path. Strip-wizard dropped the
+        # hidden wizard_mode setting (98 -> 97).
         ids = [s.get("id") for s in self.tree.iter("setting")]
-        self.assertEqual(len(ids), 98)
+        self.assertEqual(len(ids), 97)
 
     def test_category_labels_use_new_ids(self):
         cat_label_ids = {c.get("id"): c.get("label")
@@ -994,156 +902,8 @@ class TSettingsLayout(unittest.TestCase):
         self.assertEqual(cat_label_ids["connection"],   "32100")
         self.assertEqual(cat_label_ids["hardware"],     "32101")
         self.assertEqual(cat_label_ids["autopoweron"],  "32102")
-        self.assertEqual(cat_label_ids["wizard"],       "32103")
+        self.assertEqual(cat_label_ids["playback"],     "32103")
         self.assertEqual(cat_label_ids["diagnostics"],  "32104")
-
-
-
-
-class TWizardPolish(unittest.TestCase):
-    """Wizard polish: back nav state machine + dry-run no-write."""
-
-    def setUp(self):
-        import wizard_polish as wp
-        self.wp = wp
-
-    def test_initial_state(self):
-        s = self.wp.WizardState()
-        self.assertEqual(s.step, "welcome")
-        self.assertEqual(s.step_index, 0)
-        self.assertFalse(s.dry_run)
-        self.assertFalse(self.wp.can_go_back(s))
-        self.assertTrue(self.wp.can_go_next(s))
-
-    def test_steps_in_canonical_order(self):
-        self.assertEqual(self.wp.STEPS,
-                         ("welcome","connection","hardware",
-                          "autopoweron","wizard_mode","summary","done"))
-
-    def test_next_advances(self):
-        s = self.wp.WizardState()
-        s2 = self.wp.next_step(s)
-        self.assertEqual(s2.step, "connection")
-        self.assertEqual(s.step, "welcome", "original state must not mutate")
-
-    def test_next_clamps_at_end(self):
-        s = self.wp.WizardState(step_index=len(self.wp.STEPS)-1)
-        s2 = self.wp.next_step(s)
-        self.assertEqual(s2.step_index, len(self.wp.STEPS)-1)
-        self.assertFalse(self.wp.can_go_next(s))
-
-    def test_prev_clamps_at_zero(self):
-        s = self.wp.WizardState()
-        s2 = self.wp.prev_step(s)
-        self.assertEqual(s2.step_index, 0)
-        self.assertFalse(self.wp.can_go_back(s))
-
-    def test_back_nav_pops_history(self):
-        s = self.wp.WizardState()
-        s = self.wp.next_step(s)         # welcome -> connection
-        s = self.wp.next_step(s)         # connection -> hardware
-        s = self.wp.next_step(s)         # hardware -> autopoweron
-        self.assertEqual(s.step, "autopoweron")
-        s = self.wp.prev_step(s)
-        self.assertEqual(s.step, "hardware")
-        s = self.wp.prev_step(s)
-        self.assertEqual(s.step, "connection")
-        s = self.wp.prev_step(s)
-        self.assertEqual(s.step, "welcome")
-        # one more Back is a no-op
-        s = self.wp.prev_step(s)
-        self.assertEqual(s.step, "welcome")
-
-    def test_back_then_next_does_not_double_push(self):
-        s = self.wp.WizardState()
-        s = self.wp.next_step(s)         # 0 -> 1
-        s = self.wp.next_step(s)         # 1 -> 2
-        s = self.wp.prev_step(s)         # 2 -> 1
-        s = self.wp.next_step(s)         # 1 -> 2
-        # history should still be sensible (length <= 2)
-        self.assertLessEqual(len(s.history), 2)
-        self.assertEqual(s.step, "hardware")
-
-    def test_state_equality(self):
-        a = self.wp.WizardState(values={"x": 1})
-        b = self.wp.WizardState(values={"x": 1})
-        self.assertEqual(a, b)
-
-    def test_test_now_only_on_connection_step(self):
-        s = self.wp.WizardState()
-        with self.assertRaises(RuntimeError):
-            self.wp.test_now(s, probe=lambda h,p: {"ok": True})
-
-    def test_test_now_returns_probe_result(self):
-        s = self.wp.WizardState(step_index=1,
-                                values={"oppo_ip": "1.2.3.4", "oppo_port": 23})
-        s2 = self.wp.test_now(s, probe=lambda h,p: {"ok": True, "rtt_ms": 4})
-        self.assertEqual(s2.last_test, {"ok": True, "rtt_ms": 4})
-        self.assertIsNone(s.last_test, "original state must not mutate")
-
-    def test_test_now_swallows_probe_exceptions(self):
-        s = self.wp.WizardState(step_index=1,
-                                values={"oppo_ip": "1.2.3.4", "oppo_port": 23})
-        def boom(*a, **kw): raise OSError("nope")
-        s2 = self.wp.test_now(s, probe=boom)
-        self.assertFalse(s2.last_test["ok"])
-        self.assertIn("error", s2.last_test)
-
-    def test_test_now_normalises_bool_results(self):
-        s = self.wp.WizardState(step_index=1,
-                                values={"oppo_ip": "1.2.3.4", "oppo_port": 23})
-        s2 = self.wp.test_now(s, probe=lambda h,p: True)
-        self.assertEqual(s2.last_test, {"ok": True})
-
-    def test_summary_lists_every_value(self):
-        s = self.wp.WizardState(values={
-            "oppo_ip": "1.2.3.4", "oppo_port": 23, "oppo_use_wol": False,
-        }, dry_run=True)
-        rows = self.wp.summary(s)
-        keys = [k for k,_ in rows]
-        self.assertIn("oppo_ip", keys)
-        self.assertIn("oppo_port", keys)
-        self.assertIn("oppo_use_wol", keys)
-        # __dry_run__ flag is always last
-        self.assertEqual(rows[-1], ("__dry_run__", True))
-
-    def test_summary_is_sorted_deterministic(self):
-        s = self.wp.WizardState(values={"b": 2, "a": 1, "c": 3})
-        rows = self.wp.summary(s)
-        non_meta = [k for k,_ in rows if not k.startswith("__")]
-        self.assertEqual(non_meta, sorted(non_meta))
-
-    def test_apply_writes_each_value_when_not_dry_run(self):
-        s = self.wp.WizardState(values={"a": 1, "b": 2, "c": 3})
-        calls = []
-        out = self.wp.apply(s, writer=lambda k,v: calls.append((k,v)))
-        self.assertTrue(out["written"])
-        self.assertEqual(out["writer_calls"], 3)
-        self.assertEqual(sorted(calls), [("a",1),("b",2),("c",3)])
-
-    def test_apply_dry_run_does_not_write(self):
-        s = self.wp.WizardState(values={"a": 1, "b": 2}, dry_run=True)
-        calls = []
-        out = self.wp.apply(s, writer=lambda k,v: calls.append((k,v)))
-        self.assertFalse(out["written"])
-        self.assertEqual(out["writer_calls"], 0)
-        self.assertEqual(calls, [],
-                         "dry_run=True must NEVER call writer (no-write guarantee)")
-        self.assertEqual(out["values"], {"a": 1, "b": 2})
-
-    def test_apply_dry_run_no_write_with_failing_writer(self):
-        # Even if the writer would crash, dry_run must not call it.
-        def boom(*a, **kw): raise AssertionError("writer must not be called")
-        s = self.wp.WizardState(values={"a": 1}, dry_run=True)
-        out = self.wp.apply(s, writer=boom)
-        self.assertFalse(out["written"])
-
-    def test_state_copy_is_deep_enough(self):
-        s = self.wp.WizardState(values={"a": 1})
-        s2 = self.wp.next_step(s)
-        s2.values["a"] = 999
-        self.assertEqual(s.values["a"], 1,
-                         "mutating copy must not affect original")
 
 
 
@@ -2281,22 +2041,6 @@ class TLocalizationParity(unittest.TestCase):
             self.assertEqual(set(ctxs), set(ids),
                 "locale " + lang + ": some msgctxt entries lack msgstr")
 
-    # ---- new locales: at least one #31xxx string is actually localised ----
-
-    def test_new_locales_have_some_real_translations(self):
-        en = self._read("en_gb")
-        for lang in ("ru_ru","pl_pl","pt_br","ja_jp","ko_kr"):
-            other = self._read(lang)
-            # Strict-untranslated check: count msgctxt entries where
-            # this locale's msgstr equals the English msgstr.
-            en_pairs    = dict(self._re.findall(
-                r'msgctxt "(#3\d+)"\nmsgid "[^"]*"\nmsgstr "([^"]*)"', en))
-            other_pairs = dict(self._re.findall(
-                r'msgctxt "(#3\d+)"\nmsgid "[^"]*"\nmsgstr "([^"]*)"', other))
-            translated = sum(1 for k, v in other_pairs.items()
-                             if k in en_pairs and v != en_pairs[k] and v != "")
-            self.assertGreater(translated, 0,
-                "locale " + lang + " has zero real translations")
 
 
 class TMakePot(unittest.TestCase):
@@ -2685,13 +2429,6 @@ class TPropertyI18nL(unittest.TestCase):
     def test_L_on_sample_inputs_never_raises(self):
         for v in _SAMPLE_LOCALIZE_INPUTS:
             self._check_L_invariants(v)
-
-    def test_L_on_known_string_ids(self):
-        # Real #31xxx ids should resolve to non-empty translations.
-        for sid in (31000, 31001, 31050):
-            out = self.i18n.L(sid)
-            self.assertIsInstance(out, str)
-            self.assertGreater(len(out), 0)
 
     if HYPOTHESIS_AVAILABLE:
         @given(st.integers())

@@ -1,15 +1,9 @@
 import os
 import xml.sax.saxutils as xml_escape
 
-import xbmc
 import xbmcaddon
 import xbmcgui
 import xbmcvfs
-
-try:
-    from .diagnostic_logging import format_log_message
-except ImportError:  # pragma: no cover - top-level Kodi import compatibility
-    from diagnostic_logging import format_log_message
 
 try:
     from .disc_classification import (
@@ -407,8 +401,8 @@ def write_playercorefactory_file(announce=True):
     """Write a ready-to-transfer playercorefactory.xml and return its path.
 
     With announce=True (menu use) the user is shown the 4K naming reminder and
-    the saved location. With announce=False (wizard use) the file is written
-    silently so the wizard can report all generated files together.
+    the saved location. With announce=False the file is written silently so the
+    caller can batch reporting.
     """
     _, pcf_path, _ = _generated_paths()
     _write_text_file(pcf_path, build_playercorefactory_file_xml())
@@ -771,18 +765,8 @@ def export_hardware_validation_readiness():
 
 
 def main():
-    if ADDON.getSetting("wizard_completed") not in ("true", "1", "yes"):
-        try:
-            from wizard import run_wizard
-
-            run_wizard()
-        except Exception as exc:
-            xbmc.log(format_log_message("setup", "Wizard failed: " + str(exc)), xbmc.LOGWARNING)
-            if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
-                show_architecture_choice_dialog()
-    else:
-        if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
-            show_architecture_choice_dialog()
+    if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
+        show_architecture_choice_dialog()
 
     actions = [
         "Generate playercorefactory.xml file (ready to copy)",
@@ -794,9 +778,6 @@ def main():
         "Discover Oppo on network (UDP multicast)",
         "TCL ADB preset helper",
         "Experimental: file-list diagnostic (opt-in)",
-        "Run first-run wizard (Basic or Full)",
-        "Reset first-run wizard",
-        "Generate Chinoppo AutoScript (autoexec.sh)",
         "Export hardware-validation readiness report",
         "Export AVR diagnostic report",
         "Cancel",
@@ -821,27 +802,6 @@ def main():
     elif choice == 8:
         run_experimental_filelist_diagnostic()
     elif choice == 9:
-        try:
-            from wizard import run_wizard
-
-            run_wizard()
-        except Exception as exc:
-            xbmcgui.Dialog().ok("Wizard failed", str(exc))
-    elif choice == 10:
-        try:
-            from wizard import reset_wizard
-
-            reset_wizard()
-        except Exception as exc:
-            xbmcgui.Dialog().ok("Reset failed", str(exc))
-    elif choice == 11:
-        try:
-            from autoscript_helper import run_autoscript_wizard
-
-            run_autoscript_wizard(ADDON)
-        except Exception as exc:
-            xbmcgui.Dialog().ok("AutoScript failed", str(exc))
-    elif choice == 12:
         export_hardware_validation_readiness()
-    elif choice == 13:
+    elif choice == 10:
         export_avr_diagnostic_report()

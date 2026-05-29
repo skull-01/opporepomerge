@@ -155,8 +155,7 @@
             </dependencies>
         </setting>
     </category>
-    <category id="wizard" label="32103">  <!-- Wizard and playback -->
-        <setting id="wizard_mode" type="text" label="30920" default="basic" visible="false"/>
+    <category id="playback" label="32103">  <!-- Playback -->
         <setting id="python_path" type="string" label="30001" default="/usr/bin/python3" help="30002"/>
         <setting id="include_disc_folder_rules" type="bool" label="30312" default="true" help="30313"/>
         <setting id="fast_changeover" type="bool" label="30307" default="true" help="30308"/>

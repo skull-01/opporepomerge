@@ -27,7 +27,7 @@ class FakeXbmc:
 
 class TestV250Build5DiagnosticLogging(unittest.TestCase):
     def setUp(self):
-        for name in ("diagnostic_logging", "external_player", "wizard"):
+        for name in ("diagnostic_logging", "external_player"):
             sys.modules.pop(name, None)
 
     def test_format_log_message_standardizes_support_prefixes(self):
@@ -63,13 +63,6 @@ class TestV250Build5DiagnosticLogging(unittest.TestCase):
         with redirect_stdout(buffer):
             external_player.log("Requested ISO: movie.iso")
         self.assertIn("[OPPO203][PLAYER] Requested ISO: movie.iso", buffer.getvalue())
-
-    def test_wizard_log_uses_wizard_prefix_when_kodi_logger_available(self):
-        wizard = importlib.import_module("wizard")
-        fake = FakeXbmc()
-        wizard.xbmc = fake
-        wizard._wizard_log("recovery state updated")
-        self.assertEqual(fake.calls, [("[OPPO203][WIZARD] recovery state updated", fake.LOGINFO)])
 
     def test_service_prefix_is_standardized(self):
         service = importlib.import_module("service")

@@ -19,7 +19,7 @@ for item in (str(ROOT), str(LIB)):
 def kodi_stubs(*extra):
     names = {
         "xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "xbmcplugin", "xbmcdrm",
-        "resources.lib.installer", "resources.lib.wizard", "installer", "wizard",
+        "resources.lib.installer", "installer",
     }
     names.update(extra)
     old_path = list(sys.path)
@@ -113,7 +113,7 @@ def test_disc_folder_setting_still_controls_bdmv_mpls_rules():
     assert "BDMV" not in xml
 
 
-def test_installer_and_wizard_preserve_naming_warning_text():
+def test_installer_preserves_naming_warning_text():
     with _installer("true") as installer:
         warning = installer.build_xml_naming_warning_text()
     assert "4K external-player XML mode requires naming discipline" in warning
@@ -121,10 +121,3 @@ def test_installer_and_wizard_preserve_naming_warning_text():
     assert "Loose video files" in warning
     assert "metadata" in warning
     assert "ISO internals" in warning
-
-    with kodi_stubs():
-        wizard = importlib.import_module("resources.lib.wizard")
-        body = wizard.WIZARD_TEXT["xml_naming_body"]
-    assert "4K external-player XML mode requires naming discipline" in body
-    assert "MKV, MP4, M2TS, TS, and VOB stay with Kodi" in body
-    assert "cannot inspect metadata" in body
