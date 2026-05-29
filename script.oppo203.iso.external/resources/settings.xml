@@ -176,5 +176,7 @@
     </category>
     <category id="diagnostics" label="32104">  <!-- Diagnostics and experimental -->
         <setting id="oppo_experimental_filelist_enabled" type="bool" label="30501" default="false" help="30502"/>
+        <!-- Hidden: persisted by the in-add-on language menu (i18n.LANGUAGE_SETTING); label reused, never shown. -->
+        <setting id="addon_language" type="string" label="30000" default="follow_kodi" visible="false"/>
     </category>
 </settings>

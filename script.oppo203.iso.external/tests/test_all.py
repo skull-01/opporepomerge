@@ -270,7 +270,7 @@ class TI18N(unittest.TestCase):
         langs = self.i.supported_languages()
         self.assertIn("resource.language.en_gb", langs)
         self.assertIn("resource.language.zh_cn", langs)
-        self.assertEqual(len(langs), 7)
+        self.assertEqual(len(langs), 12)
 
 
 class TLangFiles(unittest.TestCase):
@@ -894,8 +894,9 @@ class TSettingsLayout(unittest.TestCase):
         # control required by the MVP no-op path. Strip-wizard dropped the
         # hidden wizard_mode setting (98 -> 97). The configurator-owner hint
         # lsep added a passive label row at the top of Connection (97 -> 98).
+        # ENH-#42 added the hidden addon_language preference slot (98 -> 99).
         ids = [s.get("id") for s in self.tree.iter("setting")]
-        self.assertEqual(len(ids), 98)
+        self.assertEqual(len(ids), 99)
 
     def test_category_labels_use_new_ids(self):
         cat_label_ids = {c.get("id"): c.get("label")

@@ -877,6 +877,38 @@ def network_settings_menu():
         )
 
 
+def language_menu():
+    """In-add-on add-on-language switcher (ENH-#42).
+
+    Persists the `addon_language` preference: the follow-Kodi sentinel
+    (default) or a pinned bundled locale. Bundled non-English strings are
+    currently English placeholders, so this saves the preference and resolves
+    the follow-Kodi sentinel; visible text changes once translations land.
+    """
+    try:
+        from .i18n import effective_language, language_options
+    except Exception:  # pragma: no cover - top-level Kodi import compatibility
+        from i18n import effective_language, language_options  # type: ignore
+
+    current = get_setting("addon_language", "follow_kodi")
+    options = language_options()
+    labels = [name + ("  (current)" if value == current else "") for value, name in options]
+    choice = xbmcgui.Dialog().select("Add-on language", labels)
+    if choice < 0:
+        return
+    value, name = options[choice]
+    ADDON.setSetting("addon_language", value)
+    if value == "follow_kodi":
+        xbmcgui.Dialog().ok(
+            "Add-on language",
+            "Following the Kodi system language (currently resolved to "
+            + effective_language()
+            + ").",
+        )
+    else:
+        xbmcgui.Dialog().ok("Add-on language", "Add-on language preference saved: " + name + ".")
+
+
 def main():
     if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
         show_architecture_choice_dialog()
@@ -894,6 +926,7 @@ def main():
         "Export hardware-validation readiness report",
         "Export AVR diagnostic report",
         "Network settings (TV / OPPO / AVR / Kodi)",
+        "Add-on language",
         "Cancel",
     ]
     choice = xbmcgui.Dialog().select("Oppo UDP-203 ISO External Player", actions)
@@ -921,3 +954,5 @@ def main():
         export_avr_diagnostic_report()
     elif choice == 11:
         network_settings_menu()
+    elif choice == 12:
+        language_menu()
