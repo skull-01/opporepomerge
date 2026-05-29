@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `2fdf869` (origin/main, 2026-05-29 — Merge PR #61 testmon py3.9 fix; `main` also carries PR #59 ENH-#57 fast test loop `9f102a3`, PR #58 README credits `61999e3`, PR #60 checklist `343aff2`, + this EOD) · **Tests on `main`:** 938 passed, 3 skipped (`pytest -n auto`, ~11s; coverage 99.07%; mypy `--gate` 28 modules / 0 errors; full CI green incl. 3.9/3.10/3.12 smokes)
+**Last sync:** commit `c48bb43` (origin/main, 2026-05-29 — Merge PR #62 EOD handoff) + this 2026-05-30 EOD doc · **ENH-#51 PRs #63–#66 open as stacked drafts** (the mypy `--strict` idiom + cascade rollout, gate 28→46, not yet merged — merge #63→#64→#65→#66) · **Tests on `main`:** 938 passed, 3 skipped (`pytest -n auto`; coverage 99.07%; mypy `--gate` **28 modules / 0 errors** on `main` — the 46-module gate lives on the unmerged ENH-#51 PRs; full CI green incl. 3.9/3.10/3.12 smokes)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -167,74 +167,61 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-29 (EOD — ENH-#57 fast-test-loop + README credits session):**
-**clean stopping point — no uncommitted addon code, no open addon PRs.** `main`
-is `2fdf869`, fully green (all six CI jobs, incl. the 3.9/3.10/3.12 compat smokes).
+**As of 2026-05-30 (EOD — ENH-#51 mypy `--strict` PRs 4–7: leaves, hubs, cascade, idiom modules):**
+**4 stacked draft PRs open, awaiting operator review/merge.** `main` is unchanged
+(`c48bb43`); all of this session's rollout work lives on the four PR branches. Each PR was
+verified green locally (`mypy --gate` 0 errors, `pytest -n auto` 938/3, coverage 99.04–99.05%,
+ruff clean).
 
-- **MERGED this session (4 PRs):**
-  - **ENH-#57 — change-scoped fast local test loop**
-    ([PR #59](https://github.com/skull-01/script.oppo203.iso.external/pull/59) `9f102a3`):
-    `tools/dev_test.py` wraps `pytest --testmon` so a local run executes only the tests
-    affected by changed code; `pytest-testmon` added to `requirements-dev.txt`;
-    `.testmondata` git-ignored; 5 guard tests. **Local-only** — CI, `scripts/verify.sh`,
-    and the 99% coverage floor are unchanged (testmon is dormant unless `--testmon` is
-    passed). Usage: `.venv\Scripts\python.exe tools/dev_test.py [--full]`.
-  - **README Credits section**
-    ([PR #58](https://github.com/skull-01/script.oppo203.iso.external/pull/58) `61999e3`):
-    community attributions (theAxleDentalDJ, keebhubhk, Moremodey1 [AVForums], tocinillo,
-    Xnoppo/siberian-git). Docs-only; placed before the legacy build notes.
-  - **Close-out + fix:**
-    [PR #60](https://github.com/skull-01/script.oppo203.iso.external/pull/60) `343aff2`
-    (Phase C verify entry for #57) and
-    **[PR #61](https://github.com/skull-01/script.oppo203.iso.external/pull/61) `2fdf869`**
-    — gate `pytest-testmon` to `python_version >= "3.10"`.
+- **Shipped this session — the ENH-#51 idiom + cascade scope, gate 28 → 46 modules.** On
+  `resume` the operator picked ENH-#51, said "do all of these" (the no-redef idiom modules +
+  the cascade group), then chose "everything now (PR 6+7)" at the mid-session checkpoint. Four
+  **stacked** drafts — **merge in order #63 → #64 → #65 → #66:**
+  - **PR 4** [#63](https://github.com/skull-01/script.oppo203.iso.external/pull/63) `7568f89`
+    (base `main`): import-fallback **leaf** modules `__init__` / `intercept` / `tv_diagnostics`
+    / `avr_control` / `oppo_tcp_client` (28→33). Settled the **`no-redef` strategy** =
+    `# type: ignore[no-redef]` on the except-branch (bare) import only.
+  - **PR 5** [#64](https://github.com/skull-01/script.oppo203.iso.external/pull/64) `8b06744`
+    (base #63): the **two hubs** `settings_reader` + `oppo_control` (33→35). `Settings.get` /
+    `__getitem__` typed `-> Any` (raw accessors; get_str/get_int/get_bool keep concrete types).
+  - **PR 6** [#65](https://github.com/skull-01/script.oppo203.iso.external/pull/65) `8406b43`
+    (base #64): the **cascade group** discovery / hardware_presets /
+    hardware_validation_readiness / nas_playback_adapter / diagnostics / diagnostic_summary /
+    logging_v116 (35→42). nas_playback_adapter needed **zero code change** post-hubs.
+  - **PR 7** [#66](https://github.com/skull-01/script.oppo203.iso.external/pull/66) `6fed436`
+    (base #65): the larger hub-dependent idiom modules oppo_remote / external_player /
+    installer / preset_manager (42→46).
+  - All four are **annotations / casts / `# type: ignore` only — no behavior change** (every
+    diff reviewed; PRs 6–7's mechanical per-module annotation was delegated to parallel
+    general-purpose sub-agents, then verified by the combined gate + full suite + coverage).
+    SHAs commented on #51; a Phase-A entry per PR added to
+    `docs/MANUAL_VERIFICATION_CHECKLIST.md` (those entries ride the PR branches and land on
+    `main` when each PR merges).
 
-- **CI lesson (recorded in memory `dev-build-iteration-loop`):** the first testmon merge
-  (#59) **reddened the Python 3.9 compat-smoke** — testmon 2.2+ dropped py3.9, but the
-  add-on floor is 3.9, so `pip install -r requirements-dev.txt` failed there. Repaired
-  forward with the env marker (#61); CI re-confirmed green on all six jobs. **Rule: any
-  dev dep that drops 3.9 needs `; python_version >= "3.10"`.** (Merged on local-3.12
-  verification before CI finished — the 3.9 matrix was the gap; wait for CI green next.)
-
-- **Operator: verify + close** —
-  **ENH-[#57](https://github.com/skull-01/script.oppo203.iso.external/issues/57)** is new
-  this session (SHA `9f102a3` commented; Phase C software check queued in
-  `docs/MANUAL_VERIFICATION_CHECKLIST.md`) and stays **open** for operator
-  verification/close. Prior close-out queue unchanged:
-  [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38) (ruff — #50),
-  [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42) (#48/#49),
-  [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43) (#47 `3ba5009`),
-  addon side of
-  [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41) (Parts A/B/C
-  merged; configurator side of Part C still pending),
-  [#51](https://github.com/skull-01/script.oppo203.iso.external/issues/51) (multi-PR strict
-  rollout, PR 1–3 merged, stays open). Phase A/C on-device verification queued for
-  #40/#42/#46–#49/#52/#53/#56 in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
+- **Resume here next:**
+  1. **Operator merges #63 → #64 → #65 → #66 in order.** They are stacked (each based on the
+     prior branch), so only `claude-review` runs on #64–#66 until the base merges and GitHub
+     retargets to `main`; the full test/types/coverage CI then appears per PR. The full gate
+     was run locally for each.
+  2. After they land, **ENH-#51's idiom + cascade scope is complete** (gate 46). The only
+     un-gated `resources/lib` leftover is `playercorefactory_merge` (~28 errors, never in the
+     requested scope); top-level `service.py` (~82) / `default.py` are also ungated.
+  3. Recipe + all idioms (the no-redef strategy, `Settings.get -> Any`, the parallel-sub-agent
+     technique, coverage pragmas for Protocol/overload/TYPE_CHECKING stubs) are in memory
+     `mypy-strict-gate-rollout`.
 
 - **Carried open (all `area:addon`):** #38, #41, #42, #43,
   [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
-  (hardware-validation testing — not started), #51, #57. Only the operator closes issues.
-
-- **Resume here next — ENH-#51 PR 4** (unchanged; not touched this session; recipe +
-  idioms in memory `mypy-strict-gate-rollout`): the **`no-redef` import-fallback idiom**
-  modules, which **need an import-strategy decision first** (the try/except bare-name
-  fallback trips `no-redef` under strict): `intercept`, `oppo_remote`, `external_player`,
-  `installer`, `oppo_tcp_client`, `tv_diagnostics`, `avr_control`, `preset_manager`,
-  `resources/lib/__init__`. Then the **cascade group** (blocked until `settings_reader` /
-  `oppo_control` migrate): `hardware_validation_readiness`, `nas_playback_adapter`,
-  `diagnostics`, `diagnostic_summary`, `discovery`, `hardware_presets`, `logging_v116`.
-  Gate is at **28 modules / 0 errors**; heaviest leaves: `installer` 112, `oppo_control`
-  111, `external_player` 88, `service.py` 82, `settings_reader` 72.
+  (hardware-validation testing — not started), #51 (this rollout — stays open for the
+  operator), #57. Only the operator closes issues. Phase A/C on-device verification still
+  queued for #40/#42/#46–#49/#52/#53/#56/#57 in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **ENH-#51 — mypy `--strict` PR 4: an import-fallback strategy** for the `no-redef`
-     idiom modules so they can enter the allowlist (unblocks intercept / oppo_remote /
-     external_player / …). Needs a design decision first — strongest lead, starts with a
-     small spike, not edits.
-  2. **ENH-#51 — the cascade group**, once `settings_reader` / `oppo_control` are migrated
-     (the two un-migrated hubs the group depends on).
-  3. **Phase A/C on-device verification** of the merged work (#40/#42/#46–#49/#53/#56/#57)
-     — operator action on real hardware, no agent code.
+  1. **ENH-#51 PR 8 (optional finish):** gate `playercorefactory_merge` + the top-level
+     `service.py` / `default.py` — the last ungated source. Closes the rollout.
+  2. **Phase A/C on-device verification** of the merged work — operator action on real
+     hardware, no agent code.
+  3. **ENH-#44 hardware-validation testing** solicitation (community/operator; not started).
 
 ## §3b Configurator work — in progress
 
@@ -478,6 +465,26 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   `tools/dev_build.py` is **not** on `main` (corrected the stale `dev-build-iteration-loop`
   memory) and that the `pre-push` hook runs the 99% coverage gate. `main` `859238e` →
   `2fdf869`; tests **933 → 938 passed, 3 skipped**, coverage **99.07%**, gate **28/0**.
+- **2026-05-30** — ENH-#51 mypy `--strict` **PRs 4–7** (`area:addon`), completing the
+  idiom + cascade scope the operator requested on `resume` ("do all of these" → "everything
+  now"). Gate **28 → 46 modules** across four **stacked** draft PRs (merge #63→#64→#65→#66):
+  **PR 4** [#63](https://github.com/skull-01/script.oppo203.iso.external/pull/63) `7568f89`
+  (import-fallback leaf modules; settled the `no-redef` strategy = `# type: ignore[no-redef]`
+  on the except-branch bare import only; `_FsLike` Protocol; `# type: ignore[attr-defined]`
+  for hub re-exports); **PR 5** [#64](https://github.com/skull-01/script.oppo203.iso.external/pull/64)
+  `8b06744` (the `settings_reader`+`oppo_control` hubs; `Settings.get`/`__getitem__` → `Any`;
+  `HARDWARE_COMPAT` annotated to stop `object` inference); **PR 6**
+  [#65](https://github.com/skull-01/script.oppo203.iso.external/pull/65) `8406b43` (the 7-module
+  cascade group; nas_playback_adapter needed zero code change once the hubs were typed); **PR 7**
+  [#66](https://github.com/skull-01/script.oppo203.iso.external/pull/66) `6fed436`
+  (oppo_remote/external_player/installer/preset_manager). Annotations/casts/`# type: ignore`
+  only — no behavior change; each verified `mypy --gate` 0 / `pytest -n auto` 938/3 /
+  coverage ~99.05% / ruff clean. PRs 6–7's mechanical per-module annotation was **delegated to
+  parallel general-purpose sub-agents** (one file each; `mypy --no-incremental` to avoid
+  concurrent-cache corruption; cross-sibling no-untyped-call left for the combined gate), then
+  verified on the main thread (gate + full suite + coverage + diff review). SHAs commented on
+  #51; Phase-A entries per PR in the manual checklist. `main` unchanged (`c48bb43`) — all work
+  on the unmerged PR branches. Memory `mypy-strict-gate-rollout` updated.
 
 ---
 
@@ -505,7 +512,7 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-29 (EOD — ENH-#57 fast-test-loop + README credits session)**.
+Last refreshed: **2026-05-30 (EOD — ENH-#51 PRs 4–7: idiom modules + hubs + cascade)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
@@ -515,7 +522,7 @@ Last refreshed: **2026-05-29 (EOD — ENH-#57 fast-test-loop + README credits se
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | **Merged** via [PR #48](https://github.com/skull-01/script.oppo203.iso.external/pull/48) at `16eda5e` (network/IP editor) + [PR #49](https://github.com/skull-01/script.oppo203.iso.external/pull/49) at `3765862` (language switcher) | Phase A/C queued; awaiting operator close |
 | 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | **Merged** via [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) at `3ba5009` (impl `18a97a6` + test-isolation `69e32b3`) | Phase A queued |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
-| 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | **PR 1 merged** [#53](https://github.com/skull-01/script.oppo203.iso.external/pull/53) `aa0cf68` (gate+tooling+7). **PR 2 merged** [#54](https://github.com/skull-01/script.oppo203.iso.external/pull/54) `56b7a17` (allowlist 7→23). **PR 3 merged** [#56](https://github.com/skull-01/script.oppo203.iso.external/pull/56) `aa4143f` (impl `d36e76f`, allowlist 23→28, the avr_* backends + a 3.9 import-bug fix). Gate now 28 modules. Rollout continues (PR 4 = `no-redef` strategy). | awaiting operator close (multi-PR rollout, stays open) |
+| 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | PRs 1–3 merged (`aa0cf68`/`56b7a17`/`aa4143f`, gate→28). **PRs 4–7 open as stacked drafts 2026-05-30** (gate 28→46): [#63](https://github.com/skull-01/script.oppo203.iso.external/pull/63) `7568f89` (leaves →33), [#64](https://github.com/skull-01/script.oppo203.iso.external/pull/64) `8b06744` (hubs →35), [#65](https://github.com/skull-01/script.oppo203.iso.external/pull/65) `8406b43` (cascade →42), [#66](https://github.com/skull-01/script.oppo203.iso.external/pull/66) `6fed436` (idiom modules →46). **Merge #63→#64→#65→#66.** | awaiting operator merge + close (multi-PR rollout, stays open) |
 | 52 | (no issue) configurator app icon + first MSI/NSIS bundle | configurator | _untracked theme_ | MERGED 2026-05-29 | [PR #52](https://github.com/skull-01/script.oppo203.iso.external/pull/52) at `859238e` — real icon set replaces the PR #35 stub; fixes a latent `bundle.icon` build-breaker; MSI 3.0 MB + NSIS 1.9 MB | Phase C on-device (install, confirm icon + launch) queued |
 | 57 | ENH-: change-scoped fast local test loop (pytest-testmon) | addon | `area:addon` | OPEN | **Merged** via [PR #59](https://github.com/skull-01/script.oppo203.iso.external/pull/59) at `9f102a3` (`tools/dev_test.py` + `pytest-testmon` dev dep + 5 guard tests); py3.9-marker fix [PR #61](https://github.com/skull-01/script.oppo203.iso.external/pull/61) `2fdf869` | awaiting operator close (Phase C software check queued) |
 
@@ -736,6 +743,21 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
 - **2026-05-29 (EOD — ENH-#51 mypy --strict PR 1 merge + PR 2 session)** — `resume` → operator picked addon, then drove the ENH-#51 rollout across two PRs (within §4's 4-PR cap). (1) **Merged PR 1**: drove draft [PR #53](https://github.com/skull-01/script.oppo203.iso.external/pull/53) to `main` at `aa0cf68` — verified the combination first (main's only advance since the PR base was docs-only), marked ready, merged with `--delete-branch`, post-merge gate green (933/3, coverage 99.10%, ruff + `mypy --gate` clean), and fixed a dangling checklist `Implementing SHA` ref to the merged commit (`3e79ec6` on `main`). (2) **Opened PR 2**: draft [PR #54](https://github.com/skull-01/script.oppo203.iso.external/pull/54) (`claude/enh51-mypy-pr2-k3n8m2q6`, tip `08a1b79`, impl `92f2373`) expanding the gate `files=` allowlist **7 → 23** — 12 already-strict-clean modules locked in with zero code change (found via a full-tree landscape run) + 4 leaf modules annotated to zero strict errors (`arch_benchmark`, `diagnostic_logging`, `i18n`, `tv_control`; signatures + pinned locals, no logic changes). All CI green on #54 (Release + Type gate + compat 3.9/3.10/3.12 + lint + build ZIP + claude-review). **§3a rewritten** to the merged-PR-1 + in-flight-PR-2 state with PR-3 themes (the `avr_*` type-fix backends lead); **§3b untouched** (no configurator work). **§15** gained a journey bullet; **§17a** #51 row + "Last refreshed" updated. **Header** "Last sync" `092444a` → `aa0cf68`, tests `932` → **933 passed, 3 skipped** (coverage 99.10%). Memory `mypy-strict-gate-rollout` updated with the already-clean-lock-in technique. #51 stays open (multi-PR rollout); PR #54 awaiting operator review/merge.
 - **2026-05-29 (EOD — ENH-#51 PR 3 + bulk-merge-all-pending session)** — `resume` → operator picked addon ENH-#51 PR 3, then said `merge all pending`. (1) **Shipped PR 3** (the `avr_*` type-fix backends): annotated the five remaining AVR backends to zero strict errors (allowlist 23 → 28, 34 errors cleared — socket `cast` to `SocketLike`, pinned `urlopen().read()`, `cast` object-typed `int`/`list`/`map`/`meta.get` values, a `dict→dict` `@overload` on `avr_diagnostics.sanitize_payload`, 2 stale `# type: ignore` removed) and fixed a **latent Python 3.9 import bug** (`bytes | str` module-level aliases evaluate eagerly at import → `TypeError` on 3.9; → `typing.Union`). (2) **Merged the whole open-PR queue** in dependency order: **#54** mypy PR 2 → `56b7a17`, **#56** mypy PR 3 (recreated from #55, which auto-closed when #54's base branch was deleted) → `aa4143f`, **#52** configurator icon → `859238e`; all branches purged. **Both §3a and §3b rewritten** to the merged state (this session touched both areas). **§15** gained a journey bullet (incl. the stacked-PR-auto-close lesson); **§17a** #41/#51 rows updated + new #52 row + "Last refreshed". **Header** "Last sync" `aa0cf68` → `859238e` (tests stay **933/3**, coverage 99%, gate **28/0**). Memory `mypy-strict-gate-rollout` updated (PR 3 idioms + stacking/verified-SHA process lessons). **Mid-session correction:** an issue-comment draft used a SHA predicted before committing (`ce97c69`); the content-integrity classifier correctly blocked it; re-posted with the real SHA `d36e76f` — nothing fabricated reached the repo or GitHub. All addon deliveries now merged; next is ENH-#51 PR 4 (the `no-redef` import-fallback strategy — needs a design decision first).
 - **2026-05-29 (EOD — ENH-#57 fast-test-loop + README credits session)** — `resume` → operator picked an ENH-#43 follow-up, which they redefined as **change-scoped local testing** and (via the popup decision model) scoped to **pytest-testmon, local build loop only**. Built `tools/dev_test.py` (wraps `pytest --testmon` — only tests affected by changed code run) + `pytest-testmon` dev dep + `.testmondata` ignore + 5 guard tests; filed **ENH-#57** and merged it as [PR #59](https://github.com/skull-01/script.oppo203.iso.external/pull/59) `9f102a3`. Also merged the **README Credits** section ([PR #58](https://github.com/skull-01/script.oppo203.iso.external/pull/58) `61999e3`; Moremodey1 → AVForums per operator), a Phase C checklist entry ([PR #60](https://github.com/skull-01/script.oppo203.iso.external/pull/60) `343aff2`), and a **py3.9 fix** ([PR #61](https://github.com/skull-01/script.oppo203.iso.external/pull/61) `2fdf869`) after #59 reddened the 3.9 compat-smoke (testmon 2.2+ needs py≥3.10; gated the dev dep with a `; python_version >= "3.10"` marker). **§3a rewritten** to the merged state + the CI lesson; **§3b untouched** (no configurator work). **§15** gained a journey bullet; **§17a** new #57 row + "Last refreshed" updated. **Header** "Last sync" `859238e` → `2fdf869`, tests **933 → 938 passed, 3 skipped**, coverage **99.07%**, gate 28/0; full CI green on `main` (six jobs, verified). Memory `dev-build-iteration-loop` corrected (dev_build.py not on main; pre-push hook = coverage gate; dev-dep 3.9-marker rule). **Process note:** #59 was merged before CI finished, on local-3.12 evidence — the 3.9 matrix was the gap; **wait for CI green before merging dependency changes.** This EOD doc pushed via a doc-only PR (direct-to-`main` push is harness-blocked).
+- **2026-05-30 (EOD — ENH-#51 mypy --strict PRs 4–7)** — `resume` → operator picked ENH-#51,
+  said "do all of these" (the no-redef idiom modules + the cascade group), then chose
+  **"everything now (PR 6+7)"** at the mid-session checkpoint. Shipped the whole idiom +
+  cascade scope as **four stacked draft PRs** (gate **28 → 46 modules**): #63 (leaves) → #64
+  (hubs) → #65 (cascade) → #66 (idiom modules); merge in that order. Annotations-only; each
+  green locally (`mypy --gate` 0, `pytest -n auto` 938/3, coverage 99.04–99.05%, ruff clean).
+  PRs 6–7 delegated to parallel sub-agents (`--no-incremental` to avoid mypy-cache races),
+  verified by the combined gate + full suite + diff review. **§3a rewritten** to the 4-draft
+  state + the merge-order resume steps + optional-PR-8 themes; **§3b untouched** (no
+  configurator work). **§15** gained a journey bullet; **§17a** #51 row + "Last refreshed"
+  updated. **Header** "Last sync" `2fdf869` → `c48bb43` (main carries the prior EOD PR #62;
+  this session's ENH-#51 work is on the unmerged PRs, so main's gate stays **28/0** and tests
+  **938/3**). Memory `mypy-strict-gate-rollout` updated (PRs 4–7 + the parallel-sub-agent
+  technique). **§21** gained the scope-decision Q&A. This EOD doc pushed via a doc-only PR
+  (direct-to-`main` push is harness-blocked).
 
 ---
 
@@ -810,3 +832,18 @@ defining terminology). Append after each substantive turn. Newest-last._
   `main`'s newer `AI_RESUME_HANDOFF.md` (pr3 never touched that file, so the 3-way
   merge keeps main's copy). **General rule for stacks:** retarget the child PR to
   `main` *before* deleting the parent's branch, or expect the recreate dance.
+
+### 2026-05-30 — ENH-#51 rollout scope ("do all of these" → how far in one session)
+
+- **Q:** On `resume` the operator picked **both** ENH-#51 candidate themes at once — "PR 4
+  (import-fallback strategy for the no-redef idiom modules)" **and** "the cascade group" —
+  with "do all of these". One theme or many PRs?
+  **A:** One theme (ENH-#51), delivered as a stack. The cascade group is blocked on the two
+  un-migrated hubs (`settings_reader` 72 + `oppo_control` 111 errors), so the real sequence is
+  PR 4 (leaves) → PR 5 (hubs) → PR 6 (cascade) → PR 7 (the larger hub-dependent idiom modules
+  oppo_remote/external_player/installer/preset_manager). Four PRs — at §4's soft cap.
+- **Q:** After PRs 4+5 (the hubs unblock everything), the remaining work was ~425 strict
+  errors / 11 modules — larger than the two bullets implied. Continue now or checkpoint?
+  **A:** Operator chose **"everything now (PR 6 + 7)"** (popup). Proceeded; parallelized the
+  mechanical per-module annotation across general-purpose sub-agents to fit it in one session
+  while keeping verification (gate + full suite + coverage + diff review) on the main thread.
