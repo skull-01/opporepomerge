@@ -1,10 +1,12 @@
 """v2.9.10 Final - software-verified release packaging."""
+
 from __future__ import annotations
 
 from pathlib import Path
 
-from resources.lib import avr_sequence, version
 from resources.lib.settings_reader import Settings
+
+from resources.lib import avr_sequence, version
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import find_project_file
@@ -39,7 +41,9 @@ def test_final_active_identity_and_release_candidate_docs():
     assert "real hardware validation was not performed or claimed" in addon.lower()
 
     for rel in ("README.md", "reference.md", "web-references.md"):
-        text = ((ROOT / rel) if (ROOT / rel).exists() else (ROOT / "docs" / "release-history" / rel)).read_text(encoding="utf-8")
+        text = (
+            (ROOT / rel) if (ROOT / rel).exists() else (ROOT / "docs" / "release-history" / rel)
+        ).read_text(encoding="utf-8")
         assert "Version 2.9.10 Final" in text
         assert "hardware validation" in text.lower()
 
@@ -56,10 +60,14 @@ def test_final_evidence_manifest_tracks_final_release_files():
         "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10.md",
     }
     manifest = ROOT / "release-evidence" / "v2.9.10-final" / "MANIFEST.txt"
-    listed = {line.strip() for line in manifest.read_text(encoding="utf-8").splitlines() if line.strip()}
+    listed = {
+        line.strip() for line in manifest.read_text(encoding="utf-8").splitlines() if line.strip()
+    }
     assert expected <= listed
     for rel in expected:
-        text = ((ROOT / rel) if (ROOT / rel).exists() else (ROOT / "docs" / "release-history" / rel)).read_text(encoding="utf-8")
+        text = (
+            (ROOT / rel) if (ROOT / rel).exists() else (ROOT / "docs" / "release-history" / rel)
+        ).read_text(encoding="utf-8")
         assert ("v2.9.10 Final" in text) or ("v2.9.10 final" in text.lower())
 
 

@@ -21,7 +21,9 @@ def test_should_intercept_tagged_4k_iso_sources():
 def test_should_intercept_tagged_bdmv_navigation_sources():
     assert intercept.should_intercept_4k_disc_source("/Movies/Dune 4K UHD/BDMV/index.bdmv")
     assert intercept.should_intercept_4k_disc_source("/Movies/Dune 2160p/BDMV/MovieObject.bdmv")
-    assert intercept.should_intercept_4k_disc_source("nfs://nas/Movies/Dune UHD/BDMV/PLAYLIST/00800.mpls")
+    assert intercept.should_intercept_4k_disc_source(
+        "nfs://nas/Movies/Dune UHD/BDMV/PLAYLIST/00800.mpls"
+    )
 
 
 def test_untagged_disc_sources_use_kodi_default_player():
@@ -32,9 +34,30 @@ def test_untagged_disc_sources_use_kodi_default_player():
 
 def test_loose_and_raw_video_files_are_always_excluded():
     excluded = (
-        ".mkv", ".mp4", ".m4v", ".mov", ".mpg", ".mpeg", ".avi", ".wmv",
-        ".flv", ".webm", ".ts", ".m2ts", ".mts", ".m2t", ".vob", ".ogm",
-        ".ogv", ".divx", ".xvid", ".3gp", ".3g2", ".f4v", ".rm", ".rmvb",
+        ".mkv",
+        ".mp4",
+        ".m4v",
+        ".mov",
+        ".mpg",
+        ".mpeg",
+        ".avi",
+        ".wmv",
+        ".flv",
+        ".webm",
+        ".ts",
+        ".m2ts",
+        ".mts",
+        ".m2t",
+        ".vob",
+        ".ogm",
+        ".ogv",
+        ".divx",
+        ".xvid",
+        ".3gp",
+        ".3g2",
+        ".f4v",
+        ".rm",
+        ".rmvb",
         ".asf",
     )
     for ext in excluded:
@@ -66,7 +89,9 @@ def test_service_handle_started_ignores_untagged_and_excluded_paths():
     fake_player.getPlayingFile.return_value = "/Movies/Dune 4K UHD.mkv"
     fake_xbmc = mock.MagicMock()
     fake_xbmc.Player.return_value = fake_player
-    with mock.patch.object(service, "xbmc", fake_xbmc), mock.patch.object(service.threading, "Thread") as thread_cls:
+    with (
+        mock.patch.object(service, "xbmc", fake_xbmc),
+        mock.patch.object(service.threading, "Thread") as thread_cls,
+    ):
         inst._handle_started()
     thread_cls.assert_not_called()
-

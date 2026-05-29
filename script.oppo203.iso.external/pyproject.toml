@@ -42,8 +42,9 @@ dev = [
   "typing-extensions>=4.12,<5",
 ]
 
-# Formatting is handled by `ruff format` (config in ruff.toml; line-length below).
-# Black was retired in favor of ruff format per docs/testing-strategy.md.
+# Formatting is handled by `ruff format`. This [tool.ruff] block is the single
+# source of truth (the standalone ruff.toml was removed); black was retired in
+# favor of ruff format per docs/testing-strategy.md.
 [tool.ruff]
 target-version = "py39"
 line-length = 100
@@ -51,22 +52,26 @@ exclude = [
   ".git",
   ".pytest_cache",
   "__pycache__",
+  "build",
   "dist",
   "output",
-  "tools",
-  "tests",
+  ".venv",
+  "configurator",
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP"]
+select = ["E", "W", "F", "B", "I", "UP", "C4"]
 ignore = [
   "E501",   # line length handled by formatter
-  "E402",   # module-level imports not at top; existing tests use sys.path setup
+  "E402",   # module-level imports not at top; tests/tools use sys.path setup
   "UP015",  # preserve explicit open() mode for Python 3.9 compatibility
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"resources/lib/*.py" = ["B008"]
+"resources/lib/*.py" = ["B008"]  # default-arg factory pattern
+# Tests legitimately import-for-side-effect (F401), redefine fixtures (F811),
+# and use `assert False` patterns (B011).
+"tests/**" = ["F401", "F811", "B011"]
 
 [tool.coverage.run]
 branch = true

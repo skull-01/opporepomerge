@@ -1,4 +1,5 @@
 """v2.9.10 Build 16 - Sony AVR experimental request helper."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -43,7 +44,11 @@ def test_build16_sony_preset_is_experimental_skeleton_only():
 
     summary = avr_presets.avr_support_summary()
     assert summary["driver_execution_families"] == (
-        "denon_marantz", "yamaha_yxc", "onkyo_eiscp", "pioneer_eiscp", "sony_audio_api"
+        "denon_marantz",
+        "yamaha_yxc",
+        "onkyo_eiscp",
+        "pioneer_eiscp",
+        "sony_audio_api",
     )
     assert summary["experimental_skeleton_families"] == ()
     assert summary["experimental_request_helper_families"] == ("sony_audio_api",)
@@ -52,14 +57,16 @@ def test_build16_sony_preset_is_experimental_skeleton_only():
 
 
 def test_build16_sony_acknowledgement_gate_and_validation_metadata():
-    settings = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "sony_audio_api",
-        "avr_host": "192.168.1.101",
-        "avr_player_input": "extInput:hdmi?port=1",
-        "sony_avr_psk": "topsecretpsk",
-        "sony_avr_player_input_uri": "extInput:hdmi?port=1",
-    })
+    settings = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "sony_audio_api",
+            "avr_host": "192.168.1.101",
+            "avr_player_input": "extInput:hdmi?port=1",
+            "sony_avr_psk": "topsecretpsk",
+            "sony_avr_player_input_uri": "extInput:hdmi?port=1",
+        }
+    )
     meta = avr_sony_audio.validation_metadata(settings).copy()
     assert meta["acknowledged"] is False
     assert meta["live_api_calls_enabled"] is True
@@ -69,15 +76,17 @@ def test_build16_sony_acknowledgement_gate_and_validation_metadata():
     assert "sony_audio_api_experimental_acknowledgement_required" in meta["warnings"]
     assert meta["hardware_validation_claimed"] is False
 
-    acknowledged = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "sony_audio_api",
-        "avr_host": "192.168.1.101",
-        "avr_player_input": "extInput:hdmi?port=1",
-        "sony_avr_experimental_acknowledged": "true",
-        "sony_avr_psk": "topsecretpsk",
-        "sony_avr_player_input_uri": "extInput:hdmi?port=1",
-    })
+    acknowledged = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "sony_audio_api",
+            "avr_host": "192.168.1.101",
+            "avr_player_input": "extInput:hdmi?port=1",
+            "sony_avr_experimental_acknowledged": "true",
+            "sony_avr_psk": "topsecretpsk",
+            "sony_avr_player_input_uri": "extInput:hdmi?port=1",
+        }
+    )
     meta = avr_sony_audio.validation_metadata(acknowledged)
     assert meta["acknowledged"] is True
     assert meta["warnings"] == ()
@@ -85,15 +94,17 @@ def test_build16_sony_acknowledgement_gate_and_validation_metadata():
 
 
 def test_build16_validate_avr_settings_accepts_guarded_sony_helper():
-    settings = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "sony_audio_api",
-        "avr_host": "192.168.1.102",
-        "avr_player_input": "extInput:hdmi?port=1",
-        "sony_avr_experimental_acknowledged": "true",
-        "sony_avr_psk": "topsecretpsk",
-        "sony_avr_player_input_uri": "extInput:hdmi?port=1",
-    })
+    settings = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "sony_audio_api",
+            "avr_host": "192.168.1.102",
+            "avr_player_input": "extInput:hdmi?port=1",
+            "sony_avr_experimental_acknowledged": "true",
+            "sony_avr_psk": "topsecretpsk",
+            "sony_avr_player_input_uri": "extInput:hdmi?port=1",
+        }
+    )
     validation = avr_control.validate_avr_settings(settings).as_dict()
     assert validation["ok"] is True
     assert validation["driver_available"] is True
@@ -140,7 +151,13 @@ def test_build16_sony_sanitizers_do_not_export_psk_or_secrets():
 
 
 def test_build16_existing_avr_drivers_and_defaults_remain_preserved():
-    for backend in ("denon_marantz", "yamaha_yxc", "onkyo_eiscp", "pioneer_eiscp", "sony_audio_api"):
+    for backend in (
+        "denon_marantz",
+        "yamaha_yxc",
+        "onkyo_eiscp",
+        "pioneer_eiscp",
+        "sony_audio_api",
+    ):
         preset = avr_presets.get_avr_preset(backend)
         assert preset["driver_available"] is True
         assert preset["hardware_validation_claimed"] is False
@@ -162,8 +179,12 @@ def test_build16_metadata_and_documentation_identity():
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 18" in text
         assert "Sony AVR experimental request helper" in text
-    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD16.md").exists() or (ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD16.md").exists()
-    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD16.md").exists() or (ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD16.md").exists()
+    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD16.md").exists() or (
+        ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD16.md"
+    ).exists()
+    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD16.md").exists() or (
+        ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD16.md"
+    ).exists()
 
 
 def test_build16_sony_edge_paths_raise_no_secrets_or_commands():
@@ -181,7 +202,9 @@ def test_build16_sony_edge_paths_raise_no_secrets_or_commands():
             raise TypeError("broken")
 
     assert avr_sony_audio.validation_metadata(None)["missing"] == (
-        "avr_host", "sony_avr_player_input_uri", "sony_avr_psk"
+        "avr_host",
+        "sony_avr_player_input_uri",
+        "sony_avr_psk",
     )
     assert avr_sony_audio.is_experimental_acknowledged(ItemsLike()) is True
     assert avr_sony_audio.redact_secret("xy") == avr_sony_audio.SONY_SECRET_REDACTION

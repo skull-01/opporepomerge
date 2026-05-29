@@ -1,14 +1,16 @@
 """v2.2.0 Build 10 - merge-compliance candidate checkpoint."""
+
 from __future__ import annotations
 
 import importlib.util
 import sys
 import unittest
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 LIB = ROOT / "resources" / "lib"
 for path in (str(ROOT), str(LIB)):
     if path not in sys.path:

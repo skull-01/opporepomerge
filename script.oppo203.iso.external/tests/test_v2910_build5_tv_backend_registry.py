@@ -1,9 +1,10 @@
 """v2.9.10 Build 16 - TV backend registry and preset foundation."""
-from pathlib import Path
+
 import importlib
 import importlib.util
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
@@ -20,7 +21,15 @@ def _load(name, rel):
 
 def test_build5_tv_backend_registry_preserves_existing_backend_ids():
     backends = _load("tv_backends_build5", "resources/lib/tv/tv_backends.py")
-    assert backends.list_backends() == ("adb", "sony_bravia", "lg_command", "samsung_command", "custom_command", "roku_ecp", "smartthings")
+    assert backends.list_backends() == (
+        "adb",
+        "sony_bravia",
+        "lg_command",
+        "samsung_command",
+        "custom_command",
+        "roku_ecp",
+        "smartthings",
+    )
     summary = backends.registry_summary()
     assert summary["backend_count"] == 7
     assert summary["runtime_behavior_changed"] is False
@@ -55,8 +64,18 @@ def test_build5_tv_control_keeps_public_api_and_dispatches_through_registry(monk
     try:
         tv_control = importlib.import_module("tv_control")
         calls = []
-        monkeypatch.setattr(tv_control, "adb_switch_input", lambda settings, command: calls.append((settings.get("tv_backend"), command)) or "adb-ok")
-        settings = {"tv_backend": "android_tv_adb", "oppo_input_adb_shell": "to-oppo", "kodi_input_adb_shell": "to-kodi"}
+        monkeypatch.setattr(
+            tv_control,
+            "adb_switch_input",
+            lambda settings, command: (
+                calls.append((settings.get("tv_backend"), command)) or "adb-ok"
+            ),
+        )
+        settings = {
+            "tv_backend": "android_tv_adb",
+            "oppo_input_adb_shell": "to-oppo",
+            "kodi_input_adb_shell": "to-kodi",
+        }
         assert tv_control.selected_backend_id(settings) == "adb"
         assert tv_control.switch_to_oppo(settings) == "adb-ok"
         assert calls == [("android_tv_adb", "to-oppo")]
@@ -77,7 +96,15 @@ def test_build5_settings_default_records_selected_tv_preset_without_changing_bac
     sr = _load("settings_reader_build5_tv", "resources/lib/kodi/settings_reader.py")
     assert sr.DEFAULTS["tv_backend"] == "adb"
     assert sr.DEFAULTS["selected_tv_preset_id"] == ""
-    assert sr.ENUM_VALUES["tv_backend"] == ["adb", "sony_bravia", "lg_command", "samsung_command", "custom_command", "roku_ecp", "smartthings"]
+    assert sr.ENUM_VALUES["tv_backend"] == [
+        "adb",
+        "sony_bravia",
+        "lg_command",
+        "samsung_command",
+        "custom_command",
+        "roku_ecp",
+        "smartthings",
+    ]
     cfg = sr.Settings({"tv_backend": "sony_bravia"})
     assert cfg.get("selected_tv_preset_id") == ""
     assert cfg.get("tv_backend") == "sony_bravia"
@@ -129,7 +156,9 @@ def test_build5_registry_edge_paths_for_coverage(monkeypatch):
     monkeypatch.setitem(backends.TV_BACKENDS, "bad_targets", {"target_settings": "not-a-dict"})
     assert backends.backend_target_setting("bad_targets", "oppo") == ""
     assert presets.get_preset(None, {"fallback": "preset"}) == {"fallback": "preset"}
-    monkeypatch.setitem(presets.TV_PRESETS, "bad_backend", {"backend": "missing", "editable": False})
+    monkeypatch.setitem(
+        presets.TV_PRESETS, "bad_backend", {"backend": "missing", "editable": False}
+    )
     warnings = presets.validate_preset_registry()
     assert "preset:bad_backend:unsupported_backend:missing" in warnings
     assert "preset:bad_backend:not_editable" in warnings

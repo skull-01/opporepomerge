@@ -1,9 +1,11 @@
 """v2.9.10 Build 18 - unified TV + AVR playback sequencing."""
+
 from __future__ import annotations
 
-from resources.lib import avr_control, avr_diagnostics, avr_presets, avr_sequence, version
-from resources.lib.settings_reader import Settings
 import external_player as external_player
+from resources.lib.settings_reader import Settings
+
+from resources.lib import avr_control, avr_diagnostics, avr_presets, avr_sequence, version
 
 
 class FakeAvrController:
@@ -50,7 +52,9 @@ def test_build18_metadata_identity_and_summary_flags():
 
 def test_build18_avr_disabled_path_is_noop_and_does_not_create_controller(monkeypatch):
     calls = []
-    monkeypatch.setattr(avr_sequence, "controller_factory", lambda settings: calls.append("factory"))
+    monkeypatch.setattr(
+        avr_sequence, "controller_factory", lambda settings: calls.append("factory")
+    )
     result = avr_sequence.pre_playback_sequence(_settings(avr_control_enabled="false"))
     assert result.ok is True
     assert result.skipped is True
@@ -117,8 +121,16 @@ def test_build18_external_player_order_keeps_tv_first_then_avr_then_oppo(monkeyp
     calls = []
     settings = _settings()
     monkeypatch.setattr(external_player, "switch_to_oppo", lambda s: calls.append("tv_to_oppo"))
-    monkeypatch.setattr(external_player, "pre_playback_sequence", lambda s: calls.append("avr_pre") or avr_sequence.AvrSequenceResult(True, "pre"))
-    monkeypatch.setattr(external_player, "start_oppo_after_optional_delay", lambda s, f, preflight_result=None: calls.append("oppo_start"))
+    monkeypatch.setattr(
+        external_player,
+        "pre_playback_sequence",
+        lambda s: calls.append("avr_pre") or avr_sequence.AvrSequenceResult(True, "pre"),
+    )
+    monkeypatch.setattr(
+        external_player,
+        "start_oppo_after_optional_delay",
+        lambda s, f, preflight_result=None: calls.append("oppo_start"),
+    )
     external_player.fast_start(settings, "/media/movie.iso")
     assert calls == ["tv_to_oppo", "avr_pre", "oppo_start"]
 
@@ -126,9 +138,21 @@ def test_build18_external_player_order_keeps_tv_first_then_avr_then_oppo(monkeyp
 def test_build18_external_player_tv_and_avr_failures_do_not_block_oppo_start(monkeypatch):
     calls = []
     settings = _settings()
-    monkeypatch.setattr(external_player, "switch_to_oppo", lambda s: (_ for _ in ()).throw(RuntimeError("tv failed")))
-    monkeypatch.setattr(external_player, "pre_playback_sequence", lambda s: avr_sequence.AvrSequenceResult(False, "pre", warnings=("avr failed",)))
-    monkeypatch.setattr(external_player, "start_oppo_after_optional_delay", lambda s, f, preflight_result=None: calls.append("oppo_start"))
+    monkeypatch.setattr(
+        external_player,
+        "switch_to_oppo",
+        lambda s: (_ for _ in ()).throw(RuntimeError("tv failed")),
+    )
+    monkeypatch.setattr(
+        external_player,
+        "pre_playback_sequence",
+        lambda s: avr_sequence.AvrSequenceResult(False, "pre", warnings=("avr failed",)),
+    )
+    monkeypatch.setattr(
+        external_player,
+        "start_oppo_after_optional_delay",
+        lambda s, f, preflight_result=None: calls.append("oppo_start"),
+    )
     external_player.fast_start(settings, "/media/movie.iso")
     assert calls == ["oppo_start"]
 
@@ -136,9 +160,17 @@ def test_build18_external_player_tv_and_avr_failures_do_not_block_oppo_start(mon
 def test_build18_external_player_return_preserves_stop_avr_restore_and_tv_restore(monkeypatch):
     calls = []
     settings = _settings()
-    monkeypatch.setattr(external_player, "run_configured_commands", lambda s, key: calls.append(("stop", key)))
-    monkeypatch.setattr(external_player, "post_playback_sequence", lambda s: calls.append(("avr_post", None)) or avr_sequence.AvrSequenceResult(True, "post"))
-    monkeypatch.setattr(external_player, "switch_to_kodi", lambda s: calls.append(("tv_to_kodi", None)))
+    monkeypatch.setattr(
+        external_player, "run_configured_commands", lambda s, key: calls.append(("stop", key))
+    )
+    monkeypatch.setattr(
+        external_player,
+        "post_playback_sequence",
+        lambda s: calls.append(("avr_post", None)) or avr_sequence.AvrSequenceResult(True, "post"),
+    )
+    monkeypatch.setattr(
+        external_player, "switch_to_kodi", lambda s: calls.append(("tv_to_kodi", None))
+    )
     external_player.fast_return(settings)
     assert calls == [("stop", "oppo_stop_commands"), ("avr_post", None), ("tv_to_kodi", None)]
 
@@ -157,7 +189,10 @@ def test_build18_sony_restore_uses_sony_restore_uri_when_available():
 
 
 def test_build18_sequence_result_and_settings_edge_paths(monkeypatch):
-    assert avr_sequence.AvrSequenceResult(True, "pre").as_dict()["hardware_validation_claimed"] is False
+    assert (
+        avr_sequence.AvrSequenceResult(True, "pre").as_dict()["hardware_validation_claimed"]
+        is False
+    )
     assert avr_sequence._settings_dict(None) == {}
 
     class BrokenItems:
@@ -180,12 +215,15 @@ def test_build18_controller_run_fallback_and_post_failure_paths():
     class RunOnlyController:
         def __init__(self):
             self.calls = []
+
         def run(self, action, **kwargs):
             self.calls.append((action, kwargs))
             return {"ok": True}
 
     run_only = RunOnlyController()
-    result = avr_sequence.pre_playback_sequence(_settings(avr_power_on_enabled="false"), controller=run_only)
+    result = avr_sequence.pre_playback_sequence(
+        _settings(avr_power_on_enabled="false"), controller=run_only
+    )
     assert result.ok is True
     assert result.actions == ("select_input",)
     assert run_only.calls == [("select_input", {})]
@@ -204,7 +242,9 @@ def test_build18_controller_run_fallback_and_post_failure_paths():
     class EmptyController:
         pass
 
-    missing_method = avr_sequence.pre_playback_sequence(_settings(avr_power_on_enabled="false"), controller=EmptyController())
+    missing_method = avr_sequence.pre_playback_sequence(
+        _settings(avr_power_on_enabled="false"), controller=EmptyController()
+    )
     assert missing_method.ok is False
     assert "avr_pre_sequence_failed_nonfatal" in missing_method.warnings
 
@@ -219,7 +259,9 @@ def test_build18_post_sequence_disabled_ineligible_and_unavailable_paths(monkeyp
     assert ineligible.skipped is True
     assert controller.calls == []
 
-    disabled = avr_sequence.post_playback_sequence(_settings(avr_control_enabled="false"), controller=controller)
+    disabled = avr_sequence.post_playback_sequence(
+        _settings(avr_control_enabled="false"), controller=controller
+    )
     assert disabled.ok is True
     assert disabled.skipped is True
 

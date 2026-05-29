@@ -1,12 +1,14 @@
 """v2.9.10 Build 16 - Roku TV ECP backend and presets."""
-from pathlib import Path
+
 import importlib
 import importlib.util
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 LIB = ROOT / "resources" / "lib"
 
 
@@ -65,7 +67,10 @@ def test_build7_roku_ecp_helper_posts_only_allowlisted_keypress_paths():
 
     assert roku.switch_input(settings, "InputHDMI1", urlopen=opener) == "ok"
     assert seen == [("http://192.0.2.60:8060/keypress/InputHDMI1", "POST", 10)]
-    assert roku.build_keypress_url(settings, "InputHDMI2") == "http://192.0.2.60:8060/keypress/InputHDMI2"
+    assert (
+        roku.build_keypress_url(settings, "InputHDMI2")
+        == "http://192.0.2.60:8060/keypress/InputHDMI2"
+    )
     for bad_key in ("InputHDMI1/../../query", "InputHDMI1?x=1", "Home", ""):
         try:
             roku.build_keypress_url(settings, bad_key)
@@ -73,7 +78,11 @@ def test_build7_roku_ecp_helper_posts_only_allowlisted_keypress_paths():
             assert "allowlisted" in str(exc) or "key" in str(exc)
         else:  # pragma: no cover - defensive assertion branch
             raise AssertionError("unsafe Roku key should be rejected")
-    for bad_settings in ({"tv_ip": "192.0.2.60/path"}, {"tv_ip": "", "roku_ecp_port": "8060"}, {"tv_ip": "192.0.2.60", "roku_ecp_port": "99999"}):
+    for bad_settings in (
+        {"tv_ip": "192.0.2.60/path"},
+        {"tv_ip": "", "roku_ecp_port": "8060"},
+        {"tv_ip": "192.0.2.60", "roku_ecp_port": "99999"},
+    ):
         try:
             roku.build_keypress_url(bad_settings, "InputHDMI1")
         except roku.RokuEcpError:
@@ -87,8 +96,16 @@ def test_build7_tv_control_dispatches_roku_nonfatal_backend_without_touching_adb
     try:
         tv_control = importlib.import_module("tv_control")
         calls = []
-        monkeypatch.setattr(tv_control, "roku_switch_input", lambda settings, key: calls.append((settings.get("tv_backend"), key)) or "roku-ok")
-        settings = {"tv_backend": "roku_tv", "roku_oppo_key": "InputHDMI1", "roku_kodi_key": "InputHDMI2"}
+        monkeypatch.setattr(
+            tv_control,
+            "roku_switch_input",
+            lambda settings, key: calls.append((settings.get("tv_backend"), key)) or "roku-ok",
+        )
+        settings = {
+            "tv_backend": "roku_tv",
+            "roku_oppo_key": "InputHDMI1",
+            "roku_kodi_key": "InputHDMI2",
+        }
         assert tv_control.selected_backend_id(settings) == "roku_ecp"
         assert tv_control.switch_to_oppo(settings) == "roku-ok"
         assert tv_control.switch_to_kodi(settings) == "roku-ok"
@@ -167,25 +184,43 @@ def test_build7_runtime_zip_includes_roku_helper_but_excludes_evidence(tmp_path)
     with zipfile.ZipFile(output) as zf:
         assert zf.testzip() is None
         bad = [
-            name for name in zf.namelist()
-            if any(token in name for token in ("tests/", "tools/", "scripts/", "release-evidence/", "BUILD_NOTES", "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX"))
+            name
+            for name in zf.namelist()
+            if any(
+                token in name
+                for token in (
+                    "tests/",
+                    "tools/",
+                    "scripts/",
+                    "release-evidence/",
+                    "BUILD_NOTES",
+                    "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX",
+                )
+            )
         ]
     assert bad == []
 
 
 def test_build7_roku_preset_edge_paths_for_coverage(monkeypatch):
     presets = _load("tv_presets_build7_edges", "resources/lib/tv/tv_presets.py")
-    monkeypatch.setitem(presets.TV_PRESETS, "bad_roku", {"backend": "adb", "editable": True, "key_allowlist_required": True})
+    monkeypatch.setitem(
+        presets.TV_PRESETS,
+        "bad_roku",
+        {"backend": "adb", "editable": True, "key_allowlist_required": True},
+    )
     monkeypatch.setattr(presets, "ROKU_TV_PRESET_IDS", presets.ROKU_TV_PRESET_IDS + ("bad_roku",))
     warnings = presets.validate_preset_registry()
     assert "preset:bad_roku:roku_tv_not_roku_ecp:adb" in warnings
-    monkeypatch.setitem(presets.TV_PRESETS, "bad_roku_allowlist", {"backend": "roku_ecp", "editable": True})
+    monkeypatch.setitem(
+        presets.TV_PRESETS, "bad_roku_allowlist", {"backend": "roku_ecp", "editable": True}
+    )
     warnings = presets.validate_preset_registry()
     assert "preset:bad_roku_allowlist:roku_ecp_without_key_allowlist" in warnings
 
 
 def test_build7_roku_helper_error_paths_and_injected_urlopen(monkeypatch):
     import urllib.error
+
     roku = _load("roku_ecp_control_build7_errors", "resources/lib/tv/roku_ecp_control.py")
     for bad_key in (None,):
         try:
@@ -195,7 +230,9 @@ def test_build7_roku_helper_error_paths_and_injected_urlopen(monkeypatch):
         else:  # pragma: no cover
             raise AssertionError("non-string Roku key should fail")
     try:
-        roku.build_keypress_url({"tv_ip": "192.0.2.60", "roku_ecp_port": "not-a-port"}, "InputHDMI1")
+        roku.build_keypress_url(
+            {"tv_ip": "192.0.2.60", "roku_ecp_port": "not-a-port"}, "InputHDMI1"
+        )
     except roku.RokuEcpError as exc:
         assert "port" in str(exc)
     else:  # pragma: no cover
@@ -215,7 +252,9 @@ def test_build7_roku_helper_error_paths_and_injected_urlopen(monkeypatch):
         status = 500
 
     try:
-        roku.send_keypress({"tv_ip": "192.0.2.60"}, "InputHDMI1", urlopen=lambda *a, **k: ErrorResponse(b"bad"))
+        roku.send_keypress(
+            {"tv_ip": "192.0.2.60"}, "InputHDMI1", urlopen=lambda *a, **k: ErrorResponse(b"bad")
+        )
     except roku.RokuEcpError as exc:
         assert "HTTP 500" in str(exc)
     else:  # pragma: no cover
@@ -232,7 +271,10 @@ def test_build7_roku_helper_error_paths_and_injected_urlopen(monkeypatch):
         raise AssertionError("URL error should fail")
 
     seen = []
-    settings = {"tv_ip": "192.0.2.60", "_roku_urlopen": lambda request, timeout=0: seen.append(request.full_url) or _Response()}
+    settings = {
+        "tv_ip": "192.0.2.60",
+        "_roku_urlopen": lambda request, timeout=0: seen.append(request.full_url) or _Response(),
+    }
     assert roku.switch_input(settings, "InputTuner") == "ok"
     assert seen == ["http://192.0.2.60:8060/keypress/InputTuner"]
 

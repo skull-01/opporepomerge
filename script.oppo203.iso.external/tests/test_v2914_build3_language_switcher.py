@@ -69,7 +69,9 @@ def _import_i18n(settings=None, localized=None, get_language=None, iso_attr=Fals
     import xbmc
     import xbmcaddon
 
-    xbmcaddon.reset(settings=settings or {}, info={"path": ROOT, "id": ADDON_ID}, localized=localized or {})
+    xbmcaddon.reset(
+        settings=settings or {}, info={"path": ROOT, "id": ADDON_ID}, localized=localized or {}
+    )
     if get_language is not None:
         if iso_attr:
             xbmc.ISO_639_1 = 0
@@ -234,7 +236,9 @@ class TLanguageMenu(unittest.TestCase):
             import xbmcaddon
             import xbmcgui
 
-            xbmcaddon.reset(settings={"addon_language": "de_de"}, info={"path": ROOT, "id": ADDON_ID})
+            xbmcaddon.reset(
+                settings={"addon_language": "de_de"}, info={"path": ROOT, "id": ADDON_ID}
+            )
             installer = importlib.import_module("resources.lib.installer")
             xbmcgui.reset()
             xbmcgui.push_select(-1)

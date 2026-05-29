@@ -1,4 +1,5 @@
 """v2.5.2 Build 1 - OPPO/Chinoppo NAS playback capability gates."""
+
 import importlib.util
 import pathlib
 import xml.etree.ElementTree as ET
@@ -89,7 +90,9 @@ def test_startup_power_fix_preserved_no_send_token_import():
 
 
 def test_release_audit_requires_v252_build1_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release_v252_build1", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_v252_build1", ROOT / "tools" / "audit_release.py"
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     results = mod.run_audit(mod.project_root(mod.Path(ROOT)), expected_version="2.9.13")
@@ -101,7 +104,10 @@ def test_release_audit_requires_v252_build1_evidence():
 
 
 def test_firmware_parser_handles_unknown_empty_and_invalid_values():
-    from resources.lib.settings_reader import _firmware_major_build, oppo20x_autoscript_firmware_status
+    from resources.lib.settings_reader import (
+        _firmware_major_build,
+        oppo20x_autoscript_firmware_status,
+    )
 
     assert _firmware_major_build(None) is None
     assert _firmware_major_build("") is None
@@ -113,13 +119,18 @@ def test_firmware_parser_handles_unknown_empty_and_invalid_values():
 
     supported_but_not_recommended = oppo20x_autoscript_firmware_status("20X-60")
     assert supported_but_not_recommended["autoscript_supported"] is True
-    assert "oppo20x_autoscript_supported_but_20x_65_0131_recommended" in supported_but_not_recommended["warnings"]
+    assert (
+        "oppo20x_autoscript_supported_but_20x_65_0131_recommended"
+        in supported_but_not_recommended["warnings"]
+    )
 
 
 def test_unknown_model_uses_warning_and_not_supported_claim():
     from resources.lib.settings_reader import nas_playback_capability
 
-    result = nas_playback_capability("mystery-player", firmware="20X-65-0131", jailbreak=True, confirmed=True)
+    result = nas_playback_capability(
+        "mystery-player", firmware="20X-65-0131", jailbreak=True, confirmed=True
+    )
     assert result["family"] == "unknown_oppo_compatible"
     assert result["supported"] is False
     assert "unknown_model_using_safe_oppo20x_assumptions" in result["warnings"]
@@ -136,6 +147,7 @@ def test_settings_reader_defensive_branches_covered_for_v252_gate():
         data = object()
 
     import tempfile
+
     with tempfile.TemporaryDirectory() as td:
         assert save_settings(td, BadMapping()) is True
 

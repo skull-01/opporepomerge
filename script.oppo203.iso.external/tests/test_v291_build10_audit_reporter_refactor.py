@@ -1,13 +1,14 @@
 """v2.9.1 Build 16 - audit reporter refactor regression tests."""
+
 from __future__ import annotations
 
 import contextlib
 import importlib.util
 import io
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -15,7 +16,9 @@ if str(ROOT) not in sys.path:
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build11", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build11", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -30,7 +33,9 @@ def test_audit_check_value_object_and_legacy_dict_api_are_both_available():
     assert audit.AuditCheck.from_mapping(check.as_dict()) == check
 
     legacy = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
-    typed = audit.collect_audit_checks(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
+    typed = audit.collect_audit_checks(
+        audit.project_root(audit.Path(ROOT)), expected_version="2.9.13"
+    )
     assert legacy
     assert typed
     assert all(isinstance(item, dict) for item in legacy)
@@ -63,11 +68,17 @@ def test_audit_cli_text_output_still_works():
     # Real subprocess smoke kept for the CLI boundary: this verifies the actual
     # `python tools/audit_release.py` entrypoint (argv parsing + text reporter).
     text = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "audit_release.py"), "--root", str(ROOT), "--expected-version", "2.9.13"],
+        [
+            sys.executable,
+            str(ROOT / "tools" / "audit_release.py"),
+            "--root",
+            str(ROOT),
+            "--expected-version",
+            "2.9.13",
+        ],
         check=False,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert text.returncode == 0, text.stdout + text.stderr
     assert "OK: python_compile - compileall passed" in text.stdout

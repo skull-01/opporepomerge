@@ -3,6 +3,7 @@
 These tests inspect CI/community configuration only. They do not exercise or
 change runtime playback, TV, AVR, NAS, or OPPO-control behavior.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

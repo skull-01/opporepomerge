@@ -1,8 +1,9 @@
 """v2.9.10 Build 3 - clone / successor capability gates."""
-from pathlib import Path
+
 import importlib.util
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -38,7 +39,9 @@ def test_build3_required_capability_sets_are_explicit_and_disjoint():
         "Magnetar-UDP800",
         "Magnetar-UDP900",
     }
-    assert not (set(caps.CHINOPPO_NAS_PLAYBACK_MODELS) & set(caps.OPPO_LIKE_SUCCESSOR_WARNING_MODELS))
+    assert not (
+        set(caps.CHINOPPO_NAS_PLAYBACK_MODELS) & set(caps.OPPO_LIKE_SUCCESSOR_WARNING_MODELS)
+    )
 
 
 def test_build3_clone_safe_wake_is_allowed_only_for_clone_family():
@@ -54,10 +57,18 @@ def test_build3_clone_safe_wake_is_allowed_only_for_clone_family():
 
 
 def test_build3_stock_oppo_and_clones_allow_existing_command_map_successors_do_not():
-    caps = _load("hardware_capabilities_build3_command_gate", "resources/lib/oppo/hardware_capabilities.py")
+    caps = _load(
+        "hardware_capabilities_build3_command_gate", "resources/lib/oppo/hardware_capabilities.py"
+    )
     for model in ("UDP-203", "UDP-205", "M9702", "M9201", "CineUltra-V204"):
         assert caps.allows_automatic_oppo_commands(model) is True
-    for model in ("Reavon-UBR-X100", "Reavon-UBR-X110", "Reavon-UBR-X200", "Magnetar-UDP800", "Magnetar-UDP900"):
+    for model in (
+        "Reavon-UBR-X100",
+        "Reavon-UBR-X110",
+        "Reavon-UBR-X200",
+        "Magnetar-UDP800",
+        "Magnetar-UDP900",
+    ):
         assert caps.is_warning_only_successor(model) is True
         assert caps.allows_automatic_oppo_commands(model) is False
         gate = caps.nas_direct_playback_gate(model)
@@ -66,8 +77,11 @@ def test_build3_stock_oppo_and_clones_allow_existing_command_map_successors_do_n
 
 
 def test_build3_settings_reader_treats_magnetar_as_warning_only_successor():
-    settings_reader = _load("settings_reader_build3_successor", "resources/lib/kodi/settings_reader.py")
+    settings_reader = _load(
+        "settings_reader_build3_successor", "resources/lib/kodi/settings_reader.py"
+    )
     from resources.lib import oppo_remote as remote
+
     for model in ("Magnetar-UDP800", "Magnetar-UDP900"):
         profile = settings_reader.hardware_profile(model)
         assert profile["protocol_compatible"] is False

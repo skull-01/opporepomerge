@@ -15,7 +15,11 @@ _BUCKETS = {
     "oppo": "oppo_control oppo_remote oppo_tcp_client command_map constants discovery reconnect_backoff hardware_capabilities hardware_presets hardware_profiles hardware_validation_readiness path_mapper nas_playback_adapter autoscript_helper",
     "kodi": "installer intercept disc_classification settings_reader settings_schema keymap_skin playercorefactory_merge i18n diagnostic_logging diagnostic_summary logging_v116 diagnostics arch_benchmark external_player version",
 }
-_CANONICAL = {mod: f"resources.lib.{bucket}.{mod}" for bucket, mods in _BUCKETS.items() for mod in mods.split()}
+_CANONICAL = {
+    mod: f"resources.lib.{bucket}.{mod}"
+    for bucket, mods in _BUCKETS.items()
+    for mod in mods.split()
+}
 
 
 def with_canonical(names):

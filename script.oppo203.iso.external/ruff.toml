@@ -1,17 +1,29 @@
-# Ruff config (PEP 621 pyproject.toml style, but standalone)
+# Ruff config (standalone). Ruff reads this in preference to the [tool.ruff]
+# mirror in pyproject.toml; keep the two in sync. Formatting is handled by
+# `ruff format` (black was retired per docs/testing-strategy.md).
 target-version = "py39"
 line-length = 100
+exclude = [
+  ".git",
+  ".pytest_cache",
+  "__pycache__",
+  "build",
+  "dist",
+  "output",
+  ".venv",
+  "configurator",
+]
 
 [lint]
-select = ["E", "F", "W", "I", "B", "UP"]
+select = ["E", "W", "F", "B", "I", "UP", "C4"]
 ignore = [
   "E501",   # line length handled by formatter
-  "E402",   # module-level imports not at top (sys.path tweaks)
-  "UP015",  # open() default mode (Python 3.9 compat)
-]
-exclude = [
-  "output/", "__pycache__/", "tools/", "tests/", "configurator/",
+  "E402",   # module-level imports not at top; tests/tools use sys.path setup
+  "UP015",  # preserve explicit open() mode for Python 3.9 compatibility
 ]
 
 [lint.per-file-ignores]
 "resources/lib/*.py" = ["B008"]   # default-arg factory pattern
+# Tests legitimately import-for-side-effect (F401), redefine fixtures (F811),
+# and use assertion patterns ruff flags as useless (B011).
+"tests/**" = ["F401", "F811", "B011"]

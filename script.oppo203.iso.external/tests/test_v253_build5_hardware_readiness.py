@@ -1,12 +1,13 @@
 """v2.5.3 Build 5 - hardware-validation readiness and diagnostic export."""
+
 from __future__ import annotations
 
-from datetime import datetime
 import importlib
 import importlib.util
-from pathlib import Path
 import sys
 import zipfile
+from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -79,8 +80,13 @@ def test_build5_reavon_readiness_report_keeps_warning_only_blocker():
 
 def test_build5_export_readiness_report_writes_text_only(tmp_path):
     helper = importlib.import_module("resources.lib.hardware_validation_readiness")
-    report = helper.build_readiness_report({"oppo_hardware_model": "chinoppo_m9702", "nas_playback_confirmed": "true"}, path_exists=lambda path: True)
-    path = helper.export_readiness_report(tmp_path, report, now=lambda: datetime(2026, 5, 18, 12, 30, 0))
+    report = helper.build_readiness_report(
+        {"oppo_hardware_model": "chinoppo_m9702", "nas_playback_confirmed": "true"},
+        path_exists=lambda path: True,
+    )
+    path = helper.export_readiness_report(
+        tmp_path, report, now=lambda: datetime(2026, 5, 18, 12, 30, 0)
+    )
     output = Path(path)
     assert output.name == "hardware-validation-readiness-20260518-123000.txt"
     text = output.read_text(encoding="utf-8")
@@ -95,7 +101,10 @@ def test_build5_installer_exposes_export_action_with_kodi_stubs(tmp_path, monkey
     monkeypatch.syspath_prepend(str(ROOT))
     monkeypatch.syspath_prepend(str(LIB))
     from tests._support.lib_buckets import with_canonical
-    for name in with_canonical(("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")):
+
+    for name in with_canonical(
+        ("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")
+    ):
         sys.modules.pop(name, None)
     import xbmcaddon  # type: ignore
     import xbmcvfs  # type: ignore
@@ -113,7 +122,9 @@ def test_build5_installer_exposes_export_action_with_kodi_stubs(tmp_path, monkey
 
 
 def test_build5_release_audit_requires_build5_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -127,13 +138,17 @@ def test_build5_release_audit_requires_build5_evidence():
 
 
 def test_runtime_zip_includes_readiness_helper_but_excludes_build5_evidence(tmp_path):
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
     out = tmp_path / "runtime.zip"
     names = tool.create_installable_zip(ROOT, out)
-    assert "script.oppo203.iso.external/resources/lib/oppo/hardware_validation_readiness.py" in names
+    assert (
+        "script.oppo203.iso.external/resources/lib/oppo/hardware_validation_readiness.py" in names
+    )
     assert "script.oppo203.iso.external/BUILD_NOTES_v2.5.3_BUILD5.md" not in names
     assert "script.oppo203.iso.external/HARDWARE_VALIDATION_READINESS_v2.5.3_BUILD5.md" not in names
     with zipfile.ZipFile(out) as zf:
@@ -153,7 +168,10 @@ def test_build5_readiness_helper_covers_settings_instance_empty_and_invalid_expo
     default_report = helper.build_readiness_report(path_exists=lambda path: True)
     assert default_report["summary"]["configuration"]["hardware_model"] == "udp_203"
 
-    assert helper.format_readiness_report(None) == "OPPO203 hardware-validation readiness report unavailable"
+    assert (
+        helper.format_readiness_report(None)
+        == "OPPO203 hardware-validation readiness report unavailable"
+    )
     try:
         helper.export_readiness_report("")
     except ValueError as exc:
@@ -171,10 +189,16 @@ def test_build5_installer_export_failure_is_non_fatal(monkeypatch):
     monkeypatch.syspath_prepend(str(ROOT))
     monkeypatch.syspath_prepend(str(LIB))
     from tests._support.lib_buckets import with_canonical
-    for name in with_canonical(("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")):
+
+    for name in with_canonical(
+        ("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")
+    ):
         sys.modules.pop(name, None)
     import xbmcaddon  # type: ignore
+
     xbmcaddon.reset(info={"path": str(ROOT), "id": "script.oppo203.iso.external"})
     installer = importlib.import_module("resources.lib.installer")
-    monkeypatch.setattr(installer, "_paths", lambda: (_ for _ in ()).throw(RuntimeError("no addon data")))
+    monkeypatch.setattr(
+        installer, "_paths", lambda: (_ for _ in ()).throw(RuntimeError("no addon data"))
+    )
     assert installer.export_hardware_validation_readiness() is None

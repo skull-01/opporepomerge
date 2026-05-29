@@ -1,11 +1,12 @@
 """v2.9.1 Build 16 - i18n extraction legacy alias hardening tests."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import subprocess
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -45,11 +46,18 @@ def test_i18n_extract_cli_keeps_check_non_writing_with_alias_notice():
     pot = ROOT / "resources" / "language" / "strings.pot"
     before = pot.exists()
     result = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "i18n_extract.py"), "--root", str(ROOT), "--backend", "legacy", "--check"],
+        [
+            sys.executable,
+            str(ROOT / "tools" / "i18n_extract.py"),
+            "--root",
+            str(ROOT),
+            "--backend",
+            "legacy",
+            "--check",
+        ],
         check=False,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "OK: i18n_extract" in result.stdout

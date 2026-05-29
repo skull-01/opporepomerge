@@ -1,4 +1,5 @@
 """v2.9.10 Build 16 - Onkyo/Integra/Pioneer eISCP AVR driver."""
+
 from __future__ import annotations
 
 import socket
@@ -13,7 +14,9 @@ from tests._support.project_files import read_project_file
 
 class FakeSocket:
     def __init__(self, response: bytes | None = None, recv_error: Exception | None = None):
-        self.response = response if response is not None else avr_onkyo_eiscp.build_eiscp_frame("!1PWR01")
+        self.response = (
+            response if response is not None else avr_onkyo_eiscp.build_eiscp_frame("!1PWR01")
+        )
         self.recv_error = recv_error
         self.sent: list[bytes] = []
         self.closed = False
@@ -74,7 +77,9 @@ def test_build14_send_eiscp_command_opens_sends_closes_per_command():
         sockets.append(sock)
         return sock
 
-    result = avr_onkyo_eiscp.send_eiscp_command("192.168.1.94", "!1SLI10", socket_factory=factory).as_dict()
+    result = avr_onkyo_eiscp.send_eiscp_command(
+        "192.168.1.94", "!1SLI10", socket_factory=factory
+    ).as_dict()
     assert result["ok"] is True
     assert result["message"] == "!1SLI10"
     assert result["command_sent"] is True
@@ -107,7 +112,9 @@ def test_build14_malformed_response_timeout_network_and_driver_errors_are_nonfat
     def network_error(address, timeout):
         raise OSError("no route")
 
-    network = avr_onkyo_eiscp.send_eiscp_command("avr.local", "!1PWR01", socket_factory=network_error).as_dict()
+    network = avr_onkyo_eiscp.send_eiscp_command(
+        "avr.local", "!1PWR01", socket_factory=network_error
+    ).as_dict()
     assert network["ok"] is False
     assert network["command_sent"] is False
     assert "avr_network_error_nonfatal" in network["warnings"]
@@ -115,7 +122,9 @@ def test_build14_malformed_response_timeout_network_and_driver_errors_are_nonfat
     def driver_error(address, timeout):
         raise RuntimeError("boom")
 
-    driver = avr_onkyo_eiscp.send_eiscp_command("avr.local", "!1PWR01", socket_factory=driver_error).as_dict()
+    driver = avr_onkyo_eiscp.send_eiscp_command(
+        "avr.local", "!1PWR01", socket_factory=driver_error
+    ).as_dict()
     assert driver["ok"] is False
     assert "avr_driver_error_nonfatal" in driver["warnings"]
 
@@ -124,20 +133,26 @@ def test_build14_controller_factory_returns_onkyo_and_pioneer_controllers_only_w
     disabled = settings_reader.Settings({})
     assert avr_control.controller_factory(disabled) is None
 
-    incomplete = settings_reader.Settings({"avr_control_enabled": "true", "avr_backend": "onkyo_eiscp"})
+    incomplete = settings_reader.Settings(
+        {"avr_control_enabled": "true", "avr_backend": "onkyo_eiscp"}
+    )
     assert avr_control.controller_factory(incomplete) is None
     validation = avr_control.validate_avr_settings(incomplete).as_dict()
     assert validation["ok"] is False
     assert validation["driver_available"] is True
     assert validation["missing"] == ("avr_host", "avr_player_input")
 
-    complete = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "onkyo_eiscp",
-        "avr_host": "192.168.1.95",
-        "avr_player_input": "10",
-    })
-    controller = avr_control.controller_factory(complete, socket_factory=lambda address, timeout: FakeSocket())
+    complete = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "onkyo_eiscp",
+            "avr_host": "192.168.1.95",
+            "avr_player_input": "10",
+        }
+    )
+    controller = avr_control.controller_factory(
+        complete, socket_factory=lambda address, timeout: FakeSocket()
+    )
     assert isinstance(controller, avr_onkyo_eiscp.OnkyoEiscpAvrController)
     assert controller.backend == "onkyo_eiscp"
     validation = avr_control.validate_avr_settings(complete).as_dict()
@@ -145,13 +160,17 @@ def test_build14_controller_factory_returns_onkyo_and_pioneer_controllers_only_w
     assert validation["driver_available"] is True
     assert validation["hardware_validation_claimed"] is False
 
-    pioneer = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "pioneer_eiscp",
-        "avr_host": "192.168.1.96",
-        "avr_player_input": "10",
-    })
-    pioneer_controller = avr_control.controller_factory(pioneer, socket_factory=lambda address, timeout: FakeSocket())
+    pioneer = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "pioneer_eiscp",
+            "avr_host": "192.168.1.96",
+            "avr_player_input": "10",
+        }
+    )
+    pioneer_controller = avr_control.controller_factory(
+        pioneer, socket_factory=lambda address, timeout: FakeSocket()
+    )
     assert isinstance(pioneer_controller, avr_onkyo_eiscp.OnkyoEiscpAvrController)
     assert pioneer_controller.backend == "pioneer_eiscp"
     pioneer_result = pioneer_controller.power_on().as_dict()
@@ -197,17 +216,23 @@ def test_build14_metadata_defaults_and_other_families_remain_safe():
 
     summary = avr_presets.avr_support_summary()
     assert summary["driver_execution_families"] == (
-        "denon_marantz", "yamaha_yxc", "onkyo_eiscp", "pioneer_eiscp", "sony_audio_api"
+        "denon_marantz",
+        "yamaha_yxc",
+        "onkyo_eiscp",
+        "pioneer_eiscp",
+        "sony_audio_api",
     )
     assert summary["playback_sequencing_hooked"] is True
     assert summary["hardware_validation_claimed"] is False
 
-    sony = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "sony_audio_api",
-        "avr_host": "192.168.1.97",
-        "avr_player_input": "BD",
-    })
+    sony = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "sony_audio_api",
+            "avr_host": "192.168.1.97",
+            "avr_player_input": "BD",
+        }
+    )
     sony_validation = avr_control.validate_avr_settings(sony).as_dict()
     assert sony_validation["ok"] is False
     assert sony_validation["driver_available"] is True
@@ -226,8 +251,12 @@ def test_build14_metadata_and_documentation_identity():
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 14" in text
         assert "Onkyo / Integra / Pioneer eISCP AVR driver" in text
-    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD14.md").exists() or (ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD14.md").exists()
-    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD14.md").exists() or (ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD14.md").exists()
+    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD14.md").exists() or (
+        ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD14.md"
+    ).exists()
+    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD14.md").exists() or (
+        ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD14.md"
+    ).exists()
 
 
 def test_build14_port_timeout_and_malformed_response_edges():

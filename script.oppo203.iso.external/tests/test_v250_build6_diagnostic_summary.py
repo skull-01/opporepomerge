@@ -1,4 +1,5 @@
 """v2.5.0 Build 6 - lightweight diagnostic summary helper tests."""
+
 from __future__ import annotations
 
 import importlib
@@ -103,7 +104,9 @@ class TestV250Build6DiagnosticSummary(unittest.TestCase):
     def test_format_summary_handles_invalid_input_and_no_missing_or_warning_lines(self):
         helper = importlib.import_module("diagnostic_summary")
         self.assertEqual(helper.format_summary(None), "OPPO203 diagnostic summary unavailable")
-        text = helper.format_summary({"addon_version": "2.5.3", "setup_complete": True, "ok": True, "configuration": {}})
+        text = helper.format_summary(
+            {"addon_version": "2.5.3", "setup_complete": True, "ok": True, "configuration": {}}
+        )
         self.assertNotIn("Missing:", text)
         self.assertNotIn("Warnings:", text)
 

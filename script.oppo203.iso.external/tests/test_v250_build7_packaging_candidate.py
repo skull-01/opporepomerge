@@ -1,9 +1,10 @@
 """v2.5.0 Build 7 - combined regression and packaging-candidate checks."""
+
 from __future__ import annotations
 
+import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
-import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
@@ -28,7 +29,10 @@ class TestV250Build7PackagingCandidate(unittest.TestCase):
         xml_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
         self.assertTrue(
             ("Build 7" in xml_text and "combined regression" in xml_text)
-            or ("final" in xml_text.lower() and "Hardware validation is intentionally deferred" in xml_text),
+            or (
+                "final" in xml_text.lower()
+                and "Hardware validation is intentionally deferred" in xml_text
+            ),
             "addon metadata must identify either the Build 7 candidate or the v2.5.0 final package",
         )
 

@@ -5,6 +5,7 @@ stubs global for the whole suite. That keeps legacy "no Kodi installed"
 checks intact while giving the project a concrete staged path for testing
 Kodi-bound code outside Kodi.
 """
+
 import contextlib
 import importlib
 import os
@@ -20,6 +21,7 @@ TARGET_MODULES = ("default", "service", "resources.lib.installer")
 @contextlib.contextmanager
 def kodi_stub_context(extra_targets=()):
     from tests._support.lib_buckets import with_canonical
+
     old_path = list(sys.path)
     names = with_canonical(set(KODI_MODULES) | set(TARGET_MODULES) | set(extra_targets))
     saved = {name: sys.modules.get(name) for name in names}
@@ -49,6 +51,7 @@ class TKodiStubModules(unittest.TestCase):
     def test_xbmc_monitor_player_and_log_are_programmable(self):
         with kodi_stub_context():
             import xbmc
+
             xbmc.reset()
             xbmc.setInfoLabel("System.BuildVersion", "21.0 Omega")
             self.assertEqual(xbmc.getInfoLabel("System.BuildVersion"), "21.0 Omega")
@@ -68,6 +71,7 @@ class TKodiStubModules(unittest.TestCase):
     def test_xbmcaddon_settings_and_info_are_programmable(self):
         with kodi_stub_context():
             import xbmcaddon
+
             xbmcaddon.reset(
                 settings={"oppo_ip": "192.0.2.10"},
                 info={"profile": "/tmp/profile", "version": "2.0.0.3"},
@@ -83,6 +87,7 @@ class TKodiStubModules(unittest.TestCase):
     def test_xbmcgui_dialog_records_calls(self):
         with kodi_stub_context():
             import xbmcgui
+
             xbmcgui.reset()
             xbmcgui.push_yesno(True)
             xbmcgui.push_select(2)
@@ -98,6 +103,7 @@ class TKodiStubModules(unittest.TestCase):
     def test_xbmcvfs_file_and_path_helpers(self):
         with kodi_stub_context():
             import xbmcvfs
+
             path = xbmcvfs.translatePath("special://profile/addon_data/demo/file.txt")
             self.assertTrue(path.startswith("/tmp/kodi-profile"))
             with xbmcvfs.File(path, "w") as handle:
@@ -109,6 +115,7 @@ class TKodiStubModules(unittest.TestCase):
     def test_installer_imports_with_local_kodi_stubs(self):
         with kodi_stub_context():
             import xbmcaddon
+
             xbmcaddon.reset(info={"path": ROOT, "profile": "/tmp/profile"})
             installer = importlib.import_module("resources.lib.installer")
             self.assertEqual(installer.ADDON_ID, "script.oppo203.iso.external")
@@ -119,6 +126,7 @@ class TKodiStubModules(unittest.TestCase):
     def test_default_and_service_import_with_local_kodi_stubs(self):
         with kodi_stub_context():
             import xbmc
+
             xbmc.reset()
             xbmc.setInfoLabel("System.BuildVersion", "21.0 (21.0.0)")
             default = importlib.import_module("default")

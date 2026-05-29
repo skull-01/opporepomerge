@@ -1,16 +1,19 @@
 """v2.9.1 Build 16 - test naming/layout standardization transition."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_test_layout():
-    spec = importlib.util.spec_from_file_location("test_layout_build14", ROOT / "tools" / "test_layout.py")
+    spec = importlib.util.spec_from_file_location(
+        "test_layout_build14", ROOT / "tools" / "test_layout.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -18,7 +21,9 @@ def _load_test_layout():
 
 
 def _load_package_tool():
-    spec = importlib.util.spec_from_file_location("package_installable_zip_build14", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip_build14", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -26,7 +31,9 @@ def _load_package_tool():
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build14", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build14", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -35,7 +42,10 @@ def _load_audit():
 
 def test_test_layout_tool_accepts_legacy_flat_and_future_versioned_paths():
     tool = _load_test_layout()
-    assert tool.classify_test_path("tests/test_v291_build14_test_layout_standardization.py") == "legacy-flat"
+    assert (
+        tool.classify_test_path("tests/test_v291_build14_test_layout_standardization.py")
+        == "legacy-flat"
+    )
     assert tool.classify_test_path("tests/v2_9_1/build14/test_example.py") == "future"
     assert tool.classify_test_path("tests/_support/helpers.py") == "support"
     assert tool.classify_test_path("tests/random/nested_test.py") == "nonstandard"
@@ -56,8 +66,7 @@ def test_test_layout_cli_check_passes_for_transition_layout():
         [sys.executable, str(ROOT / "tools" / "test_layout.py"), "--root", str(ROOT), "--check"],
         check=False,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "OK: test_layout" in result.stdout

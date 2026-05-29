@@ -7,12 +7,13 @@ surface. This helper is allowlist-driven: a file is packaged only when it is one
 of the known runtime root files, an optional runtime asset, or is under an
 allowlisted runtime directory.
 """
+
 from __future__ import annotations
 
 import argparse
+import zipfile
 from collections.abc import Iterator
 from pathlib import Path
-import zipfile
 
 ADDON_DIR_NAME = "script.oppo203.iso.external"
 
@@ -21,14 +22,16 @@ ADDON_DIR_NAME = "script.oppo203.iso.external"
 # scripts/, release-evidence/, and .github/ are excluded by omission.
 RUNTIME_ALLOWLIST_ROOT_FILES = frozenset({"addon.xml", "default.py", "service.py"})
 RUNTIME_ALLOWLIST_DIRS = frozenset({"resources"})
-OPTIONAL_RUNTIME_ROOT_FILES = frozenset({
-    "icon.png",
-    "fanart.jpg",
-    "fanart.png",
-    "LICENSE",
-    "LICENSE.txt",
-    "COPYING",
-})
+OPTIONAL_RUNTIME_ROOT_FILES = frozenset(
+    {
+        "icon.png",
+        "fanart.jpg",
+        "fanart.png",
+        "LICENSE",
+        "LICENSE.txt",
+        "COPYING",
+    }
+)
 GENERATED_CACHE_DIR_NAMES = frozenset({"__pycache__"})
 GENERATED_CACHE_SUFFIXES = frozenset({".pyc", ".pyo"})
 GENERATED_CACHE_FILE_NAMES = frozenset({".coverage"})
@@ -42,7 +45,9 @@ RUNTIME_TOP_LEVEL_DIRS = RUNTIME_ALLOWLIST_DIRS
 def project_root(start: Path | None = None) -> Path:
     start = (start or Path.cwd()).resolve()
     for candidate in (start, *start.parents):
-        if (candidate / "addon.xml").exists() and (candidate / "resources" / "settings.xml").exists():
+        if (candidate / "addon.xml").exists() and (
+            candidate / "resources" / "settings.xml"
+        ).exists():
             return candidate
     raise RuntimeError("Could not find add-on root containing addon.xml and resources/settings.xml")
 

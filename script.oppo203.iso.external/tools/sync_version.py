@@ -5,20 +5,25 @@ This helper keeps version identity explicit without making addon.xml import
 Python at Kodi runtime. Use ``--check`` in CI/audit flows and ``--write`` when
 intentionally updating addon.xml from the Python version source.
 """
+
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 
 def project_root(start: Path | None = None) -> Path:
     start = (start or Path.cwd()).resolve()
     for candidate in (start, *start.parents):
-        if (candidate / "addon.xml").exists() and (candidate / "resources" / "lib" / "kodi" / "version.py").exists():
+        if (candidate / "addon.xml").exists() and (
+            candidate / "resources" / "lib" / "kodi" / "version.py"
+        ).exists():
             return candidate
-    raise RuntimeError("Could not find add-on root containing addon.xml and resources/lib/kodi/version.py")
+    raise RuntimeError(
+        "Could not find add-on root containing addon.xml and resources/lib/kodi/version.py"
+    )
 
 
 def _import_version(root: Path):
@@ -54,7 +59,9 @@ def write_addon_xml_version(root: Path) -> str:
     source = version_source(root)
     addon_path = root / "addon.xml"
     text = addon_path.read_text(encoding="utf-8")
-    new_text, count = __import__('re').subn(r'(<addon\b[^>]*\bversion=")([^"]+)(")', rf'\g<1>{source}\g<3>', text, count=1)
+    new_text, count = __import__("re").subn(
+        r'(<addon\b[^>]*\bversion=")([^"]+)(")', rf"\g<1>{source}\g<3>", text, count=1
+    )
     if count != 1:
         raise RuntimeError("Could not find addon version attribute to update")
     addon_path.write_text(new_text, encoding="utf-8")
@@ -62,12 +69,16 @@ def write_addon_xml_version(root: Path) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Check or sync addon.xml version against resources.lib.version")
+    parser = argparse.ArgumentParser(
+        description="Check or sync addon.xml version against resources.lib.version"
+    )
     parser.add_argument("--root", default=".")
     parser.add_argument("--expected-version", default=None)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--check", action="store_true", help="check only; default behavior")
-    group.add_argument("--write", action="store_true", help="write addon.xml version from version.py")
+    group.add_argument(
+        "--write", action="store_true", help="write addon.xml version from version.py"
+    )
     args = parser.parse_args(argv)
     root = project_root(Path(args.root))
     if args.write:

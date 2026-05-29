@@ -3,6 +3,7 @@
 These tests intentionally inspect metadata/configuration only. They do not
 exercise runtime playback, TV, AVR, NAS, or OPPO-control behavior.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -21,7 +22,7 @@ def test_pyproject_declares_non_runtime_tooling_baseline() -> None:
     assert 'version = "2.9.13"' in text
     assert 'requires-python = ">=3.9"' in text
     assert "[tool.github-readiness]" in text
-    assert 'runtime_behavior_changed = false' in text
+    assert "runtime_behavior_changed = false" in text
     assert 'hardware_validation = "not_performed_not_claimed"' in text
 
 

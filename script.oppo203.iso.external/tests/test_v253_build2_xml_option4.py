@@ -1,11 +1,12 @@
 """v2.5.3 Build 2 - Option 4 conservative playercorefactory XML rules."""
+
 from __future__ import annotations
 
 import contextlib
 import importlib
-from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
@@ -18,9 +19,16 @@ for item in (str(ROOT), str(LIB)):
 @contextlib.contextmanager
 def kodi_stubs(*extra):
     from tests._support.lib_buckets import with_canonical
+
     names = {
-        "xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "xbmcplugin", "xbmcdrm",
-        "resources.lib.installer", "installer",
+        "xbmc",
+        "xbmcaddon",
+        "xbmcgui",
+        "xbmcvfs",
+        "xbmcplugin",
+        "xbmcdrm",
+        "resources.lib.installer",
+        "installer",
     }
     names.update(extra)
     names = with_canonical(names)
@@ -46,6 +54,7 @@ def kodi_stubs(*extra):
 def _installer(include_disc_folder_rules="true"):
     with kodi_stubs():
         import xbmcaddon
+
         xbmcaddon.reset(
             settings={
                 "include_disc_folder_rules": include_disc_folder_rules,
@@ -77,9 +86,9 @@ def test_option4_xml_does_not_emit_broad_or_legacy_disc_rules():
         'filetypes="dat|cue|bin"',
         'dvdimage="true"',
         'dvdfile="true"',
-        'VIDEO_TS',
-        'MPEGAV',
-        'SVCD',
+        "VIDEO_TS",
+        "MPEGAV",
+        "SVCD",
     ]
     for fragment in forbidden_fragments:
         assert fragment not in xml
@@ -89,9 +98,30 @@ def test_option4_xml_excludes_loose_raw_video_filetypes():
     with _installer("true") as installer:
         xml = installer.build_rule_xml().lower()
     loose_filetypes = (
-        "mkv", "mp4", "m4v", "mov", "mpg", "mpeg", "avi", "wmv",
-        "flv", "webm", "ts", "m2ts", "mts", "m2t", "vob", "ogm",
-        "ogv", "divx", "xvid", "3gp", "3g2", "f4v", "rm", "rmvb",
+        "mkv",
+        "mp4",
+        "m4v",
+        "mov",
+        "mpg",
+        "mpeg",
+        "avi",
+        "wmv",
+        "flv",
+        "webm",
+        "ts",
+        "m2ts",
+        "mts",
+        "m2t",
+        "vob",
+        "ogm",
+        "ogv",
+        "divx",
+        "xvid",
+        "3gp",
+        "3g2",
+        "f4v",
+        "rm",
+        "rmvb",
         "asf",
     )
     filetype_attrs = [part.split('"', 1)[0] for part in xml.split('filetypes="')[1:]]

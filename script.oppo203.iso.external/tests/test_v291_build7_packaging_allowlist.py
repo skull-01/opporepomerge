@@ -1,13 +1,14 @@
 """v2.9.1 Build 16 - allowlist-based runtime packaging policy."""
+
 from __future__ import annotations
 
 import importlib.util
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -23,7 +24,9 @@ _requires_posix_shell = pytest.mark.skipif(
 
 
 def _load_package_tool():
-    spec = importlib.util.spec_from_file_location("package_installable_zip_build8", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip_build8", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -31,7 +34,9 @@ def _load_package_tool():
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build8", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build8", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -129,8 +134,7 @@ def test_package_release_script_defaults_to_active_build(tmp_path):
         cwd=str(ROOT),
         env=env,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     runtime_zip = out / "script.oppo203.iso.external-2.9.13.zip"

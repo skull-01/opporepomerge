@@ -17,14 +17,14 @@ The Build 16 policy is intentionally dependency-safe:
 * ``--check`` performs a dry-run and verifies that the facade and legacy
   extractor agree, without writing ``resources/language/strings.pot``.
 """
+
 from __future__ import annotations
 
 import argparse
 import importlib.util
-import os
-from pathlib import Path
 import sys
-from typing import Iterable
+from collections.abc import Iterable
+from pathlib import Path
 
 DEFAULT_OUTPUT = "resources/language/strings.pot"
 SUPPORTED_BACKENDS = ("auto", "legacy", "babel")
@@ -51,7 +51,9 @@ def legacy_alias_policy() -> dict[str, str]:
 def project_root(start: Path | None = None) -> Path:
     start = (start or Path.cwd()).resolve()
     for candidate in (start, *start.parents):
-        if (candidate / "addon.xml").exists() and (candidate / "resources" / "settings.xml").exists():
+        if (candidate / "addon.xml").exists() and (
+            candidate / "resources" / "settings.xml"
+        ).exists():
             return candidate
     raise RuntimeError("Could not find add-on root containing addon.xml and resources/settings.xml")
 
@@ -133,8 +135,14 @@ def check_extraction(root: Path, backend: str) -> tuple[bool, str]:
     if set(facade_ids) != legacy_ids:
         return False, f"backend={resolved}; facade ids differ from legacy fallback"
     if count == 0:
-        return True, f"backend={resolved}; 0 ids; make_pot fallback preserved; legacy alias retained; no inline localization calls found"
-    return True, f"backend={resolved}; {count} ids; make_pot fallback preserved; legacy alias retained"
+        return (
+            True,
+            f"backend={resolved}; 0 ids; make_pot fallback preserved; legacy alias retained; no inline localization calls found",
+        )
+    return (
+        True,
+        f"backend={resolved}; {count} ids; make_pot fallback preserved; legacy alias retained",
+    )
 
 
 def write_template(root: Path, out: str, backend: str) -> tuple[Path, str, int]:
@@ -148,11 +156,17 @@ def write_template(root: Path, out: str, backend: str) -> tuple[Path, str, int]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Extract Kodi gettext template with Babel-safe fallback")
+    parser = argparse.ArgumentParser(
+        description="Extract Kodi gettext template with Babel-safe fallback"
+    )
     parser.add_argument("--root", default=".", help="add-on root to scan")
     parser.add_argument("--out", default=DEFAULT_OUTPUT, help="output .pot path")
-    parser.add_argument("--backend", choices=SUPPORTED_BACKENDS, default="auto", help="extractor backend")
-    parser.add_argument("--check", action="store_true", help="dry-run validation without writing the .pot file")
+    parser.add_argument(
+        "--backend", choices=SUPPORTED_BACKENDS, default="auto", help="extractor backend"
+    )
+    parser.add_argument(
+        "--check", action="store_true", help="dry-run validation without writing the .pot file"
+    )
     args = parser.parse_args(argv)
 
     root = project_root(Path(args.root))

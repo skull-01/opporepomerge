@@ -4,18 +4,18 @@
 This tool is intentionally dependency-free so a local AI, CI job, or user can
 run the same core release checks after unpacking a build artifact.
 """
+
 from __future__ import annotations
 
 import argparse
 import compileall
 import json
-import os
-from pathlib import Path
 import re
 import shutil
 import sys
 import tempfile
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 FORBIDDEN_COMMAND_TOKENS = ("#SIS", "#PGU", "#PGD")
 DEFAULT_EXPECTED_COMMAND_MAP_KEYS = 76
@@ -47,7 +47,7 @@ class AuditCheck:
         return {"name": self.name, "status": self.status, "detail": self.detail}
 
     @classmethod
-    def from_mapping(cls, item: dict[str, str]) -> "AuditCheck":
+    def from_mapping(cls, item: dict[str, str]) -> AuditCheck:
         return cls(
             name=str(item.get("name", "unknown")),
             status=str(item.get("status", "fail")),
@@ -70,7 +70,9 @@ class TextReporter:
         for item in checks:
             prefix = "OK" if item.passed else "FAIL"
             lines.append(f"{prefix}: {item.name} - {item.detail}")
-        lines.append(f"SUMMARY: {'PASS' if not failed else 'FAIL'} ({len(checks) - len(failed)}/{len(checks)} checks passed)")
+        lines.append(
+            f"SUMMARY: {'PASS' if not failed else 'FAIL'} ({len(checks) - len(failed)}/{len(checks)} checks passed)"
+        )
         return "\n".join(lines)
 
 
@@ -92,9 +94,13 @@ def project_root(start: Path | None = None) -> Path:
         start = Path.cwd()
     start = start.resolve()
     for candidate in (start, *start.parents):
-        if (candidate / "addon.xml").exists() and (candidate / "resources" / "settings.xml").exists():
+        if (candidate / "addon.xml").exists() and (
+            candidate / "resources" / "settings.xml"
+        ).exists():
             return candidate
-    raise RuntimeError("Could not find project root containing addon.xml and resources/settings.xml")
+    raise RuntimeError(
+        "Could not find project root containing addon.xml and resources/settings.xml"
+    )
 
 
 def ok(name: str, detail: str = "ok") -> dict[str, str]:
@@ -161,7 +167,12 @@ def audit_locales(root: Path) -> list[dict[str, str]]:
         msgstr = _po_entries(text, "msgstr")
         name = file.parent.name
         if not (len(msgctxt) == len(msgid) == len(msgstr)):
-            result.append(fail(f"locale:{name}", f"unbalanced counts msgctxt={len(msgctxt)} msgid={len(msgid)} msgstr={len(msgstr)}"))
+            result.append(
+                fail(
+                    f"locale:{name}",
+                    f"unbalanced counts msgctxt={len(msgctxt)} msgid={len(msgid)} msgstr={len(msgstr)}",
+                )
+            )
             continue
         ids = set(msgctxt)
         if len(ids) != len(msgctxt):
@@ -175,7 +186,12 @@ def audit_locales(root: Path) -> list[dict[str, str]]:
         if ids != baseline_ids:
             missing = sorted(baseline_ids - ids)[:10]
             extra = sorted(ids - baseline_ids)[:10]
-            result.append(fail(f"locale:{name}", f"msgctxt set differs from {baseline_name}; missing={missing} extra={extra}"))
+            result.append(
+                fail(
+                    f"locale:{name}",
+                    f"msgctxt set differs from {baseline_name}; missing={missing} extra={extra}",
+                )
+            )
         else:
             result.append(ok(f"locale:{name}", f"{len(ids)} msgctxt ids"))
     return result
@@ -225,14 +241,15 @@ def _import_constants(root: Path):
             sys.path.insert(0, path)
     try:
         from resources.lib.oppo import constants  # type: ignore
+
         return constants
     except Exception:  # pragma: no cover - defensive fallback for legacy unpacked trees
+
         class LegacyConstants:
             OPPO_COMMAND_MAP_SIZE = DEFAULT_EXPECTED_COMMAND_MAP_KEYS
             MIN_COVERAGE_PERCENT = DEFAULT_MIN_COVERAGE_PERCENT
+
         return LegacyConstants
-
-
 
 
 def _import_version(root: Path):
@@ -262,9 +279,19 @@ def audit_version_source(root: Path, expected_version: str | None = None) -> lis
         results.append(fail("version_consistency", f"could not parse addon.xml: {exc}"))
         return results
     if addon_version != source_version:
-        results.append(fail("version_consistency", f"addon.xml version={addon_version}; version.py ADDON_VERSION={source_version}"))
+        results.append(
+            fail(
+                "version_consistency",
+                f"addon.xml version={addon_version}; version.py ADDON_VERSION={source_version}",
+            )
+        )
     elif expected_version is not None and source_version != expected_version:
-        results.append(fail("version_consistency", f"version.py ADDON_VERSION={source_version}; expected {expected_version}"))
+        results.append(
+            fail(
+                "version_consistency",
+                f"version.py ADDON_VERSION={source_version}; expected {expected_version}",
+            )
+        )
     else:
         detail = f"addon.xml and version.py agree on {source_version}"
         if expected_version is not None:
@@ -286,7 +313,9 @@ def audit_command_map(root: Path) -> dict[str, str]:
         return fail("command_map", f"expected {expected_size} keys, found {len(keys)}")
     if len(keys) != len(set(keys)):
         return fail("command_map", "duplicate keys found")
-    offenders = [token for token in FORBIDDEN_COMMAND_TOKENS if any(token in value for value in values)]
+    offenders = [
+        token for token in FORBIDDEN_COMMAND_TOKENS if any(token in value for value in values)
+    ]
     if offenders:
         return fail("command_map", "forbidden command tokens found: " + ", ".join(offenders))
     return ok("command_map", f"{len(keys)} canonical keys; no forbidden tokens")
@@ -301,9 +330,14 @@ def audit_hardware_count(root: Path) -> dict[str, str]:
     enum_values = [item for item in match.group(1).split("|") if item]
     compat_count = len(sr.HARDWARE_COMPAT)
     if len(enum_values) != compat_count:
-        return fail("hardware_model_count", f"settings enum={len(enum_values)} HARDWARE_COMPAT={compat_count}")
-    return ok("hardware_model_count", f"settings enum and HARDWARE_COMPAT both have {compat_count} entries")
-
+        return fail(
+            "hardware_model_count",
+            f"settings enum={len(enum_values)} HARDWARE_COMPAT={compat_count}",
+        )
+    return ok(
+        "hardware_model_count",
+        f"settings enum and HARDWARE_COMPAT both have {compat_count} entries",
+    )
 
 
 def audit_coverage_gate(root: Path) -> dict[str, str]:
@@ -568,7 +602,6 @@ def legacy_required_release_files() -> list[str]:
     ]
 
 
-
 def _manifest_relpath(root: Path, manifest: Path) -> str:
     return manifest.relative_to(root).as_posix()
 
@@ -587,7 +620,9 @@ def read_evidence_manifest(root: Path, manifest: Path) -> list[str]:
         if not line or line.startswith("#"):
             continue
         if line.startswith("/") or ".." in Path(line).parts:
-            raise ValueError(f"unsafe evidence manifest entry in {_manifest_relpath(root, manifest)}: {line}")
+            raise ValueError(
+                f"unsafe evidence manifest entry in {_manifest_relpath(root, manifest)}: {line}"
+            )
         entries.append(Path(line).as_posix())
     return entries
 
@@ -629,8 +664,13 @@ def audit_release_files(root: Path, expected_version: str | None = None) -> list
         addon_path = root / "addon.xml"
         addon_text = addon_path.read_text(encoding="utf-8")
         first_line = addon_text.splitlines()[0].strip() if addon_text.splitlines() else ""
-        if first_line.startswith("<?xml") and "version=\"1.0\"" not in first_line:
-            results.append(fail("addon_xml_declaration", f"XML declaration must use version=\"1.0\", found: {first_line}"))
+        if first_line.startswith("<?xml") and 'version="1.0"' not in first_line:
+            results.append(
+                fail(
+                    "addon_xml_declaration",
+                    f'XML declaration must use version="1.0", found: {first_line}',
+                )
+            )
         else:
             results.append(ok("addon_xml_declaration", "version=1.0"))
         try:
@@ -639,8 +679,13 @@ def audit_release_files(root: Path, expected_version: str | None = None) -> list
             actual_version = None
             results.append(fail("addon_version", f"could not parse addon.xml: {exc}"))
         else:
-            results.append(ok("addon_version", expected_version) if actual_version == expected_version else fail("addon_version", f"expected {expected_version}, found {actual_version}"))
+            results.append(
+                ok("addon_version", expected_version)
+                if actual_version == expected_version
+                else fail("addon_version", f"expected {expected_version}, found {actual_version}")
+            )
     return results
+
 
 def _run_audit_dicts(root: Path, expected_version: str | None = None) -> list[dict[str, str]]:
     results: list[dict[str, str]] = []
@@ -658,16 +703,23 @@ def _run_audit_dicts(root: Path, expected_version: str | None = None) -> list[di
 
 def collect_audit_checks(root: Path, expected_version: str | None = None) -> list[AuditCheck]:
     """Collect audit results as typed checks for reporter/CI consumers."""
-    return [AuditCheck.from_mapping(item) for item in _run_audit_dicts(root, expected_version=expected_version)]
+    return [
+        AuditCheck.from_mapping(item)
+        for item in _run_audit_dicts(root, expected_version=expected_version)
+    ]
 
 
 def run_audit(root: Path, expected_version: str | None = None) -> list[dict[str, str]]:
     """Return legacy dict audit results for compatibility with existing tests/users."""
-    return [item.as_dict() for item in collect_audit_checks(root, expected_version=expected_version)]
+    return [
+        item.as_dict() for item in collect_audit_checks(root, expected_version=expected_version)
+    ]
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run release audits for script.oppo203.iso.external")
+    parser = argparse.ArgumentParser(
+        description="Run release audits for script.oppo203.iso.external"
+    )
     parser.add_argument("--root", default=".", help="project root; defaults to current directory")
     parser.add_argument("--expected-version", default=None, help="expected addon.xml version")
     parser.add_argument("--json", action="store_true", help="emit JSON instead of text")

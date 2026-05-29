@@ -1,13 +1,14 @@
 """v2.9.1 Build 16 - local build/release automation scripts."""
+
 from __future__ import annotations
 
 import importlib.util
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import sys
 import zipfile
+from pathlib import Path
 
 import pytest
 
@@ -24,7 +25,9 @@ _requires_posix_shell = pytest.mark.skipif(
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build6", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build6", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -32,7 +35,9 @@ def _load_audit():
 
 
 def _load_package_tool():
-    spec = importlib.util.spec_from_file_location("package_installable_zip_build6", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip_build6", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -48,7 +53,9 @@ def test_build6_scripts_are_present_executable_and_parse():
     assert verify.stat().st_mode & 0o111
     assert package.stat().st_mode & 0o111
     for script in (verify, package):
-        result = subprocess.run(["bash", "-n", str(script)], check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(
+            ["bash", "-n", str(script)], check=False, text=True, capture_output=True
+        )
         assert result.returncode == 0, result.stderr
 
 
@@ -58,7 +65,10 @@ def test_verify_script_documents_required_release_verification_commands():
     assert "tools/sync_version.py" in text
     assert "python3 -m pytest -q -p no:ddtrace" in text
     assert "python3 -m unittest discover -s tests -p 'test_*.py' -q" in text
-    assert "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m coverage run -m pytest -q -p no:ddtrace" in text
+    assert (
+        "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python3 -m coverage run -m pytest -q -p no:ddtrace"
+        in text
+    )
     assert "tools/audit_release.py" in text
 
 
@@ -71,8 +81,7 @@ def test_package_release_script_creates_runtime_zip_dev_source_and_checksum(tmp_
         cwd=str(ROOT),
         env={**os.environ, "OUT_DIR": str(out), "VERSION": "2.9.13", "BUILD_SUFFIX": "build6-test"},
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     runtime_zip = out / "script.oppo203.iso.external-2.9.13-build6-test.zip"
