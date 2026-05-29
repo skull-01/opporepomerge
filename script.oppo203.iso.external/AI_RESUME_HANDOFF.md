@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `7b65ed2` (origin/main, 2026-05-29 — docs: end-of-day handoff 2026-05-29 (strip-wizard session)) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~11s)
+**Last sync:** commit `bc79649` (origin/main, 2026-05-29 — Merge PR #37 two-area spine revision; landed atop PM bulk-merge of #40/#45/#33/#34/#35) · **Tests on `main`:** 865 passed, 3 skipped (`pytest -n auto`, ~10s; coverage 99.05%)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -153,8 +153,8 @@ or call cargo by full path.
 
 Rows are checked in order; a missing row at any tier is acted on per its tier rule
 described above. There is no database; no external services to verify. (Memory note
-`tauri-env-installed` records that rows 10/11 already passed on 2026-05-29; row 13 is the
-known blocker tracked in `configurator-icon-files-missing`.)
+`tauri-env-installed` records that rows 10/11 already passed on 2026-05-29; row 13 was
+satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ---
 
@@ -167,54 +167,86 @@ known blocker tracked in `configurator-icon-files-missing`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-29 (end of day):** v2.9.14 audit-ready on `wip/wizard-ux`; no
-in-flight code.
+**As of 2026-05-29 (PM bulk-merge — done for the day):** no in-flight code; clean
+stopping point. Tests on `main` at `bc79649`: **865 passed, 3 skipped in 9.95s**;
+coverage **99.05%**.
 
-- **This session — v2.9.14 release prep** on `wip/wizard-ux` (tip `9d633de`):
-  - Back-applied `area:addon` label to issue
-    [#22](https://github.com/skull-01/script.oppo203.iso.external/issues/22)
-    (the sole repo Issue; sweep complete).
-  - Audited `wip/wizard-ux`: `py_compile` + the four `tools/*.py --check` gates
-    (`render_docs`, `sync_version`, `test_layout`, `i18n_extract`) all green;
-    `pytest -n auto` = **999 passed, 3 skipped in 11.83s** (+12 vs main's 987);
-    coverage **99.10%** (pre-push hook enforces 99% floor).
-  - Found a single +1 ruff `I001` in
-    [`tools/dev_build.py`](tools/dev_build.py); fixed via `ruff check --fix` and
-    pushed as commit `9d633de` (*style: sort imports in tools/dev_build.py*).
-    Branch ruff count now matches main's 336 baseline (+0 net contribution).
-  - Filed issue
+- **Shipped this session (PM bulk-merge):**
+  - [PR #40](https://github.com/skull-01/script.oppo203.iso.external/pull/40) —
+    *Strip the in-Kodi setup wizard from the addon* — **merged at `59eb511`**.
+    44 files, +313/−5814: removed
+    [`resources/lib/wizard.py`](resources/lib/wizard.py),
+    [`resources/lib/wizard_polish.py`](resources/lib/wizard_polish.py),
+    [`resources/lib/first_run_wizard.py`](resources/lib/first_run_wizard.py),
+    13 wizard test files; renamed `<category id="wizard">` → `playback` in
+    [`resources/settings.xml`](resources/settings.xml); reduced `service.py`
+    `Monitor` to a lifecycle-only shell;
+    [`resources/lib/i18n.py`](resources/lib/i18n.py) `_EN` fallback table now
+    empty; 12 PO files trimmed (`#30910/#30920/#30930/#30940/#30950` and
+    `#31000-#31061` deleted). **#40's Phase A on-device verification was NOT
+    performed** — operator skipped per the bulk-merge directive. The
+    `Monitor.onSettingsChanged` removal (auto-apply of compatibility presets
+    when hardware model changes) is the headline behavioural change worth
+    verifying on real hardware. Revert path: `git revert 59eb511`.
+  - [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) —
+    *docs: 'configurator owns add-on configuration' policy (ENH-#41 Part A)* —
+    **merged at `816bde2`**. 3 files: [`AGENTS.md`](AGENTS.md) gained
+    `## Configuration is owned by the configurator` after `## Scope discipline`;
+    [`CONTRIBUTING.md`](CONTRIBUTING.md) gained `## Configuration ownership`
+    framed for external contributors;
+    [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
+    Phase A entry filed. The merge-resolution at `5ffa50b` preserved both #40
+    and #45 Phase A entries in the checklist.
+
+- **Carried open after this session:**
+  - **[#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
+    Parts B + C are now unblocked** since PR #40 merged. Per the §21 Q&A logged
+    on 2026-05-29:
+    - **Part B** — in-add-on guidance hint on settings open. Both mechanisms:
+      static label at top of [`resources/settings.xml`](resources/settings.xml)
+      *plus* a `service.py` first-open-per-session
+      `xbmcgui.Dialog().notification` tracked via
+      `xbmcgui.Window(10000).setProperty(...)` (clears on Kodi restart).
+    - **Part C** — settings-file ownership marker. Configurator writes
+      `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` in
+      `resources/settings.xml`; add-on warns when a configurator-managed key is
+      overwritten via Kodi's UI. The configurator-side writer change lives in
+      the configurator area but the add-on warning logic is addon work.
+  - **Five `area:addon` ENH issues still open:**
     [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
-    (`ENH-: clear ruff backlog on main`, `area:addon`) for the pre-existing 336
-    ruff errors on main — surfaced by the audit, **not** a v2.9.14 blocker;
-    3-PR incremental plan documented in the issue body.
-
-- **Outstanding before `/release 2.9.14` can run** (operator decides):
-  - **Main-side drift reconciliation** — `main` is 13 commits ahead of
-    `wip/wizard-ux` with PR #30 (configurator scaffold), PR #29 (CI fix), PR #28
-    (pytest-cov bump), and today's spine/EOD docs. Cleanest path: open
-    `wip/wizard-ux` → `main` PR, merge via GitHub, then `/release 2.9.14` from
-    `main`.
-  - **On-device verification** of the wizard fixes per
-    [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md).
+    (336-error ruff backlog, 3-PR incremental plan in the issue body),
+    [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
+    (Parts B + C still pending — Part A landed),
+    [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42)
+    (in-add-on settings menu),
+    [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43)
+    (split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages),
+    [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
+    (hardware-validation testing — lending, donations, tester reports wanted).
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **Open `wip/wizard-ux` → `main` PR** so v2.9.14 can be tagged from `main`
-     after operator merge. Smallest possible diff to unblock the release.
-  2. **Cut v2.9.14** — `/release 2.9.14` once #1 lands and operator verifies on
-     device.
-  3. **Work issue #38 — PR 1 (auto-fix sweep)** — `ruff check --fix .`, ~172
-     mechanical fixes, 336 → ~164 errors. Independent of the release.
-  4. **Fix the broken `claude-review` CI check** — partially done via PR #29
-     (allowed_bots config); next real-bot run lands ~2026-06-03 with the weekly
-     dependabot batch.
+  1. **ENH-#41 Parts B + C** — finishes the configurator-owns-config theme.
+     Touches `resources/settings.xml` (Part B static label, Part C marker
+     comment) + [`service.py`](service.py) (Part B notification). Now safe to
+     attempt since #40 already landed the `settings.xml` rename.
+  2. **Phase A device verification for #40** — operator runs the merged
+     wizard-strip on real hardware per
+     [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md);
+     no agent code work, just operator action + post-verify row archive. Could
+     pair with theme 1 in one session if hardware is to hand.
+  3. **ENH-#43 — split `resources/lib`** into TV / Oppo / AVR / Kodi
+     sub-packages. Best done *before* #42 so the in-add-on settings menu lands
+     in the right layout from day one. Independent of #41.
+  4. **ENH-#42 — minimal in-add-on settings menu**. Depends on #43's layout.
+  5. **#38 ruff backlog PR 1 (auto-fix sweep)** — `ruff check --fix .`, ~172
+     mechanical fixes, 336 → ~164 errors. Independent of everything above; can
+     run in a parallel session.
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-29 (end of day — config-owner-policy session, second EOD of the day):**
-
-**As of 2026-05-29 (PM bulk-merge):** scaffold + first three follow-ups landed; queue
-cleared of stale drafts. **§3b content is stale from #37's pre-merge view; the next
-EOD will refresh it.**
+**As of 2026-05-29 (PM bulk-merge — done for the day):** scaffold + first three
+follow-ups landed; queue cleared of stale drafts. No in-flight code; clean stopping
+point.
 
 - **PR #30** (Scaffold OppoKodiAddon Configurator) — **merged** earlier at `394f9fc`.
 - **PR #33** (window-control IPC on custom title bar) — **merged 2026-05-29 PM at
@@ -222,9 +254,8 @@ EOD will refresh it.**
 - **PR #34** (persist WizardState to `%APPDATA%`) — **merged 2026-05-29 PM at
   `bc60074`**.
 - **PR #35** (unblock first-time cargo build — icon stub + lockfile + winget docs) —
-  **merged 2026-05-29 PM at `12e5b18`**. §2a row 13 (icon) and the
-  `configurator-icon-files-missing` memory are now satisfied; memory pruning is a small
-  follow-up task.
+  **merged 2026-05-29 PM at `12e5b18`**. §2a row 13 (icon) is now satisfied; the
+  `configurator-icon-files-missing` memory was pruned this EOD.
 - **PR #32** (docs: align AGENTS.md ruff target; refresh §3 for #30) — **closed without
   merge** in the PM bulk-merge as superseded by subsequent §3 rewrites; the AGENTS.md
   parenthetical was deemed in tension with `area:addon` issue #38 (ruff backlog).
@@ -237,9 +268,15 @@ EOD will refresh it.**
   1. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
      Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over port 23) —
      multi-PR theme, its own session. #33 (IPC) and #34 (state) are now landed.
-  2. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
-  3. **App icon + bundling polish** — #35 landed a stub icon; the real icon work is
-     still open.
+  2. **File generation** for [`playercorefactory.xml`](resources/playercorefactory.xml)
+     + remote-bridge keymap. This is the configurator side of ENH-#41 (the add-on side
+     stays read-only per the policy doc just landed).
+  3. **App icon + bundling polish** — #35 landed a stub icon; replacing it with a real
+     icon + first-pass `npm run tauri build` of an .msi/.exe is an open theme.
+  4. **Configurator side of ENH-#41 Part C** — write
+     `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` into the generated
+     `settings.xml`; pairs with the add-on-side overwrite warning that lands in the
+     addon area as part of Part C.
 
 ---
 
@@ -502,6 +539,22 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   operator chose to defer per the skip-review directive; revert remains
   available if hardware testing later flags an issue. No `area:configurator`
   labels back-applied to any prior items in this session.
+- **2026-05-29 (EOD — `done for the day` after PM bulk-merge)** — Doc-only
+  refresh. Header "Last sync" updated from `7b65ed2` to `bc79649` (PR #37
+  merge); test count updated from 987 → **865 passed, 3 skipped** to reflect
+  the wizard test files deleted by #40 (coverage **99.05%** on the lower
+  denominator). **§3a rewritten** to drop #37's stale wip/wizard-ux v2.9.14
+  content (replaced by main's current addon state: PR #40 + #45 shipped, #41
+  Parts B + C unblocked, five open addon issues #38/#41/#42/#43/#44, candidate
+  themes refreshed). **§3b dedeuplicated** (two "As of" headers merged into
+  one, no content change beyond noting the `configurator-icon-files-missing`
+  memory was pruned this EOD and adding a fourth candidate theme for the
+  configurator-side ENH-#41 Part C). **§2a parenthetical** updated to note PR
+  #35 satisfied row 13 (icon stub). **Memory pruned:** deleted
+  `configurator-icon-files-missing.md` (carved out by PR #35); MEMORY.md index
+  updated. **No new code commits, no new issues, no new branches.** Tree
+  clean; `pytest -n auto --basetemp=build\_pt` on `main` re-confirmed at 865
+  passed / 3 skipped / 9.95s.
 
 ---
 
