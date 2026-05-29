@@ -9,7 +9,7 @@ playback sequencing can opt in without destabilizing OPPO/Kodi routing.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 try:
     from .avr_denon_marantz import DenonMarantzAvrController
@@ -34,7 +34,9 @@ except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     from avr_onkyo_eiscp import OnkyoEiscpAvrController  # type: ignore
     from avr_presets import get_avr_preset, normalize_avr_backend  # type: ignore
     from avr_sony_audio import SonyAudioApiAvrController  # type: ignore
-    from avr_sony_audio import validation_metadata as sony_validation_metadata
+    from avr_sony_audio import (  # type: ignore[no-redef]
+        validation_metadata as sony_validation_metadata,
+    )
     from avr_types import (  # type: ignore
         AVR_BACKEND_DENON_MARANTZ,
         AVR_BACKEND_DISABLED,
@@ -63,7 +65,7 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return dict(settings.data)
     if hasattr(settings, "items"):
         try:
-            return dict(settings.items())  # type: ignore[attr-defined]
+            return dict(settings.items())
         except Exception:
             return {}
     return {}
@@ -150,9 +152,13 @@ def validate_avr_settings(settings: dict[str, object] | object | None) -> AvrVal
 
     if backend == AVR_BACKEND_SONY_AUDIO_API:
         sony_meta = sony_validation_metadata(data)
-        warnings.extend(str(item) for item in sony_meta.get("warnings", ()))
-        for key in sony_meta.get("missing", ()):  # metadata-only Sony skeleton fields
-            missing.append(str(key))
+        warnings.extend(
+            str(item) for item in cast("tuple[object, ...]", sony_meta.get("warnings", ()))
+        )
+        for sony_key in cast(  # metadata-only Sony skeleton fields
+            "tuple[object, ...]", sony_meta.get("missing", ())
+        ):
+            missing.append(str(sony_key))
         if not sony_meta.get("acknowledged", False):
             warnings.append("sony_audio_api_refused_without_acknowledgement")
 

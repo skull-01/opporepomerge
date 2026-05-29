@@ -30,13 +30,14 @@ from __future__ import annotations
 import os
 import re as _re
 from collections.abc import Iterable
+from typing import Protocol
 
 try:
-    from .disc_classification import (
+    from .disc_classification import (  # type: ignore[attr-defined]
         DISC_STYLE_EXTENSIONS_4K,  # noqa: F401  # re-exported for sibling modules
         UHD_DISC_TAGS,  # noqa: F401  # re-exported for sibling modules
     )
-    from .disc_classification import (
+    from .disc_classification import (  # type: ignore[attr-defined]
         LOOSE_VIDEO_EXTENSIONS as EXCLUDED_LOOSE_VIDEO_EXTENSIONS,  # noqa: F401
     )
     from .disc_classification import (
@@ -62,25 +63,25 @@ except ImportError:  # pragma: no cover - top-level test import compatibility
         DISC_STYLE_EXTENSIONS_4K,  # noqa: F401  # re-exported for sibling modules
         UHD_DISC_TAGS,  # noqa: F401  # re-exported for sibling modules
     )
-    from disc_classification import (
+    from disc_classification import (  # type: ignore[no-redef]
         LOOSE_VIDEO_EXTENSIONS as EXCLUDED_LOOSE_VIDEO_EXTENSIONS,  # noqa: F401
     )
-    from disc_classification import (
+    from disc_classification import (  # type: ignore[no-redef]
         extension as _disc_extension,
     )
-    from disc_classification import (
+    from disc_classification import (  # type: ignore[no-redef]
         has_uhd_disc_tag as _shared_path_has_uhd_disc_tag,
     )
-    from disc_classification import (
+    from disc_classification import (  # type: ignore[no-redef]
         is_4k_disc_style_source as _shared_is_4k_disc_style_source,
     )
-    from disc_classification import (
+    from disc_classification import (  # type: ignore[no-redef]
         is_bdmv_navigation_path as _shared_is_bdmv_navigation_path,
     )
-    from disc_classification import (
+    from disc_classification import (  # type: ignore[no-redef]
         is_loose_video_path as _shared_is_loose_video_path,
     )
-    from disc_classification import (
+    from disc_classification import (  # type: ignore[no-redef]
         should_intercept_4k_disc_source as _shared_should_intercept_4k_disc_source,
     )
 
@@ -92,6 +93,12 @@ DISC_KIND_M2TS = "m2ts"
 DISC_KIND_MPLS = "mpls"
 DISC_KIND_MKV_SIBLING = "mkv_sibling"
 DISC_KIND_OTHER = "other"
+
+
+class _FsLike(Protocol):
+    def exists(self, p: object) -> bool: ...  # pragma: no cover
+
+    def isdir(self, p: object) -> bool: ...  # pragma: no cover
 
 
 class _RealFS:
@@ -112,7 +119,7 @@ def _lower(p: object) -> str:
     return _norm(p).lower()
 
 
-def classify(path: object, fs: object | None = None) -> str:
+def classify(path: object, fs: _FsLike | None = None) -> str:
     """Return the DISC_KIND_* constant for `path`."""
     if not path:
         return DISC_KIND_OTHER
@@ -150,7 +157,7 @@ def classify(path: object, fs: object | None = None) -> str:
     return DISC_KIND_OTHER
 
 
-def is_disc_image(path: object, fs: object | None = None) -> bool:
+def is_disc_image(path: object, fs: _FsLike | None = None) -> bool:
     """True iff classify(path) is any disc-image kind."""
     return classify(path, fs=fs) != DISC_KIND_OTHER
 
@@ -238,7 +245,7 @@ def should_intercept(
     *,
     whitelist: Iterable[str] | None = None,
     blacklist: Iterable[str] | None = None,
-    fs: object | None = None,
+    fs: _FsLike | None = None,
 ) -> bool:
     """Return True iff the service should redirect playback for `path`.
 

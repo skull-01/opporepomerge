@@ -103,6 +103,8 @@ explicit_package_bases = true
 show_error_codes = true
 pretty = true
 files = [
+  "resources/lib/__init__.py",
+  "resources/lib/avr/avr_control.py",
   "resources/lib/avr/avr_denon_marantz.py",
   "resources/lib/avr/avr_diagnostics.py",
   "resources/lib/avr/avr_onkyo_eiscp.py",
@@ -115,6 +117,7 @@ files = [
   "resources/lib/kodi/diagnostic_logging.py",
   "resources/lib/kodi/disc_classification.py",
   "resources/lib/kodi/i18n.py",
+  "resources/lib/kodi/intercept.py",
   "resources/lib/kodi/keymap_skin.py",
   "resources/lib/kodi/settings_schema.py",
   "resources/lib/kodi/version.py",
@@ -123,6 +126,7 @@ files = [
   "resources/lib/oppo/constants.py",
   "resources/lib/oppo/hardware_capabilities.py",
   "resources/lib/oppo/hardware_profiles.py",
+  "resources/lib/oppo/oppo_tcp_client.py",
   "resources/lib/oppo/path_mapper.py",
   "resources/lib/oppo/reconnect_backoff.py",
   "resources/lib/tv/adb_control.py",
@@ -130,6 +134,7 @@ files = [
   "resources/lib/tv/smartthings_control.py",
   "resources/lib/tv/tv_backends.py",
   "resources/lib/tv/tv_control.py",
+  "resources/lib/tv/tv_diagnostics.py",
   "resources/lib/tv/tv_presets.py",
 ]
 
