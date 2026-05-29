@@ -248,6 +248,54 @@ implementing SHA(s) on the issue and append a row here.
   5. Pick "Follow Kodi system language" → expect the confirmation naming the resolved locale (matches Kodi's UI language).
   6. Translation note: menu and settings labels remain English — see the placeholder caveat above.
 
+### ENH-#51 — Incremental mypy --strict gate (PR 1 of N)
+
+- **Implementing SHA:** head of `claude/enh51-mypy-strict-a7k3m2x9` (commented on issue #51).
+- **Scope:** PR 1 of the source-only `mypy --strict` rollout. Stands up the gate
+  + tooling and annotates the first leaf-module batch; the remaining ~28 modules
+  follow in later PRs. Source baseline measured this session: **788 strict
+  errors / 35 modules** at `--python-version 3.9`.
+- **What changed:**
+  - [`mypy.ini`](../mypy.ini) (authoritative) + [`pyproject.toml`](../pyproject.toml)
+    `[tool.mypy]` mirror: `python_version` 3.10 → 3.9 (matches `ruff py39` /
+    `requires-python >=3.9`), `strict = True`, `follow_imports = silent`, and a
+    curated `files` allowlist (7 modules). The now-unused `[mypy-tests.*]` /
+    `tests.*` override was dropped (no invocation type-checks tests;
+    `warn_unused_configs` flagged it).
+  - [`tools/type_check.py`](../tools/type_check.py): new blocking `--gate` mode
+    that runs mypy over the `files` allowlist (no explicit targets, so the config
+    `files` apply) and returns mypy's exit code. The default invocation stays
+    non-blocking for release safety; `build_mypy_command` still targets
+    `resources/lib`.
+  - [`.github/workflows/ci.yml`](../.github/workflows/ci.yml): new `types` job
+    runs `python tools/type_check.py --gate` (Python 3.11 runner; mypy targets 3.9).
+  - 7 leaf modules annotated to zero strict errors across all four buckets:
+    `avr/avr_sequence`, `kodi/keymap_skin`, `tv/smartthings_control`,
+    `tv/roku_ecp_control`, `oppo/reconnect_backoff`, `oppo/autoscript_helper`,
+    `tv/adb_control`. Changes are signatures + removing stale `# type: ignore`
+    comments + two locals pinned (`raw: float`, `body: str`) — **no logic changes.**
+    `nas_playback_adapter` was deliberately deferred (it cascades into
+    `settings_reader` / `oppo_control`).
+  - Guard tests updated in lockstep: `test_v291_build13_type_hint_baseline.py`
+    (asserts `python_version 3.9` + strict/follow_imports/files + the gate command
+    shape) and `test_github_readiness_g6_ci_hardening.py` (expects the `types` job
+    and the gate command in CI).
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `pytest -n auto` **933 passed / 3 skipped**; serial coverage **99%**; `ruff
+  check .` + `ruff format --check .` clean; `mypy --gate` clean (7 modules, 0
+  errors); `unittest discover` **551 OK**; `audit_release` **580/580**;
+  py_compile + render_docs/sync_version/test_layout/i18n `--check` all green.
+- **Phase A review focus:**
+  - The `files` allowlist + `follow_imports = silent` is the mechanism — confirm
+    only listed modules are gate-enforced and the rest are silently followed (so
+    the ~760 remaining strict findings do not block).
+  - Confirm the gate is wired so it can be a required check (the `types` CI job)
+    and that the default `type_check.py` stays non-blocking for releases.
+  - Spot-check a couple of annotations (e.g. `reconnect_backoff.compute_delay`'s
+    `rng: Callable[[], float] | None`) for correctness.
+- **No Phase C / on-device step:** this PR changes typing config, dev tooling,
+  and CI only — no runtime code paths, settings, or hardware behavior change.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_

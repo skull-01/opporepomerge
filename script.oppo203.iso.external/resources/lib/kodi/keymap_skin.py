@@ -47,7 +47,7 @@ _SKIN_WINDOWS = {
 }
 
 
-def generate(skin):
+def generate(skin: str) -> str:
     """Return a keymap XML string for the given skin id."""
     if skin not in SKINS:
         raise KeyError("unknown skin: " + str(skin))
@@ -72,7 +72,7 @@ def generate(skin):
     return "\n".join(parts) + "\n"
 
 
-def is_well_formed(text):
+def is_well_formed(text: str) -> bool:
     if not text or not str(text).strip():
         return False
     try:

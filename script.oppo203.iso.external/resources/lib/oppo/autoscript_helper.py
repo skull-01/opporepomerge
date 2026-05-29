@@ -1,16 +1,19 @@
 """Chinoppo AutoScript generator (v1.0.3)."""
 
+from __future__ import annotations
+
 import os
+from typing import Any
 
 
-def _safe_int(v, default):
+def _safe_int(v: Any, default: int) -> int:
     try:
         return int(v)
     except (TypeError, ValueError):
         return int(default)
 
 
-def generate(opts):
+def generate(opts: dict[str, Any] | None) -> str:
     o = dict(opts or {})
     et = bool(o.get("enable_telnet", True))
     tp = _safe_int(o.get("telnet_port", 2323), 2323)
@@ -83,7 +86,7 @@ def generate(opts):
     return "\n".join(L)
 
 
-def write_script(path, body):
+def write_script(path: str, body: str) -> str:
     body = body.replace("\r\n", "\n").replace("\r", "\n")
     with open(path, "w", newline="\n") as f:
         f.write(body)

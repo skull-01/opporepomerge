@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import urllib.error
 import urllib.request
+from collections.abc import Callable
+from typing import Any
 
 DEFAULT_ROKU_ECP_PORT = 8060
 
@@ -71,14 +73,19 @@ def build_keypress_url(settings: object, key: str) -> str:
     return f"http://{host}:{port}/keypress/{validated_key}"
 
 
-def send_keypress(settings: object, key: str, urlopen=None, timeout: int = 10) -> str:
+def send_keypress(
+    settings: object,
+    key: str,
+    urlopen: Callable[..., Any] | None = None,
+    timeout: int = 10,
+) -> str:
     """POST an allowlisted Roku ECP keypress request and return response text."""
     opener = urlopen or urllib.request.urlopen
     url = build_keypress_url(settings, key)
     request = urllib.request.Request(url, data=b"", method="POST")
     try:
         with opener(request, timeout=timeout) as response:
-            body = response.read().decode("utf-8", errors="replace")
+            body: str = response.read().decode("utf-8", errors="replace")
             status = int(getattr(response, "status", 200))
             if status >= 400:
                 raise RokuEcpError(f"Roku ECP returned HTTP {status}: {body}")
@@ -89,7 +96,7 @@ def send_keypress(settings: object, key: str, urlopen=None, timeout: int = 10) -
         raise RokuEcpError(f"Roku ECP request failed: {exc}") from exc
 
 
-def switch_input(settings: object, key: str, urlopen=None) -> str:
+def switch_input(settings: object, key: str, urlopen: Callable[..., Any] | None = None) -> str:
     """Switch a Roku TV input by sending one allowlisted ECP keypress."""
     injected = None
     try:
