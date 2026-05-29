@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""Non-blocking type-check wrapper for the OPPO ISO External add-on.
+"""Type-check wrapper for the OPPO ISO External add-on.
 
-Build 13 introduces a portable baseline for mypy without making mypy a hard
+Build 13 introduced a portable baseline for mypy without making mypy a hard
 runtime or release dependency. By default this tool reports whether mypy is
-available and returns success even when mypy is missing or reports issues. Use
-``--strict-exit`` only in local development when you intentionally want mypy
-findings to fail the command.
+available and returns success even when mypy is missing or reports issues
+(a non-blocking baseline over ``resources/lib``). Use ``--strict-exit`` only in
+local development when you intentionally want those baseline findings to fail
+the command.
+
+ENH-#51 adds ``--gate``: a blocking strict gate that type-checks only the
+curated ``files`` allowlist in ``mypy.ini`` (``follow_imports = silent`` keeps
+not-yet-annotated modules from blocking) and returns mypy's real exit code. CI
+runs ``--gate`` so strict-clean modules cannot regress, while the default
+non-blocking baseline is preserved for release safety.
 """
 
 from __future__ import annotations
@@ -44,6 +51,19 @@ def build_mypy_command(root: Path, targets: Sequence[str] = DEFAULT_TARGETS) -> 
     return command
 
 
+def build_gate_command(root: Path) -> list[str]:
+    """Build the strict-gate mypy command.
+
+    No explicit targets are passed, so mypy checks exactly the ``files``
+    allowlist declared in ``mypy.ini``.
+    """
+    config = root / "mypy.ini"
+    command = [sys.executable, "-m", "mypy"]
+    if config.exists():
+        command.extend(["--config-file", str(config)])
+    return command
+
+
 def run_type_check(root: Path, *, strict_exit: bool = False) -> int:
     """Run optional mypy and return the release-safe exit code.
 
@@ -75,15 +95,51 @@ def run_type_check(root: Path, *, strict_exit: bool = False) -> int:
     return result.returncode if strict_exit else 0
 
 
+def run_gate(root: Path) -> int:
+    """Run the blocking strict gate over the ``mypy.ini`` files allowlist.
+
+    Returns mypy's exit code. A missing mypy fails the gate (returns 1) so CI
+    cannot pass silently when the type checker is unavailable.
+    """
+    root = project_root(root)
+    if not mypy_available():
+        print("FAIL: mypy is not installed; the strict gate cannot run")
+        return 1
+    command = build_gate_command(root)
+    result = subprocess.run(
+        command,
+        cwd=str(root),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    output = result.stdout.strip()
+    if output:
+        print(output)
+    if result.returncode == 0:
+        print("OK: mypy strict gate passed for the allowlisted modules")
+        return 0
+    print(f"FAIL: mypy strict gate reported findings with exit code {result.returncode}")
+    return result.returncode
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run non-blocking mypy baseline checks")
+    parser = argparse.ArgumentParser(description="Run mypy baseline and strict-gate checks")
     parser.add_argument("--root", default=".", help="project root")
     parser.add_argument(
         "--strict-exit",
         action="store_true",
         help="return mypy/missing-mypy status instead of always passing",
     )
+    parser.add_argument(
+        "--gate",
+        action="store_true",
+        help="run the blocking strict gate over the mypy.ini files allowlist",
+    )
     args = parser.parse_args(argv)
+    if args.gate:
+        return run_gate(Path(args.root))
     return run_type_check(Path(args.root), strict_exit=args.strict_exit)
 
 

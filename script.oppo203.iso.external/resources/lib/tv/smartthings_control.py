@@ -33,7 +33,7 @@ def is_acknowledged(settings: dict[str, object] | object) -> bool:
     """Return whether the user explicitly acknowledged experimental status."""
     value = ""
     if hasattr(settings, "get"):
-        value = settings.get(SMARTTHINGS_ACK_SETTING, "")  # type: ignore[assignment, call-arg]
+        value = settings.get(SMARTTHINGS_ACK_SETTING, "")
     text = str(value).strip().lower()
     return text in {"true", "1", "yes", "on", "acknowledged"}
 
@@ -203,7 +203,7 @@ def switch_input(
     result["request_method"] = request.get_method()
 
     try:
-        with urlopen(request, timeout=timeout) as response:  # type: ignore[misc]
+        with urlopen(request, timeout=timeout) as response:
             body = response.read().decode("utf-8", errors="replace")
             status = int(getattr(response, "status", getattr(response, "code", 200)))
             result.update(

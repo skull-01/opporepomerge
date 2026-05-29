@@ -89,18 +89,28 @@ exclude_lines = [
   "if __name__ == .__main__.:",
 ]
 
+# Mirror of mypy.ini (which stays authoritative). ENH-#51 rolls out mypy --strict
+# across resources/lib incrementally; only the modules in `files` are gate-enforced
+# and the rest are followed silently until a later batch annotates them.
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.9"
+strict = true
+follow_imports = "silent"
 ignore_missing_imports = true
 warn_unused_configs = true
 namespace_packages = true
 explicit_package_bases = true
 show_error_codes = true
 pretty = true
-
-[[tool.mypy.overrides]]
-module = "tests.*"
-ignore_errors = true
+files = [
+  "resources/lib/avr/avr_sequence.py",
+  "resources/lib/kodi/keymap_skin.py",
+  "resources/lib/oppo/autoscript_helper.py",
+  "resources/lib/oppo/reconnect_backoff.py",
+  "resources/lib/tv/adb_control.py",
+  "resources/lib/tv/roku_ecp_control.py",
+  "resources/lib/tv/smartthings_control.py",
+]
 
 [tool.github-readiness]
 baseline = "v2.9.10 Final"

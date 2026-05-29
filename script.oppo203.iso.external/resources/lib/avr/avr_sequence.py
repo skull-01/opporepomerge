@@ -55,7 +55,7 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return dict(settings.data)
     if hasattr(settings, "items"):
         try:
-            return dict(settings.items())  # type: ignore[attr-defined]
+            return dict(settings.items())
         except Exception:
             return {}
     return {}

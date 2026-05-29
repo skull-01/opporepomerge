@@ -61,12 +61,30 @@ def test_type_check_script_is_non_blocking_when_mypy_is_missing_or_reports_findi
 
 def test_mypy_configuration_exists_and_targets_runtime_helpers():
     text = (ROOT / "mypy.ini").read_text(encoding="utf-8")
-    assert "python_version = 3.10" in text
+    # ENH-#51 aligns the mypy target with the rest of the toolchain (ruff py39,
+    # requires-python >=3.9) and turns on the incremental strict gate.
+    assert "python_version = 3.9" in text
     assert "ignore_missing_imports = True" in text
+    assert "strict = True" in text
+    assert "follow_imports = silent" in text
+    assert "files =" in text
+    assert "resources/lib/avr/avr_sequence.py" in text
     tool = _load_type_check()
     command = tool.build_mypy_command(ROOT)
     assert str(ROOT / "resources/lib") in command
     assert str(ROOT / "tools/package_installable_zip.py") in command
+
+
+def test_strict_gate_command_uses_allowlist_not_full_tree():
+    tool = _load_type_check()
+    command = tool.build_gate_command(ROOT)
+    assert "--config-file" in command
+    assert str(ROOT / "mypy.ini") in command
+    # The gate must rely on the mypy.ini ``files`` allowlist, never an explicit
+    # resources/lib target, so not-yet-annotated modules are followed silently
+    # (follow_imports = silent) instead of blocking the gate.
+    assert str(ROOT / "resources/lib") not in command
+    assert str(ROOT / "tools/package_installable_zip.py") not in command
 
 
 def test_selected_public_helpers_have_type_annotations():

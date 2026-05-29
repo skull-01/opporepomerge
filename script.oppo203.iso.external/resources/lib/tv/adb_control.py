@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import shlex
 import subprocess
+from collections.abc import Callable
+from typing import Any
 
 
 class ADBError(RuntimeError):
     pass
 
 
-def _run(args, timeout=15, runner=None):
+def _run(args: list[str], timeout: int = 15, runner: Callable[..., Any] | None = None) -> str:
     """Run an adb command.
 
     `runner` is an injectable subprocess-compatible callable used by tests so
@@ -33,16 +37,26 @@ def _run(args, timeout=15, runner=None):
     return str(getattr(proc, "stdout", "")).strip()
 
 
-def adb_connect(adb_path, host, port, runner=None):
+def adb_connect(
+    adb_path: str, host: str, port: int, runner: Callable[..., Any] | None = None
+) -> str:
     return _run([adb_path, "connect", f"{host}:{port}"], runner=runner)
 
 
-def adb_shell(adb_path, host, port, command, runner=None):
+def adb_shell(
+    adb_path: str,
+    host: str,
+    port: int,
+    command: str,
+    runner: Callable[..., Any] | None = None,
+) -> str:
     target = f"{host}:{port}"
     return _run([adb_path, "-s", target, "shell"] + shlex.split(command), runner=runner)
 
 
-def switch_input(settings, shell_command, runner=None):
+def switch_input(
+    settings: Any, shell_command: str, runner: Callable[..., Any] | None = None
+) -> str:
     adb_path = settings.get("adb_path", "adb")
     tv_ip = settings["tv_ip"]
     tv_port = int(settings.get("tv_adb_port", "5555"))

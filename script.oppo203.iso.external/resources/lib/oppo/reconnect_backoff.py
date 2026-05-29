@@ -5,7 +5,10 @@ schedule can be unit-tested deterministically with mocks for randomness
 and time.
 """
 
+from __future__ import annotations
+
 import random
+from collections.abc import Callable
 
 DEFAULT_BASE_DELAY = 1.0  # seconds
 DEFAULT_CAP_DELAY = 30.0  # seconds (per-step cap)
@@ -14,8 +17,12 @@ DEFAULT_JITTER = 0.25  # +/- 25 percent jitter on each delay
 
 
 def compute_delay(
-    attempt, base=DEFAULT_BASE_DELAY, cap=DEFAULT_CAP_DELAY, jitter=DEFAULT_JITTER, rng=None
-):
+    attempt: int,
+    base: float = DEFAULT_BASE_DELAY,
+    cap: float = DEFAULT_CAP_DELAY,
+    jitter: float = DEFAULT_JITTER,
+    rng: Callable[[], float] | None = None,
+) -> float:
     """Return the delay (seconds, float) before retry attempt N (1-based).
 
     Uses exponential backoff: base * 2**(attempt-1), capped at `cap`,
@@ -28,7 +35,7 @@ def compute_delay(
     """
     if attempt < 1:
         attempt = 1
-    raw = float(base) * (2 ** (attempt - 1))
+    raw: float = float(base) * (2 ** (attempt - 1))
     if raw > cap:
         raw = cap
     if not jitter:
@@ -44,12 +51,12 @@ def compute_delay(
 
 
 def schedule(
-    max_retries=DEFAULT_MAX_RETRIES,
-    base=DEFAULT_BASE_DELAY,
-    cap=DEFAULT_CAP_DELAY,
-    jitter=0.0,
-    rng=None,
-):
+    max_retries: int = DEFAULT_MAX_RETRIES,
+    base: float = DEFAULT_BASE_DELAY,
+    cap: float = DEFAULT_CAP_DELAY,
+    jitter: float = 0.0,
+    rng: Callable[[], float] | None = None,
+) -> list[float]:
     """Return the full deterministic delay schedule [d1, d2, ..., dN].
 
     Defaults to jitter=0 so callers (and tests) get the exact exponential
@@ -61,6 +68,6 @@ def schedule(
     ]
 
 
-def should_retry(attempt, max_retries=DEFAULT_MAX_RETRIES):
+def should_retry(attempt: int, max_retries: int = DEFAULT_MAX_RETRIES) -> bool:
     """True if another retry should be attempted after this failure."""
     return attempt < int(max_retries)

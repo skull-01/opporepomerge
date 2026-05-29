@@ -45,6 +45,7 @@ def test_ci_workflow_runs_release_gate_commands() -> None:
         "python -m pytest -q tests/test_v2910_final_release.py",
         "python -m pytest -q tests/test_v2910*.py",
         "python -m pytest -q",
+        "python tools/type_check.py --gate",
         "python -m unittest discover -s tests -p 'test_*.py' -q",
         "python -m coverage run -m pytest -q",
         "python -m coverage report -m",
@@ -60,10 +61,11 @@ def test_ci_workflow_runs_release_gate_commands() -> None:
 def test_ci_workflow_has_full_gate_and_compatibility_jobs() -> None:
     workflow = _load_yaml(".github/workflows/ci.yml")
     jobs = workflow["jobs"]
-    assert set(jobs) == {"test", "lint", "compatibility-smoke"}
+    assert set(jobs) == {"test", "lint", "types", "compatibility-smoke"}
     assert jobs["test"]["runs-on"] == "ubuntu-latest"
     assert jobs["test"]["timeout-minutes"] == 30
     assert jobs["lint"]["timeout-minutes"] == 15
+    assert jobs["types"]["timeout-minutes"] == 15
     assert jobs["compatibility-smoke"]["timeout-minutes"] == 15
     matrix = jobs["compatibility-smoke"]["strategy"]["matrix"]["python-version"]
     assert matrix == ["3.9", "3.10", "3.12"]
