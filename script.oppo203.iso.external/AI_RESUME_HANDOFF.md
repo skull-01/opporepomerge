@@ -30,6 +30,8 @@ When the operator types **`resume`** (alone), do exactly this:
 2. **Run the environment readiness check** in §2a. Print a small readiness table.
    - All rows green → one line `Environment: ready ✓` and continue.
    - An *auto* row missing → install it (idempotent), re-check, report what was installed.
+   - An *auto (UAC)* row missing → **warn the operator a UAC dialog is about to appear**,
+     trigger the install via `Start-Process -Verb RunAs`, then re-check.
    - A *manual* row missing → print the exact fix command and **STOP**.
 3. **Report recent backlog activity** — *last 5 issues created* and *last 5 issues closed*,
    each shown as `#N <short title snippet>` per the operator's "list issues with titles"
@@ -97,8 +99,18 @@ add-on (Python) and the Windows configurator (Node + Rust + Tauri 2).
 | 7 | **Node** 20+ | `node -v` | manual | install from nodejs.org / nvm |
 | 8 | **npm** 10+ | `npm -v` | manual | bundled with Node |
 | 9 | configurator **`node_modules`** | `test -d configurator/node_modules` | **auto** | `cd /home/user/script.oppo203.iso.external/configurator; npm install` |
-| 10 | **Rust toolchain** 1.77+ | `cargo --version && rustc --version` | manual | `curl https://sh.rustup.rs -sSf \| sh` |
-| 11 | (Windows host only) **WebView2 + MSVC Build Tools** for Tauri 2 | `npm run tauri info` in `configurator/` | manual | follow [Tauri 2 Windows prereqs](https://v2.tauri.app/start/prerequisites/#windows) |
+| 10 | **Rust toolchain** 1.77+ (`cargo`, `rustc`) | Windows: `Test-Path "$env:USERPROFILE\.cargo\bin\cargo.exe"` · POSIX: `command -v cargo` | **auto** | **Windows:** `winget install --id Rustlang.Rustup --silent --accept-package-agreements --accept-source-agreements` (default scope only; `--scope user` fails for this package) · **POSIX:** `curl https://sh.rustup.rs -sSf \| sh` |
+| 11 | (Windows only) **WebView2 runtime** for Tauri 2 webview | `Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue` returns non-null | manual | Ships with Windows 11; on older Windows install the Evergreen Bootstrapper: `winget install --id Microsoft.EdgeWebView2Runtime --silent --accept-package-agreements --accept-source-agreements` |
+| 12 | (Windows only) **MSVC Build Tools 2022** with C++ workload — Rust's `x86_64-pc-windows-msvc` toolchain links against `link.exe` | `Test-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC"` | **auto (UAC)** | `Start-Process -Verb RunAs -FilePath powershell -ArgumentList '-NoProfile','-Command','winget install --id Microsoft.VisualStudio.2022.BuildTools --silent --accept-package-agreements --accept-source-agreements --override "--quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"'` — first install triggers a Windows UAC dialog; **operator must click Yes**. Subsequent resumes skip (idempotent). |
+
+**Notes on auto-install behavior:**
+
+- Plain **auto** rows install silently with no prompt; safe to run on every resume.
+- Rows marked **auto (UAC)** install on resume if missing, but trigger a Windows UAC dialog the first time; once installed, future resumes detect it and skip. Inform the operator before the prompt fires so they're not blindsided.
+- **PATH gotcha on Windows after row 10 installs:** the cargo bin dir (`$env:USERPROFILE\.cargo\bin`) is NOT on the inherited PATH of fresh `PowerShell` tool calls until a shell restart. Prefix every cargo invocation in the same session as the install with `$env:PATH = "$env:USERPROFILE\.cargo\bin;" + [Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [Environment]::GetEnvironmentVariable("PATH","User"); ` or call cargo by full path.
+- **Manual** rows print their fix command and STOP — the agent will not install anything that needs the operator to provide credentials, sign in to a service, or make a judgment about a system-wide change other than UAC consent.
+
+**What "build the Windows binary" needs end to end:** rows 7 (Node), 8 (npm), 9 (node_modules), 10 (Rust), 11 (WebView2), 12 (MSVC). For `cargo build` / `npm run tauri dev` (development) — that's the full list. For `npm run tauri build` (production .msi/.exe bundle) — same, plus WiX 3.x and NSIS, but Tauri 2 auto-downloads both on first bundle run, so neither needs an §2a row.
 
 Auto rows install on `resume` if missing. Manual rows print their fix command and STOP.
 There is no database; no external services to verify.
