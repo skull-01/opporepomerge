@@ -471,6 +471,34 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
   or hardware behavior change.
 
+### ENH-#51 — mypy --strict allowlist expansion (PR 6 of N: the cascade group)
+
+- **Implementing SHA:** `8406b43` on `claude/enh51-mypy-pr6-c8t4n2vp` (draft PR #65;
+  commented on issue #51). **Stacked on PR #64** (base = the PR 5 branch); **merge
+  #63 → #64 → #65 in order.**
+- **Scope:** PR 6 of the source-only rollout. Annotates the seven hub-dependent "cascade"
+  modules to zero strict errors and gates them (35 → 42): `oppo/discovery`,
+  `oppo/hardware_presets`, `oppo/hardware_validation_readiness`, `oppo/nas_playback_adapter`,
+  `kodi/diagnostics`, `kodi/diagnostic_summary`, `kodi/logging_v116`.
+- **What changed (type-only, behaviour-preserving):**
+  - [`mypy.ini`](../mypy.ini) + [`pyproject.toml`](../pyproject.toml) mirror: 7 modules added.
+  - These were blocked on the PR 5 hubs. `nas_playback_adapter` reached zero with **no code
+    change** (its errors were all calls into the now-typed hubs) — gated by config only. The
+    other six got their own signature annotations.
+  - Idioms: `object` for isinstance-checked/stringified params; `dict[str, object]` returns;
+    `Any` for loose json/settings dicts; `cast` on object-typed `.get()` values before
+    container/iteration ops; `Protocol`s for injected filesystem deps (`discovery._FS`,
+    `logging_v116._FsLike`); a str/None `@overload` on `logging_v116.scrub`. All `...` stub
+    bodies + `if TYPE_CHECKING:` blocks carry `# pragma: no cover`.
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `tools/type_check.py --gate` **42 files, 0 errors**; `pytest -n auto` **938 passed /
+  3 skipped**; serial coverage **99.05%**; `ruff check` + `ruff format --check` clean.
+- **Phase A review focus:**
+  - Confirm all seven modules are signature/typing-only (no runtime control / IO / value
+    change) — especially the injected-dependency `Protocol`s and the `scrub` `@overload`.
+- **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
+  or hardware behavior change.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_
