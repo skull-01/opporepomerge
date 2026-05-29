@@ -231,6 +231,24 @@ export function Step1TierA({ go, set }: ScreenProps) {
 // ============================================================
 export function Step1TierB({ go, set }: ScreenProps) {
   const [tested, setTested] = useState(false);
+  const [sharePath, setSharePath] = useState("\\\\10.0.1.42\\Kodi");
+  const [testing, setTesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const testAccess = async () => {
+    setTesting(true);
+    setError(null);
+    try {
+      await invoke("smb_test_write", { userdataPath: sharePath });
+      setTested(true);
+    } catch (e) {
+      setTested(false);
+      setError(String(e));
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const checks: DiagCheck[] = tested
     ? [
         { status: "pass", label: "Box reachable at 10.0.1.42", detail: "ICMP 0.4 ms · 0% loss" },
@@ -257,7 +275,11 @@ export function Step1TierB({ go, set }: ScreenProps) {
           <div className="stack">
             <div className="field">
               <label className="field-label">Share path</label>
-              <input className="input" defaultValue="\\10.0.1.42\Kodi" />
+              <input
+                className="input"
+                value={sharePath}
+                onChange={(e) => setSharePath(e.target.value)}
+              />
               <div className="field-hint">
                 The share that contains the <span className="path">userdata</span> folder.
               </div>
@@ -274,9 +296,14 @@ export function Step1TierB({ go, set }: ScreenProps) {
                 <input className="input" type="password" placeholder="optional" />
               </div>
             </div>
-            <button className="btn primary" onClick={() => setTested(true)}>
-              <Icon name="play" size={13} /> Test access
+            <button className="btn primary" onClick={testAccess} disabled={testing}>
+              <Icon name="play" size={13} /> {testing ? "Testing…" : "Test access"}
             </button>
+            {error && (
+              <div className="field-hint" style={{ color: "var(--danger)" }}>
+                Write test failed: {error}
+              </div>
+            )}
           </div>
         </div>
         <div className="stack">

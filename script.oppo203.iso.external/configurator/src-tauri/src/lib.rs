@@ -1,6 +1,7 @@
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Manager;
 
 #[tauri::command]
@@ -58,6 +59,68 @@ fn reveal_path(path: String) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(serde::Serialize)]
+struct DeployReport {
+    written: Vec<String>,
+    backed_up: Vec<String>,
+}
+
+fn backup_suffix() -> String {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+        .to_string()
+}
+
+/// Read a file under the given Kodi userdata directory (local or SMB UNC path), if present.
+#[tauri::command]
+fn read_userdata_file(userdata_path: String, rel: String) -> Result<Option<String>, String> {
+    let path = std::path::Path::new(&userdata_path).join(&rel);
+    if !path.exists() {
+        return Ok(None);
+    }
+    fs::read_to_string(&path).map(Some).map_err(|e| e.to_string())
+}
+
+/// Deploy files (keyed by path relative to userdata/) into a Kodi userdata directory,
+/// backing up any existing file to a timestamped .bak first. Works for a local path or an
+/// SMB UNC path on Windows.
+#[tauri::command]
+fn deploy_to_userdata(
+    userdata_path: String,
+    files: BTreeMap<String, String>,
+) -> Result<DeployReport, String> {
+    let base = std::path::PathBuf::from(&userdata_path);
+    let mut written = Vec::new();
+    let mut backed_up = Vec::new();
+    for (rel, contents) in &files {
+        let target = base.join(rel);
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        if target.exists() {
+            let bak = format!("{}.{}.bak", target.to_string_lossy(), backup_suffix());
+            fs::copy(&target, &bak).map_err(|e| e.to_string())?;
+            backed_up.push(bak);
+        }
+        fs::write(&target, contents).map_err(|e| e.to_string())?;
+        written.push(target.to_string_lossy().into_owned());
+    }
+    Ok(DeployReport { written, backed_up })
+}
+
+/// Verify a Kodi userdata directory is writable by creating and removing a temp file.
+#[tauri::command]
+fn smb_test_write(userdata_path: String) -> Result<(), String> {
+    let base = std::path::PathBuf::from(&userdata_path);
+    fs::create_dir_all(&base).map_err(|e| e.to_string())?;
+    let probe = base.join(".oppo203-configurator-write-test");
+    fs::write(&probe, b"ok").map_err(|e| e.to_string())?;
+    fs::remove_file(&probe).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -65,7 +128,10 @@ pub fn run() {
             load_wizard_state,
             save_wizard_state,
             generate_files,
-            reveal_path
+            reveal_path,
+            read_userdata_file,
+            deploy_to_userdata,
+            smb_test_write
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
