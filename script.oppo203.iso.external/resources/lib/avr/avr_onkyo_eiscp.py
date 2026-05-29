@@ -15,7 +15,7 @@ from typing import Callable, Protocol
 
 try:
     from .avr_types import AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AvrResult
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     from avr_types import (  # type: ignore
         AVR_BACKEND_ONKYO_EISCP,
         AVR_BACKEND_PIONEER_EISCP,

@@ -17,7 +17,7 @@ def _load(name, rel):
 
 
 def test_build3_required_capability_sets_are_explicit_and_disjoint():
-    caps = _load("hardware_capabilities_build3_sets", "resources/lib/hardware_capabilities.py")
+    caps = _load("hardware_capabilities_build3_sets", "resources/lib/oppo/hardware_capabilities.py")
     assert set(caps.STOCK_OPPO_MODELS) == {"UDP-203", "UDP-205"}
     assert set(caps.CHINOPPO_NAS_PLAYBACK_MODELS) == {
         "M9702",
@@ -42,7 +42,7 @@ def test_build3_required_capability_sets_are_explicit_and_disjoint():
 
 
 def test_build3_clone_safe_wake_is_allowed_only_for_clone_family():
-    caps = _load("hardware_capabilities_build3_wake", "resources/lib/hardware_capabilities.py")
+    caps = _load("hardware_capabilities_build3_wake", "resources/lib/oppo/hardware_capabilities.py")
     for model in ("M9702", "M9200", "M9205", "CineUltra-V203", "IPUK-UHD8592", "GIEC-BDP-G5300"):
         assert caps.supports_clone_safe_wake(model) is True
         gate = caps.nas_direct_playback_gate(model)
@@ -54,7 +54,7 @@ def test_build3_clone_safe_wake_is_allowed_only_for_clone_family():
 
 
 def test_build3_stock_oppo_and_clones_allow_existing_command_map_successors_do_not():
-    caps = _load("hardware_capabilities_build3_command_gate", "resources/lib/hardware_capabilities.py")
+    caps = _load("hardware_capabilities_build3_command_gate", "resources/lib/oppo/hardware_capabilities.py")
     for model in ("UDP-203", "UDP-205", "M9702", "M9201", "CineUltra-V204"):
         assert caps.allows_automatic_oppo_commands(model) is True
     for model in ("Reavon-UBR-X100", "Reavon-UBR-X110", "Reavon-UBR-X200", "Magnetar-UDP800", "Magnetar-UDP900"):
@@ -66,7 +66,7 @@ def test_build3_stock_oppo_and_clones_allow_existing_command_map_successors_do_n
 
 
 def test_build3_settings_reader_treats_magnetar_as_warning_only_successor():
-    settings_reader = _load("settings_reader_build3_successor", "resources/lib/settings_reader.py")
+    settings_reader = _load("settings_reader_build3_successor", "resources/lib/kodi/settings_reader.py")
     from resources.lib import oppo_remote as remote
     for model in ("Magnetar-UDP800", "Magnetar-UDP900"):
         profile = settings_reader.hardware_profile(model)
@@ -80,7 +80,7 @@ def test_build3_settings_reader_treats_magnetar_as_warning_only_successor():
 
 
 def test_build3_nas_playback_gate_blocks_warning_only_successors():
-    settings_reader = _load("settings_reader_build3_nas", "resources/lib/settings_reader.py")
+    settings_reader = _load("settings_reader_build3_nas", "resources/lib/kodi/settings_reader.py")
     for model in ("Reavon-UBR-X100", "Magnetar-UDP800", "Magnetar-UDP900"):
         cap = settings_reader.nas_playback_capability(model)
         assert cap["family"] in ("unsupported_reavon", "unsupported_oppo_like_successor")
@@ -95,7 +95,7 @@ def test_build3_nas_playback_gate_blocks_warning_only_successors():
 
 
 def test_build3_readiness_report_exposes_player_gate_without_claiming_validation():
-    readiness = _load("readiness_build3", "resources/lib/hardware_validation_readiness.py")
+    readiness = _load("readiness_build3", "resources/lib/oppo/hardware_validation_readiness.py")
     report = readiness.build_readiness_report({"oppo_hardware_model": "magnetar_udp900"})
     assert report["hardware_validation_claimed"] is False
     assert report["player_hardware"]["model"] == "Magnetar-UDP900"
@@ -107,7 +107,7 @@ def test_build3_readiness_report_exposes_player_gate_without_claiming_validation
 
 
 def test_build3_version_docs_and_audit_evidence_identity():
-    version = _load("version_build3", "resources/lib/version.py")
+    version = _load("version_build3", "resources/lib/kodi/version.py")
     assert version.BUILD_ID == "v2.9.13 Final"
     assert version.BUILD_NUMBER == 22
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")

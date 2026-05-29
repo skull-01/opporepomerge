@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           version="$(python - <<'PY'
-          from resources.lib.version import ADDON_VERSION
+          from resources.lib.kodi.version import ADDON_VERSION
           print(ADDON_VERSION)
           PY
           )"

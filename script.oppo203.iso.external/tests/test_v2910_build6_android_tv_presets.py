@@ -17,7 +17,7 @@ def _load(name, rel):
 
 
 def test_build7_adds_required_android_google_tv_adb_presets_only_as_software_metadata():
-    presets = _load("tv_presets_build7", "resources/lib/tv_presets.py")
+    presets = _load("tv_presets_build7", "resources/lib/tv/tv_presets.py")
     expected = (
         "tcl_android_tv",
         "sony_android_tv",
@@ -51,8 +51,8 @@ def test_build7_adds_required_android_google_tv_adb_presets_only_as_software_met
 
 
 def test_build7_preserves_existing_tv_backend_apis_and_editable_adb_behavior():
-    backends = _load("tv_backends_build7", "resources/lib/tv_backends.py")
-    presets = _load("tv_presets_build7_backend", "resources/lib/tv_presets.py")
+    backends = _load("tv_backends_build7", "resources/lib/tv/tv_backends.py")
+    presets = _load("tv_presets_build7_backend", "resources/lib/tv/tv_presets.py")
     assert backends.list_backends() == ("adb", "sony_bravia", "lg_command", "samsung_command", "custom_command", "roku_ecp", "smartthings")
     assert backends.registry_summary()["runtime_behavior_changed"] is False
     adb_presets = presets.presets_for_backend("adb")
@@ -63,7 +63,7 @@ def test_build7_preserves_existing_tv_backend_apis_and_editable_adb_behavior():
 
 
 def test_build7_settings_keep_backend_enum_and_store_preset_metadata_without_apply_behavior():
-    sr = _load("settings_reader_build7", "resources/lib/settings_reader.py")
+    sr = _load("settings_reader_build7", "resources/lib/kodi/settings_reader.py")
     assert sr.DEFAULTS["tv_backend"] == "adb"
     assert sr.DEFAULTS["selected_tv_preset_id"] == ""
     assert sr.ENUM_VALUES["tv_backend"] == ["adb", "sony_bravia", "lg_command", "samsung_command", "custom_command", "roku_ecp", "smartthings"]
@@ -101,7 +101,7 @@ def test_runtime_zip_includes_build7_presets_but_excludes_development_evidence(t
     package_tool = _load("package_installable_zip_build7", "tools/package_installable_zip.py")
     output = tmp_path / "runtime.zip"
     names = package_tool.create_installable_zip(ROOT, output)
-    assert "script.oppo203.iso.external/resources/lib/tv_presets.py" in names
+    assert "script.oppo203.iso.external/resources/lib/tv/tv_presets.py" in names
     with zipfile.ZipFile(output) as zf:
         assert zf.testzip() is None
         bad = [
@@ -112,7 +112,7 @@ def test_runtime_zip_includes_build7_presets_but_excludes_development_evidence(t
 
 
 def test_build7_android_preset_edge_paths_for_coverage(monkeypatch):
-    presets = _load("tv_presets_build7_edges", "resources/lib/tv_presets.py")
+    presets = _load("tv_presets_build7_edges", "resources/lib/tv/tv_presets.py")
     monkeypatch.setitem(presets.TV_PRESETS, "bad_android", {"backend": "custom_command", "editable": True})
     monkeypatch.setattr(presets, "ANDROID_GOOGLE_TV_PRESET_IDS", presets.ANDROID_GOOGLE_TV_PRESET_IDS + ("bad_android",))
     warnings = presets.validate_preset_registry()

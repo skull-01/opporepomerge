@@ -31,6 +31,44 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### ENH-#43 — Split `resources/lib` into tv / oppo / avr / kodi sub-packages
+
+- **Implementing SHA:** head of `claude/enh43-lib-subpackages-r9k2m4x7` (commented on issue #43).
+- **Diff size:** 46 modules moved into `resources/lib/{tv,oppo,avr,kodi}/`; file moves only — no function/API renames.
+- **What changed:**
+  - A lazy `sys.meta_path` alias finder in [`resources/lib/__init__.py`](../resources/lib/__init__.py)
+    keeps legacy flat names (`resources.lib.oppo_control`, bare `oppo_control`) resolving to the
+    **same** canonical `resources.lib.<bucket>.<module>` objects. Imports nothing eagerly
+    (installer's `xbmcaddon.Addon()` stays lazy).
+  - `version.py` moved to `kodi/`; `sync_version.py` sentinel + CI `package.yml`,
+    `scripts/package_release.sh`, `scripts/verify.sh`, `tools/audit_release.py` updated to the
+    canonical path.
+  - Module-top cross-family imports made explicit (`from ..oppo.oppo_control import …`); lazy
+    in-function imports kept bare (finder-resolved, so existing test mocking by bare name keeps
+    working). `command_map.py` data path bumped `parents[1]` → `parents[2]` (module is one level
+    deeper) to keep resolving `resources/data/oppo_command_map.json`.
+  - Test stub-context managers (`kodi_stubs` / `kodi_stub_context`) now purge BOTH the legacy
+    alias and the canonical bucket module (via `tests/_support/lib_buckets.py`) so the finder
+    doesn't leave a stale stub-bound module across tests. New `tests/__init__.py` installs the
+    finder for the `unittest discover` path (which doesn't load `conftest.py`).
+- **CI / gates (all green this session):** `pytest -n auto` **865 passed, 3 skipped**; serial
+  coverage **99.04%** (≥ 99% gate); `ruff check` + `ruff format --check` clean; `python -m
+  unittest discover -s tests` **484 OK**; `sync_version` / `test_layout` / `i18n_extract` /
+  `render_docs` --check all OK; `audit_release` **580/580 PASS**; runtime ZIP = 70 files (50
+  under buckets, `version.py` in `kodi/`, no dev dirs leaked).
+- **Phase A review focus:**
+  - The finder is the one piece of "clever" code — confirm single-identity aliasing and lazy install.
+  - Spot-check a cross-bucket import (`external_player` → `..oppo` / `..tv` / `..avr`) and that
+    `default.py` / `service.py` still import their entry points.
+  - The 12 `# pragma: no cover` additions are all on now-dead bare-name `except ImportError:`
+    fallback branches (the finder supersedes them); confirm none masks real logic.
+- **Phase C — on-device smoke (when hardware is to hand):**
+  1. Install the runtime ZIP in Kodi; confirm the add-on opens with no import error.
+  2. Play a tagged 4K ISO; confirm handoff to the OPPO (interception + external-player path).
+  3. Confirm TV input switch + AVR sequencing still fire (if enabled).
+  4. Open the installer/diagnostics menu entries; confirm no import errors.
+  - **Software-verified only; hardware validation not claimed.**
+
 ### PR #40 — Strip the in-Kodi setup wizard from the addon
 
 - **Implementing SHA:** `3abf486` on `claude/strip-wizard-g4feovqi`.

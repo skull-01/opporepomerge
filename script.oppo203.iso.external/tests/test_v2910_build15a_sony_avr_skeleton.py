@@ -157,7 +157,7 @@ def test_build16_metadata_and_documentation_identity():
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 18" in addon
     assert "Sony AVR experimental request helper" in addon
-    assert (ROOT / "resources/lib/avr_sony_audio.py").exists()
+    assert (ROOT / "resources/lib/avr/avr_sony_audio.py").exists()
     for rel in ["README.md", "reference.md", "web-references.md"]:
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 18" in text

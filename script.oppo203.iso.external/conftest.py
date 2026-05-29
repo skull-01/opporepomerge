@@ -9,3 +9,6 @@ for sub in ("resources/lib", "tools", "tests"):
     p = os.path.join(_ROOT, sub)
     if p not in sys.path:
         sys.path.insert(0, p)
+if _ROOT not in sys.path:
+    sys.path.insert(0, _ROOT)
+import resources.lib  # noqa: E402,F401  ENH-#43: installs the legacy-name alias finder

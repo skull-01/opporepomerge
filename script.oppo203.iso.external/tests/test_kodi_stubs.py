@@ -19,8 +19,9 @@ TARGET_MODULES = ("default", "service", "resources.lib.installer")
 
 @contextlib.contextmanager
 def kodi_stub_context(extra_targets=()):
+    from tests._support.lib_buckets import with_canonical
     old_path = list(sys.path)
-    names = set(KODI_MODULES) | set(TARGET_MODULES) | set(extra_targets)
+    names = with_canonical(set(KODI_MODULES) | set(TARGET_MODULES) | set(extra_targets))
     saved = {name: sys.modules.get(name) for name in names}
     try:
         sys.path.insert(0, STUBS)

@@ -59,7 +59,7 @@ def test_runtime_member_filter_excludes_development_and_evidence_files():
         "default.py",
         "service.py",
         "resources/settings.xml",
-        "resources/lib/settings_reader.py",
+        "resources/lib/kodi/settings_reader.py",
         "resources/language/resource.language.en_gb/strings.po",
     ]
     for rel in included:
@@ -76,7 +76,7 @@ def test_created_installable_zip_is_runtime_focused(tmp_path):
         "script.oppo203.iso.external/default.py",
         "script.oppo203.iso.external/service.py",
         "script.oppo203.iso.external/resources/settings.xml",
-        "script.oppo203.iso.external/resources/lib/settings_reader.py",
+        "script.oppo203.iso.external/resources/lib/kodi/settings_reader.py",
     }
     assert required.issubset(names)
     assert all(name.startswith("script.oppo203.iso.external/") for name in names)
