@@ -414,7 +414,21 @@ _(none queued)_
 
 ## Phase C — operator end-to-end verify
 
-_(none queued)_
+### ENH-#57 — change-scoped fast local test loop (pytest-testmon)
+
+- **Issue / SHA:** [#57](https://github.com/skull-01/script.oppo203.iso.external/issues/57) —
+  delivered by [PR #59](https://github.com/skull-01/script.oppo203.iso.external/pull/59),
+  merge `9f102a3` (impl `a68ce5f`).
+- **What changed:** `tools/dev_test.py` wraps `pytest --testmon` so a local run executes
+  only the tests affected by changed code; `pytest-testmon>=2.2,<3` added to
+  `requirements-dev.txt`; `.testmondata` git-ignored; 5 guard tests. Local-only and dormant
+  unless `--testmon` is passed — CI, `scripts/verify.sh`, and the 99% coverage floor are
+  unchanged.
+- **Operator confirm (software only; no hardware):**
+  1. `cd C:\Users\rigel\Documents\gitrepo\script.oppo203.iso.external; .venv\Scripts\python.exe tools\dev_test.py --full` — first run rebuilds the impact map (~74s, whole suite green).
+  2. Re-run with no edits → `no tests ran` (everything deselected).
+  3. Edit one module, re-run → only that module's dependent tests run.
+  4. `git status` shows `.testmondata` ignored (never staged).
 
 ---
 
