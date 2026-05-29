@@ -58,6 +58,22 @@ implementing SHA(s) on the issue and append a row here.
   The operator picked "Total strip" during the resume, so this is the agreed
   scope, but it is the headline behavioural change and worth a second look.
 
+- **[#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
+  (ENH-: configurator owns add-on configuration — policy doc, part A)** —
+  branch `claude/config-owner-policy-a3k7m2nq`. Docs-only PR adding a
+  `## Configuration is owned by the configurator` section to
+  [`AGENTS.md`](../AGENTS.md) and a `## Configuration ownership` section to
+  [`CONTRIBUTING.md`](../CONTRIBUTING.md). Read both new sections and confirm:
+  (1) the policy statement matches your intent ("configurator owns persistent
+  config; add-on read-mostly"); (2) the three allowed exceptions are correct
+  (per-session toggles, the #42 settings menu carve-out, diagnostic exports);
+  (3) the "not allowed" list is correct (new persistent-setting categories,
+  new first-run dialogs, add-on side writers for `playercorefactory.xml` /
+  keymap / NAS creds). Parts B (in-add-on guidance hint) and C
+  (settings-file ownership marker) are out of scope for this PR and wait
+  until [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
+  merges. No code paths exercised — docs-only.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_
