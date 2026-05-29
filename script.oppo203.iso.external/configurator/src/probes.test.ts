@@ -33,6 +33,11 @@ describe("parseOppoPowerReply", () => {
     expect(parseOppoPowerReply("")).toBe("unknown");
     expect(parseOppoPowerReply("garbage")).toBe("unknown");
   });
+
+  it("treats an @QPW error reply as unknown (never a power state)", () => {
+    expect(parseOppoPowerReply("@QPW ER")).toBe("unknown");
+    expect(parseOppoPowerReply("@QPW OK STANDBY")).toBe("unknown");
+  });
 });
 
 describe("probePortList", () => {

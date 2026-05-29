@@ -21,10 +21,16 @@ export function inferBackendFromPorts(results: PortResult[]): TvBackend | null {
   return null;
 }
 
-/** Parse an OPPO #QPW reply ("@QPW OK ON") into on / off / unknown. */
+/**
+ * Parse an OPPO #QPW reply ("@QPW OK ON") into on / off / unknown. Token-aware rather than a
+ * loose substring scan: an "@QPW ER" error reply, or anything that does not end in a known
+ * power value, parses to "unknown" (so a failed/error reply is never read as a power state).
+ */
 export function parseOppoPowerReply(raw: string): "on" | "off" | "unknown" {
-  const upper = raw.toUpperCase();
-  if (upper.includes("OFF")) return "off";
-  if (upper.includes("ON")) return "on";
+  const tokens = raw.trim().toUpperCase().split(/\s+/);
+  if (tokens.includes("ER")) return "unknown";
+  const value = tokens[tokens.length - 1] ?? "";
+  if (value === "ON") return "on";
+  if (value === "OFF") return "off";
   return "unknown";
 }

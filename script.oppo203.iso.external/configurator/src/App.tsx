@@ -104,7 +104,7 @@ export default function App() {
 
   const onJumpStep = (sid: StepId) => go(firstScreenOfStep(sid));
 
-  const Screen = SCREEN_RENDERERS[screen];
+  const Screen = SCREEN_RENDERERS[screen] ?? Step0Gate;
 
   return (
     <WinShell title="OppoKodiAddon Configurator · setup wizard">

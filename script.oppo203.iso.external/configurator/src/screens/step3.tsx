@@ -163,16 +163,20 @@ export function Step3Test({ go, state, set }: ScreenProps) {
         command: "#QPW",
       });
       setReply(raw);
-      setPhase(raw.trim() !== "" ? "pass" : "fail");
+      // Pass only when the player actually reports power ON. A non-empty reply that is OFF or
+      // an "@QPW ER" error must NOT count as confirmed two-way control.
+      setPhase(parseOppoPowerReply(raw) === "on" ? "pass" : "fail");
     } catch {
       setPhase("fail");
     }
   };
 
   const power = parseOppoPowerReply(reply);
+  const gotReply = reply.trim() !== "";
   const baseChecks: DiagCheck[] = [
     {
-      status: phase === "fail" ? "fail" : phase !== "ready" ? "pass" : "pending",
+      // TCP was reachable if any reply came back, even one that didn't confirm power.
+      status: phase === "pass" || gotReply ? "pass" : phase === "fail" ? "fail" : "pending",
       label: "TCP :23 reachable",
       detail: phase !== "ready" ? state.playerIp : "",
     },
@@ -183,13 +187,18 @@ export function Step3Test({ go, state, set }: ScreenProps) {
       detail: phase !== "ready" ? `${wakeCmd} sent` : "",
     },
     {
-      status: phase === "pass" ? "pass" : "pending",
+      status: phase === "pass" ? "pass" : gotReply ? "fail" : "pending",
       label: "Query #QPW (status)",
-      detail: phase === "pass" ? `reply: ${reply}` : "",
+      detail: gotReply ? `reply: ${reply}` : "",
     },
     {
-      status: phase === "pass" ? "pass" : "pending",
-      label: `Confirm: player reports ${power === "off" ? "OFF" : "ON"}`,
+      status: phase === "pass" ? "pass" : gotReply ? "fail" : "pending",
+      label:
+        phase === "pass"
+          ? "Confirm: player powered ON"
+          : gotReply
+            ? `Confirm: player reported ${power.toUpperCase()} (not ON)`
+            : "Confirm: player powered ON",
       detail: phase === "pass" ? "two-way IP control verified" : "",
     },
   ];

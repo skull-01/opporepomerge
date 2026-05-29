@@ -55,7 +55,18 @@ export type WizardState = {
 };
 
 import { invoke } from "@tauri-apps/api/core";
-import type { ScreenId } from "./steps";
+import { SCREEN_TO_STEP, type ScreenId } from "./steps";
+
+/**
+ * Coerce a persisted `screen` value to a valid ScreenId, falling back to the first screen if
+ * it is missing or not a known id. A stale/renamed id from an older build would otherwise
+ * render `undefined` and white-screen the app on every launch.
+ */
+export function coerceScreenId(value: unknown): ScreenId {
+  return typeof value === "string" && value in SCREEN_TO_STEP
+    ? (value as ScreenId)
+    : "step0_gate";
+}
 
 export const INITIAL_STATE: WizardState = {
   kodiIp: "10.0.1.42",
@@ -92,8 +103,7 @@ export async function loadPersistedSession(): Promise<PersistedSession | null> {
     const obj = loaded as Record<string, unknown>;
     // Current envelope shape: { state, screen }.
     if (obj.state && typeof obj.state === "object") {
-      const screen =
-        typeof obj.screen === "string" ? (obj.screen as ScreenId) : "step0_gate";
+      const screen = coerceScreenId(obj.screen);
       return {
         state: { ...INITIAL_STATE, ...(obj.state as Partial<WizardState>) },
         screen,
