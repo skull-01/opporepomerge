@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Callable
+from typing import Callable, Union, cast
 from urllib import parse, request
 
 try:
@@ -27,7 +27,7 @@ YAMAHA_YXC_SET_INPUT_PATH = "/YamahaExtendedControl/v1/main/setInput"
 YAMAHA_YXC_GET_STATUS_PATH = "/YamahaExtendedControl/v1/main/getStatus"
 VALID_YAMAHA_INPUT_RE = re.compile(r"^[A-Za-z0-9_/-]{1,64}$")
 
-HttpGet = Callable[[str, float], bytes | str]
+HttpGet = Callable[[str, float], Union[bytes, str]]
 
 
 def _clean_text(value: object) -> str:
@@ -102,7 +102,7 @@ def build_status_url(host: object, *, port: object = DEFAULT_YAMAHA_YXC_PORT) ->
 
 def _default_http_get(url: str, timeout: float) -> bytes:
     with request.urlopen(url, timeout=timeout) as response:  # nosec B310 - user-configured local AVR endpoint; guarded/optional.
-        return response.read()
+        return cast("bytes", response.read())
 
 
 def _decode_response(payload: bytes | str) -> dict[str, object]:
@@ -118,7 +118,7 @@ def _decode_response(payload: bytes | str) -> dict[str, object]:
 
 def _response_code_message(response_code: object) -> str:
     try:
-        code = int(response_code)
+        code = int(cast("str | int", response_code))
     except (TypeError, ValueError):
         return "yamaha_yxc_response_code_invalid"
     return f"yamaha_yxc_response_code_{code}"

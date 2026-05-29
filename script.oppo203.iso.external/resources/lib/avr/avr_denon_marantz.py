@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import re
 import socket
-from typing import Callable, Protocol
+from typing import Callable, Protocol, cast
 
 try:
     from .avr_types import AVR_BACKEND_DENON_MARANTZ, AvrResult
@@ -137,10 +137,10 @@ def send_denon_command(
     parsed_port = denon_port(port)
     parsed_timeout = denon_timeout(timeout)
     factory = socket_factory or socket.create_connection
-    sock: object | None = None
+    sock: SocketLike | None = None
     payload = (command + DENON_LINE_ENDING).encode("ascii", errors="strict")
     try:
-        sock = factory((host_text, parsed_port), parsed_timeout)
+        sock = cast("SocketLike", factory((host_text, parsed_port), parsed_timeout))
         settimeout = getattr(sock, "settimeout", None)
         if callable(settimeout):
             settimeout(parsed_timeout)

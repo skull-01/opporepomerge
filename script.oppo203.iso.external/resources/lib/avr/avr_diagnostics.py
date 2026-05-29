@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import os
 import time as _time
-from typing import Any, Callable
+from typing import Any, Callable, overload
 
 try:
     from . import avr_control
@@ -53,7 +53,7 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return dict(settings.data)
     if hasattr(settings, "items"):
         try:
-            return dict(settings.items())  # type: ignore[attr-defined]
+            return dict(settings.items())
         except Exception:
             return {}
     return {}
@@ -102,6 +102,16 @@ def sanitize_text(value: object, settings: dict[str, object] | object | None = N
     for secret in _secret_values(data):
         text = text.replace(secret, REDACTION)
     return text
+
+
+@overload
+def sanitize_payload(
+    payload: dict[str, object], settings: dict[str, object] | object | None = None
+) -> dict[str, object]: ...
+
+
+@overload
+def sanitize_payload(payload: Any, settings: dict[str, object] | object | None = None) -> Any: ...
 
 
 def sanitize_payload(payload: Any, settings: dict[str, object] | object | None = None) -> Any:
@@ -224,7 +234,7 @@ def apply_wizard_selection(
 
 def validate_avr_for_diagnostics(settings: dict[str, object] | object | None) -> dict[str, object]:
     data = _settings_dict(settings)
-    validation = avr_control.validate_avr_settings(data).as_dict()
+    validation: dict[str, object] = avr_control.validate_avr_settings(data).as_dict()
     validation["hardware_validation_claimed"] = False
     return sanitize_payload(validation, data)
 
@@ -291,7 +301,7 @@ def dry_run_avr_action(
 
 def _result_to_dict(result: object) -> dict[str, object]:
     if hasattr(result, "as_dict"):
-        return dict(result.as_dict())  # type: ignore[no-any-return]
+        return dict(result.as_dict())
     if isinstance(result, dict):
         return dict(result)
     return {"ok": False, "message": str(result), "nonfatal": True, "command_sent": False}
