@@ -121,6 +121,16 @@ The Kodi add-on metadata declares MIT licensing. The source tree now includes an
 
 See `CONTRIBUTING.md`. Contributions should be small, test-backed, and must not claim hardware validation unless real tester evidence is included.
 
+## Credits
+
+This project builds on the generosity and prior work of several people in the AV community:
+
+- **[theAxleDentalDJ](https://www.avforums.com/members/theaxledentaldj.831542/)** (AVForums) — for sharing his version of the add-on, which inspired me to further enhance it and adapt it to my own setup.
+- **[keebhubhk](https://www.instagram.com/keebhubhk)** ([shop](https://keebhub.onepos.shop/)) — for doing me a huge favor in acquiring an M9205 v1 device.
+- **Moremodey1** (AVForums) — for the jailbreak.
+- **[tocinillo](https://www.avpasion.com/staff/tocinillo/)** (AV Pasión) — for his passion for AV; his YouTube video on the subject is a great primer.
+- **[Xnoppo by siberian-git](https://github.com/siberian-git/Xnoppo/tree/main)** — whose source I reviewed for ideas on the overall flow.
+
 ---
 
 # Historical build notes preserved for reconstruction
