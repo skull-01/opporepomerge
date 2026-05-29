@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Icon } from "../icons";
+import { invoke } from "@tauri-apps/api/core";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
+import { parseOppoPowerReply } from "../probes";
 import type { PlayerBrand } from "../state";
 import type { ScreenProps } from "./types";
 
@@ -142,6 +144,7 @@ type WakePhase = "ready" | "running" | "pass" | "fail";
 
 export function Step3Test({ go, state, set }: ScreenProps) {
   const [phase, setPhase] = useState<WakePhase>("ready");
+  const [reply, setReply] = useState("");
   const isClone =
     state.playerBrand === "chinoppo" ||
     state.playerBrand === "cineultra" ||
@@ -149,32 +152,44 @@ export function Step3Test({ go, state, set }: ScreenProps) {
     state.playerBrand === "giec";
   const wakeCmd = isClone ? "#EJT" : "#PON";
 
-  useEffect(() => {
-    if (phase === "running") {
-      const t = setTimeout(() => setPhase("pass"), 2200);
-      return () => clearTimeout(t);
+  const wakeAndConfirm = async () => {
+    setPhase("running");
+    setReply("");
+    try {
+      await invoke("oppo_query", { host: state.playerIp, port: 23, command: wakeCmd });
+      const raw = await invoke<string>("oppo_query", {
+        host: state.playerIp,
+        port: 23,
+        command: "#QPW",
+      });
+      setReply(raw);
+      setPhase(raw.trim() !== "" ? "pass" : "fail");
+    } catch {
+      setPhase("fail");
     }
-  }, [phase]);
+  };
 
+  const power = parseOppoPowerReply(reply);
   const baseChecks: DiagCheck[] = [
     {
-      status: phase !== "ready" ? "pass" : "pending",
+      status: phase === "fail" ? "fail" : phase !== "ready" ? "pass" : "pending",
       label: "TCP :23 reachable",
-      detail: phase !== "ready" ? "10.0.1.77 · 0.6 ms" : "",
+      detail: phase !== "ready" ? state.playerIp : "",
     },
     {
-      status: phase === "pass" ? "pass" : phase !== "ready" ? "run" : "pending",
+      status:
+        phase === "pass" ? "pass" : phase === "running" ? "run" : phase === "fail" ? "fail" : "pending",
       label: `Wake with ${wakeCmd}`,
-      detail: phase !== "ready" ? "command transmitted" : "",
+      detail: phase !== "ready" ? `${wakeCmd} sent` : "",
     },
     {
       status: phase === "pass" ? "pass" : "pending",
       label: "Query #QPW (status)",
-      detail: phase === "pass" ? "reply: @QPW ON" : "",
+      detail: phase === "pass" ? `reply: ${reply}` : "",
     },
     {
       status: phase === "pass" ? "pass" : "pending",
-      label: "Confirm: player reports ON",
+      label: `Confirm: player reports ${power === "off" ? "OFF" : "ON"}`,
       detail: phase === "pass" ? "two-way IP control verified" : "",
     },
   ];
@@ -222,7 +237,7 @@ export function Step3Test({ go, state, set }: ScreenProps) {
           />
           <div className="row" style={{ gap: 10 }}>
             {phase === "ready" && (
-              <button className="btn primary lg" onClick={() => setPhase("running")}>
+              <button className="btn primary lg" onClick={wakeAndConfirm}>
                 <Icon name="bolt" size={14} /> Wake &amp; confirm
               </button>
             )}

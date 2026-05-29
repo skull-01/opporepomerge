@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { Icon, type IconName } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
+import { invoke } from "@tauri-apps/api/core";
+import { inferBackendFromPorts, probePortList, TV_PROBE_PORTS, type PortResult } from "../probes";
 import {
   BUNDLED_TV_DB,
   fetchRemoteTvDb,
@@ -263,20 +265,33 @@ export function Step2NotFound({ go, set }: ScreenProps) {
 // STEP 2 — Probe
 // ============================================================
 export function Step2Probe({ go, set }: ScreenProps) {
-  const [probed, setProbed] = useState(false);
-  const checks: DiagCheck[] = probed
-    ? [
-        { status: "pass", label: "Roku ECP on :8060",         detail: "200 OK · TCL · 55R5 · firmware 12.5" },
-        { status: "fail", label: "ADB on :5555",              detail: "connection refused (debugging off?)" },
-        { status: "fail", label: "Sony IP control on :20060", detail: "no response" },
-        { status: "fail", label: "Samsung SmartThings",       detail: "skipped — no token configured" },
-      ]
-    : [
-        { status: "pending", label: "Roku ECP on :8060",         detail: "" },
-        { status: "pending", label: "ADB on :5555",              detail: "" },
-        { status: "pending", label: "Sony IP control on :20060", detail: "" },
-        { status: "pending", label: "Samsung SmartThings",       detail: "" },
-      ];
+  const [ip, setIp] = useState("10.0.1.51");
+  const [probing, setProbing] = useState(false);
+  const [results, setResults] = useState<PortResult[] | null>(null);
+
+  const backend = results ? inferBackendFromPorts(results) : null;
+
+  const probe = async () => {
+    setProbing(true);
+    try {
+      const r = await invoke<PortResult[]>("tv_port_probe", { host: ip, ports: probePortList() });
+      setResults(r);
+    } catch {
+      setResults([]);
+    } finally {
+      setProbing(false);
+    }
+  };
+
+  const checks: DiagCheck[] = TV_PROBE_PORTS.map((entry) => {
+    const r = results?.find((x) => x.port === entry.port);
+    return {
+      status: results === null ? "pending" : r?.open ? "pass" : "fail",
+      label: `${entry.label} on :${entry.port}`,
+      detail: results === null ? "" : r?.open ? "answered" : "no response",
+    };
+  });
+
   return (
     <div className="screen">
       <div className="screen-header">
@@ -292,11 +307,11 @@ export function Step2Probe({ go, set }: ScreenProps) {
           <div className="stack">
             <div className="field">
               <label className="field-label">TV IP</label>
-              <input className="input" defaultValue="10.0.1.51" />
+              <input className="input" value={ip} onChange={(e) => setIp(e.target.value)} />
               <div className="field-hint">Same network as this PC and your Kodi box.</div>
             </div>
-            <button className="btn primary" onClick={() => setProbed(true)}>
-              <Icon name="search" size={13} /> Probe the TV
+            <button className="btn primary" onClick={probe} disabled={probing}>
+              <Icon name="search" size={13} /> {probing ? "Probing…" : "Probe the TV"}
             </button>
           </div>
         </div>
@@ -305,27 +320,30 @@ export function Step2Probe({ go, set }: ScreenProps) {
             title="Port probe"
             checks={checks}
             footer={
-              probed ? (
+              results === null ? (
+                <span className="muted">Probe the TV to see which backends answer.</span>
+              ) : backend ? (
                 <>
-                  <strong className="success-text">Looks like a Roku TV.</strong> We'll
-                  use the <code>roku_ecp</code> backend — input switching and confirm are
-                  clean here.
+                  <strong className="success-text">Looks controllable.</strong> We'll use the{" "}
+                  <code>{backend}</code> backend — it answered on the network.
                 </>
               ) : (
-                <span className="muted">Probe the TV to see which backends answer.</span>
+                <span className="muted">
+                  Nothing answered. Check the IP / debugging, or choose a method manually.
+                </span>
               )
             }
-            footerKind={probed ? "success" : ""}
+            footerKind={backend ? "success" : ""}
           />
         </div>
       </div>
       <FooterNav
         go={go}
         back="step2_notfound"
-        next={probed ? "step2_test" : null}
-        nextLabel="Use Roku ECP"
+        next={backend ? "step2_test" : null}
+        nextLabel={backend ? `Use ${backend}` : "Continue"}
         set={set}
-        setKeys={{ tvBackend: "roku_ecp", tvModel: "probed-roku" }}
+        setKeys={backend ? { tvBackend: backend, tvModel: "probed" } : undefined}
       />
     </div>
   );

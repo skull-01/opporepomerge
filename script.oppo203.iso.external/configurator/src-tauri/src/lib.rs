@@ -1,7 +1,9 @@
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::io::{Read, Write};
+use std::net::{TcpStream, ToSocketAddrs};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::Manager;
 
 #[tauri::command]
@@ -121,6 +123,67 @@ fn smb_test_write(userdata_path: String) -> Result<(), String> {
     Ok(())
 }
 
+fn connect_timeout(host: &str, port: u16, timeout_ms: u64) -> Result<TcpStream, String> {
+    let mut last = String::from("no address resolved");
+    for addr in (host, port).to_socket_addrs().map_err(|e| e.to_string())? {
+        match TcpStream::connect_timeout(&addr, Duration::from_millis(timeout_ms)) {
+            Ok(s) => return Ok(s),
+            Err(e) => last = e.to_string(),
+        }
+    }
+    Err(last)
+}
+
+/// True if a TCP connection to host:port succeeds within the timeout.
+#[tauri::command]
+fn tcp_probe(host: String, port: u16, timeout_ms: Option<u64>) -> bool {
+    connect_timeout(&host, port, timeout_ms.unwrap_or(1500)).is_ok()
+}
+
+#[derive(serde::Serialize)]
+struct PortResult {
+    port: u16,
+    open: bool,
+}
+
+/// Probe several ports on a host, reporting which accept a TCP connection.
+#[tauri::command]
+fn tv_port_probe(host: String, ports: Vec<u16>, timeout_ms: Option<u64>) -> Vec<PortResult> {
+    let t = timeout_ms.unwrap_or(1200);
+    ports
+        .into_iter()
+        .map(|port| PortResult {
+            port,
+            open: connect_timeout(&host, port, t).is_ok(),
+        })
+        .collect()
+}
+
+/// Send an OPPO IP-control query (default #QPW on port 23) and return the raw reply.
+/// Mirrors resources/lib/oppo/oppo_control.py (CR-terminated; reply form "@CODE OK VALUE").
+#[tauri::command]
+fn oppo_query(
+    host: String,
+    port: Option<u16>,
+    command: Option<String>,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    let port = port.unwrap_or(23);
+    let ms = timeout_ms.unwrap_or(3000);
+    let timeout = Duration::from_millis(ms);
+    let mut stream = connect_timeout(&host, port, ms)?;
+    stream.set_read_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    stream.set_write_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    let mut cmd = command.unwrap_or_else(|| "#QPW".to_string());
+    if !cmd.ends_with('\r') {
+        cmd.push('\r');
+    }
+    stream.write_all(cmd.as_bytes()).map_err(|e| e.to_string())?;
+    let mut buf = [0u8; 256];
+    let n = stream.read(&mut buf).map_err(|e| e.to_string())?;
+    Ok(String::from_utf8_lossy(&buf[..n]).trim().to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -131,7 +194,10 @@ pub fn run() {
             reveal_path,
             read_userdata_file,
             deploy_to_userdata,
-            smb_test_write
+            smb_test_write,
+            tcp_probe,
+            tv_port_probe,
+            oppo_query
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
