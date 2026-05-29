@@ -75,6 +75,30 @@ fn backup_suffix() -> String {
         .to_string()
 }
 
+/// Validate an SSH host or username so ssh can't misread it as an option (a leading '-' such
+/// as `-oProxyCommand=...`) and so it can't carry shell metacharacters. Allows only the
+/// characters that appear in real hostnames/IPs and usernames.
+fn validate_ssh_component(label: &str, v: &str) -> Result<(), String> {
+    if v.is_empty() {
+        return Err(format!("ssh {label} is empty"));
+    }
+    if v.starts_with('-') {
+        return Err(format!("ssh {label} '{v}' may not start with '-'"));
+    }
+    if let Some(c) = v
+        .chars()
+        .find(|&c| !(c.is_ascii_alphanumeric() || matches!(c, '.' | ':' | '_' | '-')))
+    {
+        return Err(format!("ssh {label} '{v}' contains an invalid character '{c}'"));
+    }
+    Ok(())
+}
+
+fn validate_ssh_target(host: &str, user: &str) -> Result<(), String> {
+    validate_ssh_component("host", host)?;
+    validate_ssh_component("user", user)
+}
+
 /// Read a file under the given Kodi userdata directory (local or SMB UNC path), if present.
 #[tauri::command]
 fn read_userdata_file(userdata_path: String, rel: String) -> Result<Option<String>, String> {
@@ -106,7 +130,14 @@ fn deploy_to_userdata(
             fs::copy(&target, &bak).map_err(|e| e.to_string())?;
             backed_up.push(bak);
         }
-        fs::write(&target, contents).map_err(|e| e.to_string())?;
+        // Write to a sibling temp file then swap it in, so an interrupted write can't leave a
+        // truncated target (the .bak above covers the brief replace window).
+        let tmp = std::path::PathBuf::from(format!("{}.oppocfg-tmp", target.to_string_lossy()));
+        fs::write(&tmp, contents).map_err(|e| e.to_string())?;
+        if target.exists() {
+            fs::remove_file(&target).map_err(|e| e.to_string())?;
+        }
+        fs::rename(&tmp, &target).map_err(|e| e.to_string())?;
         written.push(target.to_string_lossy().into_owned());
     }
     Ok(DeployReport { written, backed_up })
@@ -179,9 +210,29 @@ fn oppo_query(
         cmd.push('\r');
     }
     stream.write_all(cmd.as_bytes()).map_err(|e| e.to_string())?;
-    let mut buf = [0u8; 256];
-    let n = stream.read(&mut buf).map_err(|e| e.to_string())?;
-    Ok(String::from_utf8_lossy(&buf[..n]).trim().to_string())
+    // OPPO replies are CR-terminated; a single read() can return a partial or echoed frame.
+    // Accumulate until we see the CR terminator, the peer closes, or the read times out.
+    let mut data: Vec<u8> = Vec::new();
+    let mut chunk = [0u8; 256];
+    loop {
+        match stream.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(n) => {
+                data.extend_from_slice(&chunk[..n]);
+                if data.contains(&b'\r') || data.len() > 4096 {
+                    break;
+                }
+            }
+            Err(ref e)
+                if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut =>
+            {
+                break
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+    Ok(String::from_utf8_lossy(&data).trim().to_string())
 }
 
 fn ssh_base_args(target: &str) -> Vec<String> {
@@ -209,7 +260,20 @@ fn run_ssh(target: &str, remote_cmd: &str) -> Result<(), String> {
     }
 }
 
-fn run_ssh_stdin(target: &str, remote_cmd: &str, data: &[u8]) -> Result<(), String> {
+fn run_ssh_capture(target: &str, remote_cmd: &str) -> Result<String, String> {
+    let out = std::process::Command::new("ssh")
+        .args(ssh_base_args(target))
+        .arg(remote_cmd)
+        .output()
+        .map_err(|e| format!("could not launch ssh (is the OpenSSH client installed?): {e}"))?;
+    if out.status.success() {
+        Ok(String::from_utf8_lossy(&out.stdout).into_owned())
+    } else {
+        Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+    }
+}
+
+fn run_ssh_stdin(target: &str, remote_cmd: &str, data: &[u8]) -> Result<String, String> {
     let mut child = std::process::Command::new("ssh")
         .args(ssh_base_args(target))
         .arg(remote_cmd)
@@ -226,7 +290,7 @@ fn run_ssh_stdin(target: &str, remote_cmd: &str, data: &[u8]) -> Result<(), Stri
         .map_err(|e| e.to_string())?;
     let out = child.wait_with_output().map_err(|e| e.to_string())?;
     if out.status.success() {
-        Ok(())
+        Ok(String::from_utf8_lossy(&out.stdout).into_owned())
     } else {
         Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
     }
@@ -235,11 +299,35 @@ fn run_ssh_stdin(target: &str, remote_cmd: &str, data: &[u8]) -> Result<(), Stri
 /// Verify SSH reachability + key auth to the Kodi box (non-interactive; key auth only).
 #[tauri::command]
 fn ssh_test(host: String, user: String) -> Result<(), String> {
+    validate_ssh_target(&host, &user)?;
     run_ssh(&format!("{user}@{host}"), "echo ok")
 }
 
+/// Read a file under the Kodi userdata dir over SSH, if present (None when absent).
+#[tauri::command]
+fn read_ssh_file(
+    host: String,
+    user: String,
+    userdata_path: String,
+    rel: String,
+) -> Result<Option<String>, String> {
+    validate_ssh_target(&host, &user)?;
+    let target = format!("{user}@{host}");
+    let base = userdata_path.trim_end_matches('/');
+    let remote = format!("{base}/{rel}");
+    let script =
+        format!("if [ -f '{remote}' ]; then cat '{remote}'; else printf '__OPPOCFG_ABSENT__'; fi");
+    let out = run_ssh_capture(&target, &script)?;
+    if out == "__OPPOCFG_ABSENT__" {
+        Ok(None)
+    } else {
+        Ok(Some(out))
+    }
+}
+
 /// Tier A: write the files into the Kodi userdata dir over SSH (backing up any existing file
-/// remotely first), then optionally restart Kodi. Non-interactive — requires SSH key auth.
+/// remotely first and aborting the write if that backup fails), then optionally restart Kodi.
+/// Non-interactive — requires SSH key auth.
 #[tauri::command]
 fn deploy_ssh(
     host: String,
@@ -248,25 +336,30 @@ fn deploy_ssh(
     files: BTreeMap<String, String>,
     restart: bool,
 ) -> Result<DeployReport, String> {
+    validate_ssh_target(&host, &user)?;
     let target = format!("{user}@{host}");
     let base = userdata_path.trim_end_matches('/');
     let mut written = Vec::new();
+    let mut backed_up = Vec::new();
     for (rel, contents) in &files {
         let remote = format!("{base}/{rel}");
         let parent = remote.rsplit_once('/').map(|(p, _)| p).unwrap_or(".");
+        let bak = format!("{remote}.{}.bak", backup_suffix());
+        // Back up an existing file before overwriting; '&&' chaining ABORTS the write if the
+        // backup fails, and the echoed marker lets us report the real .bak path.
         let script = format!(
-            "mkdir -p '{parent}'; if [ -f '{remote}' ]; then cp '{remote}' '{remote}.'$(date +%s)'.bak'; fi; cat > '{remote}'"
+            "mkdir -p '{parent}' && if [ -f '{remote}' ]; then cp -p '{remote}' '{bak}' && printf 'BAK:%s\\n' '{bak}'; fi && cat > '{remote}'"
         );
-        run_ssh_stdin(&target, &script, contents.as_bytes())?;
+        let stdout = run_ssh_stdin(&target, &script, contents.as_bytes())?;
         written.push(remote);
+        if let Some(line) = stdout.lines().find(|l| l.starts_with("BAK:")) {
+            backed_up.push(line.trim_start_matches("BAK:").to_string());
+        }
     }
     if restart {
         run_ssh(&target, "systemctl restart kodi")?;
     }
-    Ok(DeployReport {
-        written,
-        backed_up: Vec::new(),
-    })
+    Ok(DeployReport { written, backed_up })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -278,6 +371,7 @@ pub fn run() {
             generate_files,
             reveal_path,
             read_userdata_file,
+            read_ssh_file,
             deploy_to_userdata,
             smb_test_write,
             tcp_probe,
