@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import os
 import sys
 import threading
 import time
 import traceback
+from typing import Any, Callable
 
 try:
     import xbmc
@@ -90,7 +93,7 @@ DISC_PATH_MARKERS = [
 DISC_EXTENSIONS = {".iso", ".bdmv", ".mpls", ".m2ts", ".ifo", ".vob", ".dat", ".cue", ".bin"}
 
 
-def log(message, level=None):
+def log(message: str, level: int | None = None) -> None:
     if xbmc:
         lvl = level if level is not None else xbmc.LOGINFO
         xbmc.log(f"{LOG_PREFIX} {message}", lvl)
@@ -98,20 +101,21 @@ def log(message, level=None):
         print(f"{LOG_PREFIX} {message}", flush=True)
 
 
-def _translate(path):
+def _translate(path: str) -> str:
     if xbmcvfs:
-        return xbmcvfs.translatePath(path)
+        translated: str = xbmcvfs.translatePath(path)
+        return translated
     return path
 
 
-def _addon_data_dir():
+def _addon_data_dir() -> str:
     if xbmcaddon:
         addon = xbmcaddon.Addon(ADDON_ID)
         return _translate(addon.getAddonInfo("profile"))
     return ""
 
 
-def _read_settings():
+def _read_settings() -> Any:
     try:
         addon_data = _addon_data_dir()
         lib_path = None
@@ -135,7 +139,7 @@ def _read_settings():
         return None
 
 
-def _settings_bool(settings, key, default=False):
+def _settings_bool(settings: Any, key: str, default: bool = False) -> bool:
     try:
         if hasattr(settings, "get_bool"):
             return bool(settings.get_bool(key, default))
@@ -153,7 +157,7 @@ def _settings_bool(settings, key, default=False):
     return value in ("1", "true", "yes", "on")
 
 
-def _is_disc_path(path):
+def _is_disc_path(path: str) -> bool:
     """Return True if path looks like a disc image or folder entry."""
     if not path:
         return False
@@ -167,7 +171,7 @@ def _is_disc_path(path):
     return False
 
 
-def _should_intercept_4k_disc_source(path):
+def _should_intercept_4k_disc_source(path: str) -> bool:
     """Use the v2.5.3 centralized 4K disc-style classifier.
 
     The import is intentionally dynamic because service.py may be imported by
@@ -184,12 +188,12 @@ def _should_intercept_4k_disc_source(path):
     return bool(should_intercept_4k_disc_source(path))
 
 
-def _session_is_active(settings):
+def _session_is_active(settings: Any) -> bool:
     path = os.path.join(settings.get("addon_data_dir", ""), "oppo203iso-active")
     return bool(path and os.path.exists(path))
 
 
-def _run_interception(path, settings):
+def _run_interception(path: str, settings: Any) -> None:
     """Stop Kodi playback quickly and launch the Oppo/TV flow in background."""
     try:
         # Stop Kodi playback first
@@ -229,7 +233,7 @@ def _run_interception(path, settings):
         traceback.print_exc()
 
 
-class InterceptionPlayer(xbmc.Player if xbmc else object):
+class InterceptionPlayer(xbmc.Player if xbmc else object):  # type: ignore[misc]
     """xbmc.Player subclass for service interception mode.
 
     Test contract (test_all.TOmega):
@@ -245,7 +249,7 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
     _BDMV_MARKERS = ("/bdmv/", "bdmv\\", "/bdmv\\")  # marker tolerant
     _BDMV_FILE = "index.bdmv"
 
-    def __init__(self, settings):
+    def __init__(self, settings: Any) -> None:
         if xbmc:
             try:
                 super().__init__()
@@ -253,12 +257,12 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
                 pass
         self.settings = settings
         self._settings = settings  # back-compat
-        self._handled_path = None
-        self._active_thread = None
+        self._handled_path: str | None = None
+        self._active_thread: threading.Thread | None = None
         self._omega = _is_omega_or_newer()
 
     # Test-required helper
-    def _is_iso_or_bdmv(self, path):
+    def _is_iso_or_bdmv(self, path: str) -> bool:
         if not path:
             return False
         p = str(path).replace("\\", "/").lower()
@@ -269,7 +273,7 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
         return False
 
     # Default handler — production path. Overridden in tests.
-    def _handle_started(self):
+    def _handle_started(self) -> None:
         try:
             path = ""
             if xbmc:
@@ -296,7 +300,7 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
         except Exception as exc:
             log(f"Service interception _handle_started error: {exc}")
 
-    def onPlayBackStarted(self):
+    def onPlayBackStarted(self) -> None:
         # Pre-Omega Kodi (<21) used onPlayBackStarted; Omega+ uses onAVStarted
         if self._omega:
             return  # defer to onAVStarted on Omega
@@ -305,21 +309,21 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
         except Exception as exc:
             log(f"onPlayBackStarted swallowed exception: {exc}")
 
-    def onAVStarted(self):
+    def onAVStarted(self) -> None:
         try:
             self._handle_started()
         except Exception as exc:
             log(f"onAVStarted swallowed exception: {exc}")
 
 
-def _snapshot_managed_settings():
+def _snapshot_managed_settings() -> dict[str, Any]:
     """Return {key: value} for every CONFIGURATOR_MANAGED_KEYS entry.
 
     Used at service start to capture the configurator-written baseline so
     later `onSettingsChanged` callbacks can detect overwrites via Kodi's UI.
     Safe in headless tests: returns {} when xbmcaddon is unavailable.
     """
-    snapshot = {}
+    snapshot: dict[str, Any] = {}
     if not xbmcaddon:
         return snapshot
     try:
@@ -334,7 +338,7 @@ def _snapshot_managed_settings():
     return snapshot
 
 
-def _changed_managed_keys(baseline):
+def _changed_managed_keys(baseline: dict[str, Any]) -> list[str]:
     """Return CONFIGURATOR_MANAGED_KEYS whose current value differs from baseline."""
     if not xbmcaddon:
         return []
@@ -342,7 +346,7 @@ def _changed_managed_keys(baseline):
         addon = xbmcaddon.Addon(ADDON_ID)
     except Exception:
         return []
-    changed = []
+    changed: list[str] = []
     for key in CONFIGURATOR_MANAGED_KEYS:
         try:
             current = addon.getSetting(key)
@@ -353,7 +357,7 @@ def _changed_managed_keys(baseline):
     return changed
 
 
-def _resolve_localized(string_id, default):
+def _resolve_localized(string_id: int, default: str) -> str:
     """Resolve a localized string via resources.lib.i18n with a hard fallback."""
     try:
         from i18n import L
@@ -363,12 +367,13 @@ def _resolve_localized(string_id, default):
         except Exception:
             return default
     try:
-        return L(string_id, default)
+        resolved: str = L(string_id, default)
+        return resolved
     except Exception:
         return default
 
 
-def _notify_config_hint_once_per_session():
+def _notify_config_hint_once_per_session() -> bool:
     """Show the Part B 'use the configurator' hint at most once per Kodi session.
 
     First call sets a window property on the home window (id 10000); subsequent
@@ -397,7 +402,7 @@ def _notify_config_hint_once_per_session():
     return True
 
 
-def _warn_overwritten_managed_keys(changed_keys):
+def _warn_overwritten_managed_keys(changed_keys: list[str]) -> None:
     """Log + notify a Part C warning for each configurator-managed key that changed."""
     if not changed_keys:
         return
@@ -418,7 +423,7 @@ def _warn_overwritten_managed_keys(changed_keys):
             pass
 
 
-class Monitor(xbmc.Monitor if xbmc else object):
+class Monitor(xbmc.Monitor if xbmc else object):  # type: ignore[misc]
     """Kodi service monitor.
 
     Lifecycle (abortRequested/waitForAbort inherited) plus a passive
@@ -428,7 +433,7 @@ class Monitor(xbmc.Monitor if xbmc else object):
     hook is logging/notification-only — it never mutates add-on state.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         if xbmc:
             try:
                 super().__init__()
@@ -436,7 +441,7 @@ class Monitor(xbmc.Monitor if xbmc else object):
                 pass
         self._managed_baseline = _snapshot_managed_settings()
 
-    def onSettingsChanged(self):
+    def onSettingsChanged(self) -> None:
         try:
             _notify_config_hint_once_per_session()
             changed = _changed_managed_keys(self._managed_baseline)
@@ -447,7 +452,7 @@ class Monitor(xbmc.Monitor if xbmc else object):
             log(f"onSettingsChanged swallowed exception: {exc}")
 
 
-def _service_main():
+def _service_main() -> None:
     log("Service started (v2.5.2 Build 1).")
     settings = _read_settings()
     if settings:
@@ -490,7 +495,7 @@ def _service_main():
 
 
 # === v1.1.9 helpers (added to satisfy test_all.py TPower + TOmega) ===
-def _kodi_major_version():
+def _kodi_major_version() -> int:
     try:
         if xbmc is None:
             return 0
@@ -509,18 +514,18 @@ def _kodi_major_version():
         return 0
 
 
-def _is_omega_or_newer():
+def _is_omega_or_newer() -> bool:
     return _kodi_major_version() >= 21
 
 
-def _safe_call(fn, *a, **kw):
+def _safe_call(fn: Callable[..., Any], *a: Any, **kw: Any) -> Any:
     try:
         return fn(*a, **kw)
     except Exception:
         return None
 
 
-def _kodi_startup_power_on(settings):
+def _kodi_startup_power_on(settings: Any) -> None:
     """Wake the configured OPPO-compatible player on Kodi startup when needed.
 
     Build 8 / v2.5.1 behavior preserved for v2.5.2: query #QPW before
@@ -557,7 +562,7 @@ def _kodi_startup_power_on(settings):
         try:
             import oppo_control
         except Exception:
-            from resources.lib import oppo_control
+            from resources.lib import oppo_control  # type: ignore[attr-defined]
 
         try:
             status = oppo_control.query_power_status(host, port, timeout=timeout)
@@ -595,7 +600,7 @@ def _kodi_startup_power_on(settings):
         log(f"_kodi_startup_power_on error: {exc}")
 
 
-def _startup_wake_token(settings):
+def _startup_wake_token(settings: Any) -> str:
     model = str(settings.get("oppo_hardware_model", "udp_203") or "").lower()
     clone_markers = (
         "chinoppo",
@@ -610,7 +615,7 @@ def _startup_wake_token(settings):
     return "#EJT" if any(marker in model for marker in clone_markers) else "#PON"
 
 
-def _spawn_kodi_startup_power_on(settings):
+def _spawn_kodi_startup_power_on(settings: Any) -> threading.Thread | None:
     if not _settings_bool(settings, "kodi_startup_power_on", False):
         return None
     t = threading.Thread(target=_kodi_startup_power_on, args=(settings,), daemon=True)
