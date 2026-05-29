@@ -167,80 +167,75 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-29 (EOD — ENH-#42 + ruff-enforcement session):** clean stopping
-point, no in-flight addon code. `main` advanced `f21033b` → **`092444a`** —
-**932 passed, 3 skipped**, coverage **99.10%**. This session shipped ENH-#42
-(both halves) and resolved the ENH-#38 ruff backlog, then filed ENH-#51 to track
-the mypy `--strict` rollout (the next theme, **not yet started**).
+**As of 2026-05-29 (EOD — ENH-#51 mypy `--strict` PR 1 session):** clean
+stopping point, no uncommitted addon code. This session shipped **PR 1** of the
+mypy `--strict` rollout to a draft PR; `main` is unchanged (the work lives on the
+unmerged PR branch, all CI green).
 
-- **Shipped this session:**
-  - **ENH-#42 — minimal in-add-on settings menu** — both halves merged:
-    [PR #48](https://github.com/skull-01/script.oppo203.iso.external/pull/48)
-    *network/IP editor* at **`16eda5e`** and
-    [PR #49](https://github.com/skull-01/script.oppo203.iso.external/pull/49)
-    *add-on-language switcher* at **`3765862`**. `installer.main()` gained a
-    "Network settings (TV / OPPO / AVR / Kodi)" entry (backend-aware view/override
-    of the configurator-managed IP/port fields + a managed-by-configurator marker)
-    and an "Add-on language" entry (hidden `addon_language` setting; follow-Kodi
-    default). `i18n.supported_languages()` fixed 7 → 12; new `effective_language()`
-    + a pinned-locale `strings.po` override path in `L()`.
-  - **ENH-#38 — ruff backlog RESOLVED** —
-    [PR #50](https://github.com/skull-01/script.oppo203.iso.external/pull/50) at
-    **`092444a`**. `ruff check .` + `ruff format --check .` now clean across the
-    **whole** codebase (tests/ + tools/ included) and enforced in CI. Config
-    consolidated: `ruff.toml` stays authoritative (per the g5 "legacy configs
-    remain" test) with the `pyproject [tool.ruff]` mirror synced; `C4` added;
-    `tests/**` per-file-ignores. 246 findings cleared via `--fix` + `ruff format`
-    (which split the ~70 `E701`/`E702` one-liners). **No source files changed.**
+- **IN FLIGHT — resume here: draft
+  [PR #53](https://github.com/skull-01/script.oppo203.iso.external/pull/53)**
+  (`claude/enh51-mypy-strict-a7k3m2x9`, tip `62d811f`). **Software-verified; all 9
+  CI checks green (incl. the new `types` job); not merged.**
+  - **Done — the strict gate + tooling + first leaf batch:**
+    - **Config** ([`mypy.ini`](mypy.ini) authoritative + [`pyproject.toml`](pyproject.toml)
+      `[tool.mypy]` mirror): `python_version` 3.10 → 3.9 (matches `ruff py39` /
+      `requires-python >=3.9`), `strict = True`, **`follow_imports = silent`**, and a
+      curated `files=` allowlist. Dropped the now-unused `[mypy-tests.*]` override.
+    - **Gate** ([`tools/type_check.py`](tools/type_check.py)): new blocking `--gate`
+      mode runs mypy over the `files` allowlist (no explicit targets) and returns
+      mypy's real exit code. The default invocation stays **non-blocking** for
+      release safety; `build_mypy_command` still targets all of `resources/lib`, so
+      the build-13 baseline guard tests stay green.
+    - **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): new `types`
+      job runs `python tools/type_check.py --gate` (3.11 runner; mypy targets 3.9).
+    - **7 leaf modules annotated to zero strict errors** (all four buckets):
+      `avr/avr_sequence`, `kodi/keymap_skin`, `tv/smartthings_control`,
+      `tv/roku_ecp_control`, `oppo/reconnect_backoff`, `oppo/autoscript_helper`,
+      `tv/adb_control`. Signatures + stale-`# type: ignore` removal + two pinned
+      locals only — **no logic changes.**
+    - **Guard tests** updated in lockstep:
+      [`tests/test_v291_build13_type_hint_baseline.py`](tests/test_v291_build13_type_hint_baseline.py)
+      (config shape: 3.9 + strict/follow_imports/files + gate command) and
+      [`tests/test_github_readiness_g6_ci_hardening.py`](tests/test_github_readiness_g6_ci_hardening.py)
+      (the new `types` job + gate command in CI).
+  - **Left (future PRs):** the remaining ~28 source modules, leaf-first, added to
+    the `files=` allowlist batch-by-batch (edit BOTH `mypy.ini` and the `pyproject`
+    mirror, re-run the gate). Heaviest: `installer` 112, `oppo_control` 111,
+    `external_player` 88, `service.py` 82, `settings_reader` 72.
+    **`nas_playback_adapter` deferred** — it cascades into `settings_reader` /
+    `oppo_control`. The `no-redef` import-fallback modules (intercept, oppo_remote,
+    external_player) need a strategy before they enter the allowlist.
+  - **Verified (software only; hardware not claimed):** `pytest -n auto` **933/3**;
+    serial coverage **99%**; `ruff check .` + `ruff format --check .` clean;
+    `mypy --gate` clean (7 modules); `unittest discover` **551 OK**; `audit_release`
+    **580/580**; doc/version/layout/i18n `--check` OK; **PR #53 all CI green** (Release
+    gate + the new Type gate + compat-smoke 3.9/3.10/3.12 + lint + claude-review).
+  - **How to add modules next** is captured in memory `mypy-strict-gate-rollout`.
 
-- **Sequencing lesson:** merged the finished #48/#49 **before** the ruff sweep,
-  because `ruff format` rewrites `tests/test_all.py` + `tests/test_coverage_hardening.py`
-  — the exact files #48/#49 edited (the two worst offenders, 144 of 246 errors) —
-  which would have conflicted. Stacked-PR dance: `gh pr edit 49 --base main`
-  **before** `gh pr merge 48 --delete-branch`, so deleting the parent branch does
-  not auto-close the child.
+- **Operator: verify + close** — #51 PR 1 (SHA `62d811f` commented; Phase A entry in
+  the manual checklist; the issue stays open across the multi-PR rollout). Still
+  awaiting operator close from prior sessions: #38 (ruff — resolved by #50), #42
+  (merged via #48/#49), #43 (merged `3ba5009`), the addon side of #41.
 
-- **Verified (software only; hardware not claimed):** `pytest -n auto` **932/3**;
-  serial coverage **99.10%**; `ruff check .` + `ruff format --check .` clean;
-  `unittest discover` 551 OK; `audit_release` 578/578; doc/version/layout/i18n
-  `--check` OK; `main` push-CI green on the #48 and #49 merges (#50 push-CI was in
-  flight at EOD; PR #50's checks were fully green before merge). Merge SHAs
-  commented on #38 and #42.
-
-- **IN FLIGHT — resume here: ENH-#51 — mypy `--strict` rollout (Phase 2), NOT
-  STARTED.** Plan: flip the authoritative **`mypy.ini`** (+ synced
-  `pyproject [tool.mypy]` mirror) to `strict = true` + a curated `files = [...]`
-  allowlist; annotate source **leaf-first** in small per-PR batches; set
-  `python_version = 3.9`; make `tools/type_check.py` blocking in CI; honor the
-  `test_v291_build13` type-check-baseline guard tests. Baseline: `mypy --strict`
-  on source = **840 errors / 37 files** (298 `no-untyped-def` drives the 423
-  `no-untyped-call` cascade; ~55 real findings; 34 `no-redef` from the try/except
-  import-fallback idiom). Heaviest: `oppo_control` 111, `installer` 97,
-  `external_player` 88, `service.py` 82, `settings_reader` 72. **Source-only**
-  scope (operator decision); tests/ + tools/ deferred within #51.
-
-- **Operator: verify + close** #42 (merged via #48/#49) and #38 (resolved by #50)
-  — merge SHAs commented; only the operator closes issues. (#43 and the #41 addon
-  part from prior sessions also still await close.)
-
-- **Carried open (all `area:addon`):**
+- **Carried open (all `area:addon` unless noted):**
   [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
-  (ruff — **RESOLVED** by #50, awaiting close),
+  (ruff — RESOLVED by #50, awaiting close),
   [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
   (configurator side of Part C still open → `area:configurator`),
   [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42)
-  (**MERGED** via #48/#49, awaiting close),
+  (merged via #48/#49, awaiting close),
   [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43)
   (lib split — merged `3ba5009`, awaiting close),
   [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
   (hardware-validation testing),
   [#51](https://github.com/skull-01/script.oppo203.iso.external/issues/51)
-  (mypy `--strict` rollout — **NEW**, the in-flight theme). Only the operator
+  (mypy `--strict` rollout — **PR 1 in flight on draft #53**). Only the operator
   closes issues.
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **ENH-#51 — mypy `--strict` PR 1** — config flip (mypy.ini + mirror) + first
-     leaf-module batch + blocking CI. The in-flight theme; strongest lead.
+  1. **ENH-#51 — mypy `--strict` PR 2** — next leaf cluster added to the `files=`
+     allowlist (after #53 merges, or stacked on it). The in-flight rollout;
+     strongest lead. See memory `mypy-strict-gate-rollout` for the recipe.
   2. **Phase A on-device verification** of #40 / #42 / #46 / #47 / #48 / #49 —
      operator action on real hardware, no agent code.
   3. **Configurator-side ENH-#41 Part C** — `area:configurator` session (write the
@@ -434,6 +429,17 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
 - **2026-05-29** — ENH-#42 shipped (both halves): in-add-on network/IP editor (PR #48 at `16eda5e`) and add-on-language switcher (PR #49 at `3765862`). `installer.main()` gained "Network settings" + "Add-on language" entries; hidden `addon_language` setting; `i18n.supported_languages()` 7 → 12 plus `effective_language()` and a pinned-locale `L()` override.
 - **2026-05-29** — ENH-#38 resolved: ruff enforced across the whole codebase (PR #50 at `092444a`). `ruff check .` + `ruff format --check .` clean (tests/ + tools/ included); config consolidated (ruff.toml authoritative + pyproject mirror, `C4` added); CI flipped to whole-tree. Filed ENH-#51 to track the mypy `--strict` source rollout (curated allowlist, leaf-first, source-only).
 - **2026-05-29** — Configurator icon + bundling session (`area:configurator`). Generated the configurator's real app icon set from the repo-root add-on `icon.png` (256×256) via `tauri icon`, fixing a latent build-breaker (three `bundle.icon` files were missing on disk); pruned the mobile `ios/`/`android/` outputs and refreshed the icons README. First-pass `npm run tauri -- build` succeeded → MSI (3.0 MB) + NSIS setup (1.9 MB). Draft PR #52 (`claude/configurator-icon-bundle-h4n7k2p9`, tip `8cecd42`); `main` unchanged (configurator code lives under the PR). Software-verified only (build + bundle); installed-app/icon appearance not verified.
+- **2026-05-29** — ENH-#51 mypy `--strict` rollout PR 1 (`area:addon`). Stood up an
+  incremental strict gate instead of a global flip (source baseline **788 errors / 35
+  modules** at py3.9): `mypy.ini` (authoritative) + `pyproject` mirror gain `strict`,
+  `follow_imports = silent`, `python_version` 3.10 → 3.9, and a curated `files=`
+  allowlist; `tools/type_check.py` gains a blocking `--gate` mode (default stays
+  non-blocking) wired into a new CI `types` job. First 7-module leaf batch annotated to
+  zero strict errors (signatures + stale-`# type: ignore` removal; no logic changes);
+  `nas_playback_adapter` deferred (cascades into settings_reader/oppo_control). Guard
+  tests (build-13, g6) updated in lockstep. Draft PR #53
+  (`claude/enh51-mypy-strict-a7k3m2x9`, tip `62d811f`), all 9 CI checks green; `main`
+  unchanged (work on the unmerged PR). Added memory `mypy-strict-gate-rollout`.
 
 ---
 
@@ -461,7 +467,7 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-29 (EOD — ENH-#42 + ruff-enforcement session)**.
+Last refreshed: **2026-05-29 (EOD — ENH-#51 mypy --strict PR 1 session)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
@@ -471,7 +477,7 @@ Last refreshed: **2026-05-29 (EOD — ENH-#42 + ruff-enforcement session)**.
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | **Merged** via [PR #48](https://github.com/skull-01/script.oppo203.iso.external/pull/48) at `16eda5e` (network/IP editor) + [PR #49](https://github.com/skull-01/script.oppo203.iso.external/pull/49) at `3765862` (language switcher) | Phase A/C queued; awaiting operator close |
 | 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | **Merged** via [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) at `3ba5009` (impl `18a97a6` + test-isolation `69e32b3`) | Phase A queued |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
-| 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | — | not started (Phase 2; plan in §3a) |
+| 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | **PR 1** on draft [PR #53](https://github.com/skull-01/script.oppo203.iso.external/pull/53) at `62d811f` — strict gate + tooling + first 7-module leaf batch | awaiting operator review/close (multi-PR rollout) |
 
 ---
 
@@ -686,6 +692,7 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   of #40/#46/#47 still deferred.
 - **2026-05-29 (EOD — ENH-#42 + ruff-enforcement session)** — Operator-driven session. (1) Landed the finished ENH-#42 PRs to `main`: #48 network/IP editor at `16eda5e`, #49 language switcher at `3765862` (retargeted #49 to `main` before deleting #48's branch to avoid stacked-PR auto-close). (2) ENH-#38 ruff backlog **resolved** via PR #50 at `092444a` — `ruff check .` + `ruff format --check .` clean across tests/tools, consolidated config (ruff.toml authoritative + pyproject mirror + `C4`), CI flipped to whole-tree; 246 findings cleared, no source touched. Filed **ENH-#51** to track the mypy `--strict` rollout (source-only, curated allowlist, leaf-first) — Phase 2, not started. **§3a rewritten** to the merged state + the in-flight #51 plan; **§3b untouched**. **§15** gained two journey bullets; **§17a** rows #38/#42 + new #51 row + "Last refreshed" updated. **Header** "Last sync" `f21033b` → `092444a`, tests `886` → **932 passed, 3 skipped**, coverage `99.07%` → **99.10%**.
 - **2026-05-29 (EOD — configurator icon + bundling session)** — Single-theme `area:configurator` session (`resume` → operator picked "icon + bundling"). Generated the real app icon set from the add-on artwork via `npm run tauri -- icon ..\icon.png` (replacing the PR #35 stub), pruned the `ios/`/`android/` outputs, refreshed `src-tauri/icons/README.md`, and produced the first Windows installers via `npm run tauri -- build` (MSI 3.0 MB + NSIS 1.9 MB, exit 0, ~1m13s). Two commits on `claude/configurator-icon-bundle-h4n7k2p9`: `eb9f1cf` (icon set) + `8cecd42` (Phase A/C checklist entry); draft **PR #52** opened. **§3b rewritten** to the in-flight #52 state + refreshed candidate themes (purpose-built icon now leads); **§3a untouched** (no addon work). **§15** gained a journey bullet. **§17a untouched** — no issues opened/closed/retitled (this theme has no tracked issue). **Header unchanged** — `main` had no operational changes (configurator code lives under unmerged PR #52); tests on `main` stay 932/3/99.10%. Added memory `configurator-tauri-build-recipe`. Suite re-confirmed green this session: 932 passed, 3 skipped.
+- **2026-05-29 (EOD — ENH-#51 mypy --strict PR 1 session)** — Single-theme `area:addon` session (`resume` → operator picked ENH-#51). Shipped **PR 1** of the mypy `--strict` rollout to draft [PR #53](https://github.com/skull-01/script.oppo203.iso.external/pull/53) (`62d811f`): an incremental strict gate (`files=` allowlist + `follow_imports = silent` + `tools/type_check.py --gate` + new CI `types` job), `python_version` 3.10 → 3.9, the now-unused `[mypy-tests.*]` override dropped, and the first 7-module leaf batch annotated to zero strict errors (no logic changes; `nas_playback_adapter` deferred — cascades into settings_reader/oppo_control). Guard tests **build-13** (config shape) and **g6** (CI `types` job + gate command) updated in lockstep; SHA `62d811f` commented on #51; Phase A entry added to `docs/MANUAL_VERIFICATION_CHECKLIST.md`. **§3a rewritten** to the in-flight PR #53 state + refreshed candidate themes (PR 2 leads); **§3b untouched** (no configurator work). **§15** gained a journey bullet; **§17a** #51 row + "Last refreshed" updated. **Header unchanged** — `main` had no operational changes (ENH-#51 lives on unmerged PR #53); tests on `main` stay 932/3/99.10%. Added memory `mypy-strict-gate-rollout`. All 9 PR #53 CI checks green; software-verified only, hardware validation not claimed.
 
 ---
 
