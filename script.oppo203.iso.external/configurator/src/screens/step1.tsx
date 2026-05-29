@@ -139,8 +139,26 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
 // ============================================================
 // STEP 1 — Tier A (SSH)
 // ============================================================
-export function Step1TierA({ go, set }: ScreenProps) {
+export function Step1TierA({ go, state, set }: ScreenProps) {
   const [tested, setTested] = useState(false);
+  const [username, setUsername] = useState("root");
+  const [testing, setTesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const testConnection = async () => {
+    setTesting(true);
+    setError(null);
+    try {
+      await invoke("ssh_test", { host: state.kodiIp, user: username });
+      setTested(true);
+    } catch (e) {
+      setTested(false);
+      setError(String(e));
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const checks: DiagCheck[] = tested
     ? [
         { status: "pass", label: "SSH reachable at 10.0.1.42:22", detail: "OpenSSH_8.0 · ed25519 fingerprint OK" },
@@ -167,7 +185,11 @@ export function Step1TierA({ go, set }: ScreenProps) {
           <div className="stack">
             <div className="field">
               <label className="field-label">Username</label>
-              <input className="input" defaultValue="root" />
+              <input
+                className="input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
             </div>
             <div className="field">
               <label className="field-label">Authentication</label>
@@ -183,9 +205,17 @@ export function Step1TierA({ go, set }: ScreenProps) {
                 CoreELEC default is <span className="kbd">coreelec</span>.
               </div>
             </div>
-            <button className="btn primary" onClick={() => setTested(true)}>
-              <Icon name="play" size={13} /> Test connection
+            <button className="btn primary" onClick={testConnection} disabled={testing}>
+              <Icon name="play" size={13} /> {testing ? "Testing…" : "Test connection"}
             </button>
+            {error && (
+              <div className="field-hint" style={{ color: "var(--danger)" }}>
+                {error}
+              </div>
+            )}
+            <div className="field-hint">
+              The auto-apply test uses SSH key authentication (non-interactive).
+            </div>
           </div>
         </div>
         <div className="stack">

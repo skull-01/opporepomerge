@@ -184,6 +184,91 @@ fn oppo_query(
     Ok(String::from_utf8_lossy(&buf[..n]).trim().to_string())
 }
 
+fn ssh_base_args(target: &str) -> Vec<String> {
+    vec![
+        "-o".into(),
+        "BatchMode=yes".into(),
+        "-o".into(),
+        "StrictHostKeyChecking=accept-new".into(),
+        "-o".into(),
+        "ConnectTimeout=8".into(),
+        target.to_string(),
+    ]
+}
+
+fn run_ssh(target: &str, remote_cmd: &str) -> Result<(), String> {
+    let out = std::process::Command::new("ssh")
+        .args(ssh_base_args(target))
+        .arg(remote_cmd)
+        .output()
+        .map_err(|e| format!("could not launch ssh (is the OpenSSH client installed?): {e}"))?;
+    if out.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+    }
+}
+
+fn run_ssh_stdin(target: &str, remote_cmd: &str, data: &[u8]) -> Result<(), String> {
+    let mut child = std::process::Command::new("ssh")
+        .args(ssh_base_args(target))
+        .arg(remote_cmd)
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("could not launch ssh (is the OpenSSH client installed?): {e}"))?;
+    child
+        .stdin
+        .as_mut()
+        .ok_or_else(|| "ssh stdin unavailable".to_string())?
+        .write_all(data)
+        .map_err(|e| e.to_string())?;
+    let out = child.wait_with_output().map_err(|e| e.to_string())?;
+    if out.status.success() {
+        Ok(())
+    } else {
+        Err(String::from_utf8_lossy(&out.stderr).trim().to_string())
+    }
+}
+
+/// Verify SSH reachability + key auth to the Kodi box (non-interactive; key auth only).
+#[tauri::command]
+fn ssh_test(host: String, user: String) -> Result<(), String> {
+    run_ssh(&format!("{user}@{host}"), "echo ok")
+}
+
+/// Tier A: write the files into the Kodi userdata dir over SSH (backing up any existing file
+/// remotely first), then optionally restart Kodi. Non-interactive — requires SSH key auth.
+#[tauri::command]
+fn deploy_ssh(
+    host: String,
+    user: String,
+    userdata_path: String,
+    files: BTreeMap<String, String>,
+    restart: bool,
+) -> Result<DeployReport, String> {
+    let target = format!("{user}@{host}");
+    let base = userdata_path.trim_end_matches('/');
+    let mut written = Vec::new();
+    for (rel, contents) in &files {
+        let remote = format!("{base}/{rel}");
+        let parent = remote.rsplit_once('/').map(|(p, _)| p).unwrap_or(".");
+        let script = format!(
+            "mkdir -p '{parent}'; if [ -f '{remote}' ]; then cp '{remote}' '{remote}.'$(date +%s)'.bak'; fi; cat > '{remote}'"
+        );
+        run_ssh_stdin(&target, &script, contents.as_bytes())?;
+        written.push(remote);
+    }
+    if restart {
+        run_ssh(&target, "systemctl restart kodi")?;
+    }
+    Ok(DeployReport {
+        written,
+        backed_up: Vec::new(),
+    })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -197,7 +282,9 @@ pub fn run() {
             smb_test_write,
             tcp_probe,
             tv_port_probe,
-            oppo_query
+            oppo_query,
+            ssh_test,
+            deploy_ssh
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
