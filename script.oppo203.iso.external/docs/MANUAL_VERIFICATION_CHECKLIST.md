@@ -250,7 +250,7 @@ implementing SHA(s) on the issue and append a row here.
 
 ### ENH-#51 — Incremental mypy --strict gate (PR 1 of N)
 
-- **Implementing SHA:** head of `claude/enh51-mypy-strict-a7k3m2x9` (commented on issue #51).
+- **Implementing SHA:** merged to `main` at `aa0cf68` (implementation commit `62d811f`; commented on issue #51).
 - **Scope:** PR 1 of the source-only `mypy --strict` rollout. Stands up the gate
   + tooling and annotates the first leaf-module batch; the remaining ~28 modules
   follow in later PRs. Source baseline measured this session: **788 strict
