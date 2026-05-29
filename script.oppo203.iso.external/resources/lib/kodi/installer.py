@@ -764,6 +764,119 @@ def export_hardware_validation_readiness():
         return None
 
 
+NETWORK_SETTINGS_MANAGED_NOTE = (
+    "These connection values are normally set by the configurator on your PC. "
+    "You can override one here for a quick fix (for example after a router reboot "
+    "or DHCP change), but the next configurator run may overwrite it."
+)
+
+
+def _resolve_enum(key, default):
+    """Return the canonical enum value for key, normalizing a stored index.
+
+    Kodi may persist an enum setting as either its value ("adb") or its
+    zero-based index ("0"); settings_reader normalizes the same way.
+    """
+    raw = ADDON.getSetting(key)
+    if raw == "":
+        return default
+    if raw.isdigit():
+        try:
+            from .settings_reader import ENUM_VALUES
+        except Exception:  # pragma: no cover - top-level Kodi import compatibility
+            from settings_reader import ENUM_VALUES  # type: ignore
+        values = ENUM_VALUES.get(key, [])
+        index = int(raw)
+        if 0 <= index < len(values):
+            return values[index]
+    return raw
+
+
+def _network_fields():
+    """Return the ordered editable network fields for the active backends.
+
+    Each entry is (setting_key, label, kind) where kind is "ip", "port",
+    "text", or "info". Info rows are display-only (the Kodi box address has no
+    in-add-on setting). The TV and AVR rows follow the selected backend.
+    """
+    fields = [
+        ("oppo_ip", "OPPO IP", "ip"),
+        ("oppo_port", "OPPO port", "port"),
+        ("tv_ip", "TV IP", "ip"),
+    ]
+    tv_backend = _resolve_enum("tv_backend", "adb")
+    if tv_backend == "adb":
+        fields.append(("tv_adb_port", "TV ADB port", "port"))
+        fields.append(("adb_path", "ADB binary path", "text"))
+    elif tv_backend == "sony_bravia":
+        fields.append(("sony_psk", "Sony Bravia PSK", "text"))
+    elif tv_backend == "roku_ecp":
+        fields.append(("roku_ecp_port", "Roku ECP port", "port"))
+    elif tv_backend == "smartthings":
+        fields.append(("smartthings_token", "SmartThings token", "text"))
+        fields.append(("smartthings_device_id", "SmartThings device ID", "text"))
+    avr_backend = _resolve_enum("avr_backend", "disabled")
+    if bool_setting("avr_control_enabled", False) or avr_backend != "disabled":
+        fields.append(("avr_host", "AVR host", "ip"))
+        fields.append(("avr_port", "AVR port", "port"))
+        if avr_backend == "sony_audio_api":
+            fields.append(("sony_avr_psk", "Sony AVR PSK", "text"))
+    fields.append(("kodi_host", "Kodi box address", "info"))
+    return fields
+
+
+def network_settings_menu():
+    """In-add-on viewer/editor for the configurator-managed network fields.
+
+    Surfaces the TV / OPPO / AVR connection IPs and ports (plus the active
+    backend's host fields) so a user can nudge a value without leaving Kodi.
+    Every editable field here is configurator-managed, so an override is
+    announced as temporary. The Kodi box address is shown read-only.
+    """
+    while True:
+        fields = _network_fields()
+        rows = ["[Managed by the configurator] - select for details"]
+        for key, label, kind in fields:
+            if kind == "info":
+                rows.append(f"{label}: set on your PC (configurator)")
+            else:
+                rows.append(f"{label}: {get_setting(key)}")
+        rows.append("Back")
+
+        choice = xbmcgui.Dialog().select("Network settings (TV / OPPO / AVR / Kodi)", rows)
+        if choice < 0 or choice == len(rows) - 1:
+            return
+        if choice == 0:
+            xbmcgui.Dialog().ok("Managed by the configurator", NETWORK_SETTINGS_MANAGED_NOTE)
+            continue
+
+        key, label, kind = fields[choice - 1]
+        if kind == "info":
+            xbmcgui.Dialog().ok(
+                label,
+                "The Kodi box network address is set by the configurator on your "
+                "Windows PC when it deploys the add-on. There is no in-add-on "
+                "setting to change it here.",
+            )
+            continue
+
+        current = get_setting(key)
+        new_value = xbmcgui.Dialog().input(f"Edit {label}", current).strip()
+        if new_value == "" or new_value == current:
+            continue
+        if kind == "port" and not new_value.isdigit():
+            xbmcgui.Dialog().ok(
+                "Invalid port",
+                f"'{new_value}' is not a valid port. Enter digits only.",
+            )
+            continue
+        ADDON.setSetting(key, new_value)
+        xbmcgui.Dialog().ok(
+            "Setting updated",
+            f"'{label}' is now '{new_value}'.\n\n" + NETWORK_SETTINGS_MANAGED_NOTE,
+        )
+
+
 def main():
     if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
         show_architecture_choice_dialog()
@@ -780,6 +893,7 @@ def main():
         "Experimental: file-list diagnostic (opt-in)",
         "Export hardware-validation readiness report",
         "Export AVR diagnostic report",
+        "Network settings (TV / OPPO / AVR / Kodi)",
         "Cancel",
     ]
     choice = xbmcgui.Dialog().select("Oppo UDP-203 ISO External Player", actions)
@@ -805,3 +919,5 @@ def main():
         export_hardware_validation_readiness()
     elif choice == 10:
         export_avr_diagnostic_report()
+    elif choice == 11:
+        network_settings_menu()

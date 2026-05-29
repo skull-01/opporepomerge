@@ -180,6 +180,54 @@ implementing SHA(s) on the issue and append a row here.
     6. Restart Kodi → repeat step 3 → the once-per-session notification fires
        again (Window(10000) property cleared on restart).
 
+### ENH-#42 — Minimal in-add-on network settings menu (IP editor; PR 1 of 2)
+
+- **Implementing SHA:** head of `claude/enh42-network-editor-k4n9x2p7` (commented on issue #42).
+- **Scope:** PR 1 of 2 for ENH-#42 — the network/IP viewer-editor only. The
+  language switcher ships as PR 2.
+- **What changed:**
+  - [`resources/lib/kodi/installer.py`](../resources/lib/kodi/installer.py): new
+    menu entry "Network settings (TV / OPPO / AVR / Kodi)" in `main()` (choice
+    11, before Cancel), plus `network_settings_menu()`, `_network_fields()`, and
+    `_resolve_enum()`. The editor surfaces the configurator-managed connection
+    fields and lets the user override one in place.
+  - Fields are **backend-aware**: always OPPO IP/port + TV IP; then the active
+    `tv_backend`'s host fields (ADB port + path / Sony PSK / Roku ECP port /
+    SmartThings token + device id); AVR host/port when AVR is enabled or a
+    backend is selected (+ Sony AVR PSK for `sony_audio_api`). The Kodi box
+    address is shown **read-only** — there is no in-add-on setting for it
+    (configurator-owned).
+  - Every editable key is in `service.CONFIGURATOR_MANAGED_KEYS`, so a top
+    "[Managed by the configurator]" row explains overrides may be overwritten,
+    and each successful edit repeats that note. Empty/unchanged input is a no-op
+    (won't clear a value); non-numeric port input is rejected.
+  - `tests/test_v2914_build2_network_settings_menu.py`: 21 new tests (menu entry
+    + dispatch, backend-aware field list incl. enum-index normalization,
+    edit/write-back, invalid-port reject, no-op, read-only Kodi row, managed
+    marker).
+  - `tests/test_coverage_hardening.py`: menu-shape test updated 11→12 choices.
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `pytest -n auto` 907 passed / 3 skipped; serial coverage 99%
+  (`installer.py` 99%, new code fully covered); `ruff check` +
+  `ruff format --check resources default.py service.py` clean; `unittest
+  discover` 526 OK; `audit_release` 578/578; py_compile +
+  render_docs/sync_version/test_layout/i18n `--check` all green.
+- **Operator end-to-end (Phase C) when run on hardware:**
+  1. Open Kodi → Add-ons → OPPO 203 ISO External → run the add-on (its own
+     menu, not Kodi's generic Settings panel).
+  2. Select "Network settings (TV / OPPO / AVR / Kodi)".
+  3. Confirm the first row reads "[Managed by the configurator] - select for
+     details"; selecting it shows the managed-by-configurator explanation.
+  4. Confirm OPPO IP / OPPO port / TV IP rows show current values, and the
+     TV/AVR rows match the configured backend (e.g. ADB → TV ADB port + ADB
+     binary path).
+  5. Select "OPPO IP", enter a new value → expect "Setting updated" with the
+     managed-override note; re-open and confirm `oppo_ip` persisted.
+  6. Select "OPPO port", enter letters → expect "Invalid port" and no change.
+  7. Select "Kodi box address" → expect the read-only explanation (no input
+     prompt).
+  8. Select "Back" → returns to the main add-on menu.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_
