@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import os
 import xml.etree.ElementTree as ET
+from collections.abc import Iterable, Mapping
+from typing import Any, cast
 
 try:
     from ..oppo.command_map import load_default_command_map_json
-    from .settings_schema import build_default_schema
+    from .settings_schema import SettingIssue, build_default_schema
 except ImportError:  # top-level/audit import compatibility
     from command_map import load_default_command_map_json  # type: ignore
-    from settings_schema import build_default_schema  # type: ignore
+    from settings_schema import SettingIssue, build_default_schema  # type: ignore
 
 
 # v2.5.0 Build 2: conservative stability/validation helpers.
@@ -172,7 +176,7 @@ ENUM_VALUES = {
 SETTINGS_SCHEMA = build_default_schema(DEFAULTS, ENUM_VALUES)
 
 
-def _setting_text(value, default=""):
+def _setting_text(value: object, default: object = "") -> str:
     """Return text for a setting value while preserving legacy fallback safety.
 
     Some legacy tests and partially corrupted settings objects may provide
@@ -186,7 +190,7 @@ def _setting_text(value, default=""):
         return str(default)
 
 
-def _settings_items(data):
+def _settings_items(data: Any) -> Iterable[tuple[Any, Any]]:
     """Return key/value pairs for a mapping-like settings object."""
     try:
         return dict(data).items()
@@ -195,18 +199,18 @@ def _settings_items(data):
 
 
 class Settings:
-    def __init__(self, data):
-        merged = dict(DEFAULTS)
+    def __init__(self, data: Mapping[str, object]) -> None:
+        merged: dict[str, object] = dict(DEFAULTS)
         merged.update({k: v for k, v in data.items() if v is not None})
         self.data = merged
 
-    def get(self, key, default=None):
+    def get(self, key: str, default: object = None) -> Any:
         return self.data.get(key, default)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
         return self.data[key]
 
-    def get_bool(self, key, default=False):
+    def get_bool(self, key: str, default: bool = False) -> bool:
         raw = self.get(key, default)
         if raw is None:
             return bool(default)
@@ -217,10 +221,12 @@ class Settings:
             return bool(default)
         return value in ("1", "true", "yes", "on")
 
-    def get_str(self, key, default=""):
+    def get_str(self, key: str, default: str = "") -> str:
         return _setting_text(self.get(key, default), default)
 
-    def get_int(self, key, default=0, minimum=None, maximum=None):
+    def get_int(
+        self, key: str, default: int = 0, minimum: int | None = None, maximum: int | None = None
+    ) -> int:
         """Return an integer setting with safe fallback and optional bounds.
 
         Invalid values no longer leak ValueError into callers.  Bounds are
@@ -237,7 +243,13 @@ class Settings:
             value = int(maximum)
         return value
 
-    def get_float(self, key, default=0.0, minimum=None, maximum=None):
+    def get_float(
+        self,
+        key: str,
+        default: float = 0.0,
+        minimum: float | None = None,
+        maximum: float | None = None,
+    ) -> float:
         """Return a float setting with safe fallback and optional bounds."""
         try:
             value = float(_setting_text(self.get(key, default), default).strip())
@@ -249,14 +261,14 @@ class Settings:
             value = float(maximum)
         return value
 
-    def get_path(self, key, default="", *, expand_user=True):
+    def get_path(self, key: str, default: str = "", *, expand_user: bool = True) -> str:
         """Return a normalized path-like setting without requiring it to exist."""
         value = self.get_str(key, default).strip()
         if expand_user and value.startswith("~"):
             value = os.path.expanduser(value)
         return os.path.normpath(value) if value else ""
 
-    def schema_issues(self):
+    def schema_issues(self) -> list[SettingIssue]:
         """Return typed schema issues without mutating settings or throwing.
 
         Build 9 keeps schema validation advisory. Existing getters still perform
@@ -264,11 +276,11 @@ class Settings:
         """
         return SETTINGS_SCHEMA.validate(self.data)
 
-    def typed_values(self):
+    def typed_values(self) -> dict[str, Any]:
         """Return schema-coerced values for diagnostic and future hardening use."""
         return SETTINGS_SCHEMA.coerce(self.data)
 
-    def validate_required(self, required):
+    def validate_required(self, required: Iterable[str]) -> list[str]:
         """Return missing required setting keys without mutating settings.
 
         ``required`` may be any iterable of setting keys.  Defaults count as
@@ -282,7 +294,7 @@ class Settings:
                 missing.append(str(key))
         return missing
 
-    def validation_summary(self):
+    def validation_summary(self) -> dict[str, object]:
         """Return a compact non-throwing setup validation summary.
 
         This is a Build 2 supportability guardrail: it lets future code and AI
@@ -319,17 +331,17 @@ class Settings:
             "schema_issue_codes": [issue.code for issue in schema_issues],
         }
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: object) -> None:
         self.data[key] = value
 
-    def __contains__(self, key):
+    def __contains__(self, key: object) -> bool:
         return key in self.data
 
-    def get_lines(self, key):
-        return [line.strip() for line in self.get(key, "").splitlines() if line.strip()]
+    def get_lines(self, key: str) -> list[str]:
+        return [line.strip() for line in self.get_str(key).splitlines() if line.strip()]
 
 
-def _setting_value(element):
+def _setting_value(element: ET.Element[str]) -> str:
     if "value" in element.attrib:
         return element.attrib["value"]
     if element.text:
@@ -340,7 +352,7 @@ def _setting_value(element):
     return ""
 
 
-def read_settings(addon_data_dir):
+def read_settings(addon_data_dir: str) -> Settings:
     settings_path = os.path.join(addon_data_dir, "settings.xml")
     if not os.path.exists(settings_path):
         return Settings({})
@@ -367,7 +379,7 @@ def read_settings(addon_data_dir):
     return Settings(data)
 
 
-def save_settings(addon_data_dir, settings):
+def save_settings(addon_data_dir: str, settings: object) -> bool:
     """Persist Settings data to the add-on data settings.xml file.
 
     This helper is intentionally conservative for the v2.2 merge line: it
@@ -396,10 +408,10 @@ def save_settings(addon_data_dir, settings):
             root = ET.Element("settings")
 
     by_id = {}
-    for element in root.iter("setting"):
-        setting_id = element.attrib.get("id")
+    for existing in root.iter("setting"):
+        setting_id = existing.attrib.get("id")
         if setting_id:
-            by_id[setting_id] = element
+            by_id[setting_id] = existing
 
     for key, value in items:
         if str(key).startswith("_") or key == "addon_data_dir":
@@ -474,7 +486,7 @@ _HARDWARE_ALIASES = {
 }
 
 
-def normalize_hardware_model(model):
+def normalize_hardware_model(model: object) -> str:
     """Return the canonical v2 hardware model name for settings/UI aliases."""
     if not isinstance(model, str):
         return "UDP-203"
@@ -484,7 +496,7 @@ def normalize_hardware_model(model):
     return _HARDWARE_ALIASES.get(stripped.lower(), stripped)
 
 
-HARDWARE_COMPAT = {
+HARDWARE_COMPAT: dict[str, dict[str, object]] = {
     "UDP-203": {
         "wake_command": "#PON",
         "protocol_compatible": True,
@@ -715,7 +727,7 @@ NAS_PLAYBACK_CAPABILITY = {
 }
 
 
-def _firmware_major_build(firmware):
+def _firmware_major_build(firmware: object) -> int | None:
     """Return the numeric 20X build component, e.g. 65 for 20X-65-0131."""
     if firmware is None:
         return None
@@ -731,7 +743,7 @@ def _firmware_major_build(firmware):
         return None
 
 
-def oppo20x_autoscript_firmware_status(firmware):
+def oppo20x_autoscript_firmware_status(firmware: object) -> dict[str, Any]:
     """Describe whether original OPPO 20x firmware is AutoScript-capable.
 
     Research added in v45/v2.5.2 planning identifies 20X-56 as the minimum
@@ -741,7 +753,7 @@ def oppo20x_autoscript_firmware_status(firmware):
     active patched firmware/binary combination.
     """
     build = _firmware_major_build(firmware)
-    result = {
+    result: dict[str, Any] = {
         "firmware": "" if firmware is None else str(firmware).strip(),
         "minimum": OPPO20X_AUTOSCRIPT_MIN_FIRMWARE,
         "recommended": OPPO20X_AUTOSCRIPT_RECOMMENDED_FIRMWARE,
@@ -763,7 +775,9 @@ def oppo20x_autoscript_firmware_status(firmware):
     return result
 
 
-def nas_playback_capability(model, firmware="", jailbreak=False, confirmed=False):
+def nas_playback_capability(
+    model: object, firmware: object = "", jailbreak: bool = False, confirmed: bool = False
+) -> dict[str, object]:
     """Return a conservative NAS-mounted playback capability assessment.
 
     This is a planning/gating helper only. It does not launch playback, mutate
@@ -819,7 +833,7 @@ def nas_playback_capability(model, firmware="", jailbreak=False, confirmed=False
     }
 
 
-def hardware_profile(model):
+def hardware_profile(model: object) -> dict[str, object]:
     """Return hardware compatibility data, using a safe UDP-203-like fallback."""
     canonical = normalize_hardware_model(model)
     if canonical in HARDWARE_COMPAT:
@@ -835,14 +849,14 @@ def hardware_profile(model):
     }
 
 
-def compatibility_preset(model, jailbreak=False):
+def compatibility_preset(model: object, jailbreak: bool = False) -> dict[str, object]:
     """Return recommended MVP setting overrides for a model without mutating settings."""
     profile = hardware_profile(model)
     if profile.get("is_reavon"):
         return {"__reavon_warning__": True}
     if profile.get("is_successor"):
         return {"__successor_warning__": True}
-    preset = {}
+    preset: dict[str, object] = {}
     if profile.get("is_clone"):
         preset["oppo_start_commands"] = "#EJT\n#PLA"
         preset["oppo_start_mode"] = "tcp_commands"
@@ -852,18 +866,18 @@ def compatibility_preset(model, jailbreak=False):
     return preset
 
 
-def is_token_supported_by_hardware(token, model):
+def is_token_supported_by_hardware(token: object, model: object) -> bool:
     """Return False only for known unsupported #SRC tokens on the selected model."""
     if not isinstance(token, str):
         return True
     normalized = token.strip().upper()
     profile = hardware_profile(model)
-    if normalized in profile.get("src_unsupported", set()):
+    if normalized in cast("set[str]", profile.get("src_unsupported", set())):
         return False
     return True
 
 
-def warn_if_unsupported(token, model):
+def warn_if_unsupported(token: object, model: object) -> str | None:
     if is_token_supported_by_hardware(token, model):
         return None
     return f"Token {token!r} is not supported by configured hardware model {normalize_hardware_model(model)!r}."

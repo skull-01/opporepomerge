@@ -443,6 +443,34 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
   or hardware behavior change.
 
+### ENH-#51 — mypy --strict allowlist expansion (PR 5 of N: settings_reader + oppo_control hubs)
+
+- **Implementing SHA:** `8b06744` on `claude/enh51-mypy-pr5-h5w8k3rq` (draft PR #64;
+  commented on issue #51). **Stacked on PR #63** (base = the PR 4 branch); **merge #63 first.**
+- **Scope:** PR 5 of the source-only rollout. Annotates the two heaviest un-migrated hub
+  modules to zero strict errors and adds them to the gate (33 → 35): `kodi/settings_reader`
+  (72 errors) and `oppo/oppo_control` (111 errors). Unblocks the cascade group (PR 6+).
+- **What changed (type-only, behaviour-preserving):**
+  - [`mypy.ini`](../mypy.ini) + [`pyproject.toml`](../pyproject.toml) mirror: 2 modules added.
+  - `Settings.get` / `Settings.__getitem__` typed `-> Any` (the raw accessors; `get_str` /
+    `get_int` / `get_bool` / `get_float` / `get_path` keep the concrete types). Avoids a
+    cascade of false errors at every `settings.get(...)` call site in oppo_control.
+  - oppo_control imports `Settings` under `if TYPE_CHECKING:` (annotation-only; no runtime
+    import or cycle).
+  - `HARDWARE_COMPAT` annotated `dict[str, dict[str, object]]`; a `dict[str, Any]` pin on the
+    firmware-status result; `cast` on `urlopen().read()` and object-typed metadata tuples;
+    one loop variable renamed to avoid a reuse type clash.
+  - `get_lines` now coerces via `get_str` (equivalent for string settings).
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `tools/type_check.py --gate` **35 files, 0 errors**; `pytest -n auto` **938 passed /
+  3 skipped**; serial coverage **99.04%**; `ruff check` + `ruff format --check` clean.
+- **Phase A review focus:**
+  - Confirm both hubs are signature/typing-only — especially the `Settings.get -> Any`
+    decision and that no runtime control / HTTP / socket path changed.
+  - Confirm `get_lines` via `get_str` is behaviour-preserving for string settings.
+- **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
+  or hardware behavior change.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_
