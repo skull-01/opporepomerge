@@ -29,13 +29,16 @@ Public API
 in-memory stub; production passes None to use real `os`/`shutil`.
 """
 
+from __future__ import annotations
+
 import os
 import shutil as _shutil
 import time as _time
 import xml.etree.ElementTree as ET
+from typing import Any, Callable
 
 try:
-    from .disc_classification import (
+    from .disc_classification import (  # type: ignore[attr-defined]
         XML_4K_TAG_FILENAME_PATTERN,
         XML_DISC_FILETYPES,
         XML_LOOSE_VIDEO_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
@@ -54,7 +57,7 @@ except ImportError:  # pragma: no cover - top-level test import compatibility
 # constants are imported from disc_classification.py.
 
 
-def _option4_rule_xml(player_name, filetype):
+def _option4_rule_xml(player_name: str, filetype: str) -> str:
     return (
         '    <rule name="' + player_name + "_rule_" + filetype + '" '
         'filetypes="' + filetype + '" '
@@ -100,7 +103,7 @@ PRESETS = {
 }
 
 
-def is_well_formed(text):
+def is_well_formed(text: str | None) -> bool:
     """Return True iff `text` parses as XML.  None/empty -> True."""
     if text is None or not str(text).strip():
         return True
@@ -111,19 +114,21 @@ def is_well_formed(text):
         return False
 
 
-def _ts(now=None):
+def _ts(now: float | Callable[[], float] | None = None) -> str:
     t = _time.localtime(now() if callable(now) else (now if now else _time.time()))
     return _time.strftime("%Y%m%d-%H%M%S", t)
 
 
-def backup_path(target_path, *, now=None):
+def backup_path(target_path: str, *, now: float | Callable[[], float] | None = None) -> str:
     return target_path + "." + _ts(now) + ".bak"
 
 
 _PLAYER_NAME_TMPL = "OPPO_External_{preset}"
 
 
-def snippet_for(preset_id, *, player_path, addon_id="script.oppo203.iso.external"):
+def snippet_for(
+    preset_id: str, *, player_path: str, addon_id: str = "script.oppo203.iso.external"
+) -> str:
     """Generate a self-contained <playercorefactory> XML fragment
     for the given preset.  The fragment contains exactly one <player>
     and conservative Option 4 matching <rule> entries.
@@ -158,7 +163,7 @@ def snippet_for(preset_id, *, player_path, addon_id="script.oppo203.iso.external
 
 
 # Backwards-friendly alias
-def generate(preset_id, **kwargs):
+def generate(preset_id: str, **kwargs: Any) -> str:
     return snippet_for(preset_id, **kwargs)
 
 
@@ -168,28 +173,28 @@ def generate(preset_id, **kwargs):
 
 
 class _RealFS:
-    def exists(self, p):
+    def exists(self, p: str) -> bool:
         return os.path.exists(p)
 
-    def read(self, p):
+    def read(self, p: str) -> str:
         with open(p, "r", encoding="utf-8") as f:
             return f.read()
 
-    def write(self, p, text):
+    def write(self, p: str, text: str) -> None:
         d = os.path.dirname(p)
         if d:
             os.makedirs(d, exist_ok=True)
         with open(p, "w", encoding="utf-8") as f:
             f.write(text)
 
-    def copy(self, src, dst):
+    def copy(self, src: str, dst: str) -> None:
         d = os.path.dirname(dst)
         if d:
             os.makedirs(d, exist_ok=True)
         _shutil.copy2(src, dst)
 
 
-def _merge_xml(existing_text, snippet_text):
+def _merge_xml(existing_text: str | None, snippet_text: str) -> tuple[str, int]:
     """Merge two <playercorefactory> documents.  Idempotent: a
     <player name="X"> already present in the existing document is
     not duplicated; rules with the same name are likewise deduped.
@@ -230,7 +235,7 @@ def _merge_xml(existing_text, snippet_text):
     return ET.tostring(base, encoding="unicode"), added
 
 
-def _count_players(text):
+def _count_players(text: str) -> int:
     try:
         root = ET.fromstring(text)
     except ET.ParseError:
@@ -239,7 +244,9 @@ def _count_players(text):
     return 0 if players is None else len(players.findall("player"))
 
 
-def _restore_original_after_failed_write(fs, target_path, backup, original_text):
+def _restore_original_after_failed_write(
+    fs: Any, target_path: str, backup: str | None, original_text: str | None
+) -> None:
     """Best-effort rollback helper used only after a failed write/validation.
 
     Filesystem test doubles may not implement delete/rename, so the most
@@ -257,7 +264,13 @@ def _restore_original_after_failed_write(fs, target_path, backup, original_text)
         pass
 
 
-def merge(target_path, snippet_xml, *, fs=None, now=None):
+def merge(
+    target_path: str,
+    snippet_xml: str,
+    *,
+    fs: Any = None,
+    now: float | Callable[[], float] | None = None,
+) -> dict[str, Any]:
     """Merge snippet_xml into target_path safely.
 
     - Refuses to merge if the existing file is malformed (raises

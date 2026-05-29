@@ -124,6 +124,7 @@ files = [
   "resources/lib/kodi/intercept.py",
   "resources/lib/kodi/keymap_skin.py",
   "resources/lib/kodi/logging_v116.py",
+  "resources/lib/kodi/playercorefactory_merge.py",
   "resources/lib/kodi/preset_manager.py",
   "resources/lib/kodi/settings_reader.py",
   "resources/lib/kodi/settings_schema.py",
@@ -149,6 +150,8 @@ files = [
   "resources/lib/tv/tv_control.py",
   "resources/lib/tv/tv_diagnostics.py",
   "resources/lib/tv/tv_presets.py",
+  "default.py",
+  "service.py",
 ]
 
 [tool.github-readiness]

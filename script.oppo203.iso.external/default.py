@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import sys
+from typing import Any, cast
 
 from resources.lib.installer import main
 from resources.lib.oppo_remote import send_remote_key
@@ -10,7 +13,12 @@ if __name__ == "__main__":
         main()
 
 
-def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None):
+def run_diagnostics_dashboard(
+    addon_data_dir: str | None = None,
+    host: str | None = None,
+    port: int = 23,
+    mac: str | None = None,
+) -> str | None:
     """Installer menu entry point for the v1.0.9 diagnostics dashboard.
 
     Wires real Kodi-aware probes via best-effort lazy imports; falls
@@ -18,7 +26,7 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
     written report path or None if `addon_data_dir` is None.
     """
     try:
-        from resources.lib import diagnostics as diag
+        from resources.lib import diagnostics as diag  # type: ignore[attr-defined]
     except ImportError:
         try:
             from .resources.lib import diagnostics as diag
@@ -30,7 +38,7 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
             sys.path.insert(0, _os.path.join(_os.path.dirname(__file__), "resources", "lib"))
             diag = importlib.import_module("diagnostics")
 
-    def _tcp(h, p):
+    def _tcp(h: str, p: int) -> dict[str, Any]:
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -42,7 +50,7 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
-    def _http(h):
+    def _http(h: str) -> dict[str, Any]:
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -54,7 +62,7 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
-    def _svm(h, p):
+    def _svm(h: str, p: int) -> dict[str, Any]:
         # Capability probe only: we attempt to send "#SVM 2\r" and read
         # one line; success is any non-empty reply.
         import socket
@@ -70,7 +78,7 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
-    def _wol(m):
+    def _wol(m: str) -> dict[str, Any]:
         # Best-effort: send a magic packet; "round-trip" here means the
         # packet was sent without OS error.  Real ARP/return is out of
         # scope for a Kodi sandbox.
@@ -89,7 +97,7 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
-    def _kodi():
+    def _kodi() -> dict[str, Any]:
         try:
             import xbmc
 
@@ -101,7 +109,7 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
-    def _caps():
+    def _caps() -> dict[str, Any]:
         return {
             "ok": True,
             "service_interception": True,
@@ -122,5 +130,5 @@ def run_diagnostics_dashboard(addon_data_dir=None, host=None, port=23, mac=None)
         capabilities=_caps,
     )
     if addon_data_dir:
-        return diag.save_report(res, addon_data_dir)
+        return cast(str, diag.save_report(res, addon_data_dir))
     return None
