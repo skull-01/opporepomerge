@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `f21033b` (origin/main, 2026-05-29 — Merge PR #46 ENH-#41 B+C atop PR #47 ENH-#43 lib split) · **Tests on `main`:** 886 passed, 3 skipped (`pytest -n auto`, ~10s; coverage 99.07%)
+**Last sync:** commit `092444a` (origin/main, 2026-05-29 — Merge PR #50 ruff whole-codebase enforcement, atop the ENH-#42 #48/#49 merges) · **Tests on `main`:** 932 passed, 3 skipped (`pytest -n auto`, ~10s; coverage 99.10%)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -167,81 +167,85 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-29 (EOD — PR #47 + #46 merge session):** both formerly-in-flight
-draft PRs are **merged to `main`**; clean stopping point, no in-flight addon code.
-`main` advanced `23d43ae` → **`f21033b`** — **886 passed, 3 skipped**, coverage
-**99.07%**. This session reviewed both PRs, merged ENH-#43 (#47), integrated
-ENH-#41 B+C (#46) onto the post-#47 `main`, and verified the **combination**
-before landing it.
+**As of 2026-05-29 (EOD — ENH-#42 + ruff-enforcement session):** clean stopping
+point, no in-flight addon code. `main` advanced `f21033b` → **`092444a`** —
+**932 passed, 3 skipped**, coverage **99.10%**. This session shipped ENH-#42
+(both halves) and resolved the ENH-#38 ruff backlog, then filed ENH-#51 to track
+the mypy `--strict` rollout (the next theme, **not yet started**).
 
-- **Shipped this session — both PRs merged via `gh pr merge --merge --delete-branch`:**
-  - [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47)
-    — *split `resources/lib` into tv/oppo/avr/kodi sub-packages (ENH-#43)* —
-    **merged at `3ba5009`**. 46 modules bucketed (`version.py` → `kodi/`); legacy
-    flat names (`resources.lib.X` + bare `X`) keep resolving via the lazy
-    `sys.meta_path` alias finder in
-    [`resources/lib/__init__.py`](resources/lib/__init__.py).
-  - [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46)
-    — *in-add-on configurator-owner hint + overwrite warning (ENH-#41 Parts B+C)*
-    — **merged at `f21033b`**. Static lsep banner + once-per-session toast +
-    42-key (`CONFIGURATOR_MANAGED_KEYS`) overwrite warning in
-    `service.Monitor.onSettingsChanged` (logging/notification only, no state
-    mutation).
+- **Shipped this session:**
+  - **ENH-#42 — minimal in-add-on settings menu** — both halves merged:
+    [PR #48](https://github.com/skull-01/script.oppo203.iso.external/pull/48)
+    *network/IP editor* at **`16eda5e`** and
+    [PR #49](https://github.com/skull-01/script.oppo203.iso.external/pull/49)
+    *add-on-language switcher* at **`3765862`**. `installer.main()` gained a
+    "Network settings (TV / OPPO / AVR / Kodi)" entry (backend-aware view/override
+    of the configurator-managed IP/port fields + a managed-by-configurator marker)
+    and an "Add-on language" entry (hidden `addon_language` setting; follow-Kodi
+    default). `i18n.supported_languages()` fixed 7 → 12; new `effective_language()`
+    + a pinned-locale `strings.po` override path in `L()`.
+  - **ENH-#38 — ruff backlog RESOLVED** —
+    [PR #50](https://github.com/skull-01/script.oppo203.iso.external/pull/50) at
+    **`092444a`**. `ruff check .` + `ruff format --check .` now clean across the
+    **whole** codebase (tests/ + tools/ included) and enforced in CI. Config
+    consolidated: `ruff.toml` stays authoritative (per the g5 "legacy configs
+    remain" test) with the `pyproject [tool.ruff]` mirror synced; `C4` added;
+    `tests/**` per-file-ignores. 246 findings cleared via `--fix` + `ruff format`
+    (which split the ~70 `E701`/`E702` one-liners). **No source files changed.**
 
-- **Merge mechanics (lesson for future multi-PR sessions):** the prior §3a
-  claimed these two PRs touched "disjoint files" — **wrong.** They overlapped on
-  `service.py`, `tests/test_all.py`, and `docs/MANUAL_VERIFICATION_CHECKLIST.md`;
-  GitHub reported both MERGEABLE only because each was diffed against the *old*
-  `main`. Handled by merging #47 first, then merging the new `main` into #46's
-  branch locally (clean auto-merge — the insertions fell in distinct regions),
-  running the **full gate on the integrated tree** (commit `126bac9`), pushing,
-  waiting for CI green, then merging #46. **Lesson:** when two open PRs both look
-  mergeable, verify the *combination* locally — don't trust two independent green
-  CIs.
+- **Sequencing lesson:** merged the finished #48/#49 **before** the ruff sweep,
+  because `ruff format` rewrites `tests/test_all.py` + `tests/test_coverage_hardening.py`
+  — the exact files #48/#49 edited (the two worst offenders, 144 of 246 errors) —
+  which would have conflicted. Stacked-PR dance: `gh pr edit 49 --base main`
+  **before** `gh pr merge 48 --delete-branch`, so deleting the parent branch does
+  not auto-close the child.
 
-- **Verified on combined `main`** (`f21033b`, tree-identical to gated `126bac9`):
-  `pytest -n auto` **886/3**; serial coverage **99.07%** (≥99% floor); ruff
-  check+format clean on `resources default.py service.py`; `unittest discover`
-  **505 OK**; `audit_release` **580/580**; doc/version/layout/i18n `--check` OK;
-  `main` push-CI green (incl. the Ubuntu-only `package_release.sh`). Merge SHAs
-  commented on
-  [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43#issuecomment-4571133909)
-  and
-  [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41#issuecomment-4571134996).
-  Software-verified only; Phase A/C on-device steps still queued in the manual
-  checklist.
+- **Verified (software only; hardware not claimed):** `pytest -n auto` **932/3**;
+  serial coverage **99.10%**; `ruff check .` + `ruff format --check .` clean;
+  `unittest discover` 551 OK; `audit_release` 578/578; doc/version/layout/i18n
+  `--check` OK; `main` push-CI green on the #48 and #49 merges (#50 push-CI was in
+  flight at EOD; PR #50's checks were fully green before merge). Merge SHAs
+  commented on #38 and #42.
 
-- **What to resume next session:**
-  - **Operator: verify + close #43 and #41** (merge SHAs commented; only the
-    operator closes issues). #41 is **only partly done** — its addon side (Parts
-    B+C) shipped, but the **configurator side of Part C** (writing the
-    `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` marker into the
-    generated `settings.xml`) is still open → `area:configurator` session.
-  - **ENH-#42** (minimal in-add-on settings menu) is now **unblocked** by #43's
-    bucket layout — strongest addon lead.
-  - Phase A on-device verification of #40 / #46 / #47 (whenever hardware is to
-    hand) — all queued in the manual checklist.
+- **IN FLIGHT — resume here: ENH-#51 — mypy `--strict` rollout (Phase 2), NOT
+  STARTED.** Plan: flip the authoritative **`mypy.ini`** (+ synced
+  `pyproject [tool.mypy]` mirror) to `strict = true` + a curated `files = [...]`
+  allowlist; annotate source **leaf-first** in small per-PR batches; set
+  `python_version = 3.9`; make `tools/type_check.py` blocking in CI; honor the
+  `test_v291_build13` type-check-baseline guard tests. Baseline: `mypy --strict`
+  on source = **840 errors / 37 files** (298 `no-untyped-def` drives the 423
+  `no-untyped-call` cascade; ~55 real findings; 34 `no-redef` from the try/except
+  import-fallback idiom). Heaviest: `oppo_control` 111, `installer` 97,
+  `external_player` 88, `service.py` 82, `settings_reader` 72. **Source-only**
+  scope (operator decision); tests/ + tools/ deferred within #51.
 
-- **Carried open after this session (all `area:addon`):**
+- **Operator: verify + close** #42 (merged via #48/#49) and #38 (resolved by #50)
+  — merge SHAs commented; only the operator closes issues. (#43 and the #41 addon
+  part from prior sessions also still await close.)
+
+- **Carried open (all `area:addon`):**
   [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
-  (ruff backlog),
+  (ruff — **RESOLVED** by #50, awaiting close),
   [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
-  (configurator-owns-config — addon B+C **merged** at `f21033b`; configurator
-  side of Part C still open),
+  (configurator side of Part C still open → `area:configurator`),
   [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42)
-  (in-add-on settings menu — now unblocked),
+  (**MERGED** via #48/#49, awaiting close),
   [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43)
-  (lib split — **merged** at `3ba5009`, awaiting operator close),
+  (lib split — merged `3ba5009`, awaiting close),
   [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
-  (hardware-validation testing). Only the operator closes issues.
+  (hardware-validation testing),
+  [#51](https://github.com/skull-01/script.oppo203.iso.external/issues/51)
+  (mypy `--strict` rollout — **NEW**, the in-flight theme). Only the operator
+  closes issues.
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **ENH-#42 — minimal in-add-on settings menu** — now unblocked by #43's
-     bucket layout; clean lead.
-  2. **#38 ruff backlog PR 1 (auto-fix sweep)** — independent; parallel-session
-     friendly.
-  3. **Phase A device verification** for #40 / #46 / #47 — operator action on
-     real hardware, no agent code.
+  1. **ENH-#51 — mypy `--strict` PR 1** — config flip (mypy.ini + mirror) + first
+     leaf-module batch + blocking CI. The in-flight theme; strongest lead.
+  2. **Phase A on-device verification** of #40 / #42 / #46 / #47 / #48 / #49 —
+     operator action on real hardware, no agent code.
+  3. **Configurator-side ENH-#41 Part C** — `area:configurator` session (write the
+     `<!-- generated by configurator … -->` marker into the generated
+     `settings.xml`).
 
 ## §3b Configurator work — in progress
 
@@ -414,6 +418,8 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   note; integrated #46 onto the post-#47 `main` locally, ran the full gate on the
   combined tree (commit `126bac9`: 886/3, coverage 99.07%), then merged. `main`
   `23d43ae` → `f21033b`; test count 865 → 886.
+- **2026-05-29** — ENH-#42 shipped (both halves): in-add-on network/IP editor (PR #48 at `16eda5e`) and add-on-language switcher (PR #49 at `3765862`). `installer.main()` gained "Network settings" + "Add-on language" entries; hidden `addon_language` setting; `i18n.supported_languages()` 7 → 12 plus `effective_language()` and a pinned-locale `L()` override.
+- **2026-05-29** — ENH-#38 resolved: ruff enforced across the whole codebase (PR #50 at `092444a`). `ruff check .` + `ruff format --check .` clean (tests/ + tools/ included); config consolidated (ruff.toml authoritative + pyproject mirror, `C4` added); CI flipped to whole-tree. Filed ENH-#51 to track the mypy `--strict` source rollout (curated allowlist, leaf-first, source-only).
 
 ---
 
@@ -441,16 +447,17 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-29 (EOD — PR #47 + #46 merge session)**.
+Last refreshed: **2026-05-29 (EOD — ENH-#42 + ruff-enforcement session)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
 | 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`, merged via #40 at `59eb511`) | closed by operator |
-| 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not started |
+| 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | **Resolved** by [PR #50](https://github.com/skull-01/script.oppo203.iso.external/pull/50) at `092444a` — `ruff check .` + `ruff format --check .` clean whole-codebase, enforced in CI | awaiting operator close |
 | 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | Part A `816bde2` (PR #45). Addon side of Parts B + C **merged** via [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46) at `f21033b`. **Configurator side of Part C still pending** (separate `area:configurator` session). | Phase A queued (#45, #46) |
-| 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | — | not started |
+| 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | **Merged** via [PR #48](https://github.com/skull-01/script.oppo203.iso.external/pull/48) at `16eda5e` (network/IP editor) + [PR #49](https://github.com/skull-01/script.oppo203.iso.external/pull/49) at `3765862` (language switcher) | Phase A/C queued; awaiting operator close |
 | 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | **Merged** via [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) at `3ba5009` (impl `18a97a6` + test-isolation `69e32b3`) | Phase A queued |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
+| 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | — | not started (Phase 2; plan in §3a) |
 
 ---
 
@@ -663,6 +670,7 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   passed, 3 skipped**, coverage `99.05%` → **99.07%**. No new issues/branches;
   ENH-#42 now unblocked by #43's bucket layout. Phase A/C on-device verification
   of #40/#46/#47 still deferred.
+- **2026-05-29 (EOD — ENH-#42 + ruff-enforcement session)** — Operator-driven session. (1) Landed the finished ENH-#42 PRs to `main`: #48 network/IP editor at `16eda5e`, #49 language switcher at `3765862` (retargeted #49 to `main` before deleting #48's branch to avoid stacked-PR auto-close). (2) ENH-#38 ruff backlog **resolved** via PR #50 at `092444a` — `ruff check .` + `ruff format --check .` clean across tests/tools, consolidated config (ruff.toml authoritative + pyproject mirror + `C4`), CI flipped to whole-tree; 246 findings cleared, no source touched. Filed **ENH-#51** to track the mypy `--strict` rollout (source-only, curated allowlist, leaf-first) — Phase 2, not started. **§3a rewritten** to the merged state + the in-flight #51 plan; **§3b untouched**. **§15** gained two journey bullets; **§17a** rows #38/#42 + new #51 row + "Last refreshed" updated. **Header** "Last sync" `f21033b` → `092444a`, tests `886` → **932 passed, 3 skipped**, coverage `99.07%` → **99.10%**.
 
 ---
 
