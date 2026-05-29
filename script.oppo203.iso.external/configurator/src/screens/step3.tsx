@@ -4,33 +4,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { parseOppoPowerReply } from "../probes";
-import type { PlayerBrand } from "../state";
+import { PLAYER_BRANDS, isWakeRewriteBrand } from "../players";
 import type { ScreenProps } from "./types";
 
 // ============================================================
 // STEP 3 — Player brand + model + IP
 // ============================================================
-type BrandPosture = "stock" | "wake-rewrite" | "warning";
-
-type Brand = {
-  id: PlayerBrand;
-  name: string;
-  ch: string;
-  posture: BrandPosture;
-  models: readonly string[];
-};
-
-const PLAYER_BRANDS: readonly Brand[] = [
-  { id: "oppo",      name: "OPPO",          ch: "O",  posture: "stock",        models: ["UDP-203", "UDP-205"] },
-  { id: "chinoppo",  name: "Chinoppo",      ch: "C",  posture: "wake-rewrite", models: ["M9201", "M9203", "M9205 V1", "M9205C", "M9200", "M9205", "M9702"] },
-  { id: "magnetar",  name: "Magnetar",      ch: "M",  posture: "warning",      models: ["UDP800", "UDP900"] },
-  { id: "reavon",    name: "Reavon",        ch: "R",  posture: "warning",      models: ["UBR-X100", "UBR-X110", "UBR-X200"] },
-  { id: "cineultra", name: "CineUltra",     ch: "CU", posture: "wake-rewrite", models: ["V203", "V204"] },
-  { id: "ipuk",      name: "iPUK",          ch: "iP", posture: "wake-rewrite", models: ["UHD8592"] },
-  { id: "giec",      name: "Giec",          ch: "G",  posture: "wake-rewrite", models: ["BDP-G5300"] },
-  { id: "other",     name: "Other / clone", ch: "?",  posture: "stock",        models: ["Conservative default", "Chinoppo eject-to-wake"] },
-];
-
 export function Step3Brand({ go, state, set }: ScreenProps) {
   const selected = PLAYER_BRANDS.find((b) => b.id === state.playerBrand);
   return (
@@ -71,11 +50,11 @@ export function Step3Brand({ go, state, set }: ScreenProps) {
             <div className="filter-row" style={{ gap: 8 }}>
               {selected.models.map((m) => (
                 <button
-                  key={m}
-                  className={`filter-pill ${state.playerModel === m ? "selected" : ""}`.trim()}
-                  onClick={() => set({ playerModel: m })}
+                  key={m.label}
+                  className={`filter-pill ${state.playerModel === m.label ? "selected" : ""}`.trim()}
+                  onClick={() => set({ playerModel: m.label })}
                 >
-                  {m}
+                  {m.label}
                 </button>
               ))}
             </div>
@@ -145,11 +124,7 @@ type WakePhase = "ready" | "running" | "pass" | "fail";
 export function Step3Test({ go, state, set }: ScreenProps) {
   const [phase, setPhase] = useState<WakePhase>("ready");
   const [reply, setReply] = useState("");
-  const isClone =
-    state.playerBrand === "chinoppo" ||
-    state.playerBrand === "cineultra" ||
-    state.playerBrand === "ipuk" ||
-    state.playerBrand === "giec";
+  const isClone = isWakeRewriteBrand(state.playerBrand);
   const wakeCmd = isClone ? "#EJT" : "#PON";
 
   const wakeAndConfirm = async () => {

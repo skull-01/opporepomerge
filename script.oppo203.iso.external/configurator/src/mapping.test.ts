@@ -75,13 +75,21 @@ describe("wizardStateToAddonSettings", () => {
     expect(out.sony_kodi_hdmi_port).toBe("1");
   });
 
-  it("disables TV switching when the user dropped to manual", () => {
+  it("enables TV switching only with a backend configured and not manual", () => {
+    // backend configured + auto -> enabled
     expect(
-      wizardStateToAddonSettings(makeState({ tvManualSwitch: true })).tv_switching_enabled,
+      wizardStateToAddonSettings(makeState({ tvBackend: "adb", tvManualSwitch: false }))
+        .tv_switching_enabled,
+    ).toBe("true");
+    // backend configured but user dropped to manual -> disabled
+    expect(
+      wizardStateToAddonSettings(makeState({ tvBackend: "adb", tvManualSwitch: true }))
+        .tv_switching_enabled,
     ).toBe("false");
+    // no backend (TV setup skipped) -> disabled, so the add-on's default backend isn't switched
     expect(
       wizardStateToAddonSettings(makeState({ tvManualSwitch: false })).tv_switching_enabled,
-    ).toBe("true");
+    ).toBe("false");
   });
 
   it("never emits kodi_host (configurator-side) or tv_ip (captured later)", () => {

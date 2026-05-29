@@ -1,4 +1,5 @@
-import type { InputAddress, PlayerBrand, WizardState } from "./state";
+import type { InputAddress, WizardState } from "./state";
+import { hwModelFor } from "./players";
 
 /**
  * The add-on setting IDs the configurator is responsible for writing, derived from the
@@ -11,42 +12,12 @@ import type { InputAddress, PlayerBrand, WizardState } from "./state";
  */
 export type AddonSettings = Record<string, string>;
 
-/** UI (brand, model label) → `oppo_hardware_model` enum value, in settings.xml order. */
-const PLAYER_MODEL_TO_HW: Record<PlayerBrand, Record<string, string>> = {
-  oppo: { "UDP-203": "udp_203", "UDP-205": "udp_205" },
-  chinoppo: {
-    M9201: "chinoppo_m9201",
-    M9203: "chinoppo_m9203",
-    "M9205 V1": "chinoppo_m9205",
-    M9205C: "chinoppo_m9205c",
-    M9200: "chinoppo_m9200",
-    M9205: "chinoppo_m9205",
-    M9702: "chinoppo_m9702",
-  },
-  magnetar: { UDP800: "magnetar_udp800", UDP900: "magnetar_udp900" },
-  reavon: {
-    "UBR-X100": "reavon_ubrx100",
-    "UBR-X110": "reavon_ubrx110",
-    "UBR-X200": "reavon_ubrx200",
-  },
-  cineultra: { V203: "cineultra_v203", V204: "cineultra_v204" },
-  ipuk: { UHD8592: "ipuk_uhd8592" },
-  giec: { "BDP-G5300": "giec_bdp_g5300" },
-  // "Other / clone": conservative stock OPPO vs a clone eject-to-wake default.
-  other: {
-    "Conservative default": "udp_203",
-    "Chinoppo eject-to-wake": "chinoppo_m9205",
-  },
-};
-
-// The UI lists both "M9205 V1" and "M9205" for Chinoppo, but settings.xml has a single
-// non-C enum value (chinoppo_m9205); both collapse to it pending maintainer confirmation
-// that they are the same device.
-
-/** Resolve the `oppo_hardware_model` enum value, or null if brand/model is unset/unknown. */
+/**
+ * Resolve the `oppo_hardware_model` enum value, or null if brand/model is unset/unknown. The
+ * brand/model catalog and its enum mapping live in ./players as the single source of truth.
+ */
 export function playerHardwareModel(state: WizardState): string | null {
-  if (!state.playerBrand || !state.playerModel) return null;
-  return PLAYER_MODEL_TO_HW[state.playerBrand]?.[state.playerModel] ?? null;
+  return hwModelFor(state.playerBrand, state.playerModel);
 }
 
 function hdmiNumber(value: InputAddress): number | null {
@@ -94,7 +65,9 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     python_path: state.pythonPath,
     // IP control over TCP :23 is the wizard's assumption.
     oppo_port: "23",
-    tv_switching_enabled: state.tvManualSwitch ? "false" : "true",
+    // Enable TV switching only when a backend is configured and the user didn't drop to
+    // manual; otherwise "false", so a no-TV setup doesn't switch against the default backend.
+    tv_switching_enabled: state.tvBackend && !state.tvManualSwitch ? "true" : "false",
   };
 
   const hardwareModel = playerHardwareModel(state);
