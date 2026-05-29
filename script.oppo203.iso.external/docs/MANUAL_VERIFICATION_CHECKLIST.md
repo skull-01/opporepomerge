@@ -31,6 +31,46 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — real app icon + first MSI/NSIS bundle
+
+- **Branch / SHA:** `claude/configurator-icon-bundle-h4n7k2p9` — icon set at
+  `eb9f1cf`. **No tracked issue** (configurator polish theme; PR-only).
+- **What changed (committed):**
+  - Replaced the 766-byte placeholder `icon.ico` (PR #35) with a real icon set
+    generated from the repo-root add-on artwork (`icon.png`, 256×256) via
+    `cd configurator; npm run tauri -- icon ..\icon.png`. `tauri.conf.json`
+    `bundle.icon` referenced four files (`32x32.png`, `128x128.png`,
+    `icon.icns`, `icon.ico`) but only the stub `icon.ico` existed, so a release
+    bundle would have failed on the three missing files.
+  - Committed the standard Tauri **desktop** set only (PNG sizes + the
+    `Square*Logo.png` / `StoreLogo.png` Windows-Store assets + `icon.icns`);
+    the `ios/` and `android/` folders `tauri icon` also emits were pruned (this
+    is a Windows desktop app). `tauri.conf.json` was **not** changed.
+  - Refreshed the stale "placeholder" `src-tauri/icons/README.md`.
+- **Build verification (software only):** `cd configurator; npm run tauri -- build`
+  → **exit 0**, release compile ~1m13s, **2 bundles produced**:
+  - MSI (WiX): `…\target\release\bundle\msi\OppoKodiAddon Configurator_0.1.0_x64_en-US.msi` (3.0 MB)
+  - NSIS setup: `…\target\release\bundle\nsis\OppoKodiAddon Configurator_0.1.0_x64-setup.exe` (1.9 MB)
+  - raw exe: `…\target\release\oppokodiaddon-configurator.exe` (8.4 MB)
+- **Phase A review focus:**
+  - Icon art is the add-on's promo image — busy/text-heavy, so the 32×32
+    taskbar icon is cluttered. Operator picked this source for a first pass;
+    swap in a purpose-built 1024×1024 PNG + re-run `tauri icon` to improve.
+  - 256×256 source ⇒ the macOS `icon.icns` and the larger Store logos are
+    upscaled; the Windows MSI/NSIS bundle only uses sizes ≤256, so its icons
+    are not upscaled.
+- **Phase C — operator end-to-end (on the Windows host):**
+  1. Run the NSIS setup `OppoKodiAddon Configurator_0.1.0_x64-setup.exe` (or
+     the MSI); confirm it installs without error.
+  2. Confirm the installed app's Start-menu / desktop / taskbar icon shows the
+     add-on artwork (not a generic/blank icon).
+  3. Launch the app; confirm the window opens with the custom title bar and the
+     configurator UI renders.
+  4. Confirm the window / title-bar icon matches.
+  5. Uninstall via Apps & features (or the MSI) and confirm clean removal.
+  - **Software-verified only (build + bundle succeeded); installed-app
+    behaviour and icon appearance not yet verified by the agent.**
+
 ### ENH-#43 — Split `resources/lib` into tv / oppo / avr / kodi sub-packages
 
 - **Implementing SHA:** head of `claude/enh43-lib-subpackages-r9k2m4x7` (commented on issue #43).
