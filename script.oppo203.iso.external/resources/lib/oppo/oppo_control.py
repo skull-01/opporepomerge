@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import socket
 import struct
@@ -5,6 +7,11 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Iterable, Iterator, Mapping
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:  # pragma: no cover
+    from ..kodi.settings_reader import Settings
 
 
 class OppoError(RuntimeError):
@@ -53,14 +60,20 @@ OPPO_DISCOVERY_MCAST_ADDR = "239.255.255.251"
 OPPO_DISCOVERY_PORT = 7624
 
 
-def normalize_command(command):
+def normalize_command(command: str) -> str:
     command = command.strip()
     if not command:
         return ""
     return command if command.endswith("\r") else command + "\r"
 
 
-def send_commands(host, port, commands, timeout=3.0, delay=1.0):
+def send_commands(
+    host: str,
+    port: int | str,
+    commands: Iterable[str],
+    timeout: float = 3.0,
+    delay: float = 1.0,
+) -> list[str]:
     responses = []
     with socket.create_connection((host, int(port)), timeout=float(timeout)) as sock:
         sock.settimeout(float(timeout))
@@ -77,7 +90,7 @@ def send_commands(host, port, commands, timeout=3.0, delay=1.0):
     return responses
 
 
-def query_command(host, port, command, timeout=3.0):
+def query_command(host: str, port: int | str, command: str, timeout: float = 3.0) -> str:
     """Send a single query command and return the parsed value from the response.
 
     The Oppo UDP-20X protocol returns responses in two forms:
@@ -101,7 +114,7 @@ def query_command(host, port, command, timeout=3.0):
     return _parse_response(raw)
 
 
-def _parse_response(raw):
+def _parse_response(raw: str) -> str:
     """Parse an Oppo response line into the value part."""
     if not raw:
         return ""
@@ -131,27 +144,27 @@ def _parse_response(raw):
     return upper
 
 
-def query_power_status(host, port, timeout=3.0):
+def query_power_status(host: str, port: int | str, timeout: float = 3.0) -> str:
     """Send #QPW and return 'ON', 'OFF', or '' (timeout)."""
     return query_command(host, port, "#QPW", timeout=timeout)
 
 
-def query_playback_status(host, port, timeout=3.0):
+def query_playback_status(host: str, port: int | str, timeout: float = 3.0) -> str:
     """Send #QPL and return the playback status string such as 'PLAY', 'STOP', etc."""
     return query_command(host, port, "#QPL", timeout=timeout)
 
 
-def query_input_source(host, port, timeout=3.0):
+def query_input_source(host: str, port: int | str, timeout: float = 3.0) -> str:
     """Send #QIS and return the current input source string."""
     return query_command(host, port, "#QIS", timeout=timeout)
 
 
-def tcp_qpl_is_idle(status):
+def tcp_qpl_is_idle(status: object) -> bool:
     """Return True if the QPL status indicates the player is idle/stopped."""
     return str(status).strip().upper() in TCP_QPL_IDLE_STATUSES
 
 
-def setup_verbose_mode(host, port, mode, timeout=3.0):
+def setup_verbose_mode(host: str, port: int | str, mode: str | int, timeout: float = 3.0) -> str:
     """Send #SVM <mode> to enable verbose status messages.
 
     mode 0 = verbose off (default)
@@ -164,7 +177,7 @@ def setup_verbose_mode(host, port, mode, timeout=3.0):
     return query_command(host, port, f"#SVM {mode_int}", timeout=timeout)
 
 
-def maybe_setup_verbose_mode(settings, host, port):
+def maybe_setup_verbose_mode(settings: Settings, host: str, port: int | str) -> None:
     """Apply verbose mode setting if non-zero."""
     mode = settings.get("oppo_verbose_mode", "0").strip()
     if mode in ("0", ""):
@@ -180,13 +193,17 @@ def maybe_setup_verbose_mode(settings, host, port):
 # ---------------------------------------------------------------------------
 
 
-def discover_oppo(timeout=5.0, port=OPPO_DISCOVERY_PORT, mcast_addr=OPPO_DISCOVERY_MCAST_ADDR):
+def discover_oppo(
+    timeout: float = 5.0,
+    port: int = OPPO_DISCOVERY_PORT,
+    mcast_addr: str = OPPO_DISCOVERY_MCAST_ADDR,
+) -> list[dict[str, object]]:
     """Attempt to discover Oppo devices via multicast on 239.255.255.251:7624.
 
     Returns a list of dicts with keys: ip, port, name, raw.
     Each dict represents one responding device.
     """
-    results = []
+    results: list[dict[str, object]] = []
     sock = None
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -235,7 +252,7 @@ def discover_oppo(timeout=5.0, port=OPPO_DISCOVERY_PORT, mcast_addr=OPPO_DISCOVE
 # ---------------------------------------------------------------------------
 
 
-def run_preflight(settings):
+def run_preflight(settings: Settings) -> dict[str, object]:
     """Run optional preflight queries before starting playback.
 
     If oppo_preflight_enabled is true:
@@ -278,7 +295,7 @@ def run_preflight(settings):
 # ---------------------------------------------------------------------------
 
 
-def wake_on_lan(mac_address, broadcast="255.255.255.255", port=9):
+def wake_on_lan(mac_address: str, broadcast: str = "255.255.255.255", port: int | str = 9) -> None:
     mac = mac_address.replace(":", "").replace("-", "").replace(".", "").strip()
     if len(mac) != 12:
         raise OppoError("Oppo MAC address must contain 12 hexadecimal characters.")
@@ -293,7 +310,7 @@ def wake_on_lan(mac_address, broadcast="255.255.255.255", port=9):
         sock.sendto(packet, (broadcast, int(port)))
 
 
-def maybe_wake_on_lan(settings):
+def maybe_wake_on_lan(settings: Settings) -> bool:
     if not settings.get_bool("oppo_use_wol", False):
         return False
     mac = settings.get("oppo_mac", "").strip()
@@ -303,11 +320,13 @@ def maybe_wake_on_lan(settings):
     return True
 
 
-def _http_base(settings):
+def _http_base(settings: Settings) -> str:
     return "http://{}:{}".format(settings["oppo_ip"], int(settings.get("oppo_http_port", "436")))
 
 
-def _http_get(settings, endpoint, query=None, timeout=None):
+def _http_get(
+    settings: Settings, endpoint: str, query: str | None = None, timeout: float | None = None
+) -> str:
     url = _http_base(settings) + endpoint
     if query is not None:
         url += "?" + query
@@ -316,7 +335,7 @@ def _http_get(settings, endpoint, query=None, timeout=None):
     )
     try:
         with urllib.request.urlopen(url, timeout=request_timeout) as response:
-            body = response.read().decode("utf-8", errors="replace")
+            body = cast("bytes", response.read()).decode("utf-8", errors="replace")
             if response.status >= 400:
                 raise OppoError(f"Oppo HTTP API returned HTTP {response.status}: {body}")
             return body
@@ -324,7 +343,7 @@ def _http_get(settings, endpoint, query=None, timeout=None):
         raise OppoError(f"Oppo HTTP API request failed for {url}: {exc}") from exc
 
 
-def activate_http_api(settings):
+def activate_http_api(settings: Settings) -> bool:
     if not settings.get_bool("oppo_http_activate", True):
         return False
     host = settings.get("oppo_http_broadcast", "255.255.255.255")
@@ -335,12 +354,12 @@ def activate_http_api(settings):
     return True
 
 
-def signin_http_api(settings):
+def signin_http_api(settings: Settings) -> str:
     query = urllib.parse.quote('{"user":"","password":""}', safe="")
     return _http_get(settings, "/signin", query=query)
 
 
-def _translate_media_path(settings, media_file):
+def _translate_media_path(settings: Settings, media_file: str) -> str:
     translated = (
         _disc_folder_root(media_file)
         if settings.get_bool("oppo_http_disc_folder_root", True)
@@ -355,7 +374,7 @@ def _translate_media_path(settings, media_file):
     return translated
 
 
-def _disc_folder_root(media_file):
+def _disc_folder_root(media_file: str) -> str:
     normalized = media_file.replace("\\", "/")
     lowered = normalized.lower()
     markers = [
@@ -374,7 +393,7 @@ def _disc_folder_root(media_file):
     return media_file
 
 
-def _build_json_payload(settings, media_file):
+def _build_json_payload(settings: Settings, media_file: str) -> dict[str, object]:
     """Build the JSON payload for Oppo HTTP /playnormalfile?payload=<urlencoded JSON>.
 
     Fields per v0.8.0 JSON payload spec:
@@ -410,7 +429,7 @@ def _build_json_payload(settings, media_file):
     return payload
 
 
-def play_media_http_api(settings, media_file):
+def play_media_http_api(settings: Settings, media_file: str) -> str:
     payload_mode = settings.get("oppo_http_payload_mode", "raw_path")
 
     if payload_mode == "json_payload":
@@ -426,15 +445,15 @@ def play_media_http_api(settings, media_file):
     return _http_get(settings, "/playnormalfile", query=path_query, timeout=10)
 
 
-def get_playback_info(settings):
+def get_playback_info(settings: Settings) -> dict[str, Any]:
     body = _http_get(settings, "/getmovieplayinfo")
     try:
-        return json.loads(body)
+        return cast("dict[str, Any]", json.loads(body))
     except ValueError:
         return {"raw": body}
 
 
-def get_playback_status(settings):
+def get_playback_status(settings: Settings) -> str:
     """Return the best available playback status string from getmovieplayinfo.
 
     Checks top-level and nested 'result'/'playinfo' sub-dicts.  Returns the
@@ -454,7 +473,7 @@ def get_playback_status(settings):
     return ""
 
 
-def http_status_is_idle(status):
+def http_status_is_idle(status: object) -> bool:
     """Return True only when status is a known idle/stopped value.
 
     v0.9.0: '0' and '56' are valid playing states (e_play_status from
@@ -474,7 +493,7 @@ def http_status_is_idle(status):
 # ---------------------------------------------------------------------------
 
 
-def http_info_is_definitive_stop(info):
+def http_info_is_definitive_stop(info: object) -> bool:
     """Return True when the Oppo HTTP response signals an official, clean stop.
 
     The Oppo returns errcode1 == -5 when playback has ended cleanly.  This
@@ -494,7 +513,7 @@ def http_info_is_definitive_stop(info):
     return False
 
 
-def http_info_indicates_playing(info):
+def http_info_indicates_playing(info: object) -> bool:
     """Return True when the Oppo HTTP response indicates active/non-idle playback.
 
     Checks e_play_status (numeric 0 or 56 = playing), and play_status / status /
@@ -521,7 +540,7 @@ def http_info_indicates_playing(info):
     return False
 
 
-def _info_containers(info):
+def _info_containers(info: dict[str, Any]) -> Iterator[dict[str, Any]]:
     """Yield the top-level info dict plus any nested result/playinfo sub-dicts."""
     yield info
     for nested_key in ("result", "playinfo"):
@@ -530,7 +549,12 @@ def _info_containers(info):
             yield nested
 
 
-def _filter_commands_for_mode(settings, key, commands, preflight_result=None):
+def _filter_commands_for_mode(
+    settings: Settings,
+    key: str,
+    commands: list[str],
+    preflight_result: dict[str, object] | None = None,
+) -> list[str]:
     if key != "oppo_start_commands":
         return commands
     # Preflight already_on overrides oppo_already_on_mode
@@ -552,7 +576,7 @@ def _filter_commands_for_mode(settings, key, commands, preflight_result=None):
     return filtered
 
 
-def _resolve_hardware_wake_command(settings, command):
+def _resolve_hardware_wake_command(settings: Settings, command: str) -> str:
     """Apply v2 MVP send-time wake rewrite to configured start commands."""
     if not isinstance(command, str):
         return command
@@ -570,7 +594,9 @@ def _resolve_hardware_wake_command(settings, command):
     return wake if is_clone and isinstance(wake, str) and wake else command
 
 
-def run_configured_commands(settings, key, preflight_result=None):
+def run_configured_commands(
+    settings: Settings, key: str, preflight_result: dict[str, object] | None = None
+) -> list[str]:
     host = settings["oppo_ip"]
     port = int(settings.get("oppo_port", "23"))
     timeout = float(settings.get("oppo_socket_timeout", "3.0"))
@@ -582,7 +608,9 @@ def run_configured_commands(settings, key, preflight_result=None):
     return send_commands(host, port, commands, timeout=timeout, delay=delay)
 
 
-def run_start(settings, media_file, preflight_result=None):
+def run_start(
+    settings: Settings, media_file: str, preflight_result: dict[str, object] | None = None
+) -> str | None:
     maybe_wake_on_lan(settings)
 
     host = settings["oppo_ip"]
@@ -609,7 +637,7 @@ def run_start(settings, media_file, preflight_result=None):
 # ---------------------------------------------------------------------------
 
 
-def get_audio_tracks(settings):
+def get_audio_tracks(settings: Settings) -> list[dict[str, object]]:
     """Return list of audio track dicts from Oppo HTTP /getaudiomenulist.
 
     Each entry has at minimum: index (int), name (str), selected (bool).
@@ -626,7 +654,7 @@ def get_audio_tracks(settings):
         return []
 
 
-def set_audio_track(settings, index):
+def set_audio_track(settings: Settings, index: int | str) -> str:
     """Select audio track by index via Oppo HTTP /setaudiomenulist.
 
     index: zero-based integer matching the 'index' field from get_audio_tracks().
@@ -635,7 +663,7 @@ def set_audio_track(settings, index):
     return _http_get(settings, "/setaudiomenulist", query=query)
 
 
-def get_subtitle_tracks(settings):
+def get_subtitle_tracks(settings: Settings) -> list[dict[str, object]]:
     """Return list of subtitle track dicts from Oppo HTTP /getsubtitlemenulist.
 
     Each entry has at minimum: index (int), name (str), selected (bool).
@@ -652,7 +680,7 @@ def get_subtitle_tracks(settings):
         return []
 
 
-def set_subtitle_track(settings, index):
+def set_subtitle_track(settings: Settings, index: int | str) -> str:
     """Select subtitle track by index via Oppo HTTP /setsubttmenulist.
 
     index: zero-based integer matching the 'index' field from get_subtitle_tracks().
@@ -662,7 +690,7 @@ def set_subtitle_track(settings, index):
     return _http_get(settings, "/setsubttmenulist", query=query)
 
 
-def _normalise_track(t):
+def _normalise_track(t: dict[str, Any]) -> dict[str, object]:
     """Normalise a raw track dict from the Oppo API to a consistent shape."""
     return {
         "index": int(t.get("index", 0)),
@@ -676,7 +704,7 @@ def _normalise_track(t):
 # ---------------------------------------------------------------------------
 
 
-def set_play_time(settings, h, m, s):
+def set_play_time(settings: Settings, h: int | str, m: int | str, s: int | str) -> str:
     """Seek to the given time position via Oppo HTTP /setplaytime.
 
     h, m, s: hours, minutes, seconds (integers).
@@ -692,7 +720,7 @@ def set_play_time(settings, h, m, s):
 # ---------------------------------------------------------------------------
 
 
-def get_file_list_raw(settings, path="/"):
+def get_file_list_raw(settings: Settings, path: str = "/") -> str:
     """Call the undocumented /getfilelist endpoint and return the raw response body.
 
     WARNING: This endpoint is not officially documented and its response format
@@ -709,7 +737,9 @@ def get_file_list_raw(settings, path="/"):
     return _http_get(settings, "/getfilelist", query=query, timeout=10)
 
 
-def parse_undocumented_file_list(raw, base_path=None):
+def parse_undocumented_file_list(
+    raw: object, base_path: str | None = None
+) -> list[dict[str, object]]:
     """Attempt to parse an undocumented Oppo /getfilelist response.
 
     EXPERIMENTAL: This parser handles both JSON (newer firmware) and the
@@ -759,7 +789,7 @@ def parse_undocumented_file_list(raw, base_path=None):
     else:
         raw_bytes = text.encode("utf-8", errors="replace")
 
-    entries = []
+    entries: list[dict[str, object]] = []
     chunks = _re.split(b"[\x01\x02]", raw_bytes)
     for chunk in chunks:
         if not chunk:
@@ -776,7 +806,9 @@ def parse_undocumented_file_list(raw, base_path=None):
     return [e for e in entries if e["name"]]
 
 
-def _normalise_filelist_entry(entry, base_path=None, raw_entry=None):
+def _normalise_filelist_entry(
+    entry: object, base_path: str | None = None, raw_entry: str | None = None
+) -> dict[str, object]:
     """Return a structured diagnostic entry from JSON, list, or binary fields."""
     raw_fields = []
     source = entry
@@ -841,7 +873,7 @@ def _normalise_filelist_entry(entry, base_path=None, raw_entry=None):
     }
 
 
-def _first_non_empty(mapping, *keys):
+def _first_non_empty(mapping: Mapping[str, Any], *keys: str) -> str:
     for key in keys:
         value = mapping.get(key)
         if value not in (None, ""):
@@ -849,7 +881,7 @@ def _first_non_empty(mapping, *keys):
     return ""
 
 
-def _first_int(mapping, *keys):
+def _first_int(mapping: Mapping[str, Any], *keys: str) -> int | None:
     for key in keys:
         value = mapping.get(key)
         parsed = _safe_int(value)
@@ -858,7 +890,7 @@ def _first_int(mapping, *keys):
     return None
 
 
-def _first_bool(mapping, *keys):
+def _first_bool(mapping: Mapping[str, Any], *keys: str) -> bool | None:
     for key in keys:
         if key not in mapping:
             continue
@@ -873,7 +905,7 @@ def _first_bool(mapping, *keys):
     return None
 
 
-def _safe_int(value):
+def _safe_int(value: object) -> int | None:
     if value in (None, ""):
         return None
     try:
@@ -882,7 +914,7 @@ def _safe_int(value):
         return None
 
 
-def _guess_name_from_fields(fields):
+def _guess_name_from_fields(fields: Iterable[object]) -> str:
     for field in fields:
         text_field = str(field).strip()
         if not text_field:
@@ -898,7 +930,7 @@ def _guess_name_from_fields(fields):
     return ""
 
 
-def _guess_path_from_fields(fields):
+def _guess_path_from_fields(fields: Iterable[object]) -> str:
     for field in fields:
         text_field = str(field).strip()
         lowered = text_field.lower()
@@ -907,7 +939,7 @@ def _guess_path_from_fields(fields):
     return ""
 
 
-def _guess_size_from_fields(fields):
+def _guess_size_from_fields(fields: Iterable[object]) -> int | None:
     labelled_size = None
     numeric_candidates = []
     for field in fields:
@@ -924,21 +956,27 @@ def _guess_size_from_fields(fields):
     return numeric_candidates[0] if numeric_candidates else None
 
 
-def _join_base_path(base_path, name):
+def _join_base_path(base_path: object, name: str) -> str:
     base = str(base_path).rstrip("/\\")
     if not base:
         return name
     return base + "/" + str(name).lstrip("/\\")
 
 
-def _extension_for(value):
+def _extension_for(value: object) -> str:
     leaf = str(value or "").rstrip("/\\").split("/")[-1].split("\\")[-1]
     if "." not in leaf:
         return ""
     return leaf.rsplit(".", 1)[-1].lower()
 
 
-def _infer_entry_type(name="", path="", extension="", type_hint="", explicit_is_dir=None):
+def _infer_entry_type(
+    name: str = "",
+    path: str = "",
+    extension: str = "",
+    type_hint: str = "",
+    explicit_is_dir: bool | None = None,
+) -> str:
     if explicit_is_dir is True:
         return "directory"
     if explicit_is_dir is False:
@@ -959,7 +997,9 @@ def _infer_entry_type(name="", path="", extension="", type_hint="", explicit_is_
     return "unknown"
 
 
-def _infer_disc_type(name="", path="", extension="", raw_fields=None):
+def _infer_disc_type(
+    name: str = "", path: str = "", extension: str = "", raw_fields: list[str] | None = None
+) -> str:
     combined = " ".join(
         [str(name or ""), str(path or "")] + [str(f) for f in (raw_fields or [])]
     ).lower()
