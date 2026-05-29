@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `3967cb6` (origin/main, 2026-05-29 — docs: create BUILD_PLAN.md) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~12s)
+**Last sync:** commit `7b65ed2` (origin/main, 2026-05-29 — docs: end-of-day handoff 2026-05-29 (strip-wizard session)) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~11s)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -110,79 +110,81 @@ There is no database; no external services to verify.
 > **Read this FIRST on `resume`.** Maintained by `done for the day`. If empty, the last
 > session ended clean; offer the operator a fresh theme.
 
-**As of 2026-05-29 (end of day — strip-wizard session):**
+**As of 2026-05-29 (end of day — config-owner-policy session, second EOD of the day):**
 
-- **Addon area today — PR [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
-  *Strip the in-Kodi setup wizard from the addon*** is open as a **draft** on
-  `claude/strip-wizard-g4feovqi` (tip `92a9408`).
-  - Commit `3abf486` is the 44-file change (+313 / −5814):
-    - Deleted `resources/lib/wizard.py`, `wizard_polish.py`, `first_run_wizard.py`.
-    - Simplified `service.py.Monitor` to a no-op subclass — **headline behavioural
-      change** per operator's "total strip" choice: `onSettingsChanged` no longer
-      auto-applies compatibility presets when the user changes hardware model in
-      Kodi settings. That responsibility moves to the configurator.
-    - Gutted `installer.main()`'s wizard menu items and the auto-wizard launch.
-    - Slimmed `autoscript_helper.py` to pure `generate()` / `write_script()`.
-    - Dropped `wizard_mode` from `resources/settings.xml`; renamed
-      `<category id="wizard">` → `<category id="playback">`.
-    - Scrubbed wizard msgids from all 12 PO files (`#30910/#30920/#30930/#30940/#30950`,
-      the full `#31000-#31061` v1.0.6 block; retitled `#32103` → "Playback" and
-      `#32113` → "Playback-architecture knobs.").
-    - Updated [`README.md`](README.md) Installation step,
-      [`docs/testing-strategy.md`](docs/testing-strategy.md),
-      [`scripts/hooks/pre-push`](scripts/hooks/pre-push), and the `.coveragerc`
-      comment header.
-    - Restored `tests/test_v2910_build16_avr_wizard_diagnostics.py` with the
-      wizard-coupled halves stripped (kept the
-      `avr_diagnostics.wizard_capabilities` / `wizard_family_options` /
-      `apply_wizard_selection` pure-data API for the configurator).
-    - Added `TStripWizard*` test classes to lock the post-strip surface.
-  - Commit `92a9408` is the Phase A entry in
-    [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
-    for the operator's review of PR #40.
+- **Addon area today — PR [#45](https://github.com/skull-01/script.oppo203.iso.external/pull/45)
+  *docs: 'configurator owns add-on configuration' policy (ENH-#41 part A)*** is
+  open as a **draft** on `claude/config-owner-policy-a3k7m2nq` (tip `1ed15a3`).
+  - Commit `1ed15a3` is a 3-file docs-only change (+70 / −1):
+    - [`AGENTS.md`](AGENTS.md): new `## Configuration is owned by the configurator`
+      section after `## Scope discipline`. Lists allowed in-add-on exceptions
+      (per-session toggles, the #42 settings-menu carve-out, diagnostic
+      exports already in `installer.main()`) and not-allowed-without-sign-off
+      (new persistent-setting categories, new first-run dialogs, add-on side
+      writers for `playercorefactory.xml` / keymap / NAS creds).
+    - [`CONTRIBUTING.md`](CONTRIBUTING.md): matching `## Configuration ownership`
+      section between `## Ground rules` and `## Local checks`, framed for
+      external contributors. Same policy + exceptions.
+    - [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md):
+      Phase A entry asking the operator to confirm the policy + the three
+      allowed exceptions + the not-allowed list match their intent.
+  - Implementing SHA `1ed15a3` commented on
+    [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
+    per the only-operator-closes-issues norm.
 
-- **Tests on the strip branch:** `pytest -n auto` = **865 passed, 3 skipped** in
-  ~10s (vs main's 987 — the −122 delta is wizard tests that no longer exist).
-  Coverage gate (serial): **99.05%**, above the 99% floor.
+- **Tests on the policy-doc branch:** `pytest -n auto --basetemp=build\_pt` =
+  **987 passed, 3 skipped** in ~11s. Pre-push hook (parallel + coverage gate,
+  99% floor): **987 passed, 3 skipped** in 14.65s; coverage **99.08%**. Docs-only
+  change, no behavioural impact — feature branch matches main's test result.
 
-- **Four new ENH issues filed (all `area:addon`):**
-  - [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41) configurator owns add-on configuration; add-on is read-mostly
-  - [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42) minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language)
-  - [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43) split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages
-  - [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44) hardware-validation testing — lending, donations, tester reports wanted
+- **Parts B + C of #41 deferred to next session — both wait on PR #40.** Per
+  this session's sequencing Q&A (now logged in §21): Part A docs ship now from
+  `main` (no overlap with #40). Parts B + C touch `resources/settings.xml`,
+  which PR #40 also renames (`<category id="wizard">` → `<category id="playback">`)
+  and modifies (`wizard_mode` removed) — doing them now would create avoidable
+  merge friction.
+  - **Part B** (in-add-on guidance hint on settings open): per operator's
+    "Both" choice — static label at top of `resources/settings.xml` *plus*
+    `service.py` first-open-per-session `xbmcgui.Dialog().notification`
+    tracked via `xbmcgui.Window(10000)` property (clears on Kodi restart).
+  - **Part C** (settings-file ownership marker): configurator writes
+    `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` in `settings.xml`;
+    add-on warns when a configurator-managed key is overwritten via Kodi's UI.
+  - Acceptance for #41 stays open until B + C land.
 
-- **[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) created on `main`** (commit `3967cb6`).
-  It captures the strategic direction (two areas, configurator-owns-config policy,
-  honest-signature posture) and lists every open issue + PR per area with a one-line
-  note and a suggested ordering for the next sessions.
-
-- **Configurator area not touched this session.** Drafts
-  [#32](https://github.com/skull-01/script.oppo203.iso.external/pull/32) /
-  [#33](https://github.com/skull-01/script.oppo203.iso.external/pull/33) /
-  [#34](https://github.com/skull-01/script.oppo203.iso.external/pull/34) /
-  [#35](https://github.com/skull-01/script.oppo203.iso.external/pull/35) and stale
-  [#36](https://github.com/skull-01/script.oppo203.iso.external/pull/36) remain in
-  their 2026-05-29 state.
-
-- **Outstanding before PR #40 can land:** operator review of the diff (especially
-  the `Monitor.onSettingsChanged` removal — that's the headline behavioural
-  change). On-device verification per the Phase A entry in
-  `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
+- **Still in flight (carried over from prior session):**
+  - PR [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
+    (strip-wizard) — draft on `claude/strip-wizard-g4feovqi`, mergeable
+    `CLEAN`. Awaiting operator review of the diff (especially the
+    `Monitor.onSettingsChanged` removal — the headline behavioural change) +
+    Phase A on-device verification. **#40's Phase A entry lives on its own
+    branch (`92a9408`); it will appear in `main`'s
+    `docs/MANUAL_VERIFICATION_CHECKLIST.md` only after #40 merges.**
+    `main`'s checklist currently shows just the #45 Phase A row (from this
+    EOD commit).
+  - Six addon-area issues open: #38 (ruff backlog), #41 (parent of #45 —
+    stays open until B + C also land), #42 (settings menu), #43 (lib split),
+    #44 (hardware testing).
+  - Configurator drafts #32 / #33 / #34 / #35 unchanged since 2026-05-29.
+  - Spine revision PR [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37)
+    still open — once merged it will introduce the §3a/§3b split.
 
 - **Candidate themes for next session** (pick one, per §4):
-  1. **Operator review + merge PR #40**, then start ENH-: #41 (policy doc +
-     in-add-on guidance dialog + settings-file ownership marker). Cheap,
-     high-leverage; sets the contract every following issue depends on.
-  2. **ENH-: #43 — split `resources/lib` into TV/Oppo/AVR/Kodi sub-packages.**
-     Best done *before* #42 so the new settings menu lands in the right layout.
-  3. **ENH-: #42 — minimal in-add-on settings menu.** Depends on #43's layout.
-  4. **#38 ruff backlog PR 1 (auto-fix sweep).** Independent; can run in a
-     parallel session.
-  5. **Configurator triage** (different area) — work through #32/#33/#34/#35.
+  1. **Operator review + merge PR #40, then #45, then #41 Parts B + C.** Finishes
+     the configurator-owns-config theme started across the last two sessions.
+     Highest-leverage path; everything below depends on the policy contract.
+  2. **ENH-#43 — split `resources/lib` into TV/Oppo/AVR/Kodi sub-packages.**
+     Best done *before* #42 so the in-add-on settings menu lands in the right
+     layout from day one. Independent of #45.
+  3. **ENH-#42 — minimal in-add-on settings menu.** Depends on #43's layout
+     and #41's policy doc landing.
+  4. **#38 ruff backlog PR 1 (auto-fix sweep).** Independent of all of the
+     above; can run in a parallel session.
+  5. **Configurator triage** (different area) — work through #32 / #33 / #34
+     / #35.
 
-- **No active blockers.** Six addon-area issues are now in §17a; the operator's
-  spine revision PR [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37)
-  is still open and will introduce the §3a/§3b split once merged.
+- **No active blockers.** Six addon-area issues in §17a; #45 added to the
+  table this EOD as the implementing PR for #41 part A.
 
 ---
 
@@ -330,13 +332,13 @@ the hybrid model._
 _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from here first
 before re-scanning live GitHub state (operator norm #10)._
 
-Last refreshed: **2026-05-29 (EOD — strip-wizard)**.
+Last refreshed: **2026-05-29 (EOD — config-owner-policy)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
 | 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`) | closed by operator |
 | 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not started |
-| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | — | not started |
+| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | `1ed15a3` (Part A only) on `claude/config-owner-policy-a3k7m2nq` — [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) draft. Parts B + C pending after PR #40 merges. | Phase A queued |
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | — | not started |
 | 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | — | not started |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
@@ -387,6 +389,29 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   remains open and unmerged on `main`; when it lands it will introduce the
   §3a/§3b split and the rewritten §2a — at that point the next EOD reconciles
   whatever drift this entry created.
+- **2026-05-29 (EOD — config-owner-policy session)** — **Second** `done for
+  the day` cycle on 2026-05-29, after the strip-wizard EOD at `7b65ed2`.
+  Single-theme addon session that drafted **Part A** (policy doc) of
+  [ENH-#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41).
+  PR [#45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) on
+  `claude/config-owner-policy-a3k7m2nq` (tip `1ed15a3`) opened as draft.
+  3 files changed, +70 / −1: [`AGENTS.md`](AGENTS.md) gained
+  `## Configuration is owned by the configurator`,
+  [`CONTRIBUTING.md`](CONTRIBUTING.md) gained `## Configuration ownership`
+  (matching policy framed for external contributors),
+  [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
+  gained a Phase A row for the #45 review. Tests on the policy-doc branch:
+  **987 passed, 3 skipped** in 10.69s (`pytest -n auto --basetemp=build\_pt`);
+  pre-push hook with coverage gate: **987 passed, 3 skipped** in 14.65s,
+  coverage **99.08%**. SHA `1ed15a3` commented on issue #41 per the
+  only-operator-closes-issues norm. Parts B + C of #41 deferred to the next
+  session — both touch `resources/settings.xml`, which PR #40 also modifies,
+  so doing them now would create avoidable merge friction. §3 rewritten to
+  record PR #45 + the carried-over state of PR #40; §17a row for #41 updated
+  with `1ed15a3` (Part A) and "Phase A queued"; §21 gained the sequencing +
+  hint-mechanism Q&A from this session. Header "Last sync" updated from
+  `3967cb6` to `7b65ed2`. No new gotchas (§14 unchanged). No new issues
+  opened or closed.
 
 ---
 
@@ -424,3 +449,23 @@ defining terminology). Append after each substantive turn. Newest-last._
 
 - **Q:** GitHub Issues, PR-only, or hybrid?
   **A:** Hybrid — Issues for bug/enhancement tracking, PRs for delivery.
+
+### 2026-05-29 — Sequencing ENH-#41 against PR #40; in-add-on guidance hint mechanism
+
+- **Q:** Should ENH-#41 (configurator-owns-config) ship as one PR or be split
+  against PR #40 (strip-wizard, still draft)?
+  **A:** Split into three parts. **Part A** (policy doc to
+  [`AGENTS.md`](AGENTS.md) + [`CONTRIBUTING.md`](CONTRIBUTING.md)) ships now
+  from `main` — no overlap with #40's diff. **Parts B** (in-add-on guidance
+  hint on settings open) and **C** (settings.xml ownership marker) wait until
+  #40 merges; both modify `resources/settings.xml`, which #40 renames
+  (`<category id="wizard">` → `<category id="playback">`) and trims
+  (`wizard_mode` removed). Doing B + C now would create avoidable merge
+  friction.
+- **Q:** For Part B's in-add-on guidance hint, which mechanism — a static
+  label at the top of `settings.xml`, a `service.py` first-open-per-session
+  `xbmcgui.Dialog().notification`, or both?
+  **A:** Both. Static label is permanent visible guidance; the notification
+  draws attention exactly once per Kodi session (tracked via
+  `xbmcgui.Window(10000).setProperty(...)`, which clears on Kodi restart).
+  Most code, strongest UX guarantee.

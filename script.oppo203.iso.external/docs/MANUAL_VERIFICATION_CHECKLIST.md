@@ -31,6 +31,33 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### PR #40 — Strip the in-Kodi setup wizard from the addon
+
+- **Implementing SHA:** `3abf486` on `claude/strip-wizard-g4feovqi`.
+- **Diff size:** 44 files; +313 / −5814 (mostly deletes).
+- **Review focus:**
+  - `service.py` `Monitor` is now a no-op shell (lifecycle only). Confirm
+    `_service_main()` still works (it uses `Monitor()` for
+    `abortRequested`/`waitForAbort`, both inherited from `xbmc.Monitor`).
+  - `resources/lib/installer.py` `main()` lost the wizard auto-launch and
+    menu items 9 (Run wizard), 10 (Reset wizard), 11 (AutoScript). The
+    architecture-choice first-run dialog still fires when
+    `architecture_choice_made` is unset.
+  - `resources/settings.xml`: `<category id="wizard">` was renamed to
+    `<category id="playback">` — verify no other code reads the old id.
+  - `resources/lib/i18n.py` `_EN` fallback table is now empty; `L()` still
+    resolves through `xbmcaddon` when Kodi is running.
+  - 12 PO files: `#30910/#30920/#30930/#30940/#30950` and `#31000-#31061`
+    deleted; `#32103` retitled to "Playback", `#32113` to
+    "Playback-architecture knobs."
+- **CI / gates:** `pytest -n auto` 865 passed, 3 skipped; coverage 99.05%
+  (>= 99% gate); ruff + py_compile + tools/*.py --check all green.
+- **Decision required from operator before merge:** is the behavioural change
+  in `Monitor.onSettingsChanged` (no longer auto-applies compatibility
+  presets when the user changes hardware model in Kodi settings) acceptable?
+  The operator picked "Total strip" during the resume, so this is the agreed
+  scope, but it is the headline behavioural change and worth a second look.
+
 - **[#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
   (ENH-: configurator owns add-on configuration — policy doc, part A)** —
   branch `claude/config-owner-policy-a3k7m2nq`. Docs-only PR adding a
