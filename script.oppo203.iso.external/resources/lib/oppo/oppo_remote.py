@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import json
 import os
+from typing import cast
 
 try:
     import xbmc
@@ -24,60 +27,60 @@ from .oppo_control import (
 try:
     from ..kodi.settings_reader import DEFAULTS, Settings, read_settings
 except ImportError:  # pragma: no cover - top-level test/import compatibility
-    from settings_reader import DEFAULTS, Settings, read_settings
+    from settings_reader import DEFAULTS, Settings, read_settings  # type: ignore[no-redef]
 
 try:
     from .command_map import load_default_command_map
 except ImportError:  # pragma: no cover - top-level test/import compatibility
-    from command_map import load_default_command_map
+    from command_map import load_default_command_map  # type: ignore[no-redef]
 try:
     from ..kodi.diagnostic_logging import format_log_message, log_to_xbmc
 except ImportError:  # pragma: no cover - top-level test/import compatibility
-    from diagnostic_logging import format_log_message, log_to_xbmc
+    from diagnostic_logging import format_log_message, log_to_xbmc  # type: ignore[no-redef]
 
 
 ADDON_ID = "script.oppo203.iso.external"
 DEFAULT_COMMAND_MAP = load_default_command_map()
 
 
-def _translate(path):
+def _translate(path: str) -> str:
     if xbmcvfs:
-        return xbmcvfs.translatePath(path)
+        return cast("str", xbmcvfs.translatePath(path))
     return path
 
 
-def _notify(message):
+def _notify(message: str) -> None:
     if xbmcgui:
         xbmcgui.Dialog().notification("Oppo UDP-203", message, "", 1500, False)
 
 
-def _log(message):
+def _log(message: str) -> None:
     if xbmc:
         xbmc.log(format_log_message("remote", message), xbmc.LOGINFO)
     else:
         log_to_xbmc(None, "remote", message)
 
 
-def _addon_data_dir():
+def _addon_data_dir() -> str:
     if xbmcaddon:
         addon = xbmcaddon.Addon(ADDON_ID)
         return _translate(addon.getAddonInfo("profile"))
     return ""
 
 
-def _load_settings():
+def _load_settings() -> Settings:
     addon_data = _addon_data_dir()
     settings = read_settings(addon_data) if addon_data else Settings({})
     settings.data["addon_data_dir"] = addon_data
     return settings
 
 
-def _session_is_active(settings):
+def _session_is_active(settings: Settings) -> bool:
     path = os.path.join(settings.get("addon_data_dir", ""), "oppo203iso-active")
     return bool(path and os.path.exists(path))
 
 
-def _command_map(settings):
+def _command_map(settings: Settings) -> dict[str, str]:
     raw = settings.get("oppo_remote_command_map", DEFAULTS["oppo_remote_command_map"])
     try:
         parsed = json.loads(raw)
@@ -88,7 +91,7 @@ def _command_map(settings):
     return merged
 
 
-def send_remote_key(key):
+def send_remote_key(key: str) -> None:
     settings = _load_settings()
     normalized_key = key.strip().lower()
 
@@ -111,7 +114,9 @@ def send_remote_key(key):
             pass
 
     if command and normalized_key in ("power_on", "power_toggle"):
-        rewritten = resolve_power_on_token(command, settings.get("oppo_hardware_model", "udp_203"))
+        rewritten = cast(
+            "str", resolve_power_on_token(command, settings.get("oppo_hardware_model", "udp_203"))
+        )
         if rewritten != command:
             _log(
                 f"[wake-rewrite] {command} -> {rewritten} for model {settings.get('oppo_hardware_model', 'udp_203')}"
@@ -148,7 +153,7 @@ def send_remote_key(key):
 # ---------------------------------------------------------------------------
 
 
-def _cycle_audio(settings):
+def _cycle_audio(settings: Settings) -> None:
     """Cycle to the next audio track via the Oppo HTTP API.
 
     Reads the current audio track list, finds the selected track, and selects
@@ -162,7 +167,7 @@ def _cycle_audio(settings):
         selected_idx = next((i for i, t in enumerate(tracks) if t.get("selected")), 0)
         next_idx = (selected_idx + 1) % len(tracks)
         next_track = tracks[next_idx]
-        set_audio_track(settings, next_track["index"])
+        set_audio_track(settings, cast("int | str", next_track["index"]))
         _log(f"Cycled audio to track {next_track['index']}: {next_track['name']}.")
         _notify(f"Audio: {next_track['name']}")
     except Exception as exc:
@@ -173,7 +178,7 @@ def _cycle_audio(settings):
         send_commands(host, port, ["#AUD"], timeout=timeout, delay=0)
 
 
-def _cycle_subtitle(settings):
+def _cycle_subtitle(settings: Settings) -> None:
     """Cycle to the next subtitle track via the Oppo HTTP API.
 
     Reads the current subtitle track list, finds the selected track, and selects
@@ -187,7 +192,7 @@ def _cycle_subtitle(settings):
         selected_idx = next((i for i, t in enumerate(tracks) if t.get("selected")), 0)
         next_idx = (selected_idx + 1) % len(tracks)
         next_track = tracks[next_idx]
-        set_subtitle_track(settings, next_track["index"])
+        set_subtitle_track(settings, cast("int | str", next_track["index"]))
         _log(f"Cycled subtitle to track {next_track['index']}: {next_track['name']}.")
         _notify(f"Subtitle: {next_track['name']}")
     except Exception as exc:
@@ -198,7 +203,7 @@ def _cycle_subtitle(settings):
         send_commands(host, port, ["#SUB"], timeout=timeout, delay=0)
 
 
-def _seek_beginning(settings):
+def _seek_beginning(settings: Settings) -> None:
     """Seek to the beginning of the current title via Oppo HTTP /setplaytime."""
     try:
         set_play_time(settings, 0, 0, 0)
@@ -208,7 +213,7 @@ def _seek_beginning(settings):
         _log(f"seek_beginning failed: {exc}")
 
 
-def resolve_power_on_token(token, hardware_model):
+def resolve_power_on_token(token: object, hardware_model: object) -> object:
     """Rewrite OPPO power wake tokens for Chinoppo-style hardware.
 
     Stock OPPO UDP-203/205 keeps #PON/#POW. Chinoppo/M9702-style

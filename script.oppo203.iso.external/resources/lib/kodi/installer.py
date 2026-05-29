@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import os
 import xml.sax.saxutils as xml_escape
+from typing import cast
 
 import xbmcaddon
 import xbmcgui
 import xbmcvfs
 
 try:
-    from .disc_classification import (
+    from .disc_classification import (  # type: ignore[attr-defined]
         XML_4K_TAG_FILENAME_PATTERN,
         XML_DISC_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
         XML_LOOSE_VIDEO_FILETYPES,  # noqa: F401  # re-exported; asserted by tests
@@ -52,23 +55,23 @@ TCL_ADB_PRESETS = [
 ]
 
 
-def tpath(path):
-    return xbmcvfs.translatePath(path)
+def tpath(path: str) -> str:
+    return cast(str, xbmcvfs.translatePath(path))
 
 
-def get_setting(key, default=""):
-    value = ADDON.getSetting(key)
+def get_setting(key: str, default: str = "") -> str:
+    value: str = ADDON.getSetting(key)
     return value if value != "" else default
 
 
-def bool_setting(key, default=False):
-    value = ADDON.getSetting(key)
+def bool_setting(key: str, default: bool = False) -> bool:
+    value: str = ADDON.getSetting(key)
     if value == "":
         return default
     return value.strip().lower() in ("1", "true", "yes", "on")
 
 
-def _paths():
+def _paths() -> tuple[str, str, str]:
     addon_path = tpath(ADDON.getAddonInfo("path"))
     script_path = os.path.join(addon_path, "resources", "lib", "external_player.py")
     addon_data = tpath(f"special://profile/addon_data/{ADDON_ID}")
@@ -77,7 +80,7 @@ def _paths():
     return script_path, addon_data, snippet_path
 
 
-def _player_element_xml():
+def _player_element_xml() -> str:
     """Return the bare <player> element (no merge-instruction comment).
 
     Shared by the manual-merge snippet and the ready-to-transfer
@@ -102,7 +105,7 @@ def _player_element_xml():
 """
 
 
-def build_external_player_xml():
+def build_external_player_xml() -> str:
     return "<!-- Add this inside the existing <players> element. -->\n" + _player_element_xml()
 
 
@@ -113,7 +116,7 @@ def build_external_player_xml():
 # from disc_classification.py so installer and merge-helper rules stay aligned.
 
 
-def build_xml_naming_warning_text():
+def build_xml_naming_warning_text() -> str:
     return (
         "4K external-player XML mode requires naming discipline.\n\n"
         "Only disc-style sources whose filename or visible folder path contains "
@@ -129,7 +132,7 @@ def build_xml_naming_warning_text():
     )
 
 
-def _option4_rule(filetype):
+def _option4_rule(filetype: str) -> str:
     return (
         f'<rule filetypes="{filetype}" '
         f'filename="{XML_4K_TAG_FILENAME_PATTERN}" '
@@ -137,8 +140,8 @@ def _option4_rule(filetype):
     )
 
 
-def build_rule_xml(include_merge_comment=True):
-    rules = []
+def build_rule_xml(include_merge_comment: bool = True) -> str:
+    rules: list[str] = []
     if include_merge_comment:
         rules.append("<!-- Add this inside the existing <rules> element. -->")
     rules.extend(
@@ -198,7 +201,7 @@ _KEYMAP_FILE_HEADER = """<!--
 """
 
 
-def _keymap_document_xml():
+def _keymap_document_xml() -> str:
     """Return the bare <keymap> document shared by the snippet and the file."""
     return """<keymap>
   <FullscreenVideo>
@@ -267,16 +270,16 @@ def _keymap_document_xml():
 """
 
 
-def build_keymap_snippet_xml():
+def build_keymap_snippet_xml() -> str:
     return _KEYMAP_MERGE_HEADER + _keymap_document_xml()
 
 
-def build_keymap_file_xml():
+def build_keymap_file_xml() -> str:
     """Return a complete, ready-to-transfer keymap document (no merge comments)."""
     return _KEYMAP_FILE_HEADER + _keymap_document_xml()
 
 
-def build_snippet_xml():
+def build_snippet_xml() -> str:
     arch = get_setting("playback_architecture", "external_player")
     if arch == "service_interception":
         header = """<!--
@@ -315,7 +318,7 @@ Manual merge instructions:
 """
 
 
-def build_snippet_xml_body():
+def build_snippet_xml_body() -> str:
     return f"""<!-- Full standalone example -->
 <playercorefactory>
   <players>
@@ -328,11 +331,11 @@ def build_snippet_xml_body():
 """
 
 
-def _indent(text, prefix):
+def _indent(text: str, prefix: str) -> str:
     return "\n".join(prefix + line if line else line for line in text.rstrip().splitlines())
 
 
-def build_playercorefactory_file_xml():
+def build_playercorefactory_file_xml() -> str:
     """Return a complete, ready-to-transfer playercorefactory.xml.
 
     Unlike build_snippet_xml(), this is a drop-in file: it omits the
@@ -370,7 +373,7 @@ def build_playercorefactory_file_xml():
     )
 
 
-def _generated_paths():
+def _generated_paths() -> tuple[str, str, str]:
     """Return (generated_dir, playercorefactory_path, keymap_path).
 
     The output mirrors Kodi's userdata layout so the user can copy the whole
@@ -385,7 +388,7 @@ def _generated_paths():
     return generated_dir, pcf_path, keymap_path
 
 
-def _write_text_file(path, text):
+def _write_text_file(path: str, text: str) -> str:
     parent = os.path.dirname(path)
     if parent:
         xbmcvfs.mkdirs(parent)
@@ -397,7 +400,7 @@ def _write_text_file(path, text):
     return path
 
 
-def write_playercorefactory_file(announce=True):
+def write_playercorefactory_file(announce: bool = True) -> str:
     """Write a ready-to-transfer playercorefactory.xml and return its path.
 
     With announce=True (menu use) the user is shown the 4K naming reminder and
@@ -419,7 +422,7 @@ def write_playercorefactory_file(announce=True):
     return pcf_path
 
 
-def write_keymap_file(announce=True):
+def write_keymap_file(announce: bool = True) -> str:
     """Write a ready-to-transfer remote-bridge keymap and return its path."""
     _, _, keymap_path = _generated_paths()
     _write_text_file(keymap_path, build_keymap_file_xml())
@@ -434,9 +437,13 @@ def write_keymap_file(announce=True):
     return keymap_path
 
 
-def generate_transfer_files(include_playercorefactory=True, include_keymap=True, announce=True):
+def generate_transfer_files(
+    include_playercorefactory: bool = True,
+    include_keymap: bool = True,
+    announce: bool = True,
+) -> dict[str, str]:
     """Write the ready-to-transfer files and return a dict of {kind: path}."""
-    paths = {}
+    paths: dict[str, str] = {}
     if include_playercorefactory:
         paths["playercorefactory"] = write_playercorefactory_file(announce=announce)
     if include_keymap:
@@ -444,7 +451,7 @@ def generate_transfer_files(include_playercorefactory=True, include_keymap=True,
     return paths
 
 
-def write_snippet():
+def write_snippet() -> None:
     _, _, snippet_path = _paths()
     xml = build_snippet_xml()
     handle = xbmcvfs.File(snippet_path, "w")
@@ -464,7 +471,7 @@ def write_snippet():
     xbmcgui.Dialog().textviewer("playercorefactory snippet", xml)
 
 
-def write_keymap_snippet():
+def write_keymap_snippet() -> None:
     _, addon_data, _ = _paths()
     snippet_path = os.path.join(addon_data, "oppo203iso-keymap-snippet.xml")
     xml = build_keymap_snippet_xml()
@@ -481,23 +488,23 @@ def write_keymap_snippet():
     xbmcgui.Dialog().textviewer("Kodi remote bridge keymap snippet", xml)
 
 
-def show_generated_xml():
+def show_generated_xml() -> None:
     xbmcgui.Dialog().textviewer(
         "playercorefactory.xml (ready to copy)",
         build_playercorefactory_file_xml(),
     )
 
 
-def show_generated_keymap_xml():
+def show_generated_keymap_xml() -> None:
     xbmcgui.Dialog().textviewer(
         "Remote bridge keymap (ready to copy)",
         build_keymap_file_xml(),
     )
 
 
-def show_architecture_choice_dialog():
+def show_architecture_choice_dialog() -> int:
     """Show first-run architecture choice dialog if not already made."""
-    choice = xbmcgui.Dialog().select(
+    choice: int = xbmcgui.Dialog().select(
         "Oppo UDP-203: Choose Playback Architecture",
         [
             "External Player (recommended): Kodi routes disc files via playercorefactory.xml. "
@@ -524,7 +531,7 @@ def show_architecture_choice_dialog():
     return choice
 
 
-def run_oppo_discovery():
+def run_oppo_discovery() -> None:
     """Attempt Oppo UDP multicast discovery and show results.
 
     v0.9.0: If exactly one device is found, offer a yes/no prompt to apply
@@ -591,7 +598,7 @@ def run_oppo_discovery():
         xbmcgui.Dialog().ok("Oppo UDP-203 Discovery", f"Discovery failed: {exc}")
 
 
-def show_tcl_presets():
+def show_tcl_presets() -> None:
     """Show TCL ADB preset options and let user copy commands."""
     labels = [p["label"] for p in TCL_ADB_PRESETS] + ["Cancel"]
     choice = xbmcgui.Dialog().select("TCL ADB Presets", labels)
@@ -621,7 +628,7 @@ def show_tcl_presets():
         )
 
 
-def run_experimental_filelist_diagnostic():
+def run_experimental_filelist_diagnostic() -> None:
     """Experimental: preview /getfilelist response with structured parser (v0.9.2).
 
     v0.9.2: The diagnostic now calls parse_undocumented_file_list(raw,
@@ -678,7 +685,7 @@ def run_experimental_filelist_diagnostic():
             f"Entries parsed: {len(entries)}\n"
         )
         if entries:
-            lines = []
+            lines: list[str] = []
             for i, e in enumerate(entries[:50]):
                 # Compact one-line summary per entry
                 tag = "[D]" if e["is_dir"] else ("[F]" if e["is_file"] else "[?]")
@@ -715,7 +722,7 @@ def run_experimental_filelist_diagnostic():
         xbmcgui.Dialog().ok("Experimental File List", f"Failed: {exc}")
 
 
-def export_avr_diagnostic_report():
+def export_avr_diagnostic_report() -> str | None:
     """Export a sanitized Build 16 AVR diagnostic report."""
     try:
         try:
@@ -739,7 +746,7 @@ def export_avr_diagnostic_report():
         return None
 
 
-def export_hardware_validation_readiness():
+def export_hardware_validation_readiness() -> str | None:
     """Export a non-invasive Build 5 hardware-validation readiness report."""
     try:
         try:
@@ -748,7 +755,7 @@ def export_hardware_validation_readiness():
                 export_readiness_report,
             )
         except Exception:  # pragma: no cover - top-level Kodi import compatibility
-            from hardware_validation_readiness import (
+            from hardware_validation_readiness import (  # type: ignore[no-redef]
                 build_readiness_report,
                 export_readiness_report,
             )
@@ -771,13 +778,13 @@ NETWORK_SETTINGS_MANAGED_NOTE = (
 )
 
 
-def _resolve_enum(key, default):
+def _resolve_enum(key: str, default: str) -> str:
     """Return the canonical enum value for key, normalizing a stored index.
 
     Kodi may persist an enum setting as either its value ("adb") or its
     zero-based index ("0"); settings_reader normalizes the same way.
     """
-    raw = ADDON.getSetting(key)
+    raw: str = ADDON.getSetting(key)
     if raw == "":
         return default
     if raw.isdigit():
@@ -792,14 +799,14 @@ def _resolve_enum(key, default):
     return raw
 
 
-def _network_fields():
+def _network_fields() -> list[tuple[str, str, str]]:
     """Return the ordered editable network fields for the active backends.
 
     Each entry is (setting_key, label, kind) where kind is "ip", "port",
     "text", or "info". Info rows are display-only (the Kodi box address has no
     in-add-on setting). The TV and AVR rows follow the selected backend.
     """
-    fields = [
+    fields: list[tuple[str, str, str]] = [
         ("oppo_ip", "OPPO IP", "ip"),
         ("oppo_port", "OPPO port", "port"),
         ("tv_ip", "TV IP", "ip"),
@@ -825,7 +832,7 @@ def _network_fields():
     return fields
 
 
-def network_settings_menu():
+def network_settings_menu() -> None:
     """In-add-on viewer/editor for the configurator-managed network fields.
 
     Surfaces the TV / OPPO / AVR connection IPs and ports (plus the active
@@ -877,7 +884,7 @@ def network_settings_menu():
         )
 
 
-def language_menu():
+def language_menu() -> None:
     """In-add-on add-on-language switcher (ENH-#42).
 
     Persists the `addon_language` preference: the follow-Kodi sentinel
@@ -909,7 +916,7 @@ def language_menu():
         xbmcgui.Dialog().ok("Add-on language", "Add-on language preference saved: " + name + ".")
 
 
-def main():
+def main() -> None:
     if ADDON.getSetting("architecture_choice_made") not in ("true", "1", "yes"):
         show_architecture_choice_dialog()
 
