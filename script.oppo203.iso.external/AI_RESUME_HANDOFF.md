@@ -23,23 +23,53 @@ inputs).
 
 # §1 The `resume` command
 
+Work in this repo is split into **two areas** that share one machine and one git history:
+
+- **Addon** — the Kodi add-on (Python under `resources/`, entry points `default.py` /
+  `service.py`, release tooling under `tools/`, tests under `tests/`).
+- **Configurator** — the Windows configurator app (Tauri 2 + React/TS under
+  `configurator/`).
+
+Issues are tagged with **`area:addon`** or **`area:configurator`** labels so the resume
+command can summarize each area independently. Both areas live on `main`; one environment
+serves both (see §2a).
+
 When the operator types **`resume`** (alone), do exactly this:
 
-1. **Read this file** (especially §3 "Work in progress") and the repo instruction files
+1. **Read this file** (especially §3a "Addon work in progress" and §3b "Configurator work
+   in progress") and the repo instruction files
    ([`AGENTS.md`](AGENTS.md), [`CLAUDE.md`](CLAUDE.md), [`CONTRIBUTING.md`](CONTRIBUTING.md)).
-2. **Run the environment readiness check** in §2a. Print a small readiness table.
-   - All rows green → one line `Environment: ready ✓` and continue.
-   - An *auto* row missing → install it (idempotent), re-check, report what was installed.
-   - An *auto (UAC)* row missing → **warn the operator a UAC dialog is about to appear**,
-     trigger the install via `Start-Process -Verb RunAs`, then re-check.
+2. **Run the unified environment readiness check** in §2a — it covers prerequisites for
+   **both** areas (Python venv + dev deps for addon; Node + Rust + Tauri + WebView2 for
+   configurator; plus the `area:addon` / `area:configurator` GitHub labels). Print a small
+   readiness table.
+   - All rows green → one line `Environment: ready ✓ (addon + configurator)` and continue.
+   - An *auto-repo* row missing → install it (idempotent: `venv`, `pip install`, `npm
+     install`, `gh label create --force`), re-check, report what was installed.
+   - An *auto-system* row missing → attempt `winget install ... --silent
+     --accept-source-agreements --accept-package-agreements` (per row), re-check; on
+     success continue, on failure print the manual fix and **STOP**.
    - A *manual* row missing → print the exact fix command and **STOP**.
-3. **Report recent backlog activity** — *last 5 issues created* and *last 5 issues closed*,
-   each shown as `#N <short title snippet>` per the operator's "list issues with titles"
-   norm. Use `gh issue list --limit 5 --state all --sort created` and
-   `gh issue list --limit 5 --state closed --sort updated`.
-4. **Suggest 1–3 themes** (one theme = one session, per the session-shape rule in §4). Lead
-   with any unfinished entry in §3 "Work in progress". **STOP and wait** for the operator
-   to pick a theme before doing any new work.
+3. **Report recent backlog activity per area.** Two parallel blocks, **Addon** then
+   **Configurator**, each with:
+   - *Last 5 issues created* — `gh issue list --label area:<area> --limit 5 --state all
+     --sort created` — one line each as `#N <short title snippet>` (operator's "list
+     issues with titles" norm).
+   - *Last 5 issues closed* — `gh issue list --label area:<area> --limit 5 --state closed
+     --sort updated` — same formatting.
+   - *Work in progress* — paraphrase §3a (for addon) or §3b (for configurator) in 2–4
+     lines: the in-flight branch/PR, what's done, what's left, blockers.
+
+   If any issues exist that carry neither `area:addon` nor `area:configurator`, list them
+   under a short **Unclassified** tail (≤5 rows) so they can be triaged.
+4. **Suggest themes per area, separately** (still one theme = one session per §4).
+   - **Addon — 1–3 candidate themes**, each one line, leading with any unfinished §3a
+     entry.
+   - **Configurator — 1–3 candidate themes**, each one line, leading with any unfinished
+     §3b entry.
+
+   **STOP and wait** for the operator to pick **one area and one theme** before doing any
+   new work. Do not start work in both areas in the same session (§4 session-shape rule).
 
 ## Other natural-language triggers any agent must honor
 
@@ -67,8 +97,11 @@ When the operator types **`done for the day`**, do exactly this:
    - Tests green → normal commit + `git push -u origin <branch>`.
    - Tests red or work mid-flight → `wip: <short summary>` checkpoint commit + push. Note
      the wip status in §3 so next session knows it's not done.
-2. **Update §3 "Work in progress"** — overwrite with the current state: what's in flight,
-   the clean stopping point for tomorrow, any blockers.
+2. **Update §3 "Work in progress" — overwrite §3a and §3b independently.** Touch only the
+   area(s) you actually worked in this session. For each touched area: current state,
+   what's in flight, the clean stopping point for tomorrow, any blockers. If you didn't
+   touch an area, leave its subsection unchanged. If an area ended clean, write `(none)`
+   in its subsection so next `resume` reports it as a fresh slate.
 3. **Append a dated entry to §19** "Updates to this document" — one bullet per material
    change (this entry, plus anything new added during the session).
 4. **Refresh the §17a backlog audit cache** if any issues were opened, closed, or
@@ -85,118 +118,128 @@ substantive Q&A happened, append §21; verify §2a still matches the actual read
 
 # §2a Environment readiness
 
-The readiness check verifies the operator's machine can edit, test, and build both the
-add-on (Python) and the Windows configurator (Node + Rust + Tauri 2).
+The readiness check verifies the **single Windows machine** can edit, test, and build
+**both** areas — the Kodi add-on (Python) **and** the Tauri 2 configurator (Node + Rust +
+WebView2). One pass covers both.
 
-| Row | Prereq | How to check | Auto-installable? | Fix command if missing |
+**Tiers.** `auto-repo` = idempotent and runs in user scope, the resume command does it
+without prompting. `auto-system` = the resume command attempts `winget install` (best
+effort, no admin elevation requested; user-scope installs don't need it); on success it
+re-checks and continues, on failure it prints the manual fix and **STOPS**. `manual` = an
+operator action the resume command will not perform (auth flows, browser-redirect installs).
+
+| Row | Prereq | How to check (PowerShell) | Tier | Install command |
 |---|---|---|---|---|
-| 1 | **git** ≥ 2.30 | `git --version` | manual | install from package manager |
-| 2 | **`gh` CLI** authenticated | `gh auth status` | manual | `gh auth login` (operator) |
-| 3 | **Python** 3.9+ | `python3 --version` | manual | install from python.org / pyenv |
-| 4 | Repo **`.venv`** | `test -d .venv` | **auto** | `cd /home/user/script.oppo203.iso.external; python3 -m venv .venv` |
-| 5 | **Python dev deps** | `.venv/bin/python -m pytest --version` | **auto** | `cd /home/user/script.oppo203.iso.external; .venv/bin/python -m pip install -r requirements-dev.txt paramiko` |
-| 6 | **paramiko** (SSH probes) | `.venv/bin/python -c "import paramiko"` | **auto** | covered by row 5 |
-| 7 | **Node** 20+ | `node -v` | manual | install from nodejs.org / nvm |
-| 8 | **npm** 10+ | `npm -v` | manual | bundled with Node |
-| 9 | configurator **`node_modules`** | `test -d configurator/node_modules` | **auto** | `cd /home/user/script.oppo203.iso.external/configurator; npm install` |
-| 10 | **Rust toolchain** 1.77+ (`cargo`, `rustc`) | Windows: `Test-Path "$env:USERPROFILE\.cargo\bin\cargo.exe"` · POSIX: `command -v cargo` | **auto** | **Windows:** `winget install --id Rustlang.Rustup --silent --accept-package-agreements --accept-source-agreements` (default scope only; `--scope user` fails for this package) · **POSIX:** `curl https://sh.rustup.rs -sSf \| sh` |
-| 11 | (Windows only) **WebView2 runtime** for Tauri 2 webview | `Get-ItemProperty 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}' -ErrorAction SilentlyContinue` returns non-null | manual | Ships with Windows 11; on older Windows install the Evergreen Bootstrapper: `winget install --id Microsoft.EdgeWebView2Runtime --silent --accept-package-agreements --accept-source-agreements` |
-| 12 | (Windows only) **MSVC Build Tools 2022** with C++ workload — Rust's `x86_64-pc-windows-msvc` toolchain links against `link.exe` | `Test-Path "${env:ProgramFiles(x86)}\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC"` | **auto (UAC)** | `Start-Process -Verb RunAs -FilePath powershell -ArgumentList '-NoProfile','-Command','winget install --id Microsoft.VisualStudio.2022.BuildTools --silent --accept-package-agreements --accept-source-agreements --override "--quiet --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"'` — first install triggers a Windows UAC dialog; **operator must click Yes**. Subsequent resumes skip (idempotent). |
+| 1 | **git** ≥ 2.30 | `git --version` | auto-system | `winget install --id Git.Git -e --silent --accept-source-agreements --accept-package-agreements` |
+| 2 | **`gh` CLI** authenticated | `gh auth status` | manual | `gh auth login` (operator approves the browser flow) |
+| 3 | **Python** 3.9+ on PATH | `python --version` | auto-system | `winget install --id Python.Python.3.12 -e --silent --accept-source-agreements --accept-package-agreements` |
+| 4 | Repo **`.venv`** | `Test-Path .venv` | auto-repo | `cd C:\Users\rigel\Documents\gitrepo\script.oppo203.iso.external; python -m venv .venv` |
+| 5 | **Python dev deps** | `.venv\Scripts\python.exe -m pytest --version` | auto-repo | `cd C:\Users\rigel\Documents\gitrepo\script.oppo203.iso.external; .venv\Scripts\python.exe -m pip install -r requirements-dev.txt paramiko` |
+| 6 | **paramiko** (SSH probes) | `.venv\Scripts\python.exe -c "import paramiko"` | auto-repo | covered by row 5 |
+| 7 | **Node** 20+ | `node -v` | auto-system | `winget install --id OpenJS.NodeJS.LTS -e --silent --accept-source-agreements --accept-package-agreements` |
+| 8 | **npm** 10+ | `npm -v` | bundled | comes with Node row 7 |
+| 9 | configurator **`node_modules`** | `Test-Path configurator\node_modules` | auto-repo | `cd C:\Users\rigel\Documents\gitrepo\script.oppo203.iso.external\configurator; npm install` |
+| 10 | **Rust toolchain** 1.77+ | `cargo --version; rustc --version` | auto-system | `winget install --id Rustlang.Rustup -e --silent --accept-source-agreements --accept-package-agreements; rustup default stable` |
+| 11 | **MSVC Build Tools** (Tauri linker) | `(Get-Command link.exe -ErrorAction SilentlyContinue) -ne $null` or `cd configurator; npm run tauri info` | auto-system | `winget install --id Microsoft.VisualStudio.2022.BuildTools -e --silent --accept-source-agreements --accept-package-agreements --override "--add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"` (multi-GB; first run is slow) |
+| 12 | **WebView2 runtime** | `Test-Path 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'` | bundled-w11 | bundled with Windows 11; if absent: `winget install --id Microsoft.EdgeWebView2Runtime -e --silent --accept-source-agreements --accept-package-agreements` |
+| 13 | **Configurator icon** (placeholder OK) | `Test-Path configurator\src-tauri\icons\icon.ico` | auto-repo | generate from a placeholder PNG via `cd configurator; npm run tauri icon -- ../docs/installuidraft/.../placeholder.png` (or commit a stub `icon.ico`); blocks `cargo build` otherwise |
+| 14 | Repo has **`area:addon`** and **`area:configurator`** labels | `gh label list --json name --jq '.[].name' \| Select-String '^area:(addon\|configurator)$'` returns both | auto-repo | `gh label create area:addon --color 0E8A16 --description "Kodi add-on (Python)" --force; gh label create area:configurator --color 5319E7 --description "Windows configurator (Tauri 2)" --force` |
 
-**Notes on auto-install behavior:**
+**PATH gotcha on Windows after row 10 installs:** the cargo bin dir
+(`$env:USERPROFILE\.cargo\bin`) is NOT on the inherited PATH of fresh `PowerShell` tool
+calls until a shell restart. Prefix every cargo invocation in the same session as the
+install with `$env:PATH = "$env:USERPROFILE\.cargo\bin;" + [Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [Environment]::GetEnvironmentVariable("PATH","User"); `
+or call cargo by full path.
 
-- Plain **auto** rows install silently with no prompt; safe to run on every resume.
-- Rows marked **auto (UAC)** install on resume if missing, but trigger a Windows UAC dialog the first time; once installed, future resumes detect it and skip. Inform the operator before the prompt fires so they're not blindsided.
-- **PATH gotcha on Windows after row 10 installs:** the cargo bin dir (`$env:USERPROFILE\.cargo\bin`) is NOT on the inherited PATH of fresh `PowerShell` tool calls until a shell restart. Prefix every cargo invocation in the same session as the install with `$env:PATH = "$env:USERPROFILE\.cargo\bin;" + [Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [Environment]::GetEnvironmentVariable("PATH","User"); ` or call cargo by full path.
-- **Manual** rows print their fix command and STOP — the agent will not install anything that needs the operator to provide credentials, sign in to a service, or make a judgment about a system-wide change other than UAC consent.
-
-**What "build the Windows binary" needs end to end:** rows 7 (Node), 8 (npm), 9 (node_modules), 10 (Rust), 11 (WebView2), 12 (MSVC). For `cargo build` / `npm run tauri dev` (development) — that's the full list. For `npm run tauri build` (production .msi/.exe bundle) — same, plus WiX 3.x and NSIS, but Tauri 2 auto-downloads both on first bundle run, so neither needs an §2a row.
-
-Auto rows install on `resume` if missing. Manual rows print their fix command and STOP.
-There is no database; no external services to verify.
+Rows are checked in order; a missing row at any tier is acted on per its tier rule
+described above. There is no database; no external services to verify. (Memory note
+`tauri-env-installed` records that rows 10/11 already passed on 2026-05-29; row 13 is the
+known blocker tracked in `configurator-icon-files-missing`.)
 
 ---
 
 # §3 Work in progress (resume here first)
 
-> **Read this FIRST on `resume`.** Maintained by `done for the day`. If empty, the last
-> session ended clean; offer the operator a fresh theme.
+> **Read this FIRST on `resume`.** §3a covers Addon work, §3b covers Configurator work.
+> Maintained by `done for the day` — each subsection is overwritten independently. If a
+> subsection is empty (`(none)`), that area ended clean; offer the operator a fresh theme
+> in that area.
+
+## §3a Addon work — in progress
+
+**As of 2026-05-29 (end of day):** v2.9.14 audit-ready on `wip/wizard-ux`; no
+in-flight code.
+
+- **This session — v2.9.14 release prep** on `wip/wizard-ux` (tip `9d633de`):
+  - Back-applied `area:addon` label to issue
+    [#22](https://github.com/skull-01/script.oppo203.iso.external/issues/22)
+    (the sole repo Issue; sweep complete).
+  - Audited `wip/wizard-ux`: `py_compile` + the four `tools/*.py --check` gates
+    (`render_docs`, `sync_version`, `test_layout`, `i18n_extract`) all green;
+    `pytest -n auto` = **999 passed, 3 skipped in 11.83s** (+12 vs main's 987);
+    coverage **99.10%** (pre-push hook enforces 99% floor).
+  - Found a single +1 ruff `I001` in
+    [`tools/dev_build.py`](tools/dev_build.py); fixed via `ruff check --fix` and
+    pushed as commit `9d633de` (*style: sort imports in tools/dev_build.py*).
+    Branch ruff count now matches main's 336 baseline (+0 net contribution).
+  - Filed issue
+    [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
+    (`ENH-: clear ruff backlog on main`, `area:addon`) for the pre-existing 336
+    ruff errors on main — surfaced by the audit, **not** a v2.9.14 blocker;
+    3-PR incremental plan documented in the issue body.
+
+- **Outstanding before `/release 2.9.14` can run** (operator decides):
+  - **Main-side drift reconciliation** — `main` is 13 commits ahead of
+    `wip/wizard-ux` with PR #30 (configurator scaffold), PR #29 (CI fix), PR #28
+    (pytest-cov bump), and today's spine/EOD docs. Cleanest path: open
+    `wip/wizard-ux` → `main` PR, merge via GitHub, then `/release 2.9.14` from
+    `main`.
+  - **On-device verification** of the wizard fixes per
+    [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md).
+
+- **Candidate themes for next addon session** (pick one, per §4):
+  1. **Open `wip/wizard-ux` → `main` PR** so v2.9.14 can be tagged from `main`
+     after operator merge. Smallest possible diff to unblock the release.
+  2. **Cut v2.9.14** — `/release 2.9.14` once #1 lands and operator verifies on
+     device.
+  3. **Work issue #38 — PR 1 (auto-fix sweep)** — `ruff check --fix .`, ~172
+     mechanical fixes, 336 → ~164 errors. Independent of the release.
+  4. **Fix the broken `claude-review` CI check** — partially done via PR #29
+     (allowed_bots config); next real-bot run lands ~2026-06-03 with the weekly
+     dependabot batch.
+
+## §3b Configurator work — in progress
 
 **As of 2026-05-29 (end of day — config-owner-policy session, second EOD of the day):**
 
-- **Addon area today — PR [#45](https://github.com/skull-01/script.oppo203.iso.external/pull/45)
-  *docs: 'configurator owns add-on configuration' policy (ENH-#41 part A)*** is
-  open as a **draft** on `claude/config-owner-policy-a3k7m2nq` (tip `1ed15a3`).
-  - Commit `1ed15a3` is a 3-file docs-only change (+70 / −1):
-    - [`AGENTS.md`](AGENTS.md): new `## Configuration is owned by the configurator`
-      section after `## Scope discipline`. Lists allowed in-add-on exceptions
-      (per-session toggles, the #42 settings-menu carve-out, diagnostic
-      exports already in `installer.main()`) and not-allowed-without-sign-off
-      (new persistent-setting categories, new first-run dialogs, add-on side
-      writers for `playercorefactory.xml` / keymap / NAS creds).
-    - [`CONTRIBUTING.md`](CONTRIBUTING.md): matching `## Configuration ownership`
-      section between `## Ground rules` and `## Local checks`, framed for
-      external contributors. Same policy + exceptions.
-    - [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md):
-      Phase A entry asking the operator to confirm the policy + the three
-      allowed exceptions + the not-allowed list match their intent.
-  - Implementing SHA `1ed15a3` commented on
-    [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
-    per the only-operator-closes-issues norm.
+**As of 2026-05-29 (PM bulk-merge):** scaffold + first three follow-ups landed; queue
+cleared of stale drafts. **§3b content is stale from #37's pre-merge view; the next
+EOD will refresh it.**
 
-- **Tests on the policy-doc branch:** `pytest -n auto --basetemp=build\_pt` =
-  **987 passed, 3 skipped** in ~11s. Pre-push hook (parallel + coverage gate,
-  99% floor): **987 passed, 3 skipped** in 14.65s; coverage **99.08%**. Docs-only
-  change, no behavioural impact — feature branch matches main's test result.
+- **PR #30** (Scaffold OppoKodiAddon Configurator) — **merged** earlier at `394f9fc`.
+- **PR #33** (window-control IPC on custom title bar) — **merged 2026-05-29 PM at
+  `45c6572`**.
+- **PR #34** (persist WizardState to `%APPDATA%`) — **merged 2026-05-29 PM at
+  `bc60074`**.
+- **PR #35** (unblock first-time cargo build — icon stub + lockfile + winget docs) —
+  **merged 2026-05-29 PM at `12e5b18`**. §2a row 13 (icon) and the
+  `configurator-icon-files-missing` memory are now satisfied; memory pruning is a small
+  follow-up task.
+- **PR #32** (docs: align AGENTS.md ruff target; refresh §3 for #30) — **closed without
+  merge** in the PM bulk-merge as superseded by subsequent §3 rewrites; the AGENTS.md
+  parenthetical was deemed in tension with `area:addon` issue #38 (ruff backlog).
+- **PR #36** (mid-day EOD handoff) — **closed without merge** as a stale snapshot
+  superseded by later EOD entries on `main`.
 
-- **Parts B + C of #41 deferred to next session — both wait on PR #40.** Per
-  this session's sequencing Q&A (now logged in §21): Part A docs ship now from
-  `main` (no overlap with #40). Parts B + C touch `resources/settings.xml`,
-  which PR #40 also renames (`<category id="wizard">` → `<category id="playback">`)
-  and modifies (`wizard_mode` removed) — doing them now would create avoidable
-  merge friction.
-  - **Part B** (in-add-on guidance hint on settings open): per operator's
-    "Both" choice — static label at top of `resources/settings.xml` *plus*
-    `service.py` first-open-per-session `xbmcgui.Dialog().notification`
-    tracked via `xbmcgui.Window(10000)` property (clears on Kodi restart).
-  - **Part C** (settings-file ownership marker): configurator writes
-    `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` in `settings.xml`;
-    add-on warns when a configurator-managed key is overwritten via Kodi's UI.
-  - Acceptance for #41 stays open until B + C land.
+- **No `area:configurator` issues open.** §17a cache has no configurator rows.
 
-- **Still in flight (carried over from prior session):**
-  - PR [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
-    (strip-wizard) — draft on `claude/strip-wizard-g4feovqi`, mergeable
-    `CLEAN`. Awaiting operator review of the diff (especially the
-    `Monitor.onSettingsChanged` removal — the headline behavioural change) +
-    Phase A on-device verification. **#40's Phase A entry lives on its own
-    branch (`92a9408`); it will appear in `main`'s
-    `docs/MANUAL_VERIFICATION_CHECKLIST.md` only after #40 merges.**
-    `main`'s checklist currently shows just the #45 Phase A row (from this
-    EOD commit).
-  - Six addon-area issues open: #38 (ruff backlog), #41 (parent of #45 —
-    stays open until B + C also land), #42 (settings menu), #43 (lib split),
-    #44 (hardware testing).
-  - Configurator drafts #32 / #33 / #34 / #35 unchanged since 2026-05-29.
-  - Spine revision PR [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37)
-    still open — once merged it will introduce the §3a/§3b split.
-
-- **Candidate themes for next session** (pick one, per §4):
-  1. **Operator review + merge PR #40, then #45, then #41 Parts B + C.** Finishes
-     the configurator-owns-config theme started across the last two sessions.
-     Highest-leverage path; everything below depends on the policy contract.
-  2. **ENH-#43 — split `resources/lib` into TV/Oppo/AVR/Kodi sub-packages.**
-     Best done *before* #42 so the in-add-on settings menu lands in the right
-     layout from day one. Independent of #45.
-  3. **ENH-#42 — minimal in-add-on settings menu.** Depends on #43's layout
-     and #41's policy doc landing.
-  4. **#38 ruff backlog PR 1 (auto-fix sweep).** Independent of all of the
-     above; can run in a parallel session.
-  5. **Configurator triage** (different area) — work through #32 / #33 / #34
-     / #35.
-
-- **No active blockers.** Six addon-area issues in §17a; #45 added to the
-  table this EOD as the implementing PR for #41 part A.
+- **Candidate themes for next configurator session** (pick one, per §4):
+  1. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
+     Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over port 23) —
+     multi-PR theme, its own session. #33 (IPC) and #34 (state) are now landed.
+  2. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
+  3. **App icon + bundling polish** — #35 landed a stub icon; the real icon work is
+     still open.
 
 ---
 
@@ -342,15 +385,16 @@ the hybrid model._
 # §17a Backlog audit cache
 
 _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from here first
-before re-scanning live GitHub state (operator norm #10)._
+before re-scanning live GitHub state (operator norm #10). The `Area` column is the
+`area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-29 (EOD — config-owner-policy)**.
+Last refreshed: **2026-05-29 (PM bulk-merge)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
-| 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`) | closed by operator |
+| 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`, merged via #40 at `59eb511`) | closed by operator |
 | 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not started |
-| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | `1ed15a3` (Part A only) on `claude/config-owner-policy-a3k7m2nq` — [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) draft. Parts B + C pending after PR #40 merges. | Phase A queued |
+| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | `1ed15a3` (Part A) merged via [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) at `816bde2`. Parts B + C pending. | Phase A queued |
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | — | not started |
 | 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | — | not started |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
@@ -381,10 +425,20 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (`build\_tmp` Windows-locked tmpdirs vs. `audit_release.py`); updated the header
   "Last sync" / "Tests on `main`" to `4e54c5d` / 987 passed, 3 skipped. PR #30 unchanged.
   §17a still empty (no issues opened/closed/retitled).
+- **2026-05-29 (spine-revision branch — EODs #2, #3)** — Parallel history on
+  `docs/eod-handoff-2026-05-29-pm` (PR #37). Authored the §3a/§3b two-area
+  restructure of §1, §2a, §3, AGENTS.md, `.claude/commands/resume.md`,
+  `docs/ai-handoff/AI_RESUME_GUIDE.md` §9; ran one addon session under the new
+  spine (audited `wip/wizard-ux` for v2.9.14, fixed a single ruff I001 in
+  `tools/dev_build.py`, filed issue #38 for the 336-error ruff backlog).
+  **Header "Last sync" on that branch was `394f9fc`** (the PR #30 merge); tests
+  on `wip/wizard-ux` were 999 passed / 3 skipped / 99.10% coverage. The §3a/§3b
+  content authored on that branch is preserved only via this entry — the actual
+  §3a/§3b on `main` was overwritten by the PM bulk-merge entry below.
 - **2026-05-29 (EOD — strip-wizard session)** — End-of-day after a single-theme
   addon session that stripped the in-Kodi setup wizard from the add-on. PR
   [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40) on
-  `claude/strip-wizard-g4feovqi` (tip `92a9408`) is open as draft. 44 files
+  `claude/strip-wizard-g4feovqi` (tip `92a9408`) was open as draft. 44 files
   changed, +313 / −5814. Tests: **865 passed, 3 skipped** in ~10s on the strip
   branch; coverage **99.05%** (≥ 99% floor). Filed 4 new `area:addon` ENH
   issues — #41 configurator-owns-config policy, #42 in-add-on settings menu,
@@ -392,16 +446,11 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   Created [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) on `main` (commit
   `3967cb6`) with the strategic direction + open-issue grid + suggested
   ordering. Header "Last sync" updated from `4e54c5d` to `3967cb6`; tests on
-  `main` re-confirmed at **987 passed, 3 skipped** in ~12s (unchanged — the
-  strip work is on a feature branch). §3 rewritten to record the strip-wizard
-  PR + new issues; §17a backlog cache populated for the first time (with
-  Area column added) — six rows: #22 (closed), #38, #41, #42, #43, #44.
-  Operator's spine revision PR
-  [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37)
-  remains open and unmerged on `main`; when it lands it will introduce the
-  §3a/§3b split and the rewritten §2a — at that point the next EOD reconciles
-  whatever drift this entry created.
-- **2026-05-29 (EOD — config-owner-policy session)** — **Second** `done for
+  `main` re-confirmed at **987 passed, 3 skipped** in ~12s. §3 rewritten to
+  record the strip-wizard PR + new issues; §17a backlog cache populated for
+  the first time (with Area column added) — six rows: #22 (closed), #38, #41,
+  #42, #43, #44.
+- **2026-05-29 (EOD — config-owner-policy session)** — Second `done for
   the day` cycle on 2026-05-29, after the strip-wizard EOD at `7b65ed2`.
   Single-theme addon session that drafted **Part A** (policy doc) of
   [ENH-#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41).
@@ -413,17 +462,46 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (matching policy framed for external contributors),
   [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
   gained a Phase A row for the #45 review. Tests on the policy-doc branch:
-  **987 passed, 3 skipped** in 10.69s (`pytest -n auto --basetemp=build\_pt`);
-  pre-push hook with coverage gate: **987 passed, 3 skipped** in 14.65s,
-  coverage **99.08%**. SHA `1ed15a3` commented on issue #41 per the
-  only-operator-closes-issues norm. Parts B + C of #41 deferred to the next
-  session — both touch `resources/settings.xml`, which PR #40 also modifies,
-  so doing them now would create avoidable merge friction. §3 rewritten to
-  record PR #45 + the carried-over state of PR #40; §17a row for #41 updated
-  with `1ed15a3` (Part A) and "Phase A queued"; §21 gained the sequencing +
-  hint-mechanism Q&A from this session. Header "Last sync" updated from
-  `3967cb6` to `7b65ed2`. No new gotchas (§14 unchanged). No new issues
-  opened or closed.
+  **987 passed, 3 skipped** in 10.69s; coverage **99.08%**. SHA `1ed15a3`
+  commented on issue #41 per the only-operator-closes-issues norm. Parts B + C
+  of #41 deferred to the next session — both touch `resources/settings.xml`,
+  which PR #40 also modifies.
+- **2026-05-29 (PM — bulk-merge session)** — Operator typed `resume` then
+  directed "merge all pending, operator will skip review." Bulk-merged the
+  five mergeable PRs in dependency order:
+  [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
+  strip-wizard at `59eb511`,
+  [#45](https://github.com/skull-01/script.oppo203.iso.external/pull/45)
+  config-owner-policy Part A at `816bde2` (after resolving a
+  `docs/MANUAL_VERIFICATION_CHECKLIST.md` conflict that preserved both #40 and
+  #45 Phase A entries),
+  [#33](https://github.com/skull-01/script.oppo203.iso.external/pull/33)
+  window-control IPC at `45c6572`,
+  [#34](https://github.com/skull-01/script.oppo203.iso.external/pull/34) state
+  persistence at `bc60074`,
+  [#35](https://github.com/skull-01/script.oppo203.iso.external/pull/35) cargo
+  unblock at `12e5b18`. Closed three superseded/stale PRs without merge:
+  [#39](https://github.com/skull-01/script.oppo203.iso.external/pull/39)
+  (wip/wizard-ux — predecessor of #40),
+  [#36](https://github.com/skull-01/script.oppo203.iso.external/pull/36) (stale
+  mid-day handoff),
+  [#32](https://github.com/skull-01/script.oppo203.iso.external/pull/32) (stale
+  §3 refresh + ruff-target line now in tension with #38). Resolved this PR
+  ([#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37) the
+  two-area spine revision) against the new `main`: took #37's structural
+  changes (§1 step 2 multi-area wording, §2a's 14-row table with `auto-repo` /
+  `auto-system` / `manual` tiers, §3a/§3b split, AGENTS.md area-label rule,
+  `.claude/commands/resume.md` two-area procedure, AI_RESUME_GUIDE.md §9
+  update); took `main`'s §17a (6 rows); rewrote §3b to record the four
+  configurator-area PR outcomes this session; **§3a still carries the stale
+  wip/wizard-ux v2.9.14 content from #37 and will be overwritten by the next
+  EOD**. `pytest -n auto --basetemp=build\_pt` on `main` after the five
+  merges: **865 passed, 3 skipped in 10.40s** (test count dropped from 987 →
+  865 because #40 deleted the wizard test files; coverage **99.05%** ≥ 99%
+  floor). Phase A on-device verification of #40 was **NOT** performed —
+  operator chose to defer per the skip-review directive; revert remains
+  available if hardware testing later flags an issue. No `area:configurator`
+  labels back-applied to any prior items in this session.
 
 ---
 

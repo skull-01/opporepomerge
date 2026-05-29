@@ -504,6 +504,13 @@ real on-device bug fixes staged for v2.9.14. Each step's rationale:
 
 ## 9. Current state & next steps
 
+> **Scope note (added 2026-05-29).** This guide is the deep companion for the **add-on
+> area**. As of 2026-05-29 the repo also tracks a second area, the Windows **configurator**
+> (Tauri 2 + React under `configurator/`). The session-continuity spine for both areas
+> lives in [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md): §3a tracks addon WIP, §3b
+> tracks configurator WIP, and §1 defines the `resume` command. Sections 1–8 / 10 of this
+> guide remain addon-only; this §9 below is the addon-area snapshot.
+
 **Branch `wip/wizard-ux`** (off `main`; the v2.9.14 candidate — NOT yet version-bumped)
 contains, as separate commits:
 - `tools/dev_build.py` (+ `--sync/--deploy/--restart` modes) — dev tooling.
@@ -535,20 +542,31 @@ release notes' "Runtime behavior" section should say so (unlike v2.9.13).
 
 ### Resuming with `resume` / `/resume`
 
-When the maintainer types **`resume`** (or runs the `/resume` slash command —
-`.claude/commands/resume.md`), produce a short, scannable briefing — do NOT start changing
-code until they pick a direction:
-1. `git fetch` to refresh.
-2. **Last 5 completed items** — the 5 most recently merged pull requests
-   (`gh pr list --state merged --limit 5 --json number,title,mergedAt`), each summarized in
-   one line (what it delivered). Also check closed Issues
-   (`gh issue list --state closed --limit 5`) in case GitHub Issues are in use. (This repo
-   has tracked work via PRs rather than Issues, so merged PRs are the "completed" signal.)
-3. **In flight** — open PRs (`gh pr list --state open`), unmerged work branches
-   (`git branch -r --no-merged origin/main`), and the latest release
-   (`gh release list --limit 1`).
-4. **Suggest what to work on next** — 2-4 concrete options grounded in the above and in
-   "§9 Current state & next steps" / "Known issues", and recommend one.
+> **Authoritative spec:** [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §1, and the
+> runnable checklist in [`.claude/commands/resume.md`](../../.claude/commands/resume.md).
+> This subsection only summarizes the shape so a reader of this guide isn't surprised — do
+> not duplicate the spec here, it will drift (it already did, between 2026-05-28 and
+> 2026-05-29).
+
+The `resume` command operates on **two areas in one environment** (addon, configurator):
+
+1. **Environment preflight** for both areas via the handoff's §2a readiness table —
+   PowerShell checks + tiered installs (`auto-repo` always, `auto-system` best-effort via
+   `winget`, `manual` stops for the operator). Covers Python venv + dev deps for the
+   add-on; Node + Rust + MSVC Build Tools + WebView2 for the configurator; plus the
+   `area:addon` / `area:configurator` GitHub labels (auto-created if missing).
+2. **Two parallel activity blocks** — for each area: last 5 issues created, last 5 issues
+   closed (filtered by `gh issue list --label area:<area>`), and a 2–4 line WIP
+   paraphrase of §3a (addon) or §3b (configurator). Issues lacking either area label fall
+   into an **Unclassified** tail for triage.
+3. **Themes recommended per area separately** — 1–3 candidates each, leading with any
+   unfinished §3a / §3b entry. The session-shape rule (one theme = one session, §4 of
+   the handoff) still applies: pick **one area and one theme**, then STOP — do not start
+   work in both areas in the same session.
+
+Historical note: before 2026-05-29 the `resume` flow was a single list of last-5 merged
+PRs without area filtering (this guide's prior version described that flow). The switch
+to a two-area split landed alongside the hybrid issue model adopted on 2026-05-28.
 
 ---
 

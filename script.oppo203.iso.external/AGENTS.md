@@ -7,6 +7,10 @@ the rules below. Contributor norms: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 - **Issues** track bugs (`type:bug`) and enhancements (`ENH-` prefix). The operator files
   most; agents file `type:bug` on bug reports per the operator's personal norm.
+- **Every issue carries one area label — `area:addon` or `area:configurator`** — so the
+  `resume` command can summarize each area independently (see `AI_RESUME_HANDOFF.md` §1).
+  Agents apply the area label whenever they file an issue. The two labels are auto-created
+  on `resume` if missing (§2a row 14).
 - **PRs** deliver. Open drafts; the operator promotes to ready when verified.
 - **Only the operator closes issues.** Never `gh issue close`. Never `Closes/Fixes/Resolves
   #N` in commit messages or PR descriptions. When work seems done: comment the implementing
