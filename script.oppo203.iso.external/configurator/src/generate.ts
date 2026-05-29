@@ -17,7 +17,7 @@ export type KodiTarget = {
 const ADDON_ID = "script.oppo203.iso.external";
 
 // Mirror of resources/lib/oppo/constants.py XML_4K_TAG_FILENAME_PATTERN.
-const XML_4K_TAG_FILENAME_PATTERN = ".*(4K|4k|UHD|uhd|2160p|2160P).*";
+export const XML_4K_TAG_FILENAME_PATTERN = ".*(4K|4k|UHD|uhd|2160p|2160P).*";
 
 const PATHS_BY_PLATFORM: Record<KodiPlatform, { addons: string; userdata: string; sep: string }> = {
   coreelec: { addons: "/storage/.kodi/addons", userdata: "/storage/.kodi/userdata", sep: "/" },

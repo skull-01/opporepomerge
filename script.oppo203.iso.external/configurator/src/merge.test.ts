@@ -30,8 +30,27 @@ describe("mergePlayercorefactory", () => {
     expect(count).toBe(1);
   });
 
-  it("falls back to a fresh document for a non-playercorefactory file", () => {
-    const xml = mergePlayercorefactory("<advancedsettings><foo/></advancedsettings>", target);
-    expect(xml).toContain('<player name="Oppo203ISO"');
+  it("preserves a user-authored rule that targets our player", () => {
+    const existing =
+      '<playercorefactory><players></players>' +
+      '<rules><rule filetypes="img" player="Oppo203ISO"/></rules></playercorefactory>';
+    const xml = mergePlayercorefactory(existing, target);
+    expect(xml).toContain('filetypes="img" player="Oppo203ISO"');
+    expect(xml).toContain('filetypes="iso"');
+    // re-running must not duplicate or drop the user's img rule
+    const again = mergePlayercorefactory(xml, target);
+    expect((again.match(/filetypes="img"/g) || []).length).toBe(1);
+  });
+
+  it("refuses (throws) for a non-playercorefactory file instead of overwriting it", () => {
+    expect(() =>
+      mergePlayercorefactory("<advancedsettings><foo/></advancedsettings>", target),
+    ).toThrow(/refusing to merge/);
+  });
+
+  it("refuses (throws) for a malformed file instead of overwriting it", () => {
+    expect(() => mergePlayercorefactory("<playercorefactory><players>", target)).toThrow(
+      /refusing to merge/,
+    );
   });
 });

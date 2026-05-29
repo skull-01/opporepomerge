@@ -4,6 +4,7 @@ import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { invoke } from "@tauri-apps/api/core";
 import { buildTransferFiles, kodiTargetForPlatform, type KodiPlatform } from "../generate";
+import { smbUserdataPath } from "../apply";
 import type { ScreenProps } from "./types";
 
 // ============================================================
@@ -267,7 +268,7 @@ export function Step1TierB({ go, state, set }: ScreenProps) {
     setTesting(true);
     setError(null);
     try {
-      await invoke("smb_test_write", { userdataPath: state.smbSharePath });
+      await invoke("smb_test_write", { userdataPath: smbUserdataPath(state.smbSharePath) });
       setTested(true);
     } catch (e) {
       setTested(false);

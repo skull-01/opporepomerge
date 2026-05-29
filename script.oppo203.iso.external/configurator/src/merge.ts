@@ -1,4 +1,5 @@
 import {
+  XML_4K_TAG_FILENAME_PATTERN,
   buildPlayerElementXml,
   buildPlayercorefactoryXml,
   buildRuleXml,
@@ -7,11 +8,17 @@ import {
 
 const PLAYER_NAME = "Oppo203ISO";
 
+// The filetypes of the rules we generate. Used to identify our own prior rules for
+// idempotent replacement without touching user-authored rules that target our player.
+const OUR_RULE_FILETYPES = new Set(["iso", "bdmv", "mpls"]);
+
 /**
  * Merge our <player>/<rule> entries into an existing playercorefactory.xml, preserving the
  * user's other players and rules. Idempotent: re-running replaces our own entries rather than
- * duplicating them. Returns a fresh document when there is no usable existing file. Mirrors
- * resources/lib/kodi/playercorefactory_merge.py (merge, never blind-overwrite).
+ * duplicating them. Returns a fresh document when there is no existing file, and REFUSES
+ * (throws) when an existing file is malformed or not a playercorefactory document — mirroring
+ * resources/lib/kodi/playercorefactory_merge.py, which never blind-overwrites a file it can't
+ * safely merge.
  */
 export function mergePlayercorefactory(
   existing: string | null,
@@ -25,9 +32,16 @@ export function mergePlayercorefactory(
   const doc = new DOMParser().parseFromString(existing, "application/xml");
   const root = doc.documentElement;
   const malformed = doc.getElementsByTagName("parsererror").length > 0;
-  if (malformed || !root || root.nodeName !== "playercorefactory") {
-    // Not a usable playercorefactory document — fall back to a fresh file.
-    return buildPlayercorefactoryXml(target, includeDiscFolderRules);
+  if (malformed) {
+    throw new Error(
+      "existing playercorefactory.xml is malformed; refusing to merge. Fix or move the file first.",
+    );
+  }
+  if (!root || root.nodeName !== "playercorefactory") {
+    throw new Error(
+      `existing playercorefactory.xml root is <${root?.nodeName ?? "unknown"}>, expected ` +
+        "<playercorefactory>; refusing to merge. Fix or move the file first.",
+    );
   }
 
   let players = root.getElementsByTagName("players")[0];
@@ -42,12 +56,20 @@ export function mergePlayercorefactory(
     root.appendChild(rules);
   }
 
-  // Drop any prior entries of ours so a re-run is idempotent.
+  // Drop our own prior entries so a re-run is idempotent, WITHOUT removing user-authored
+  // players/rules that merely target our player. Our rules are identified by their exact
+  // signature (our filetypes + our 4K filename pattern + our player), so a hand-added rule
+  // like <rule filetypes="img" player="Oppo203ISO"/> is preserved.
   Array.from(players.getElementsByTagName("player"))
     .filter((p) => p.getAttribute("name") === PLAYER_NAME)
     .forEach((p) => p.remove());
   Array.from(rules.getElementsByTagName("rule"))
-    .filter((r) => r.getAttribute("player") === PLAYER_NAME)
+    .filter(
+      (r) =>
+        r.getAttribute("player") === PLAYER_NAME &&
+        r.getAttribute("filename") === XML_4K_TAG_FILENAME_PATTERN &&
+        OUR_RULE_FILETYPES.has(r.getAttribute("filetypes") ?? ""),
+    )
     .forEach((r) => r.remove());
 
   const playerFrag = new DOMParser().parseFromString(buildPlayerElementXml(target), "application/xml");
