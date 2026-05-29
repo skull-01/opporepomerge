@@ -183,7 +183,7 @@ def test_build13_metadata_and_documentation_identity():
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 13" in addon
     assert "Yamaha MusicCast / YXC AVR driver" in addon
-    assert (ROOT / "resources/lib/avr_yamaha.py").exists()
+    assert (ROOT / "resources/lib/avr/avr_yamaha.py").exists()
     for rel in ["README.md", "reference.md", "web-references.md"]:
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 13" in text

@@ -14,7 +14,7 @@ from urllib import error, request
 
 try:
     from .avr_types import AVR_BACKEND_SONY_AUDIO_API, AvrResult
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     from avr_types import AVR_BACKEND_SONY_AUDIO_API, AvrResult  # type: ignore
 
 SONY_AUDIO_API_BACKEND_ID = AVR_BACKEND_SONY_AUDIO_API

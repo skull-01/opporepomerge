@@ -17,7 +17,7 @@ try:
     from . import avr_control
     from .avr_presets import get_avr_preset, list_avr_presets
     from .avr_types import AVR_BACKEND_DISABLED, AvrResult
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     import avr_control  # type: ignore
     from avr_presets import get_avr_preset, list_avr_presets  # type: ignore
     from avr_types import AVR_BACKEND_DISABLED, AvrResult  # type: ignore

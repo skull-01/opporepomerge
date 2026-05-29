@@ -4,7 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${VERSION:-$(cd "$ROOT" && python3 - <<'PY'
-from resources.lib.version import ADDON_VERSION
+from resources.lib.kodi.version import ADDON_VERSION
 print(ADDON_VERSION)
 PY
 )}"
@@ -32,7 +32,7 @@ root = Path.cwd()
 import os
 out_dir = Path(os.environ.get("OUT_DIR", str(root / "dist")))
 addon_id = "script.oppo203.iso.external"
-version = os.environ.get("VERSION", "") or __import__("resources.lib.version", fromlist=["ADDON_VERSION"]).ADDON_VERSION
+version = os.environ.get("VERSION", "") or __import__("resources.lib.kodi.version", fromlist=["ADDON_VERSION"]).ADDON_VERSION
 build_suffix = os.environ.get("BUILD_SUFFIX", "")
 suffix_part = f"-{build_suffix}" if build_suffix else ""
 dev_zip = out_dir / f"{addon_id}-{version}{suffix_part}-dev-source.zip"

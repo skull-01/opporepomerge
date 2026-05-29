@@ -16,7 +16,7 @@ try:
         AVR_BACKEND_SONY_AUDIO_API,
         AVR_BACKEND_YAMAHA_YXC,
     )
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     from avr_types import (  # type: ignore
         AVR_BACKEND_DENON_MARANTZ,
         AVR_BACKEND_DISABLED,

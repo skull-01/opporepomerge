@@ -83,7 +83,7 @@ def test_build6_runtime_zip_excludes_prehardware_and_build_evidence(tmp_path):
     )
     for suffix in forbidden_suffixes:
         assert f"script.oppo203.iso.external/{suffix}" not in names
-    assert "script.oppo203.iso.external/resources/lib/hardware_validation_readiness.py" in names
+    assert "script.oppo203.iso.external/resources/lib/oppo/hardware_validation_readiness.py" in names
     with zipfile.ZipFile(out) as zf:
         addon_text = zf.read("script.oppo203.iso.external/addon.xml").decode("utf-8")
     assert "Build 6" in addon_text

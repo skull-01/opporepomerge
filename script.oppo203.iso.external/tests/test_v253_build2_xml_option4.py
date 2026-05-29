@@ -17,11 +17,13 @@ for item in (str(ROOT), str(LIB)):
 
 @contextlib.contextmanager
 def kodi_stubs(*extra):
+    from tests._support.lib_buckets import with_canonical
     names = {
         "xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "xbmcplugin", "xbmcdrm",
         "resources.lib.installer", "installer",
     }
     names.update(extra)
+    names = with_canonical(names)
     old_path = list(sys.path)
     saved = {name: sys.modules.get(name) for name in names}
     try:

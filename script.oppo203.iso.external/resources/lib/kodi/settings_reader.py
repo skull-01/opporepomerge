@@ -2,7 +2,7 @@ import os
 import xml.etree.ElementTree as ET
 
 try:
-    from .command_map import load_default_command_map_json
+    from ..oppo.command_map import load_default_command_map_json
     from .settings_schema import build_default_schema
 except ImportError:  # top-level/audit import compatibility
     from command_map import load_default_command_map_json  # type: ignore

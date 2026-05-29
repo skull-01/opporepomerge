@@ -14,7 +14,7 @@ from typing import Any
 try:
     from .avr_control import avr_enabled, controller_factory, selected_avr_backend
     from .avr_types import AVR_BACKEND_DISABLED, AVR_BACKEND_SONY_AUDIO_API  # noqa: F401
-except ImportError:  # top-level/test compatibility
+except ImportError:  # pragma: no cover - top-level/test compatibility
     from avr_control import avr_enabled, controller_factory, selected_avr_backend  # type: ignore
     from avr_types import (  # type: ignore  # noqa: F401
         AVR_BACKEND_DISABLED,

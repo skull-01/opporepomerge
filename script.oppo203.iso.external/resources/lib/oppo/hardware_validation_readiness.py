@@ -12,10 +12,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:  # pragma: no cover - import style differs under Kodi and pytest
-    from .diagnostic_summary import build_summary, format_summary
+    from ..kodi.diagnostic_summary import build_summary, format_summary
+    from ..kodi.settings_reader import Settings, nas_playback_capability
     from .hardware_capabilities import nas_direct_playback_gate, player_setup_guidance
     from .hardware_profiles import get_profile, normalize_profile_key
-    from .settings_reader import Settings, nas_playback_capability
 except Exception:  # pragma: no cover
     from diagnostic_summary import build_summary, format_summary  # type: ignore
     from hardware_capabilities import (  # type: ignore
@@ -89,7 +89,7 @@ def _as_settings(settings=None, addon_data_dir=None) -> Settings:
         return Settings(settings)
     if addon_data_dir:
         try:
-            from .settings_reader import read_settings
+            from ..kodi.settings_reader import read_settings
         except Exception:  # pragma: no cover - top-level Kodi import compatibility
             from settings_reader import read_settings  # type: ignore
         return read_settings(addon_data_dir)

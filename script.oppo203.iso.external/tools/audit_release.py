@@ -199,7 +199,10 @@ def _import_settings_reader(root: Path):
     for path in (str(root), str(lib)):
         if path not in sys.path:
             sys.path.insert(0, path)
-    import settings_reader  # type: ignore
+    try:
+        from resources.lib.kodi import settings_reader  # type: ignore
+    except Exception:  # pragma: no cover - legacy flat-layout fallback
+        import settings_reader  # type: ignore
     return settings_reader
 
 
@@ -208,7 +211,10 @@ def _import_command_map(root: Path):
     for path in (str(root), str(lib)):
         if path not in sys.path:
             sys.path.insert(0, path)
-    import command_map  # type: ignore
+    try:
+        from resources.lib.oppo import command_map  # type: ignore
+    except Exception:  # pragma: no cover - legacy flat-layout fallback
+        import command_map  # type: ignore
     return command_map
 
 
@@ -218,7 +224,7 @@ def _import_constants(root: Path):
         if path not in sys.path:
             sys.path.insert(0, path)
     try:
-        import constants  # type: ignore
+        from resources.lib.oppo import constants  # type: ignore
         return constants
     except Exception:  # pragma: no cover - defensive fallback for legacy unpacked trees
         class LegacyConstants:
@@ -235,7 +241,7 @@ def _import_version(root: Path):
         if path not in sys.path:
             sys.path.insert(0, path)
     try:
-        from resources.lib import version as version_module  # type: ignore
+        from resources.lib.kodi import version as version_module  # type: ignore
     except Exception:
         import version as version_module  # type: ignore
     return version_module

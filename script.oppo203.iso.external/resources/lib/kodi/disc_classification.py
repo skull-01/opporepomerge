@@ -12,7 +12,7 @@ from __future__ import annotations
 import os
 
 try:  # package import during normal use
-    from .constants import (
+    from ..oppo.constants import (
         DISC_STYLE_EXTENSIONS_4K,  # noqa: F401  # re-exported via shared-constants hub
         LOOSE_VIDEO_EXTENSIONS,
         UHD_DISC_TAGS,

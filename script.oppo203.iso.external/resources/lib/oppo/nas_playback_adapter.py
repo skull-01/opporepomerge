@@ -15,8 +15,8 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 try:  # package import when running under Kodi/tests as package
+    from ..kodi.settings_reader import nas_playback_capability
     from .path_mapper import PathMappingRule, explain_path_mapping, rules_from_settings
-    from .settings_reader import nas_playback_capability
 except Exception:  # pragma: no cover - top-level fallback for legacy tests
     from path_mapper import (  # type: ignore
         PathMappingRule,

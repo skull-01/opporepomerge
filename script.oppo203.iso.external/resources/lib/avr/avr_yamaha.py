@@ -17,7 +17,7 @@ from urllib import parse, request
 
 try:
     from .avr_types import AVR_BACKEND_YAMAHA_YXC, AvrResult
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     from avr_types import AVR_BACKEND_YAMAHA_YXC, AvrResult  # type: ignore
 
 DEFAULT_YAMAHA_YXC_PORT = 80

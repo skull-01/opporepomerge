@@ -72,7 +72,8 @@ def test_build5_installer_exposes_export_action_with_kodi_stubs(tmp_path, monkey
     monkeypatch.syspath_prepend(str(stubs))
     monkeypatch.syspath_prepend(str(ROOT))
     monkeypatch.syspath_prepend(str(LIB))
-    for name in ("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer"):
+    from tests._support.lib_buckets import with_canonical
+    for name in with_canonical(("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")):
         sys.modules.pop(name, None)
     import xbmcaddon  # type: ignore
     import xbmcvfs  # type: ignore
@@ -110,7 +111,7 @@ def test_runtime_zip_includes_readiness_helper_but_excludes_build5_evidence(tmp_
     spec.loader.exec_module(tool)
     out = tmp_path / "runtime.zip"
     names = tool.create_installable_zip(ROOT, out)
-    assert "script.oppo203.iso.external/resources/lib/hardware_validation_readiness.py" in names
+    assert "script.oppo203.iso.external/resources/lib/oppo/hardware_validation_readiness.py" in names
     assert "script.oppo203.iso.external/BUILD_NOTES_v2.5.3_BUILD5.md" not in names
     assert "script.oppo203.iso.external/HARDWARE_VALIDATION_READINESS_v2.5.3_BUILD5.md" not in names
     with zipfile.ZipFile(out) as zf:
@@ -147,7 +148,8 @@ def test_build5_installer_export_failure_is_non_fatal(monkeypatch):
     monkeypatch.syspath_prepend(str(stubs))
     monkeypatch.syspath_prepend(str(ROOT))
     monkeypatch.syspath_prepend(str(LIB))
-    for name in ("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer"):
+    from tests._support.lib_buckets import with_canonical
+    for name in with_canonical(("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")):
         sys.modules.pop(name, None)
     import xbmcaddon  # type: ignore
     xbmcaddon.reset(info={"path": str(ROOT), "id": "script.oppo203.iso.external"})

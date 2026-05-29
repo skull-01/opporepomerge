@@ -2177,10 +2177,15 @@ class TSmokeImports(unittest.TestCase):
     def test_every_lib_module_imports(self):
         skipped = []
         failed = []
-        names = sorted(f[:-3] for f in os.listdir(self.lib)
-                       if f.endswith(".py") and f != "__init__.py")
+        names = []
+        for sub in ("tv", "oppo", "avr", "kodi"):
+            bucket = os.path.join(self.lib, sub)
+            if os.path.isdir(bucket):
+                names.extend(f[:-3] for f in os.listdir(bucket)
+                             if f.endswith(".py") and f != "__init__.py")
+        names = sorted(names)
         self.assertGreater(len(names), 0,
-                           "no modules found under resources/lib")
+                           "no modules found under resources/lib sub-packages")
         import importlib
         for name in names:
             try:

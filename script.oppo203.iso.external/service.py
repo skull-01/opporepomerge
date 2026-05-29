@@ -15,6 +15,11 @@ except ImportError:
     xbmcgui = None
     xbmcvfs = None
 
+try:  # ENH-#43: install the legacy flat-name alias finder before bare imports below
+    import resources.lib  # noqa: F401
+except Exception:
+    pass
+
 
 ADDON_ID = "script.oppo203.iso.external"
 LOG_PREFIX = "[OPPO203][SERVICE]"

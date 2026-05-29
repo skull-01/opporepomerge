@@ -719,7 +719,7 @@ def export_avr_diagnostic_report():
     """Export a sanitized Build 16 AVR diagnostic report."""
     try:
         try:
-            from .avr_diagnostics import export_avr_diagnostic_report as _export
+            from ..avr.avr_diagnostics import export_avr_diagnostic_report as _export
             from .settings_reader import DEFAULTS
         except Exception:  # pragma: no cover - top-level Kodi import compatibility
             from avr_diagnostics import export_avr_diagnostic_report as _export  # type: ignore
@@ -743,7 +743,7 @@ def export_hardware_validation_readiness():
     """Export a non-invasive Build 5 hardware-validation readiness report."""
     try:
         try:
-            from .hardware_validation_readiness import (
+            from ..oppo.hardware_validation_readiness import (
                 build_readiness_report,
                 export_readiness_report,
             )

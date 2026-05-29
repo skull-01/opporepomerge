@@ -223,8 +223,8 @@ def test_runtime_zip_includes_adapter_but_excludes_build4_evidence(tmp_path):
     spec.loader.exec_module(packager)
     output = tmp_path / "runtime.zip"
     names = set(packager.create_installable_zip(ROOT, output))
-    assert "script.oppo203.iso.external/resources/lib/nas_playback_adapter.py" in names
-    assert "script.oppo203.iso.external/resources/lib/path_mapper.py" in names
+    assert "script.oppo203.iso.external/resources/lib/oppo/nas_playback_adapter.py" in names
+    assert "script.oppo203.iso.external/resources/lib/oppo/path_mapper.py" in names
     assert "script.oppo203.iso.external/BUILD_NOTES_v2.5.2_BUILD4.md" not in names
     assert "script.oppo203.iso.external/tests/test_v252_build4_nas_playback_adapter.py" not in names
     with zipfile.ZipFile(output) as zf:

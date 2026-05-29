@@ -22,7 +22,7 @@ try:
         is_supported_backend,
         normalize_backend_id,
     )
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     import tv_control  # type: ignore
     from tv_backends import (  # type: ignore
         backend_target_setting,
@@ -34,7 +34,7 @@ except ImportError:  # top-level/audit/test compatibility
 try:
     from .smartthings_control import TOKEN_REDACTION, redact_secret_in_text, redact_token
     from .smartthings_control import validation_metadata as smartthings_validation_metadata
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     try:
         from smartthings_control import (  # type: ignore
             TOKEN_REDACTION,

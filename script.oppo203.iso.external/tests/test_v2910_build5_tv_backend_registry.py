@@ -19,7 +19,7 @@ def _load(name, rel):
 
 
 def test_build5_tv_backend_registry_preserves_existing_backend_ids():
-    backends = _load("tv_backends_build5", "resources/lib/tv_backends.py")
+    backends = _load("tv_backends_build5", "resources/lib/tv/tv_backends.py")
     assert backends.list_backends() == ("adb", "sony_bravia", "lg_command", "samsung_command", "custom_command", "roku_ecp", "smartthings")
     summary = backends.registry_summary()
     assert summary["backend_count"] == 7
@@ -33,7 +33,7 @@ def test_build5_tv_backend_registry_preserves_existing_backend_ids():
 
 
 def test_build5_tv_preset_registry_is_software_only_and_uses_preserved_backends():
-    presets = _load("tv_presets_build5", "resources/lib/tv_presets.py")
+    presets = _load("tv_presets_build5", "resources/lib/tv/tv_presets.py")
     preset_ids = presets.list_presets()
     assert "adb_existing" in preset_ids
     assert "sony_bravia_ip" in preset_ids
@@ -74,7 +74,7 @@ def test_build5_tv_control_keeps_public_api_and_dispatches_through_registry(monk
 
 
 def test_build5_settings_default_records_selected_tv_preset_without_changing_backend_enum():
-    sr = _load("settings_reader_build5_tv", "resources/lib/settings_reader.py")
+    sr = _load("settings_reader_build5_tv", "resources/lib/kodi/settings_reader.py")
     assert sr.DEFAULTS["tv_backend"] == "adb"
     assert sr.DEFAULTS["selected_tv_preset_id"] == ""
     assert sr.ENUM_VALUES["tv_backend"] == ["adb", "sony_bravia", "lg_command", "samsung_command", "custom_command", "roku_ecp", "smartthings"]
@@ -84,7 +84,7 @@ def test_build5_settings_default_records_selected_tv_preset_without_changing_bac
 
 
 def test_build5_version_docs_and_audit_evidence_identity():
-    version = _load("version_build5", "resources/lib/version.py")
+    version = _load("version_build5", "resources/lib/kodi/version.py")
     assert version.BUILD_ID == "v2.9.13 Final"
     assert version.BUILD_NUMBER == 22
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
@@ -105,8 +105,8 @@ def test_runtime_zip_excludes_build5_development_evidence(tmp_path):
     package_tool = _load("package_installable_zip_build5", "tools/package_installable_zip.py")
     output = tmp_path / "runtime.zip"
     names = package_tool.create_installable_zip(ROOT, output)
-    assert "script.oppo203.iso.external/resources/lib/tv_backends.py" in names
-    assert "script.oppo203.iso.external/resources/lib/tv_presets.py" in names
+    assert "script.oppo203.iso.external/resources/lib/tv/tv_backends.py" in names
+    assert "script.oppo203.iso.external/resources/lib/tv/tv_presets.py" in names
     forbidden = (
         "tests/",
         "tools/",
@@ -122,8 +122,8 @@ def test_runtime_zip_excludes_build5_development_evidence(tmp_path):
 
 
 def test_build5_registry_edge_paths_for_coverage(monkeypatch):
-    backends = _load("tv_backends_build5_edges", "resources/lib/tv_backends.py")
-    presets = _load("tv_presets_build5_edges", "resources/lib/tv_presets.py")
+    backends = _load("tv_backends_build5_edges", "resources/lib/tv/tv_backends.py")
+    presets = _load("tv_presets_build5_edges", "resources/lib/tv/tv_presets.py")
     assert backends.normalize_backend_id(None) == "adb"
     assert backends.get_backend("missing", {"fallback": True}) == {"fallback": True}
     monkeypatch.setitem(backends.TV_BACKENDS, "bad_targets", {"target_settings": "not-a-dict"})

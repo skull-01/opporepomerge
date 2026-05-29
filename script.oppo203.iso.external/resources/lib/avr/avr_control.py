@@ -29,7 +29,7 @@ try:
         AvrValidation,
     )
     from .avr_yamaha import YamahaYxcAvrController
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     from avr_denon_marantz import DenonMarantzAvrController  # type: ignore
     from avr_onkyo_eiscp import OnkyoEiscpAvrController  # type: ignore
     from avr_presets import get_avr_preset, normalize_avr_backend  # type: ignore
