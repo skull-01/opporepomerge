@@ -74,10 +74,23 @@ describe("parseTvDb", () => {
 });
 
 describe("isNewer", () => {
-  it("compares db_version as a sortable date string", () => {
+  it("compares parsed db_version dates", () => {
     const base = { ...BUNDLED_TV_DB, db_version: "2026.05.30" };
     expect(isNewer(base, { ...base, db_version: "2026.06.01" })).toBe(true);
     expect(isNewer(base, { ...base, db_version: "2026.05.30" })).toBe(false);
     expect(isNewer(base, { ...base, db_version: "2026.05.01" })).toBe(false);
+  });
+
+  it("handles unpadded month/day correctly (not a raw string compare)", () => {
+    const oct = { ...BUNDLED_TV_DB, db_version: "2026.10.01" };
+    const jun = { ...BUNDLED_TV_DB, db_version: "2026.6.1" };
+    // "2026.6.1" > "2026.10.01" as raw strings, but June is older than October
+    expect(isNewer(oct, jun)).toBe(false);
+    expect(isNewer(jun, oct)).toBe(true);
+  });
+
+  it("never treats an unparseable version as newer", () => {
+    const base = { ...BUNDLED_TV_DB, db_version: "2026.05.30" };
+    expect(isNewer(base, { ...base, db_version: "garbage" })).toBe(false);
   });
 });

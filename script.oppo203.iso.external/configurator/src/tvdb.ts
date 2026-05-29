@@ -72,9 +72,23 @@ export function parseTvDb(value: unknown): TvDb | null {
   return v as unknown as TvDb;
 }
 
-/** True when `candidate` is strictly newer than `current` (db_version is a sortable date). */
+/**
+ * Parse a db_version (YYYY.MM.DD) to a sortable integer (YYYYMMDD). Returns -1 if it does not
+ * match that shape, so an unexpectedly-formatted version is never mis-ordered or treated as
+ * newer by a raw string compare.
+ */
+export function dbVersionKey(version: string): number {
+  const m = version.trim().match(/^(\d{4})\.(\d{1,2})\.(\d{1,2})$/);
+  if (!m) return -1;
+  return Number(m[1]) * 10000 + Number(m[2]) * 100 + Number(m[3]);
+}
+
+/** True when `candidate` is strictly newer than `current`, comparing parsed db_version dates. */
 export function isNewer(current: TvDb, candidate: TvDb): boolean {
-  return candidate.db_version > current.db_version;
+  const c = dbVersionKey(candidate.db_version);
+  const cur = dbVersionKey(current.db_version);
+  if (c < 0 || cur < 0) return false;
+  return c > cur;
 }
 
 /** Best-effort fetch of the published DB. Returns null on any network or parse error. */
