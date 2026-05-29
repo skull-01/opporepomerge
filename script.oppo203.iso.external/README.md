@@ -65,6 +65,12 @@ Software-verified release. Hardware validation not performed / not claimed.
 
 Do not write that a device path is hardware-validated unless a real tester report exists in the project evidence.
 
+## Help validate on real hardware
+
+This project is **software-verified only** — the device-control paths (OPPO/clone players, TV input switching, AVR sequencing) are unit-tested but have **not** been confirmed against real hardware. Tester reports, hardware lending, and donations are all wanted so specific models can move from "software-supported" to "hardware-validated."
+
+See **[`docs/HARDWARE_VALIDATION.md`](docs/HARDWARE_VALIDATION.md)** for the current status per device family, what's most needed, and how to help. To submit a tester report, follow the [Hardware reports](CONTRIBUTING.md#hardware-reports) guide and open a GitHub issue. Tracked by [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44).
+
 ## Installation
 
 1. Download the installable runtime ZIP for the release.
