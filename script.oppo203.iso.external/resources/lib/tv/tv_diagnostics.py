@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import os
 import time as _time
-from typing import Any, Callable
+from typing import Any, Callable, cast, overload
 
 try:
     from . import tv_control
@@ -41,17 +41,19 @@ except ImportError:  # pragma: no cover - top-level/audit/test compatibility
             redact_secret_in_text,
             redact_token,
         )
-        from smartthings_control import validation_metadata as smartthings_validation_metadata
+        from smartthings_control import (  # type: ignore[no-redef]
+            validation_metadata as smartthings_validation_metadata,
+        )
     except Exception:  # pragma: no cover - defensive fallback for unusual imports
         TOKEN_REDACTION = "<redacted>"
 
-        def redact_token(value: object, visible_prefix: int = 4, visible_suffix: int = 2) -> str:  # type: ignore
+        def redact_token(value: object, visible_prefix: int = 4, visible_suffix: int = 2) -> str:
             return TOKEN_REDACTION if value else ""
 
-        def redact_secret_in_text(text: object, token: object = "") -> str:  # type: ignore
+        def redact_secret_in_text(text: object, token: object = "") -> str:
             return "" if text is None else str(text).replace(str(token), TOKEN_REDACTION)
 
-        def smartthings_validation_metadata(settings: dict[str, object]) -> dict[str, object]:  # type: ignore
+        def smartthings_validation_metadata(settings: dict[str, object]) -> dict[str, object]:
             return {"warnings": (), "hardware_validation_claimed": False}
 
 
@@ -74,7 +76,7 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return dict(settings.data)
     if hasattr(settings, "items"):
         try:
-            return dict(settings.items())  # type: ignore[attr-defined]
+            return dict(settings.items())
         except Exception:
             return {}
     return {}
@@ -109,6 +111,12 @@ def sanitize_text(value: object, settings: dict[str, object] | object | None = N
     return safe
 
 
+@overload
+def sanitize_payload(
+    payload: dict[str, Any], settings: dict[str, object] | object | None = None
+) -> dict[str, object]: ...
+@overload
+def sanitize_payload(payload: Any, settings: dict[str, object] | object | None = None) -> Any: ...
 def sanitize_payload(payload: Any, settings: dict[str, object] | object | None = None) -> Any:
     """Recursively sanitize diagnostics data for export or logging.
 
@@ -218,7 +226,9 @@ def validate_tv_settings(settings: dict[str, object] | object | None) -> dict[st
         warnings.append("sony_psk_missing")
     if backend == "smartthings":
         metadata = smartthings_validation_metadata(data)
-        warnings.extend(str(item) for item in metadata.get("warnings", ()))
+        warnings.extend(
+            str(item) for item in cast("tuple[object, ...]", metadata.get("warnings", ()))
+        )
 
     return sanitize_payload(
         {

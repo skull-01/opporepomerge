@@ -408,6 +408,41 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
   or hardware behavior change.
 
+### ENH-#51 — mypy --strict allowlist expansion (PR 4 of N: import-fallback leaf modules)
+
+- **Implementing SHA:** `7568f89` on `claude/enh51-mypy-pr4-n7k4m2qp` (draft PR #63;
+  commented on issue #51).
+- **Scope:** PR 4 of the source-only rollout. Branches from `main`. Expands the gate
+  `files=` allowlist 28 → 33 modules by resolving the `no-redef` import-fallback idiom
+  (handoff §3a) plus co-located errors in 5 leaf modules. No gate/tooling/CI changes.
+- **What changed (type-only, behaviour-preserving):**
+  - [`mypy.ini`](../mypy.ini) (authoritative) + [`pyproject.toml`](../pyproject.toml)
+    `[tool.mypy]` mirror: 5 modules added to `files=` (kept sorted by path).
+  - **Import-fallback strategy:** the ENH-#43 try (dotted) / except (bare) import fallback
+    redefines names under `--strict`. The except-branch (runtime-fallback) import now
+    carries a targeted `# type: ignore[no-redef]`; the canonical dotted import stays fully
+    type-checked.
+  - `resources/lib/__init__`: annotated the lazy alias finder/loader; `cast` the loader to
+    `importlib.abc.Loader` at the `ModuleSpec` call; type-only `if TYPE_CHECKING` imports.
+  - `kodi/intercept`: `_FsLike` Protocol for the duck-typed `fs` param;
+    `# type: ignore[attr-defined]` on the canonical imports of constants re-exported through
+    the disc_classification shared-constants hub (names exist at runtime).
+  - `tv/tv_diagnostics`: `dict -> dict` `@overload` on `sanitize_payload`; `cast` the
+    object-typed metadata `.get()` tuples before iterating; 4 stale `# type: ignore` removed.
+  - `avr/avr_control`: `cast` object-typed `sony_meta.get()` tuples; 1 stale
+    `# type: ignore` removed.
+  - `oppo/oppo_tcp_client`: annotated all method signatures + instance attributes;
+    `from __future__ import annotations` for the `X | None` hints.
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `tools/type_check.py --gate` **33 files, 0 errors**; `pytest -n auto` **938 passed /
+  3 skipped**; serial coverage **99.04%**; `ruff check .` + `ruff format --check .` clean.
+- **Phase A review focus:**
+  - Confirm the 5 modules are signature/typing-only — especially the `_AliasLoader` `cast`,
+    the `_FsLike` Protocol, and the `sanitize_payload` `@overload`.
+  - Confirm the `no-redef` ignores sit only on the except-branch (bare) fallback imports.
+- **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
+  or hardware behavior change.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_

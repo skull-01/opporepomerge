@@ -31,9 +31,12 @@ Usage in external_player.py hold_playback() verbose_push branch::
     # stopped=False -> timed out or connection failed (caller should exit anyway)
 """
 
+from __future__ import annotations
+
 import socket
 import threading
 import time
+from collections.abc import Callable
 
 # Push message prefixes that signal playback has stopped or the device is idle.
 _UPL_STOP_VALUES = {
@@ -69,7 +72,14 @@ class OppoTcpClient:
     condition is received or the timeout expires.
     """
 
-    def __init__(self, host, port, send_svm=True, svm_mode=2, recv_timeout=5.0):
+    def __init__(
+        self,
+        host: str,
+        port: int | str,
+        send_svm: bool = True,
+        svm_mode: int = 2,
+        recv_timeout: float = 5.0,
+    ) -> None:
         self._per_attempt_timeout = 14400
         self._host = host
         self._port = int(port)
@@ -80,11 +90,11 @@ class OppoTcpClient:
         self._connected = threading.Event()
         self._connection_closed = threading.Event()
         self._stop_event_seen = False
-        self._error = None
-        self._sock = None
-        self._thread = None
+        self._error: Exception | None = None
+        self._sock: socket.socket | None = None
+        self._thread: threading.Thread | None = None
 
-    def _connect_and_read(self):
+    def _connect_and_read(self) -> None:
         """Background thread: connect, set verbose mode, read push lines."""
         try:
             sock = socket.create_connection((self._host, self._port), timeout=10.0)
@@ -136,7 +146,7 @@ class OppoTcpClient:
                 except OSError:
                     pass
 
-    def _handle_line(self, line):
+    def _handle_line(self, line: str) -> None:
         """Inspect one incoming line for stop/play push events."""
         upper = line.upper().strip()
         if not upper.startswith("@"):
@@ -157,7 +167,7 @@ class OppoTcpClient:
                 self._stop_event_seen = True
                 self._stopped.set()
 
-    def wait_for_stop(self, timeout=14400):
+    def wait_for_stop(self, timeout: float = 14400) -> bool:
         """Block until a real stop push event is received or timeout expires.
 
         Returns True only when @UPL/@UPW content explicitly signals stop/power
@@ -186,15 +196,15 @@ class OppoTcpClient:
 
     def wait_for_stop_persistent(
         self,
-        timeout=14400,
-        max_retries=8,
-        base_delay=1.0,
-        cap_delay=30.0,
-        jitter=0.25,
-        _sleep=None,
-        _rng=None,
-        _connect_factory=None,
-    ):
+        timeout: float | None = 14400,
+        max_retries: int = 8,
+        base_delay: float = 1.0,
+        cap_delay: float = 30.0,
+        jitter: float = 0.25,
+        _sleep: Callable[[float], None] | None = None,
+        _rng: Callable[[], float] | None = None,
+        _connect_factory: Callable[[], bool] | None = None,
+    ) -> bool:
         """Like wait_for_stop, but reconnects on transient failures.
 
         On each failure we consult `reconnect_backoff.compute_delay` for
@@ -217,7 +227,7 @@ class OppoTcpClient:
         try:
             from . import reconnect_backoff as rb
         except (ImportError, ValueError):  # pragma: no cover - top-level/test compatibility
-            import reconnect_backoff as rb
+            import reconnect_backoff as rb  # type: ignore[no-redef]
 
         if _sleep is None:
             _sleep = time.sleep
@@ -255,7 +265,7 @@ class OppoTcpClient:
             if deadline is not None and time.time() >= deadline:
                 return False
 
-    def _attempt_once(self):
+    def _attempt_once(self) -> bool:
         """Single connect+wait attempt; returns True on stop, False on failure.
 
         Reuses the existing wait_for_stop() for behavioural parity, but
@@ -273,7 +283,7 @@ class OppoTcpClient:
         self._thread = None
         return bool(self.wait_for_stop(timeout=self._per_attempt_timeout))
 
-    def close(self):
+    def close(self) -> None:
         """Request shutdown of the background thread and close the socket."""
         self._stopped.set()
         if self._sock:

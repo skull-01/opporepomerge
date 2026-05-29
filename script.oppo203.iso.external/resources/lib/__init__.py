@@ -19,9 +19,17 @@ trigger ``kodi.installer`` (which runs ``xbmcaddon.Addon()`` at import time).
 Aliasing happens lazily, only when a legacy name is actually imported.
 """
 
+from __future__ import annotations
+
 import importlib
 import sys
 from importlib.machinery import ModuleSpec
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:  # pragma: no cover
+    from collections.abc import Sequence
+    from importlib.abc import Loader
+    from types import ModuleType
 
 _PKG = __name__  # "resources.lib"
 
@@ -81,27 +89,34 @@ _BUCKET = {
 
 
 class _AliasLoader:
-    def __init__(self, target):
+    def __init__(self, target: str) -> None:
         self._target = target
 
-    def create_module(self, spec):
+    def create_module(self, spec: ModuleSpec) -> ModuleType:
         module = importlib.import_module(self._target)
         sys.modules[spec.name] = module
         return module
 
-    def exec_module(self, module):
+    def exec_module(self, module: ModuleType) -> None:
         # Body already executed by the canonical import; never re-run it.
         pass
 
 
 class _AliasFinder:
-    def find_spec(self, fullname, path=None, target=None):
+    def find_spec(
+        self,
+        fullname: str,
+        path: Sequence[str] | None = None,
+        target: ModuleType | None = None,
+    ) -> ModuleSpec | None:
         if fullname.startswith(_PKG + "."):
             short = fullname[len(_PKG) + 1 :]
             if "." not in short and short in _BUCKET:
-                return ModuleSpec(fullname, _AliasLoader(f"{_PKG}.{_BUCKET[short]}.{short}"))
+                loader = _AliasLoader(f"{_PKG}.{_BUCKET[short]}.{short}")
+                return ModuleSpec(fullname, cast("Loader", loader))
         elif fullname in _BUCKET:
-            return ModuleSpec(fullname, _AliasLoader(f"{_PKG}.{_BUCKET[fullname]}.{fullname}"))
+            loader = _AliasLoader(f"{_PKG}.{_BUCKET[fullname]}.{fullname}")
+            return ModuleSpec(fullname, cast("Loader", loader))
         return None
 
 
