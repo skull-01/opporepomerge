@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import json
 import shlex
 import subprocess
 import urllib.error
 import urllib.request
+from typing import Any
 
 from .adb_control import switch_input as adb_switch_input
 from .roku_ecp_control import switch_input as roku_switch_input
@@ -11,7 +14,7 @@ try:
     from smartthings_control import switch_input as smartthings_switch_input
     from smartthings_control import validation_metadata as smartthings_validation_metadata
 except ImportError:  # pragma: no cover - package-import fallback (only taken on-device)
-    from .smartthings_control import switch_input as smartthings_switch_input  # type: ignore
+    from .smartthings_control import switch_input as smartthings_switch_input
     from .smartthings_control import validation_metadata as smartthings_validation_metadata
 
 try:
@@ -28,7 +31,7 @@ class TVControlError(RuntimeError):
     pass
 
 
-def _run_external(command, settings, timeout=20):
+def _run_external(command: str | None, settings: dict[str, Any], timeout: int = 20) -> str:
     command = (command or "").strip()
     if not command:
         raise TVControlError("External TV command is empty.")
@@ -48,7 +51,7 @@ def _run_external(command, settings, timeout=20):
     return proc.stdout.strip()
 
 
-def _sony_set_hdmi(settings, port):
+def _sony_set_hdmi(settings: dict[str, Any], port: str | int) -> str:
     tv_ip = settings["tv_ip"]
     psk = settings.get("sony_psk", "")
     if not psk:
@@ -72,7 +75,7 @@ def _sony_set_hdmi(settings, port):
     )
     try:
         with urllib.request.urlopen(request, timeout=10) as response:
-            response_body = response.read().decode("utf-8", errors="replace")
+            response_body: str = response.read().decode("utf-8", errors="replace")
             if response.status >= 400:
                 raise TVControlError(
                     f"Sony Bravia API returned HTTP {response.status}: {response_body}"
@@ -82,7 +85,7 @@ def _sony_set_hdmi(settings, port):
         raise TVControlError(f"Sony Bravia API request failed: {exc}") from exc
 
 
-def _switch(settings, target):
+def _switch(settings: dict[str, Any], target: str) -> str | dict[str, object]:
     backend = normalize_backend_id(settings.get("tv_backend", "adb"))
     if not is_supported_backend(backend):
         raise TVControlError(f"Unsupported TV backend: {backend}")
@@ -128,21 +131,22 @@ def _switch(settings, target):
             "smartthings_oppo_input_id" if target == "oppo" else "smartthings_kodi_input_id"
         )
         metadata = smartthings_validation_metadata(settings)
+        switched: dict[str, object] = smartthings_switch_input(settings, settings.get(key, ""))
         if not metadata.get("acknowledged"):
-            return smartthings_switch_input(settings, settings.get(key, ""))
-        return smartthings_switch_input(settings, settings.get(key, ""))
+            return switched
+        return switched
 
     raise TVControlError(f"Unsupported TV backend: {backend}")
 
 
-def selected_backend_id(settings):
+def selected_backend_id(settings: dict[str, Any]) -> str:
     """Return the normalized selected TV backend without performing IO."""
     return normalize_backend_id(settings.get("tv_backend", "adb"))
 
 
-def switch_to_oppo(settings):
+def switch_to_oppo(settings: dict[str, Any]) -> str | dict[str, object]:
     return _switch(settings, "oppo")
 
 
-def switch_to_kodi(settings):
+def switch_to_kodi(settings: dict[str, Any]) -> str | dict[str, object]:
     return _switch(settings, "kodi")

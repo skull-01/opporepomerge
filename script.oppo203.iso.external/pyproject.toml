@@ -103,13 +103,29 @@ explicit_package_bases = true
 show_error_codes = true
 pretty = true
 files = [
+  "resources/lib/avr/avr_presets.py",
   "resources/lib/avr/avr_sequence.py",
+  "resources/lib/avr/avr_types.py",
+  "resources/lib/kodi/arch_benchmark.py",
+  "resources/lib/kodi/diagnostic_logging.py",
+  "resources/lib/kodi/disc_classification.py",
+  "resources/lib/kodi/i18n.py",
   "resources/lib/kodi/keymap_skin.py",
+  "resources/lib/kodi/settings_schema.py",
+  "resources/lib/kodi/version.py",
   "resources/lib/oppo/autoscript_helper.py",
+  "resources/lib/oppo/command_map.py",
+  "resources/lib/oppo/constants.py",
+  "resources/lib/oppo/hardware_capabilities.py",
+  "resources/lib/oppo/hardware_profiles.py",
+  "resources/lib/oppo/path_mapper.py",
   "resources/lib/oppo/reconnect_backoff.py",
   "resources/lib/tv/adb_control.py",
   "resources/lib/tv/roku_ecp_control.py",
   "resources/lib/tv/smartthings_control.py",
+  "resources/lib/tv/tv_backends.py",
+  "resources/lib/tv/tv_control.py",
+  "resources/lib/tv/tv_presets.py",
 ]
 
 [tool.github-readiness]

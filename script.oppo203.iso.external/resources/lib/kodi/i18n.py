@@ -11,6 +11,8 @@ locale changes the source file consulted but not yet the visible text until
 translations are populated. The mechanism is in place for when they are.
 """
 
+from __future__ import annotations
+
 import os
 
 try:
@@ -96,12 +98,12 @@ _EN: dict[int, str] = {}
 _PO_CACHE: dict[str, dict[int, str]] = {}
 
 
-def supported_languages():
+def supported_languages() -> list[str]:
     """Return the list of bundled language resource folders."""
     return ["resource.language." + code for code in BUNDLED_LOCALES]
 
 
-def language_options():
+def language_options() -> list[tuple[str, str]]:
     """Return [(value, label)] for the in-add-on language menu.
 
     First entry is the follow-Kodi sentinel; the rest are the bundled locales.
@@ -111,7 +113,7 @@ def language_options():
     return options
 
 
-def _get_setting(key):
+def _get_setting(key: str) -> str:
     if xbmcaddon is None:
         return ""
     try:
@@ -120,7 +122,7 @@ def _get_setting(key):
         return ""
 
 
-def _kodi_locale():
+def _kodi_locale() -> str:
     """Resolve Kodi's current UI language to a bundled locale code."""
     if xbmc is None:
         return DEFAULT_LOCALE
@@ -136,7 +138,7 @@ def _kodi_locale():
     return _KODI_LANG_MAP.get(raw[:2], DEFAULT_LOCALE)
 
 
-def effective_language():
+def effective_language() -> str:
     """Return the active bundled locale code.
 
     follow_kodi (the default) resolves through Kodi's UI language; a pinned
@@ -148,7 +150,7 @@ def effective_language():
     return _kodi_locale()
 
 
-def _override_locale():
+def _override_locale() -> str | None:
     """Return the pinned locale code when one is set, else None (follow Kodi)."""
     setting = _get_setting(LANGUAGE_SETTING).strip()
     if setting and setting != FOLLOW_KODI and setting in BUNDLED_LOCALES:
@@ -156,13 +158,13 @@ def _override_locale():
     return None
 
 
-def _po_path(code):
+def _po_path(code: str) -> str:
     here = os.path.dirname(os.path.abspath(__file__))
     language_root = os.path.join(os.path.dirname(os.path.dirname(here)), "language")
     return os.path.join(language_root, "resource.language." + code, "strings.po")
 
 
-def _load_po(code):
+def _load_po(code: str) -> dict[int, str]:
     """Parse a bundled strings.po into {numeric_id: msgstr}, cached per locale."""
     if code in _PO_CACHE:
         return _PO_CACHE[code]
@@ -184,7 +186,7 @@ def _load_po(code):
     return table
 
 
-def L(string_id, default=None):
+def L(string_id: int, default: str | None = None) -> str:
     """Return localized string, falling back to English source.
 
     Always safe to call: never raises, never returns None. A pinned
@@ -202,7 +204,7 @@ def L(string_id, default=None):
             return value
     if xbmcaddon is not None:
         try:
-            s = xbmcaddon.Addon(ADDON_ID).getLocalizedString(sid)
+            s: str = xbmcaddon.Addon(ADDON_ID).getLocalizedString(sid)
             if s:
                 return s
         except Exception:
