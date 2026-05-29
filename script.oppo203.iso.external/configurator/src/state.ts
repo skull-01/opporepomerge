@@ -1,3 +1,5 @@
+import type { KodiPlatform } from "./generate";
+
 export type Tier = "A" | "B" | "C";
 
 export type TvBackend =
@@ -28,6 +30,8 @@ export type WizardState = {
   tier: Tier | null;
   kodiVerified: boolean;
   playbackArchitecture: PlaybackArchitecture;
+  kodiPlatform: KodiPlatform | null;
+  pythonPath: string;
 
   tvBrand: string | null;
   tvModel: string | null;
@@ -56,6 +60,8 @@ export const INITIAL_STATE: WizardState = {
   tier: null,
   kodiVerified: false,
   playbackArchitecture: "external_player",
+  kodiPlatform: null,
+  pythonPath: "/usr/bin/python3",
   tvBrand: null,
   tvModel: null,
   tvBackend: null,

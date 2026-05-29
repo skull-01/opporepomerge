@@ -2,6 +2,8 @@ import { useState, type ReactNode } from "react";
 import { Icon } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
+import { invoke } from "@tauri-apps/api/core";
+import { buildTransferFiles, kodiTargetForPlatform, type KodiPlatform } from "../generate";
 import type { ScreenProps } from "./types";
 
 // ============================================================
@@ -321,7 +323,31 @@ export function Step1TierB({ go, set }: ScreenProps) {
 // ============================================================
 // STEP 1 — Tier C (Manual)
 // ============================================================
-export function Step1TierC({ go, set }: ScreenProps) {
+const PLATFORM_LABELS: Record<KodiPlatform, string> = {
+  coreelec: "CoreELEC / LibreELEC",
+  android: "Android",
+  windows: "Windows",
+  linux: "Linux",
+};
+
+export function Step1TierC({ go, state, set }: ScreenProps) {
+  const [savedDir, setSavedDir] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const platform: KodiPlatform = state.kodiPlatform ?? "coreelec";
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const target = kodiTargetForPlatform(platform, state.pythonPath);
+      const dir = await invoke<string>("generate_files", { files: buildTransferFiles(target) });
+      setSavedDir(dir);
+    } catch {
+      setSavedDir(null);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="screen">
       <div className="screen-header">
@@ -394,14 +420,45 @@ export function Step1TierC({ go, set }: ScreenProps) {
         </div>
       </div>
 
-      <div className="row" style={{ marginTop: 18, gap: 10 }}>
-        <button className="btn primary">
-          <Icon name="download" size={14} /> Generate &amp; save files
+      <h2 className="section-title" style={{ marginTop: 18 }}>Generate for</h2>
+      <div className="row" style={{ gap: 8, marginTop: 8 }}>
+        {(["coreelec", "android", "windows", "linux"] as const).map((p) => (
+          <button
+            key={p}
+            className={`filter-pill ${platform === p ? "selected" : ""}`.trim()}
+            onClick={() => set({ kodiPlatform: p })}
+          >
+            {PLATFORM_LABELS[p]}
+          </button>
+        ))}
+      </div>
+      <div className="row" style={{ marginTop: 14, gap: 10 }}>
+        <button className="btn primary" onClick={generate} disabled={generating}>
+          <Icon name="download" size={14} /> {generating ? "Generating…" : "Generate & save files"}
         </button>
-        <button className="btn outline">
+        <button
+          className="btn outline"
+          onClick={() => {
+            if (savedDir) void invoke("reveal_path", { path: savedDir });
+          }}
+          disabled={!savedDir}
+        >
           <Icon name="folder" size={14} /> Open output folder
         </button>
       </div>
+      {savedDir && (
+        <div className="callout info" style={{ marginTop: 12 }}>
+          <span className="callout-icon">
+            <Icon name="check" size={13} stroke={2.2} />
+          </span>
+          <div className="callout-body">
+            Files written to <span className="path">{savedDir}</span> — copy{" "}
+            <span className="path">playercorefactory.xml</span> and{" "}
+            <span className="path">keymaps/oppo203iso.xml</span> into your Kodi userdata
+            folder.
+          </div>
+        </div>
+      )}
       <FooterNav
         go={go}
         back="step1_intro"

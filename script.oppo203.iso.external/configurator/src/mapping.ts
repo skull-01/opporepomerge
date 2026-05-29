@@ -91,6 +91,7 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     // Architecture is chosen on the Kodi-box screen and written explicitly.
     playback_architecture: state.playbackArchitecture,
     architecture_choice_made: "true",
+    python_path: state.pythonPath,
     // IP control over TCP :23 is the wizard's assumption.
     oppo_port: "23",
     tv_switching_enabled: state.tvManualSwitch ? "false" : "true",

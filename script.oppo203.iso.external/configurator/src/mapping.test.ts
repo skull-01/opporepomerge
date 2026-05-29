@@ -46,6 +46,12 @@ describe("wizardStateToAddonSettings", () => {
     expect(out.architecture_choice_made).toBe("true");
   });
 
+  it("writes python_path from state", () => {
+    expect(
+      wizardStateToAddonSettings(makeState({ pythonPath: "/usr/bin/python3.11" })).python_path,
+    ).toBe("/usr/bin/python3.11");
+  });
+
   it("writes oppo_ip from playerIp and pins oppo_port to 23", () => {
     const out = wizardStateToAddonSettings(makeState({ playerIp: "10.0.1.80" }));
     expect(out.oppo_ip).toBe("10.0.1.80");
