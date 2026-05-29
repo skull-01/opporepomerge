@@ -1,3 +1,5 @@
+import type { KodiPlatform } from "./generate";
+
 export type Tier = "A" | "B" | "C";
 
 export type TvBackend =
@@ -21,10 +23,17 @@ export type PlayerBrand =
 
 export type InputAddress = number | "cec" | string | null;
 
+export type PlaybackArchitecture = "external_player" | "service_interception";
+
 export type WizardState = {
   kodiIp: string;
   tier: Tier | null;
   kodiVerified: boolean;
+  playbackArchitecture: PlaybackArchitecture;
+  kodiPlatform: KodiPlatform | null;
+  pythonPath: string;
+  smbSharePath: string;
+  sshUser: string;
 
   tvBrand: string | null;
   tvModel: string | null;
@@ -46,28 +55,28 @@ export type WizardState = {
 };
 
 import { invoke } from "@tauri-apps/api/core";
+import { SCREEN_TO_STEP, type ScreenId } from "./steps";
 
-export async function loadPersistedState(): Promise<WizardState | null> {
-  try {
-    const loaded = await invoke<WizardState | null>("load_wizard_state");
-    return loaded ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function savePersistedState(state: WizardState): Promise<void> {
-  try {
-    await invoke("save_wizard_state", { state });
-  } catch {
-    // best-effort; persistence must never block the UI
-  }
+/**
+ * Coerce a persisted `screen` value to a valid ScreenId, falling back to the first screen if
+ * it is missing or not a known id. A stale/renamed id from an older build would otherwise
+ * render `undefined` and white-screen the app on every launch.
+ */
+export function coerceScreenId(value: unknown): ScreenId {
+  return typeof value === "string" && value in SCREEN_TO_STEP
+    ? (value as ScreenId)
+    : "step0_gate";
 }
 
 export const INITIAL_STATE: WizardState = {
   kodiIp: "10.0.1.42",
   tier: null,
   kodiVerified: false,
+  playbackArchitecture: "external_player",
+  kodiPlatform: null,
+  pythonPath: "/usr/bin/python3",
+  smbSharePath: "\\\\10.0.1.42\\Kodi",
+  sshUser: "root",
   tvBrand: null,
   tvModel: null,
   tvBackend: null,
@@ -83,6 +92,40 @@ export const INITIAL_STATE: WizardState = {
   kodiInput: null,
   testMode: null,
 };
+
+/** Persisted between sessions: the wizard state plus the screen to resume on. */
+export type PersistedSession = { state: WizardState; screen: ScreenId };
+
+export async function loadPersistedSession(): Promise<PersistedSession | null> {
+  try {
+    const loaded = await invoke<unknown>("load_wizard_state");
+    if (!loaded || typeof loaded !== "object") return null;
+    const obj = loaded as Record<string, unknown>;
+    // Current envelope shape: { state, screen }.
+    if (obj.state && typeof obj.state === "object") {
+      const screen = coerceScreenId(obj.screen);
+      return {
+        state: { ...INITIAL_STATE, ...(obj.state as Partial<WizardState>) },
+        screen,
+      };
+    }
+    // Legacy shape: a bare WizardState written before screen persistence existed.
+    return {
+      state: { ...INITIAL_STATE, ...(obj as Partial<WizardState>) },
+      screen: "step0_gate",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function savePersistedSession(session: PersistedSession): Promise<void> {
+  try {
+    await invoke("save_wizard_state", { state: session });
+  } catch {
+    // best-effort; persistence must never block the UI
+  }
+}
 
 export type ChainCompletion = {
   media: boolean;

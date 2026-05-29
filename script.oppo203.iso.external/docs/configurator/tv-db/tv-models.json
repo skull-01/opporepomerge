@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "db_version": "2026.05.30",
+  "lineups": [
+    { "id": "sony-googletv",    "brand": "sony",      "label": "Sony Bravia (Google TV)", "platform": "Google TV", "backend": "adb",            "tier": "probe",   "years": [2021, 2025], "validated": false },
+    { "id": "sony-bravia-ip",   "brand": "sony",      "label": "Sony Bravia (IP control)", "platform": "Bravia",    "backend": "sony_bravia",    "tier": "probe",   "years": [2018, 2025], "validated": false },
+    { "id": "samsung-tizen",    "brand": "samsung",   "label": "Samsung (Tizen)",          "platform": "Tizen",     "backend": "smartthings",    "tier": "probe",   "years": [2018, 2025], "validated": false },
+    { "id": "samsung-command",  "brand": "samsung",   "label": "Samsung (paired command)", "platform": "Tizen",     "backend": "samsung_command","tier": "command", "years": [2018, 2025], "validated": false },
+    { "id": "lg-webos",         "brand": "lg",        "label": "LG (webOS)",               "platform": "webOS",     "backend": "lg_command",     "tier": "command", "years": [2018, 2025], "validated": false },
+    { "id": "tcl-googletv",     "brand": "tcl",       "label": "TCL (Google TV)",          "platform": "Google TV", "backend": "adb",            "tier": "probe",   "years": [2021, 2025], "validated": false },
+    { "id": "tcl-roku",         "brand": "tcl",       "label": "TCL (Roku TV)",            "platform": "Roku TV",   "backend": "roku_ecp",       "tier": "probe",   "years": [2018, 2025], "validated": false },
+    { "id": "hisense-googletv", "brand": "hisense",   "label": "Hisense (Google TV)",      "platform": "Google TV", "backend": "adb",            "tier": "probe",   "years": [2020, 2025], "validated": false },
+    { "id": "hisense-vidaa",    "brand": "hisense",   "label": "Hisense (VIDAA)",          "platform": "VIDAA",     "backend": "custom_command", "tier": "command", "years": [2018, 2025], "validated": false },
+    { "id": "hisense-roku",     "brand": "hisense",   "label": "Hisense (Roku TV)",        "platform": "Roku TV",   "backend": "roku_ecp",       "tier": "probe",   "years": [2018, 2025], "validated": false },
+    { "id": "roku-tv",          "brand": "roku",      "label": "Roku TV",                  "platform": "Roku TV",   "backend": "roku_ecp",       "tier": "probe",   "years": [2018, 2025], "validated": false },
+    { "id": "vizio-smartcast",  "brand": "vizio",     "label": "Vizio SmartCast",          "platform": "SmartCast", "backend": "custom_command", "tier": "command", "years": [2018, 2025], "validated": false },
+    { "id": "panasonic",        "brand": "panasonic", "label": "Panasonic",                "platform": "MyHomeScreen / FireTV", "backend": "custom_command", "tier": "command", "years": [2018, 2025], "validated": false }
+  ],
+  "models": [
+    { "id": "tcl-55q9-2023",  "brand": "tcl",  "name": "55Q9 (2023)", "year": 2023, "size": "55\"", "lineup": "tcl-googletv", "validated": false },
+    { "id": "tcl-65q9-2023",  "brand": "tcl",  "name": "65Q9 (2023)", "year": 2023, "size": "65\"", "lineup": "tcl-googletv", "validated": false },
+    { "id": "tcl-75q9-2023",  "brand": "tcl",  "name": "75Q9 (2023)", "year": 2023, "size": "75\"", "lineup": "tcl-googletv", "validated": false },
+    { "id": "tcl-65q10-2024", "brand": "tcl",  "name": "65Q10 Pro",   "year": 2024, "size": "65\"", "lineup": "tcl-googletv", "validated": false },
+    { "id": "tcl-65q7-2022",  "brand": "tcl",  "name": "65Q7",        "year": 2022, "size": "65\"", "lineup": "tcl-googletv", "validated": false },
+    { "id": "tcl-55r5-2022",  "brand": "tcl",  "name": "55R5 (Roku)", "year": 2022, "size": "55\"", "lineup": "tcl-roku",     "validated": false },
+    { "id": "sony-xr55a80l-2023", "brand": "sony", "name": "XR-55A80L", "year": 2023, "size": "55\"", "lineup": "sony-googletv", "validated": false },
+    { "id": "roku-55r635-2021",   "brand": "roku", "name": "55R635",    "year": 2021, "size": "55\"", "lineup": "roku-tv",       "validated": false }
+  ]
+}

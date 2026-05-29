@@ -6,8 +6,8 @@ import { Sidebar } from "./shell/Sidebar";
 import {
   INITIAL_STATE,
   computeCompleted,
-  loadPersistedState,
-  savePersistedState,
+  loadPersistedSession,
+  savePersistedSession,
   type WizardState,
 } from "./state";
 import {
@@ -70,16 +70,19 @@ export default function App() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    void loadPersistedState().then((loaded) => {
-      if (loaded) setState(loaded);
+    void loadPersistedSession().then((loaded) => {
+      if (loaded) {
+        setState(loaded.state);
+        setScreen(loaded.screen);
+      }
       setHydrated(true);
     });
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    void savePersistedState(state);
-  }, [state, hydrated]);
+    void savePersistedSession({ state, screen });
+  }, [state, screen, hydrated]);
 
   const set = useCallback(
     (patch: Partial<WizardState>) => setState((s) => ({ ...s, ...patch })),
@@ -101,7 +104,7 @@ export default function App() {
 
   const onJumpStep = (sid: StepId) => go(firstScreenOfStep(sid));
 
-  const Screen = SCREEN_RENDERERS[screen];
+  const Screen = SCREEN_RENDERERS[screen] ?? Step0Gate;
 
   return (
     <WinShell title="OppoKodiAddon Configurator · setup wizard">

@@ -2,6 +2,9 @@ import { useState, type ReactNode } from "react";
 import { Icon } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
+import { invoke } from "@tauri-apps/api/core";
+import { buildTransferFiles, kodiTargetForPlatform, type KodiPlatform } from "../generate";
+import { smbUserdataPath } from "../apply";
 import type { ScreenProps } from "./types";
 
 // ============================================================
@@ -36,6 +39,32 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
             Reachable from this Windows PC. Reserve it on DHCP if you can.
           </div>
         </div>
+      </div>
+
+      <h2 className="section-title" style={{ marginTop: 8 }}>
+        Playback architecture
+      </h2>
+      <p className="screen-subtitle" style={{ marginTop: 4, marginBottom: 10 }}>
+        How Kodi hands a disc image to your player. External Player is the standard,
+        most predictable path; Service Interception is an alternate for special setups.
+      </p>
+      <div className="row" style={{ gap: 8, marginBottom: 22 }}>
+        <button
+          className={`filter-pill ${
+            state.playbackArchitecture === "external_player" ? "selected" : ""
+          }`.trim()}
+          onClick={() => set({ playbackArchitecture: "external_player" })}
+        >
+          External Player (recommended)
+        </button>
+        <button
+          className={`filter-pill ${
+            state.playbackArchitecture === "service_interception" ? "selected" : ""
+          }`.trim()}
+          onClick={() => set({ playbackArchitecture: "service_interception" })}
+        >
+          Service Interception
+        </button>
       </div>
 
       <h2 className="section-title" style={{ marginTop: 8 }}>
@@ -111,8 +140,25 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
 // ============================================================
 // STEP 1 — Tier A (SSH)
 // ============================================================
-export function Step1TierA({ go, set }: ScreenProps) {
+export function Step1TierA({ go, state, set }: ScreenProps) {
   const [tested, setTested] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const testConnection = async () => {
+    setTesting(true);
+    setError(null);
+    try {
+      await invoke("ssh_test", { host: state.kodiIp, user: state.sshUser });
+      setTested(true);
+    } catch (e) {
+      setTested(false);
+      setError(String(e));
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const checks: DiagCheck[] = tested
     ? [
         { status: "pass", label: "SSH reachable at 10.0.1.42:22", detail: "OpenSSH_8.0 · ed25519 fingerprint OK" },
@@ -139,7 +185,11 @@ export function Step1TierA({ go, set }: ScreenProps) {
           <div className="stack">
             <div className="field">
               <label className="field-label">Username</label>
-              <input className="input" defaultValue="root" />
+              <input
+                className="input"
+                value={state.sshUser}
+                onChange={(e) => set({ sshUser: e.target.value })}
+              />
             </div>
             <div className="field">
               <label className="field-label">Authentication</label>
@@ -155,9 +205,17 @@ export function Step1TierA({ go, set }: ScreenProps) {
                 CoreELEC default is <span className="kbd">coreelec</span>.
               </div>
             </div>
-            <button className="btn primary" onClick={() => setTested(true)}>
-              <Icon name="play" size={13} /> Test connection
+            <button className="btn primary" onClick={testConnection} disabled={testing}>
+              <Icon name="play" size={13} /> {testing ? "Testing…" : "Test connection"}
             </button>
+            {error && (
+              <div className="field-hint" style={{ color: "var(--danger)" }}>
+                {error}
+              </div>
+            )}
+            <div className="field-hint">
+              The auto-apply test uses SSH key authentication (non-interactive).
+            </div>
           </div>
         </div>
         <div className="stack">
@@ -201,8 +259,25 @@ export function Step1TierA({ go, set }: ScreenProps) {
 // ============================================================
 // STEP 1 — Tier B (SMB)
 // ============================================================
-export function Step1TierB({ go, set }: ScreenProps) {
+export function Step1TierB({ go, state, set }: ScreenProps) {
   const [tested, setTested] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const testAccess = async () => {
+    setTesting(true);
+    setError(null);
+    try {
+      await invoke("smb_test_write", { userdataPath: smbUserdataPath(state.smbSharePath) });
+      setTested(true);
+    } catch (e) {
+      setTested(false);
+      setError(String(e));
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const checks: DiagCheck[] = tested
     ? [
         { status: "pass", label: "Box reachable at 10.0.1.42", detail: "ICMP 0.4 ms · 0% loss" },
@@ -229,7 +304,11 @@ export function Step1TierB({ go, set }: ScreenProps) {
           <div className="stack">
             <div className="field">
               <label className="field-label">Share path</label>
-              <input className="input" defaultValue="\\10.0.1.42\Kodi" />
+              <input
+                className="input"
+                value={state.smbSharePath}
+                onChange={(e) => set({ smbSharePath: e.target.value })}
+              />
               <div className="field-hint">
                 The share that contains the <span className="path">userdata</span> folder.
               </div>
@@ -246,9 +325,14 @@ export function Step1TierB({ go, set }: ScreenProps) {
                 <input className="input" type="password" placeholder="optional" />
               </div>
             </div>
-            <button className="btn primary" onClick={() => setTested(true)}>
-              <Icon name="play" size={13} /> Test access
+            <button className="btn primary" onClick={testAccess} disabled={testing}>
+              <Icon name="play" size={13} /> {testing ? "Testing…" : "Test access"}
             </button>
+            {error && (
+              <div className="field-hint" style={{ color: "var(--danger)" }}>
+                Write test failed: {error}
+              </div>
+            )}
           </div>
         </div>
         <div className="stack">
@@ -295,7 +379,31 @@ export function Step1TierB({ go, set }: ScreenProps) {
 // ============================================================
 // STEP 1 — Tier C (Manual)
 // ============================================================
-export function Step1TierC({ go, set }: ScreenProps) {
+const PLATFORM_LABELS: Record<KodiPlatform, string> = {
+  coreelec: "CoreELEC / LibreELEC",
+  android: "Android",
+  windows: "Windows",
+  linux: "Linux",
+};
+
+export function Step1TierC({ go, state, set }: ScreenProps) {
+  const [savedDir, setSavedDir] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const platform: KodiPlatform = state.kodiPlatform ?? "coreelec";
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const target = kodiTargetForPlatform(platform, state.pythonPath);
+      const dir = await invoke<string>("generate_files", { files: buildTransferFiles(target) });
+      setSavedDir(dir);
+    } catch {
+      setSavedDir(null);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="screen">
       <div className="screen-header">
@@ -368,14 +476,45 @@ export function Step1TierC({ go, set }: ScreenProps) {
         </div>
       </div>
 
-      <div className="row" style={{ marginTop: 18, gap: 10 }}>
-        <button className="btn primary">
-          <Icon name="download" size={14} /> Generate &amp; save files
+      <h2 className="section-title" style={{ marginTop: 18 }}>Generate for</h2>
+      <div className="row" style={{ gap: 8, marginTop: 8 }}>
+        {(["coreelec", "android", "windows", "linux"] as const).map((p) => (
+          <button
+            key={p}
+            className={`filter-pill ${platform === p ? "selected" : ""}`.trim()}
+            onClick={() => set({ kodiPlatform: p })}
+          >
+            {PLATFORM_LABELS[p]}
+          </button>
+        ))}
+      </div>
+      <div className="row" style={{ marginTop: 14, gap: 10 }}>
+        <button className="btn primary" onClick={generate} disabled={generating}>
+          <Icon name="download" size={14} /> {generating ? "Generating…" : "Generate & save files"}
         </button>
-        <button className="btn outline">
+        <button
+          className="btn outline"
+          onClick={() => {
+            if (savedDir) void invoke("reveal_path", { path: savedDir });
+          }}
+          disabled={!savedDir}
+        >
           <Icon name="folder" size={14} /> Open output folder
         </button>
       </div>
+      {savedDir && (
+        <div className="callout info" style={{ marginTop: 12 }}>
+          <span className="callout-icon">
+            <Icon name="check" size={13} stroke={2.2} />
+          </span>
+          <div className="callout-body">
+            Files written to <span className="path">{savedDir}</span> — copy{" "}
+            <span className="path">playercorefactory.xml</span> and{" "}
+            <span className="path">keymaps/oppo203iso.xml</span> into your Kodi userdata
+            folder.
+          </div>
+        </div>
+      )}
       <FooterNav
         go={go}
         back="step1_intro"

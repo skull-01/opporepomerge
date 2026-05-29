@@ -1,0 +1,59 @@
+import type { AddonSettings } from "./mapping";
+
+/** Path of the add-on's runtime settings file relative to Kodi userdata/. */
+export const ADDON_DATA_SETTINGS_REL = "addon_data/script.oppo203.iso.external/settings.xml";
+
+function xmlEscape(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+/**
+ * Serialize add-on settings into Kodi's runtime userdata/addon_data settings.xml (v2 format,
+ * Kodi 19+). Ids are sorted for a stable, diff-friendly file. This is the file the
+ * configurator writes over SFTP/SMB while Kodi is stopped (CONFIGURATOR_HANDOFF.md §7 Q2).
+ */
+export function serializeSettingsXml(settings: AddonSettings): string {
+  const lines = Object.keys(settings)
+    .sort()
+    .map((id) => `    <setting id="${xmlEscape(id)}">${xmlEscape(settings[id])}</setting>`);
+  return (
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    '<settings version="2">\n' +
+    lines.join("\n") +
+    "\n</settings>\n"
+  );
+}
+
+/**
+ * Merge our settings into an existing Kodi settings.xml, PRESERVING any settings the
+ * configurator does not own, so applying never silently resets the user's other add-on
+ * settings. Our values win for the ids we manage. Returns a fresh file when none exists, and
+ * REFUSES (throws) when an existing file is malformed or not a <settings> document rather than
+ * clobbering it.
+ */
+export function mergeSettingsXml(existing: string | null, ours: AddonSettings): string {
+  if (!existing || existing.trim() === "") {
+    return serializeSettingsXml(ours);
+  }
+  const doc = new DOMParser().parseFromString(existing, "application/xml");
+  const root = doc.documentElement;
+  const malformed = doc.getElementsByTagName("parsererror").length > 0;
+  if (malformed || !root || root.nodeName !== "settings") {
+    throw new Error(
+      "existing settings.xml is malformed or not a <settings> document; refusing to overwrite. " +
+        "Fix or move the file first.",
+    );
+  }
+  const merged: AddonSettings = {};
+  for (const el of Array.from(root.getElementsByTagName("setting"))) {
+    const id = el.getAttribute("id");
+    if (id) merged[id] = el.textContent ?? "";
+  }
+  Object.assign(merged, ours);
+  return serializeSettingsXml(merged);
+}
