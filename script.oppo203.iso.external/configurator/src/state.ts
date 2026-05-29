@@ -32,6 +32,8 @@ export type WizardState = {
   playbackArchitecture: PlaybackArchitecture;
   kodiPlatform: KodiPlatform | null;
   pythonPath: string;
+  smbSharePath: string;
+  sshUser: string;
 
   tvBrand: string | null;
   tvModel: string | null;
@@ -62,6 +64,8 @@ export const INITIAL_STATE: WizardState = {
   playbackArchitecture: "external_player",
   kodiPlatform: null,
   pythonPath: "/usr/bin/python3",
+  smbSharePath: "\\\\10.0.1.42\\Kodi",
+  sshUser: "root",
   tvBrand: null,
   tvModel: null,
   tvBackend: null,

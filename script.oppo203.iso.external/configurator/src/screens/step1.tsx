@@ -141,7 +141,6 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
 // ============================================================
 export function Step1TierA({ go, state, set }: ScreenProps) {
   const [tested, setTested] = useState(false);
-  const [username, setUsername] = useState("root");
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -149,7 +148,7 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
     setTesting(true);
     setError(null);
     try {
-      await invoke("ssh_test", { host: state.kodiIp, user: username });
+      await invoke("ssh_test", { host: state.kodiIp, user: state.sshUser });
       setTested(true);
     } catch (e) {
       setTested(false);
@@ -187,8 +186,8 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
               <label className="field-label">Username</label>
               <input
                 className="input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={state.sshUser}
+                onChange={(e) => set({ sshUser: e.target.value })}
               />
             </div>
             <div className="field">
@@ -259,9 +258,8 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
 // ============================================================
 // STEP 1 — Tier B (SMB)
 // ============================================================
-export function Step1TierB({ go, set }: ScreenProps) {
+export function Step1TierB({ go, state, set }: ScreenProps) {
   const [tested, setTested] = useState(false);
-  const [sharePath, setSharePath] = useState("\\\\10.0.1.42\\Kodi");
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -269,7 +267,7 @@ export function Step1TierB({ go, set }: ScreenProps) {
     setTesting(true);
     setError(null);
     try {
-      await invoke("smb_test_write", { userdataPath: sharePath });
+      await invoke("smb_test_write", { userdataPath: state.smbSharePath });
       setTested(true);
     } catch (e) {
       setTested(false);
@@ -307,8 +305,8 @@ export function Step1TierB({ go, set }: ScreenProps) {
               <label className="field-label">Share path</label>
               <input
                 className="input"
-                value={sharePath}
-                onChange={(e) => setSharePath(e.target.value)}
+                value={state.smbSharePath}
+                onChange={(e) => set({ smbSharePath: e.target.value })}
               />
               <div className="field-hint">
                 The share that contains the <span className="path">userdata</span> folder.

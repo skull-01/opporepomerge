@@ -3,6 +3,7 @@ import { Icon, type IconName } from "../icons";
 import { Chain } from "../shell/Chain";
 import { DiagLog } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
+import { applyToKodi, type ApplyResult } from "../apply";
 import type { ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
@@ -474,6 +475,22 @@ function Question({
 // TEST — Success summary
 // ============================================================
 export function TestSuccess({ go, state }: ScreenProps) {
+  const [applying, setApplying] = useState(false);
+  const [result, setResult] = useState<ApplyResult | null>(null);
+
+  const apply = async () => {
+    setApplying(true);
+    setResult(await applyToKodi(state));
+    setApplying(false);
+  };
+
+  const applyLabel =
+    state.tier === "A"
+      ? "Apply to Kodi (SSH + restart)"
+      : state.tier === "B"
+        ? "Apply to Kodi (SMB)"
+        : "Generate files to copy";
+
   return (
     <div className="screen">
       <div className="intro-hero">
@@ -521,12 +538,24 @@ export function TestSuccess({ go, state }: ScreenProps) {
           </div>
         </div>
 
+        {result && (
+          <div
+            className={`callout ${result.ok ? "success" : "warn"}`}
+            style={{ width: "100%", marginBottom: 14 }}
+          >
+            <span className="callout-icon">
+              <Icon name={result.ok ? "check" : "warn"} size={13} stroke={2.2} />
+            </span>
+            <div className="callout-body">{result.detail}</div>
+          </div>
+        )}
+
         <div className="row" style={{ gap: 10 }}>
-          <button className="btn primary lg" onClick={() => go("step0_gate")}>
-            <Icon name="check" size={14} /> Done
+          <button className="btn primary lg" onClick={apply} disabled={applying}>
+            <Icon name="download" size={14} /> {applying ? "Applying…" : applyLabel}
           </button>
-          <button className="btn outline">
-            <Icon name="download" size={14} /> Save setup report (.txt)
+          <button className="btn outline" onClick={() => go("step0_gate")}>
+            <Icon name="check" size={14} /> Done
           </button>
         </div>
 

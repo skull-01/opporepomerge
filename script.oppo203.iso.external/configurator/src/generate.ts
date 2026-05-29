@@ -47,6 +47,11 @@ export function kodiTargetForPlatform(platform: KodiPlatform, pythonPath?: strin
   };
 }
 
+/** The Kodi userdata directory for a platform (where playercorefactory.xml + keymaps/ live). */
+export function userdataDirForPlatform(platform: KodiPlatform): string {
+  return PATHS_BY_PLATFORM[platform].userdata;
+}
+
 function xmlEscape(value: string): string {
   return value
     .replace(/&/g, "&amp;")
