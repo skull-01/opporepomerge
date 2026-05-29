@@ -19,6 +19,33 @@ except ImportError:
 ADDON_ID = "script.oppo203.iso.external"
 LOG_PREFIX = "[OPPO203][SERVICE]"
 
+# Setting keys the Windows configurator owns. Edits to these via Kodi's
+# settings UI are warned about, not blocked. Operator-tunable knobs (timeouts,
+# retries, bool toggles, playback timings, broadcast addresses, mode enums)
+# are intentionally excluded — only protocol-level integration knobs the
+# configurator wizard writes belong here.
+CONFIGURATOR_MANAGED_KEYS = (
+    "oppo_ip", "oppo_mac", "tv_ip", "avr_host",
+    "oppo_port", "oppo_http_port", "tv_adb_port", "roku_ecp_port", "avr_port",
+    "oppo_hardware_model", "tv_backend", "avr_backend",
+    "selected_avr_preset_id", "tv_adb_preset",
+    "adb_path", "oppo_input_adb_shell", "kodi_input_adb_shell",
+    "lg_oppo_command", "lg_kodi_command",
+    "samsung_oppo_command", "samsung_kodi_command",
+    "custom_oppo_command", "custom_kodi_command",
+    "roku_oppo_key", "roku_kodi_key",
+    "sony_psk", "sony_oppo_hdmi_port", "sony_kodi_hdmi_port",
+    "smartthings_token", "smartthings_device_id",
+    "smartthings_oppo_input_id", "smartthings_kodi_input_id",
+    "avr_player_input", "avr_restore_input", "avr_sound_mode",
+    "sony_avr_psk", "sony_avr_api_path",
+    "sony_avr_player_input_uri", "sony_avr_restore_input_uri",
+    "oppo_start_commands", "oppo_stop_commands", "oppo_remote_command_map",
+)
+
+CONFIG_HINT_WINDOW_PROPERTY = "oppo203_config_hint_shown"
+CONFIG_HINT_WINDOW_ID = 10000
+
 # v0.8.0: Disc path markers used by service interception to detect disc files
 DISC_PATH_MARKERS = [
     "/bdmv/",
@@ -254,8 +281,139 @@ class InterceptionPlayer(xbmc.Player if xbmc else object):
             log(f"onAVStarted swallowed exception: {exc}")
 
 
+def _snapshot_managed_settings():
+    """Return {key: value} for every CONFIGURATOR_MANAGED_KEYS entry.
+
+    Used at service start to capture the configurator-written baseline so
+    later `onSettingsChanged` callbacks can detect overwrites via Kodi's UI.
+    Safe in headless tests: returns {} when xbmcaddon is unavailable.
+    """
+    snapshot = {}
+    if not xbmcaddon:
+        return snapshot
+    try:
+        addon = xbmcaddon.Addon(ADDON_ID)
+    except Exception:
+        return snapshot
+    for key in CONFIGURATOR_MANAGED_KEYS:
+        try:
+            snapshot[key] = addon.getSetting(key)
+        except Exception:
+            snapshot[key] = ""
+    return snapshot
+
+
+def _changed_managed_keys(baseline):
+    """Return CONFIGURATOR_MANAGED_KEYS whose current value differs from baseline."""
+    if not xbmcaddon:
+        return []
+    try:
+        addon = xbmcaddon.Addon(ADDON_ID)
+    except Exception:
+        return []
+    changed = []
+    for key in CONFIGURATOR_MANAGED_KEYS:
+        try:
+            current = addon.getSetting(key)
+        except Exception:
+            continue
+        if current != baseline.get(key, ""):
+            changed.append(key)
+    return changed
+
+
+def _resolve_localized(string_id, default):
+    """Resolve a localized string via resources.lib.i18n with a hard fallback."""
+    try:
+        from i18n import L
+    except Exception:
+        try:
+            from resources.lib.i18n import L
+        except Exception:
+            return default
+    try:
+        return L(string_id, default)
+    except Exception:
+        return default
+
+
+def _notify_config_hint_once_per_session():
+    """Show the Part B 'use the configurator' hint at most once per Kodi session.
+
+    First call sets a window property on the home window (id 10000); subsequent
+    calls in the same Kodi process see the property and skip. The property
+    clears on Kodi restart by design. Returns True iff the notification fired.
+    """
+    if not xbmcgui:
+        return False
+    try:
+        window = xbmcgui.Window(CONFIG_HINT_WINDOW_ID)
+        if window.getProperty(CONFIG_HINT_WINDOW_PROPERTY) == "1":
+            return False
+        window.setProperty(CONFIG_HINT_WINDOW_PROPERTY, "1")
+    except Exception:
+        return False
+    title = _resolve_localized(30293, "OPPO 203 ISO External")
+    body = _resolve_localized(
+        30291,
+        "Most settings are managed by the configurator. Changes here may be overwritten.",
+    )
+    try:
+        xbmcgui.Dialog().notification(title, body, time=8000)
+    except Exception:
+        return False
+    log("Configurator hint: shown once per session on first settings change.")
+    return True
+
+
+def _warn_overwritten_managed_keys(changed_keys):
+    """Log + notify a Part C warning for each configurator-managed key that changed."""
+    if not changed_keys:
+        return
+    title = _resolve_localized(30293, "OPPO 203 ISO External")
+    template = _resolve_localized(
+        30292,
+        "Setting '{key}' is managed by the configurator. Re-run the configurator to make this change permanent.",
+    )
+    warn_level = xbmc.LOGWARNING if xbmc else None
+    for key in changed_keys:
+        msg = template.replace("{key}", key)
+        log(f"Configurator-managed key '{key}' was overwritten via Kodi UI.", warn_level)
+        if not xbmcgui:
+            continue
+        try:
+            xbmcgui.Dialog().notification(title, msg, time=6000)
+        except Exception:
+            pass
+
+
 class Monitor(xbmc.Monitor if xbmc else object):
-    """Kodi service monitor (lifecycle only; abortRequested/waitForAbort inherited)."""
+    """Kodi service monitor.
+
+    Lifecycle (abortRequested/waitForAbort inherited) plus a passive
+    `onSettingsChanged` hook that (a) shows a once-per-session generic
+    configurator-hint notification, and (b) warns per key when an entry in
+    `CONFIGURATOR_MANAGED_KEYS` was overwritten via Kodi's settings UI. The
+    hook is logging/notification-only — it never mutates add-on state.
+    """
+
+    def __init__(self):
+        if xbmc:
+            try:
+                super().__init__()
+            except Exception:
+                pass
+        self._managed_baseline = _snapshot_managed_settings()
+
+    def onSettingsChanged(self):
+        try:
+            _notify_config_hint_once_per_session()
+            changed = _changed_managed_keys(self._managed_baseline)
+            if changed:
+                _warn_overwritten_managed_keys(changed)
+                self._managed_baseline = _snapshot_managed_settings()
+        except Exception as exc:
+            log(f"onSettingsChanged swallowed exception: {exc}")
 
 
 def _service_main():

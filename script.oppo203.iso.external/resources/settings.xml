@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings version="1">
     <category id="connection" label="32100">  <!-- Connection -->
+        <setting id="config_owner_hint" label="30290" type="lsep"/>
         <setting id="oppo_ip" type="string" label="30101" default="192.168.1.50"/>
         <setting id="oppo_port" type="integer" label="30102" default="23"/>
         <setting id="oppo_socket_timeout" type="number" label="30103" default="3.0"/>
