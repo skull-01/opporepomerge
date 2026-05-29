@@ -499,6 +499,36 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
   or hardware behavior change.
 
+### ENH-#51 — mypy --strict allowlist expansion (PR 7 of N: hub-dependent idiom modules)
+
+- **Implementing SHA:** `6fed436` on `claude/enh51-mypy-pr7-k2p9m4xt` (draft PR #66;
+  commented on issue #51). **Stacked on PR #65** (base = the PR 6 branch); **merge
+  #63 → #64 → #65 → #66 in order.**
+- **Scope:** PR 7 of the source-only rollout — the final batch of the requested scope.
+  Annotates the four larger no-redef import-fallback modules deferred from PR 4 to zero
+  strict errors and gates them (42 → 46): `oppo/oppo_remote`, `kodi/external_player`,
+  `kodi/installer`, `kodi/preset_manager`.
+- **What changed (type-only, behaviour-preserving):**
+  - [`mypy.ini`](../mypy.ini) + [`pyproject.toml`](../pyproject.toml) mirror: 4 modules added.
+  - PR 4 no-redef strategy throughout (`# type: ignore[no-redef]` on except-branch bare
+    imports only). `cast` for object/Any values hitting type-specific ops (`xbmcvfs.translatePath`,
+    track-index dict values, the `tv_control` `dict[str, Any]` call sites); a `Protocol` for the
+    injected fs dep in preset_manager; local var annotations in installer's XML/keymap builders.
+  - **`installer` (~958 lines)** runs `xbmcaddon.Addon()` and builds playercorefactory/keymap
+    XML — annotations + no-op casts only; 15 installer tests pass; zero behavior change.
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `tools/type_check.py --gate` **46 files, 0 errors**; `pytest -n auto` **938 passed /
+  3 skipped**; serial coverage **99.05%**; `ruff check` + `ruff format --check` clean.
+- **Phase A review focus:**
+  - `installer` especially: confirm signature/typing-only — no change to settings reads,
+    XML generation, or the `xbmcaddon`/dialog control flow.
+  - Confirm the `tv_control` `cast("dict[str, Any]", settings)` call sites are behaviour-neutral.
+- **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
+  or hardware behavior change.
+- **Rollout status:** PRs 4–7 take the gate **28 → 46**; the ENH-#51 idiom + cascade scope is
+  complete. Only `playercorefactory_merge` (never in scope) and top-level `service.py` /
+  `default.py` remain ungated — candidates for a future follow-up.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_
