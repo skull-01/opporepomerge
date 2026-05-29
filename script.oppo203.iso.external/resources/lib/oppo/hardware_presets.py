@@ -8,8 +8,12 @@ player family. Consumers (wizard, oppo_control, service) call
 Adding a new preset = add an entry to PRESETS with safe defaults.
 """
 
+from __future__ import annotations
+
+from typing import cast
+
 # Canonical preset keys (kept in a list so order is stable for UI).
-PRESET_KEYS = [
+PRESET_KEYS: list[str] = [
     "udp_203",
     "udp_205",
     "udp_203_jailbroken",
@@ -29,7 +33,7 @@ PRESET_KEYS = [
 ]
 
 
-def _base():
+def _base() -> dict[str, object]:
     return {
         "label": "Generic",
         "family": "oppo",
@@ -51,7 +55,7 @@ def _base():
     }
 
 
-PRESETS = {
+PRESETS: dict[str, dict[str, object]] = {
     "udp_203": dict(
         _base(), label="OPPO UDP-203", notes="Reference OPPO UDP-203. Full IP-control support."
     ),
@@ -172,36 +176,36 @@ PRESETS = {
 }
 
 
-def get_preset(key):
+def get_preset(key: object) -> dict[str, object]:
     """Return a preset dict (or generic_oppo_clone fallback)."""
     if not key:
         return PRESETS["generic_oppo_clone"]
     return PRESETS.get(str(key).lower(), PRESETS["generic_oppo_clone"])
 
 
-def list_presets():
+def list_presets() -> list[tuple[str, object]]:
     """Return [(key, label), ...] for UI selection."""
     return [(k, PRESETS[k]["label"]) for k in PRESET_KEYS]
 
 
-def select_power_on_command(key):
+def select_power_on_command(key: object) -> str:
     """Return the power-on command for a given preset.
 
     Chinoppo-class devices use #EJT (no #PON wake support).
     """
     p = get_preset(key)
-    return p["eject"] if p.get("use_eject_for_power_on") else p["power_on"]
+    return cast(str, p["eject"] if p.get("use_eject_for_power_on") else p["power_on"])
 
 
-def select_play_command(key):
+def select_play_command(key: object) -> list[str]:
     """Return either ['#PLA'] or ['#EJT', '#PLA'] depending on quirks."""
     p = get_preset(key)
     if p.get("needs_eject_before_play"):
-        return [p["eject"], p["play"]]
-    return [p["play"]]
+        return [cast(str, p["eject"]), cast(str, p["play"])]
+    return [cast(str, p["play"])]
 
 
-def select_recommended_power_delay(key):
+def select_recommended_power_delay(key: object) -> int:
     """Return a sensible power-on settle time (seconds) per preset."""
     p = get_preset(key)
     if p.get("family") == "reavon" and key == "reavon_ubrx200":
@@ -211,9 +215,9 @@ def select_recommended_power_delay(key):
     return 5
 
 
-def supports_http(key):
+def supports_http(key: object) -> bool:
     return bool(get_preset(key).get("supports_http"))
 
 
-def is_chinoppo_family(key):
+def is_chinoppo_family(key: object) -> bool:
     return get_preset(key).get("family") == "chinoppo"
