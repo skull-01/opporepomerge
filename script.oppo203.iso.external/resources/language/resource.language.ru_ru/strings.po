@@ -684,3 +684,19 @@ msgstr "Sony AVR restore input URI"
 msgctxt "#30270"
 msgid "Optional metadata for a future Sony restore helper. No restore command is sent in Build 15A."
 msgstr "Optional metadata for a future Sony restore helper. No restore command is sent in Build 15A."
+
+msgctxt "#30290"
+msgid "Most settings here are managed by the Windows configurator app. Changes you make in Kodi may be overwritten the next time the configurator runs. Use the configurator for persistent changes."
+msgstr "Most settings here are managed by the Windows configurator app. Changes you make in Kodi may be overwritten the next time the configurator runs. Use the configurator for persistent changes."
+
+msgctxt "#30291"
+msgid "Most settings are managed by the configurator. Changes here may be overwritten."
+msgstr "Most settings are managed by the configurator. Changes here may be overwritten."
+
+msgctxt "#30292"
+msgid "Setting '{key}' is managed by the configurator. Re-run the configurator to make this change permanent."
+msgstr "Setting '{key}' is managed by the configurator. Re-run the configurator to make this change permanent."
+
+msgctxt "#30293"
+msgid "OPPO 203 ISO External"
+msgstr "OPPO 203 ISO External"

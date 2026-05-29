@@ -892,9 +892,10 @@ class TSettingsLayout(unittest.TestCase):
         # v2 Build 2 keeps architecture-selection rows hidden/deferred, adds
         # hardware model, and adds the explicit TV-switching enable/disable
         # control required by the MVP no-op path. Strip-wizard dropped the
-        # hidden wizard_mode setting (98 -> 97).
+        # hidden wizard_mode setting (98 -> 97). The configurator-owner hint
+        # lsep added a passive label row at the top of Connection (97 -> 98).
         ids = [s.get("id") for s in self.tree.iter("setting")]
-        self.assertEqual(len(ids), 97)
+        self.assertEqual(len(ids), 98)
 
     def test_category_labels_use_new_ids(self):
         cat_label_ids = {c.get("id"): c.get("label")
