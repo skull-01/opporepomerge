@@ -225,47 +225,52 @@ ruff clean).
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-29 (EOD — bulk-merge-all-pending session):** **clean stopping
-point, no uncommitted work, no open configurator PRs.** The icon + bundling PR
-was **merged to `main`** this session (part of the operator's `merge all pending`
-directive); `main` is `859238e`.
+**As of 2026-05-30 (EOD — configurator wiring-layer session):** the wizard UI is
+now wired to the add-on contract. Delivered on the **open draft
+[PR #68](https://github.com/skull-01/script.oppo203.iso.external/pull/68)**
+(`claude/configurator-wizard-wiring-q7m3k9x2`, off `main`); developed in an
+isolated worktree, **no uncommitted work**. `main` is unchanged by this work
+(PR #68 unmerged). **Software-verified only** — not run against real hardware
+(Kodi box / OPPO / TV) and not click-tested in the live app.
 
-- **MERGED this session — PR #52** (configurator app icon + first installers) at
-  `859238e` (`claude/configurator-icon-bundle-h4n7k2p9`). Replaced the 766-byte
-  placeholder `icon.ico` (PR #35) with a real icon set generated from the repo-root
-  add-on artwork (`icon.png`, 256×256) via `cd configurator; npm run tauri -- icon
-  ..\icon.png` — fixed a latent build-breaker (`tauri.conf.json bundle.icon`
-  referenced `32x32.png` / `128x128.png` / `icon.icns`, none of which existed on
-  disk). Pruned the `ios/`/`android/` outputs; `tauri.conf.json` unchanged; refreshed
-  the stale `src-tauri/icons/README.md`. First-pass `npm run tauri -- build`
-  succeeded → **MSI** (3.0 MB) + **NSIS setup** (1.9 MB). **Software-verified only
-  (build + bundle); installed-app icon appearance NOT verified.** All CI green at
-  merge.
-  - **Left for operator — Phase C on-device** (no agent code): install the MSI/NSIS,
-    confirm the installer/taskbar icon shows and the app launches — steps in
-    `docs/MANUAL_VERIFICATION_CHECKLIST.md` on `main`.
-  - Build recipe + gotchas in memory `configurator-tauri-build-recipe` (cargo on
-    PATH + sandbox off for the WiX/NSIS download).
+- **Shipped on PR #68 — 7 slices, one commit each** (per
+  [`configurator/CONFIGURATOR_HANDOFF.md`](configurator/CONFIGURATOR_HANDOFF.md)):
+  1. `mapping.ts` — `WizardState` → add-on setting IDs (verified vs `settings.xml`);
+     screen-resume persistence; Step-1 architecture chooser; brand→model fix.
+  2. TV model DB — `docs/configurator/tv-db/tv-models.json` (hybrid lineup +
+     per-model schema) + `tvdb.ts` resolver + on-demand GitHub refresh.
+  3. `generate.ts` — `playercorefactory.xml` + keymap reimplemented from
+     `installer.py`; Rust `generate_files`/`reveal_path`; Tier C local save.
+  4. `settings_xml.ts` + DOM `merge.ts` (mirrors `playercorefactory_merge.py`);
+     Rust `deploy_to_userdata`/`read_userdata_file`/`smb_test_write`; Tier B test.
+  5. `probes.ts` + Rust `tcp_probe`/`tv_port_probe`/`oppo_query`; wired into Step 2
+     (TV port probe + backend inference) and Step 3 (OPPO `#QPW` wake-and-confirm).
+  6. Tier A SSH — Rust `ssh_test`/`deploy_ssh` via the system OpenSSH client
+     (key auth, `BatchMode`); Step-1 Tier A test wired.
+  7. `apply.ts` — end-of-wizard **Apply to Kodi** (composes settings.xml + merged
+     playercorefactory + keymap; deploys via the chosen tier).
+- **Verified:** `tsc -b` + `vite build` clean; `cargo check` clean (std-only Rust,
+  no new crates); **46 vitest unit tests**; the add-on coverage gate ran green on
+  every push (938/3, 99.07%). Decisions A–E from the handoff Q&A captured in the
+  PR body + code comments.
 
-- **Prior merged scaffold/work (unchanged):** PR #30 scaffold (`394f9fc`),
-  PR #33 window-control IPC (`45c6572`), PR #34 `%APPDATA%` state (`bc60074`),
-  PR #35 cargo-unblock + icon stub (`12e5b18`).
+- **Resume here next (configurator):**
+  1. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B
+     SMB, Tier C copy) against a real Kodi box / OPPO / TV — operator action; the
+     paths are software-verified only.
+  2. **Confirm the Chinoppo `M9205 V1` vs `M9205`** collapse to `chinoppo_m9205`
+     (flagged in PR #68) and split them in `configurator/src/mapping.ts` if distinct.
+  3. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (seed is small,
+     all `validated:false`; lineups carry the platform→backend mapping; unseeded
+     brands fall through to the not-found probe path).
+  4. **Real test ISO** — swap the placeholder once the asset exists (decision E).
 
-- **No `area:configurator` issues open.** §17a cache has no configurator rows.
+- **Prior merged scaffold/work (unchanged):** PR #30 scaffold, #33 window-control
+  IPC, #34 `%APPDATA%` state, #35 cargo-unblock + icon stub, #52 icon + first
+  installers (`859238e`).
 
-- **Candidate themes for next configurator session** (pick one, per §4):
-  1. **Purpose-built app icon** — the merged #52 icon is the add-on's busy promo art
-     (cluttered at 32×32); drop a clean 1024×1024 PNG + re-run `tauri icon`. Small,
-     finishes the icon thread.
-  2. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe
-     for Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over
-     port 23) — multi-PR theme, its own session.
-  3. **File generation** for [`playercorefactory.xml`](resources/playercorefactory.xml)
-     + remote-bridge keymap. This is the configurator side of ENH-#41 (the add-on
-     side stays read-only per the policy doc).
-  4. **Configurator side of ENH-#41 Part C** — write
-     `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` into the generated
-     `settings.xml`; pairs with the add-on-side overwrite warning.
+- **No `area:configurator` issues open.** PR #68 is untracked-theme delivery; its
+  description + this entry are the record.
 
 ---
 
