@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import argparse
 import os
 import sys
 import threading
 import time
 import traceback
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Callable, cast
+
+if TYPE_CHECKING:  # pragma: no cover
+    from .settings_reader import Settings
 
 try:
     from ..avr.avr_sequence import post_playback_sequence, pre_playback_sequence
@@ -23,9 +30,9 @@ try:
     from .diagnostic_logging import log_to_xbmc
     from .settings_reader import read_settings
 except ImportError:  # pragma: no cover - run as __main__ via runpy / bare-name fallback
-    from avr_sequence import post_playback_sequence, pre_playback_sequence
-    from diagnostic_logging import log_to_xbmc
-    from oppo_control import (
+    from avr_sequence import post_playback_sequence, pre_playback_sequence  # type: ignore[no-redef]
+    from diagnostic_logging import log_to_xbmc  # type: ignore[no-redef]
+    from oppo_control import (  # type: ignore[no-redef]
         get_playback_info,
         http_info_indicates_playing,
         http_info_is_definitive_stop,
@@ -36,19 +43,19 @@ except ImportError:  # pragma: no cover - run as __main__ via runpy / bare-name 
         run_start,
         tcp_qpl_is_idle,
     )
-    from settings_reader import read_settings
-    from tv_control import switch_to_kodi, switch_to_oppo
+    from settings_reader import read_settings  # type: ignore[no-redef]
+    from tv_control import switch_to_kodi, switch_to_oppo  # type: ignore[no-redef]
 
 
-def log(message):
+def log(message: str) -> None:
     log_to_xbmc(None, "player", message)
 
 
-def session_file(settings):
+def session_file(settings: Settings) -> str:
     return os.path.join(settings.get("addon_data_dir", ""), "oppo203iso-active")
 
 
-def mark_session_active(settings):
+def mark_session_active(settings: Settings) -> None:
     path = session_file(settings)
     if not path:
         return
@@ -56,16 +63,16 @@ def mark_session_active(settings):
         handle.write(str(time.time()))
 
 
-def clear_session_active(settings):
+def clear_session_active(settings: Settings) -> None:
     path = session_file(settings)
     if path and os.path.exists(path):
         os.remove(path)
 
 
-def run_parallel(tasks):
-    errors = []
+def run_parallel(tasks: Iterable[tuple[str, Callable[[], object]]]) -> None:
+    errors: list[tuple[str, Exception, str]] = []
 
-    def runner(name, func):
+    def runner(name: str, func: Callable[[], object]) -> None:
         try:
             func()
         except Exception as exc:
@@ -86,7 +93,9 @@ def run_parallel(tasks):
         raise errors[0][1]
 
 
-def start_oppo_after_optional_delay(settings, media_file, preflight_result=None):
+def start_oppo_after_optional_delay(
+    settings: Settings, media_file: str, preflight_result: dict[str, object] | None = None
+) -> None:
     startup_delay = int(settings.get("startup_delay", "0"))
     if startup_delay > 0:
         log(f"Waiting {startup_delay} second(s) before starting Oppo.")
@@ -95,7 +104,7 @@ def start_oppo_after_optional_delay(settings, media_file, preflight_result=None)
     run_start(settings, media_file, preflight_result=preflight_result)
 
 
-def tv_switching_enabled(settings):
+def tv_switching_enabled(settings: Settings) -> bool:
     """Return True when MVP TV input switching should run.
 
     The v2 MVP keeps TCL/Android TV switching optional and settings-controlled.
@@ -109,7 +118,7 @@ def tv_switching_enabled(settings):
     return settings.get_bool("tv_switching_enabled", True)
 
 
-def _safe_tv_switch(settings, target):
+def _safe_tv_switch(settings: Settings, target: str) -> str | dict[str, object] | None:
     """Switch TV input if enabled, but never corrupt playback cleanup.
 
     ADB and TV-control failures are logged as non-fatal because the MVP
@@ -122,15 +131,17 @@ def _safe_tv_switch(settings, target):
     try:
         if target == "oppo":
             log("Switching TV to Oppo input.")
-            return switch_to_oppo(settings)
+            return switch_to_oppo(cast("dict[str, Any]", settings))
         log("Switching TV back to Kodi input.")
-        return switch_to_kodi(settings)
+        return switch_to_kodi(cast("dict[str, Any]", settings))
     except Exception as exc:
         log(f"TV switch to {target} failed (non-fatal): {exc}")
         return None
 
 
-def fast_start(settings, media_file, preflight_result=None):
+def fast_start(
+    settings: Settings, media_file: str, preflight_result: dict[str, object] | None = None
+) -> None:
     # v2 MVP Slice 3: make startup order deterministic and safe.
     # TV switching is attempted before OPPO/external playback handoff, but TV
     # failures are non-fatal so they do not corrupt playback or cleanup.
@@ -143,7 +154,7 @@ def fast_start(settings, media_file, preflight_result=None):
     start_oppo_after_optional_delay(settings, media_file, preflight_result)
 
 
-def fast_return(settings):
+def fast_return(settings: Settings) -> None:
     log("Sending Oppo stop commands.")
     run_configured_commands(settings, "oppo_stop_commands")
     avr_result = post_playback_sequence(settings)
@@ -153,7 +164,7 @@ def fast_return(settings):
         _safe_tv_switch(settings, "kodi")
 
 
-def hold_playback(settings):
+def hold_playback(settings: Settings) -> None:
     mode = settings.get("hold_mode", "fixed_timeout")
 
     if mode == "http_poll":
@@ -307,7 +318,7 @@ def hold_playback(settings):
     time.sleep(seconds)
 
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(
         description="Kodi external-player wrapper for Oppo UDP-203 ISO playback."
     )
