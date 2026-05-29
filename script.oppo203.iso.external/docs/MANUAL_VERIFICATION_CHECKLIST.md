@@ -228,6 +228,26 @@ implementing SHA(s) on the issue and append a row here.
      prompt).
   8. Select "Back" → returns to the main add-on menu.
 
+### ENH-#42 — In-add-on add-on-language switcher (PR 2 of 2)
+
+- **Implementing SHA:** head of `claude/enh42-language-switcher-q8m3v7k2` (commented on issue #42).
+- **Stacked on** the PR 1 network-editor branch (both touch `installer.main()` + the menu-shape test); **merge PR 1 first**.
+- **Scope:** the language half of ENH-#42. Open question #1 ("follow Kodi system language") is included per the issue's acceptance criteria.
+- **What changed:**
+  - [`resources/lib/kodi/i18n.py`](../resources/lib/kodi/i18n.py): `supported_languages()` fixed 7 → 12 (it was stale, omitting ja/ko/pl/pt/ru); new `language_options()`, `effective_language()` (resolves the `addon_language` setting — follow-Kodi maps `xbmc.getLanguage()` → bundled locale, en_gb fallback), and a small per-locale `strings.po` reader so `L()` consults a pinned locale first. The default follow-Kodi path is unchanged.
+  - [`resources/settings.xml`](../resources/settings.xml): hidden `addon_language` setting (`visible="false"`, default `follow_kodi`), driven from the add-on menu rather than Kodi's settings panel (settings count 98 → 99; label reuses an existing string id since it is never displayed).
+  - [`resources/lib/kodi/installer.py`](../resources/lib/kodi/installer.py): new "Add-on language" menu entry (choice 12) + `language_menu()`.
+  - Tests: `tests/test_v2914_build3_language_switcher.py` (25 tests incl. the follow-Kodi stub path); `tests/test_all.py` supported-languages 7→12 + settings count 98→99; `tests/test_coverage_hardening.py` menu-shape 12→13.
+  - **Honest caveat:** the 12 bundled non-en_gb `strings.po` files are currently English placeholders (msgstr == msgid), and Kodi renders `settings.xml` labels in its own GUI language. So pinning a locale changes the source file `L()` consults but does **not** yet change visible text — the mechanism is in place for when translations are populated. Today only the configurator-owner notifications (ids 30290–30293) route through `L()`.
+- **CI / gates (software-verified only; hardware validation not claimed):** `pytest -n auto` 932 passed / 3 skipped; serial coverage 99% (`i18n.py` 100%); `ruff check` + `ruff format --check resources default.py service.py` clean; `unittest discover` 551 OK; `audit_release` 578/578; doc/version/layout/i18n `--check` green.
+- **Operator end-to-end (Phase C) when run on hardware:**
+  1. Open Kodi → Add-ons → OPPO 203 ISO External → run the add-on.
+  2. Select "Add-on language".
+  3. Confirm the list shows "Follow Kodi system language" first (marked "(current)" by default) then the 12 locales.
+  4. Pick a locale → expect "Add-on language preference saved: …"; re-open and confirm it is now marked "(current)".
+  5. Pick "Follow Kodi system language" → expect the confirmation naming the resolved locale (matches Kodi's UI language).
+  6. Translation note: menu and settings labels remain English — see the placeholder caveat above.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_

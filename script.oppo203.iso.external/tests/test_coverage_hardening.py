@@ -474,7 +474,7 @@ class TKodiBoundCoverageHardening(unittest.TestCase):
             self.assertTrue(any(call[0] == "textviewer" for call in xbmcgui.calls()))
 
     def test_installer_main_menu_dispatches_each_choice(self):
-        """Strip-wizard: installer.main() menu has 12 choices (0-11) + Cancel.
+        """Strip-wizard: installer.main() menu has 13 choices (0-12) + Cancel.
 
         Exercise every dispatch + the architecture-choice gate to lock the
         post-strip menu shape.
@@ -498,8 +498,8 @@ class TKodiBoundCoverageHardening(unittest.TestCase):
             fake_oc.discover_oppo = lambda timeout=0: []  # no-results branch
             sys.modules["oppo_control"] = fake_oc
 
-            # Each menu choice 0..11, then Cancel (-1).
-            for choice in range(12):
+            # Each menu choice 0..12, then Cancel (-1).
+            for choice in range(13):
                 xbmcgui.reset()
                 xbmcgui.push_select(choice)
                 # show_tcl_presets needs a sub-select + yesno; filelist asks no
