@@ -328,6 +328,46 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths,
   settings, or hardware behavior change.
 
+### ENH-#51 — mypy --strict allowlist expansion (PR 3 of N: the avr_* backends)
+
+- **Implementing SHA:** `d36e76f` on `claude/enh51-mypy-pr3-avr-x7m2k9q4` (draft PR #55;
+  commented on issue #51).
+- **Scope:** PR 3 of the source-only rollout. **Stacked on PR #54** (base = the PR 2
+  branch); **merge #54 first.** Expands the gate `files=` allowlist 23 → 28 modules by
+  annotating the five remaining AVR backends. No gate/tooling/CI changes (PR 1).
+- **What changed (type-only, behaviour-preserving):**
+  - [`mypy.ini`](../mypy.ini) (authoritative) + [`pyproject.toml`](../pyproject.toml)
+    `[tool.mypy]` mirror: 5 modules added to `files=` (kept sorted by path).
+  - `avr/avr_denon_marantz` + `avr/avr_onkyo_eiscp`: the per-command socket was typed
+    `object`; annotated it as the module's existing `SocketLike` Protocol and `cast()` the
+    socket-factory result so `sendall`/`recv` typecheck.
+  - `avr/avr_yamaha` + `avr/avr_sony_audio`: pin `urlopen().read()` to `bytes`; `cast()`
+    the `int()`/`list()`/`map()` inputs and the `meta.get()` warning/missing tuples that
+    type as `object`.
+  - `avr/avr_diagnostics`: a `dict -> dict` `@overload` on `sanitize_payload` so the
+    dict-returning helpers stop leaking `Any`; one local pinned; 2 stale `# type: ignore`
+    removed.
+  - **Latent Python 3.9 import bug fixed:** the `HttpGet`/`SonyPost` aliases used PEP 604
+    `bytes | str`. These are module-level assignments (eagerly evaluated, not lazied by
+    `from __future__ import annotations`), so on the project's 3.9 floor they raise
+    `TypeError` at import. The full suite runs on 3.11 and the 3.9 compat-smoke job does
+    not import these modules, so it was never hit. Switched to `typing.Union`.
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `tools/type_check.py --gate` **28 files, 0 errors**; `pytest -n auto` **933 passed /
+  3 skipped**; serial coverage **99%** (`avr_diagnostics` 0 missed — overloads cost
+  nothing); `ruff check .` + `ruff format --check .` clean; `unittest discover` **551 OK**;
+  py_compile + render_docs / sync_version / test_layout / i18n_extract `--check` all green.
+- **Phase A review focus:**
+  - Confirm the 5 modules are signature/typing-only — especially the socket-factory
+    `cast()` and the `sanitize_payload` `@overload`.
+  - Confirm the `bytes | str` → `Union` change is the intended 3.9 fix.
+- **Phase A — Python 3.9 import smoke (recommended).** On a 3.9 interpreter, confirm
+  `import resources.lib.avr.avr_yamaha` and `import resources.lib.avr.avr_sony_audio` no
+  longer raise `TypeError`. The hosted CI 3.9 job does not import these modules, so this is
+  the only place that exercises the fix on 3.9.
+- **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
+  or hardware behavior change.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_

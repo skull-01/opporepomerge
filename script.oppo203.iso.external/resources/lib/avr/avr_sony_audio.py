@@ -9,7 +9,7 @@ Sony PSKs, passwords, credentials, tokens, or secrets in helper results.
 from __future__ import annotations
 
 import json
-from typing import Callable
+from typing import Callable, Union, cast
 from urllib import error, request
 
 try:
@@ -31,7 +31,7 @@ DEFAULT_SONY_AUDIO_API_PATH = "/sony/audio"
 DEFAULT_SONY_AUDIO_TIMEOUT = 3.0
 
 _SECRET_KEY_FRAGMENTS = ("psk", "password", "credential", "token", "secret")
-SonyPost = Callable[[str, bytes, dict[str, str], float], bytes | str]
+SonyPost = Callable[[str, bytes, dict[str, str], float], Union[bytes, str]]
 
 
 def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, object]:
@@ -43,7 +43,7 @@ def _settings_dict(settings: dict[str, object] | object | None) -> dict[str, obj
         return dict(settings.data)
     if hasattr(settings, "items"):
         try:
-            return dict(settings.items())  # type: ignore[attr-defined]
+            return dict(settings.items())
         except Exception:
             return {}
     return {}
@@ -155,7 +155,7 @@ def build_refusal_result(
 ) -> AvrResult:
     """Return a non-commanding refusal result for unacknowledged Sony AVR actions."""
     meta = validation_metadata(settings)
-    warnings = list(meta.get("warnings", ()))
+    warnings = list(cast("tuple[str, ...]", meta.get("warnings", ())))
     if not meta.get("acknowledged", False):
         warnings.append("sony_audio_api_refused_without_acknowledgement")
     return AvrResult(
@@ -222,7 +222,7 @@ def build_status_payload() -> bytes:
 def _default_post(url: str, payload: bytes, headers: dict[str, str], timeout: float) -> bytes:
     req = request.Request(url, data=payload, headers=headers, method="POST")
     with request.urlopen(req, timeout=timeout) as response:  # nosec - explicit user-configured local API endpoint
-        return response.read()
+        return cast("bytes", response.read())
 
 
 def _parse_response(
@@ -272,7 +272,9 @@ def send_sony_audio_request(
     if not meta.get("acknowledged", False):
         return build_refusal_result(action, data)
     missing = [
-        item for item in meta.get("missing", ()) if item not in {"sony_avr_player_input_uri"}
+        item
+        for item in cast("tuple[str, ...]", meta.get("missing", ()))
+        if item not in {"sony_avr_player_input_uri"}
     ]
     if missing:
         return AvrResult(
@@ -281,7 +283,12 @@ def send_sony_audio_request(
             backend=SONY_AUDIO_API_BACKEND_ID,
             message="sony_audio_api_config_incomplete",
             warnings=tuple(
-                dict.fromkeys([*map(str, meta.get("warnings", ())), "avr_config_incomplete"])
+                dict.fromkeys(
+                    [
+                        *map(str, cast("tuple[str, ...]", meta.get("warnings", ()))),
+                        "avr_config_incomplete",
+                    ]
+                )
             ),
             nonfatal=True,
             hardware_validation_claimed=False,

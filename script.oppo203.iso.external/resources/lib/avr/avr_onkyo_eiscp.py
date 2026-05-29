@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import socket
 import struct
-from typing import Callable, Protocol
+from typing import Callable, Protocol, cast
 
 try:
     from .avr_types import AVR_BACKEND_ONKYO_EISCP, AVR_BACKEND_PIONEER_EISCP, AvrResult
@@ -175,9 +175,9 @@ def send_eiscp_command(
     parsed_port = eiscp_port(port)
     parsed_timeout = eiscp_timeout(timeout)
     factory = socket_factory or socket.create_connection
-    sock: object | None = None
+    sock: SocketLike | None = None
     try:
-        sock = factory((host_text, parsed_port), parsed_timeout)
+        sock = cast("SocketLike", factory((host_text, parsed_port), parsed_timeout))
         settimeout = getattr(sock, "settimeout", None)
         if callable(settimeout):
             settimeout(parsed_timeout)
