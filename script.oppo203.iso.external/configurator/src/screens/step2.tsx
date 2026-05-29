@@ -2,7 +2,17 @@ import { useState, useEffect } from "react";
 import { Icon, type IconName } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
-import type { TvBackend } from "../state";
+import {
+  BUNDLED_TV_DB,
+  fetchRemoteTvDb,
+  isNewer,
+  modelsForBrand,
+  resolveBackend,
+  resolvePlatform,
+  resolveTier,
+  type TvDb,
+  type TvDbModel,
+} from "../tvdb";
 import type { ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
@@ -55,38 +65,36 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
 // ============================================================
 // STEP 2 — Model
 // ============================================================
-type Model = {
-  id: string;
-  brand: string;
-  name: string;
-  year: string;
-  size: string;
-  platform: string;
-  tier: "probe" | "command";
-  backend: TvBackend;
-};
-
-const ALL_MODELS: readonly Model[] = [
-  { id: "55q9-2023",  brand: "tcl", name: "55Q9 (2023)",   year: "2023", size: "55\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "65q9-2023",  brand: "tcl", name: "65Q9 (2023)",   year: "2023", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "75q9-2023",  brand: "tcl", name: "75Q9 (2023)",   year: "2023", size: "75\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "65q10-2024", brand: "tcl", name: "65Q10 Pro",     year: "2024", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "65q7-2022",  brand: "tcl", name: "65Q7",          year: "2022", size: "65\"", platform: "Google TV", tier: "probe", backend: "adb" },
-  { id: "55r5-2022",  brand: "tcl", name: "55R5 (Roku)",   year: "2022", size: "55\"", platform: "Roku TV",   tier: "probe", backend: "roku_ecp" },
-];
-
 export function Step2Model({ go, state, set }: ScreenProps) {
+  const [db, setDb] = useState<TvDb>(BUNDLED_TV_DB);
   const [year, setYear] = useState("2023");
   const [size, setSize] = useState('65"');
   const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
   const brandName = TV_BRANDS.find((b) => b.id === state.tvBrand)?.name ?? "TV";
-  const filtered = ALL_MODELS.filter(
+  const models = state.tvBrand ? modelsForBrand(db, state.tvBrand) : [];
+  const filtered = models.filter(
     (m) =>
-      (!state.tvBrand || m.brand === state.tvBrand) &&
-      (!year || m.year === year) &&
+      (!year || String(m.year) === year) &&
       (!size || m.size === size) &&
       m.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const refresh = async () => {
+    setRefreshing(true);
+    const remote = await fetchRemoteTvDb();
+    if (remote && isNewer(db, remote)) setDb(remote);
+    setRefreshing(false);
+  };
+
+  const select = (m: TvDbModel) => {
+    set({
+      tvModel: m.id,
+      tvPlatform: resolvePlatform(db, m),
+      tvBackend: resolveBackend(db, m),
+    });
+  };
 
   return (
     <div className="screen">
@@ -109,6 +117,9 @@ export function Step2Model({ go, state, set }: ScreenProps) {
             />
           </div>
           <span className="spacer" />
+          <button className="btn ghost sm" onClick={refresh} disabled={refreshing}>
+            <Icon name="download" size={13} /> {refreshing ? "Updating…" : "Update list"}
+          </button>
           <button className="btn ghost sm" onClick={() => go("step2_notfound")}>
             <Icon name="search" size={13} /> Can't find my model
           </button>
@@ -151,26 +162,28 @@ export function Step2Model({ go, state, set }: ScreenProps) {
               </button>
             </div>
           )}
-          {filtered.map((m) => (
-            <div
-              key={m.id}
-              className={`model-row ${state.tvModel === m.id ? "selected" : ""}`.trim()}
-              onClick={() =>
-                set({ tvModel: m.id, tvPlatform: m.platform, tvBackend: m.backend })
-              }
-            >
-              <div>
-                <div>{m.name}</div>
-                <div className="model-row-meta">
-                  {m.platform} · backend <code>{m.backend}</code>
+          {filtered.map((m) => {
+            const backend = resolveBackend(db, m);
+            const tier = resolveTier(db, m);
+            return (
+              <div
+                key={m.id}
+                className={`model-row ${state.tvModel === m.id ? "selected" : ""}`.trim()}
+                onClick={() => select(m)}
+              >
+                <div>
+                  <div>{m.name}</div>
+                  <div className="model-row-meta">
+                    {resolvePlatform(db, m) ?? "—"} · backend <code>{backend ?? "—"}</code>
+                  </div>
                 </div>
+                <span className={`chip ${tier === "probe" ? "success" : "warn"}`}>
+                  <span className="chip-dot" />
+                  {tier === "probe" ? "probe & confirm" : "bring-your-own command"}
+                </span>
               </div>
-              <span className={`chip ${m.tier === "probe" ? "success" : "warn"}`}>
-                <span className="chip-dot" />
-                {m.tier === "probe" ? "probe & confirm" : "bring-your-own command"}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
       <FooterNav
