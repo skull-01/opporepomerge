@@ -7,14 +7,15 @@ available and returns success even when mypy is missing or reports issues. Use
 ``--strict-exit`` only in local development when you intentionally want mypy
 findings to fail the command.
 """
+
 from __future__ import annotations
 
 import argparse
 import importlib.util
-from pathlib import Path
 import subprocess
 import sys
-from typing import Sequence
+from collections.abc import Sequence
+from pathlib import Path
 
 DEFAULT_TARGETS = ("resources/lib", "tools/package_installable_zip.py")
 
@@ -54,21 +55,34 @@ def run_type_check(root: Path, *, strict_exit: bool = False) -> int:
         print("SKIP: mypy is not installed; non-blocking type-check baseline is configured")
         return 1 if strict_exit else 0
     command = build_mypy_command(root)
-    result = subprocess.run(command, cwd=str(root), text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+    result = subprocess.run(
+        command,
+        cwd=str(root),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
     output = result.stdout.strip()
     if output:
         print(output)
     if result.returncode == 0:
         print("OK: mypy completed without findings")
         return 0
-    print(f"WARN: mypy reported findings with exit code {result.returncode}; non-blocking baseline keeps release verification green")
+    print(
+        f"WARN: mypy reported findings with exit code {result.returncode}; non-blocking baseline keeps release verification green"
+    )
     return result.returncode if strict_exit else 0
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run non-blocking mypy baseline checks")
     parser.add_argument("--root", default=".", help="project root")
-    parser.add_argument("--strict-exit", action="store_true", help="return mypy/missing-mypy status instead of always passing")
+    parser.add_argument(
+        "--strict-exit",
+        action="store_true",
+        help="return mypy/missing-mypy status instead of always passing",
+    )
     args = parser.parse_args(argv)
     return run_type_check(Path(args.root), strict_exit=args.strict_exit)
 

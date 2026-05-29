@@ -1,11 +1,12 @@
 """v2.5.3 Build 3 - version identity and audit reconciliation."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import sys
-import zipfile
 import xml.etree.ElementTree as ET
+import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
@@ -17,11 +18,16 @@ def test_addon_xml_version_matches_v253_package_line():
     text = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.5.3 Build 3" in text
     assert "Version 2.5.3 Build 2" in text
-    assert "Version 2.5.2 Build 2 optimized runtime installable package policy remains preserved" in text
+    assert (
+        "Version 2.5.2 Build 2 optimized runtime installable package policy remains preserved"
+        in text
+    )
 
 
 def test_release_audit_requires_v253_and_build3_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -44,7 +50,9 @@ def test_build3_documents_no_runtime_behavior_change():
 
 
 def test_runtime_zip_policy_still_excludes_build3_evidence(tmp_path):
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)

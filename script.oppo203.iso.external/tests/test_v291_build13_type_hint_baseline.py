@@ -1,11 +1,12 @@
 """v2.9.1 Build 16 - type hints and non-blocking mypy baseline tests."""
+
 from __future__ import annotations
 
 import importlib.util
 import inspect
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
@@ -15,7 +16,9 @@ for item in (str(ROOT), str(LIB)):
 
 
 def _load_type_check():
-    spec = importlib.util.spec_from_file_location("type_check_build13", ROOT / "tools" / "type_check.py")
+    spec = importlib.util.spec_from_file_location(
+        "type_check_build13", ROOT / "tools" / "type_check.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -23,7 +26,9 @@ def _load_type_check():
 
 
 def _load_package_tool():
-    spec = importlib.util.spec_from_file_location("package_installable_zip_build13", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip_build13", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -31,7 +36,9 @@ def _load_package_tool():
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build13", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build13", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -43,11 +50,13 @@ def test_type_check_script_is_non_blocking_when_mypy_is_missing_or_reports_findi
         [sys.executable, str(ROOT / "tools" / "type_check.py"), "--root", str(ROOT)],
         check=False,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    assert any(token in result.stdout for token in ("SKIP: mypy is not installed", "OK: mypy", "WARN: mypy"))
+    assert any(
+        token in result.stdout
+        for token in ("SKIP: mypy is not installed", "OK: mypy", "WARN: mypy")
+    )
 
 
 def test_mypy_configuration_exists_and_targets_runtime_helpers():
@@ -75,7 +84,9 @@ def test_selected_public_helpers_have_type_annotations():
     ):
         sig = inspect.signature(func)
         assert sig.return_annotation is not inspect.Signature.empty, func.__name__
-        assert any(param.annotation is not inspect.Parameter.empty for param in sig.parameters.values()), func.__name__
+        assert any(
+            param.annotation is not inspect.Parameter.empty for param in sig.parameters.values()
+        ), func.__name__
 
 
 def test_runtime_packaging_excludes_type_check_dev_files():

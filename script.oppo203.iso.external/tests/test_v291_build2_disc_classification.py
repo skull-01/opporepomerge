@@ -1,23 +1,25 @@
 """v2.9.1 Build 2 - centralized disc classification and shared constants."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import find_project_file, read_project_file
+
 LIB = ROOT / "resources" / "lib"
 STUBS = ROOT / "tests" / "_stubs"
 for path in (str(STUBS), str(ROOT), str(LIB)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-import disc_classification as dc  # noqa: E402
-import intercept  # noqa: E402
-import installer  # noqa: E402
-import playercorefactory_merge as pcf  # noqa: E402
 import constants  # noqa: E402
+import disc_classification as dc  # noqa: E402
+import installer  # noqa: E402
+import intercept  # noqa: E402
+import playercorefactory_merge as pcf  # noqa: E402
 
 
 def _read(name: str) -> str:
@@ -97,7 +99,9 @@ def test_v291_build2_metadata_and_evidence_are_present():
 
 
 def test_v291_build2_release_audit_requires_build2_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -116,7 +120,9 @@ def test_v291_build2_release_audit_requires_build2_evidence():
 
 
 def test_v291_build2_runtime_zip_policy_includes_runtime_helpers_and_excludes_evidence():
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)

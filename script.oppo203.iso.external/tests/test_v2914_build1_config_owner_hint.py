@@ -22,6 +22,7 @@ for _name in ("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs"):
 
 def _import_service():
     import service
+
     return service
 
 
@@ -67,28 +68,46 @@ class TManagedKeysContent(unittest.TestCase):
 
     def test_includes_core_ips_and_hardware_model(self):
         for key in (
-            "oppo_ip", "tv_ip", "avr_host",
-            "oppo_hardware_model", "tv_backend", "avr_backend",
+            "oppo_ip",
+            "tv_ip",
+            "avr_host",
+            "oppo_hardware_model",
+            "tv_backend",
+            "avr_backend",
         ):
             self.assertIn(key, self.s.CONFIGURATOR_MANAGED_KEYS)
 
     def test_includes_command_strings_and_tokens(self):
         for key in (
-            "lg_oppo_command", "samsung_kodi_command", "custom_oppo_command",
-            "roku_oppo_key", "smartthings_token", "sony_psk",
-            "avr_player_input", "oppo_start_commands", "oppo_remote_command_map",
+            "lg_oppo_command",
+            "samsung_kodi_command",
+            "custom_oppo_command",
+            "roku_oppo_key",
+            "smartthings_token",
+            "sony_psk",
+            "avr_player_input",
+            "oppo_start_commands",
+            "oppo_remote_command_map",
         ):
             self.assertIn(key, self.s.CONFIGURATOR_MANAGED_KEYS)
 
     def test_excludes_operator_tunable_knobs(self):
         for key in (
-            "oppo_socket_timeout", "oppo_command_delay",
-            "reconnect_enabled", "reconnect_max_retries",
-            "kodi_startup_power_on", "kodi_startup_power_on_delay",
-            "fast_changeover", "switch_back_on_exit",
-            "fixed_timeout_minutes", "http_poll_interval",
-            "oppo_use_wol", "tv_switching_enabled", "avr_control_enabled",
-            "oppo_jailbreak_enabled", "oppo_verbose_mode",
+            "oppo_socket_timeout",
+            "oppo_command_delay",
+            "reconnect_enabled",
+            "reconnect_max_retries",
+            "kodi_startup_power_on",
+            "kodi_startup_power_on_delay",
+            "fast_changeover",
+            "switch_back_on_exit",
+            "fixed_timeout_minutes",
+            "http_poll_interval",
+            "oppo_use_wol",
+            "tv_switching_enabled",
+            "avr_control_enabled",
+            "oppo_jailbreak_enabled",
+            "oppo_verbose_mode",
         ):
             self.assertNotIn(key, self.s.CONFIGURATOR_MANAGED_KEYS)
 
@@ -115,7 +134,7 @@ class TSnapshotAndDiff(unittest.TestCase):
         self.assertEqual(snap["tv_ip"], "10.0.0.6")
 
     def test_changed_keys_detects_changes(self):
-        baseline = {key: "" for key in self.s.CONFIGURATOR_MANAGED_KEYS}
+        baseline = dict.fromkeys(self.s.CONFIGURATOR_MANAGED_KEYS, "")
         baseline["oppo_ip"] = "10.0.0.5"
         baseline["avr_host"] = "10.0.0.7"
         current = dict(baseline)
@@ -131,7 +150,7 @@ class TSnapshotAndDiff(unittest.TestCase):
         self.assertEqual(changed, [])
 
     def test_changed_keys_ignores_non_managed(self):
-        baseline = {key: "" for key in self.s.CONFIGURATOR_MANAGED_KEYS}
+        baseline = dict.fromkeys(self.s.CONFIGURATOR_MANAGED_KEYS, "")
         current = dict(baseline)
         current["oppo_socket_timeout"] = "5.0"  # operator-tunable
         current["fast_changeover"] = "false"
@@ -198,15 +217,15 @@ class TMonitor(unittest.TestCase):
         fake_addon_mod = _make_xbmcaddon(live)
         window = _FakeWindow()
         fake_gui = _make_xbmcgui_with_window(window)
-        with mock.patch.object(self.s, "xbmcaddon", fake_addon_mod), \
-             mock.patch.object(self.s, "xbmcgui", fake_gui):
+        with (
+            mock.patch.object(self.s, "xbmcaddon", fake_addon_mod),
+            mock.patch.object(self.s, "xbmcgui", fake_gui),
+        ):
             monitor = self.s.Monitor()
             live["oppo_ip"] = "192.168.1.99"
             monitor.onSettingsChanged()
             self.assertEqual(window.getProperty("oppo203_config_hint_shown"), "1")
-            self.assertGreaterEqual(
-                fake_gui.Dialog.return_value.notification.call_count, 2
-            )
+            self.assertGreaterEqual(fake_gui.Dialog.return_value.notification.call_count, 2)
             self.assertEqual(monitor._managed_baseline["oppo_ip"], "192.168.1.99")
 
     def test_on_settings_changed_part_b_only_when_no_managed_change(self):
@@ -214,8 +233,10 @@ class TMonitor(unittest.TestCase):
         fake_addon_mod = _make_xbmcaddon(live)
         window = _FakeWindow()
         fake_gui = _make_xbmcgui_with_window(window)
-        with mock.patch.object(self.s, "xbmcaddon", fake_addon_mod), \
-             mock.patch.object(self.s, "xbmcgui", fake_gui):
+        with (
+            mock.patch.object(self.s, "xbmcaddon", fake_addon_mod),
+            mock.patch.object(self.s, "xbmcgui", fake_gui),
+        ):
             monitor = self.s.Monitor()
             monitor.onSettingsChanged()
             self.assertEqual(fake_gui.Dialog.return_value.notification.call_count, 1)
@@ -226,8 +247,10 @@ class TMonitor(unittest.TestCase):
         fake_addon_mod = _make_xbmcaddon(live)
         window = _FakeWindow()
         fake_gui = _make_xbmcgui_with_window(window)
-        with mock.patch.object(self.s, "xbmcaddon", fake_addon_mod), \
-             mock.patch.object(self.s, "xbmcgui", fake_gui):
+        with (
+            mock.patch.object(self.s, "xbmcaddon", fake_addon_mod),
+            mock.patch.object(self.s, "xbmcgui", fake_gui),
+        ):
             monitor = self.s.Monitor()
             live["oppo_ip"] = "192.168.1.99"
             monitor.onSettingsChanged()
@@ -240,8 +263,10 @@ class TMonitor(unittest.TestCase):
     def test_on_settings_changed_swallows_exceptions(self):
         fake_addon_mod = mock.MagicMock()
         fake_addon_mod.Addon.side_effect = RuntimeError("boom")
-        with mock.patch.object(self.s, "xbmcaddon", fake_addon_mod), \
-             mock.patch.object(self.s, "xbmcgui", None):
+        with (
+            mock.patch.object(self.s, "xbmcaddon", fake_addon_mod),
+            mock.patch.object(self.s, "xbmcgui", None),
+        ):
             monitor = self.s.Monitor()
             monitor.onSettingsChanged()
 
@@ -256,14 +281,12 @@ class TSettingsXmlAndPo(unittest.TestCase):
         connection_block = text[connection_idx:next_category_idx]
         self.assertIn('label="30290"', connection_block)
         self.assertIn('type="lsep"', connection_block)
-        lsep_idx = connection_block.index("type=\"lsep\"")
+        lsep_idx = connection_block.index('type="lsep"')
         first_real_setting_idx = connection_block.index('id="oppo_ip"')
         self.assertLess(lsep_idx, first_real_setting_idx)
 
     def test_po_has_all_new_entries(self):
-        path = os.path.join(
-            ROOT, "resources", "language", "resource.language.en_gb", "strings.po"
-        )
+        path = os.path.join(ROOT, "resources", "language", "resource.language.en_gb", "strings.po")
         with open(path, "r", encoding="utf-8") as fh:
             text = fh.read()
         for ctx in ("#30290", "#30291", "#30292", "#30293"):

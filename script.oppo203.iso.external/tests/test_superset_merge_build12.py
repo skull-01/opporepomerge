@@ -4,16 +4,18 @@ This build is a release-candidate stabilization checkpoint.  It may identify a
 software merge-complete candidate state, but it must not overclaim real hardware
 validation or final release status.
 """
+
 from __future__ import annotations
 
 import importlib.util
 import sys
 import unittest
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import find_project_file, read_project_file
+
 LIB = ROOT / "resources" / "lib"
 for path in (str(ROOT), str(LIB)):
     if path not in sys.path:
@@ -40,7 +42,10 @@ class TestBuild12MergeComplianceReview(unittest.TestCase):
     def test_merge_matrix_marks_software_candidate_but_not_final_release(self):
         text = self.read("MERGE_COMPLIANCE_MATRIX_v2.2.0_RELEASE.md")
         self.assertIn("software_merge_status: complete_no_known_software_gaps", text)
-        self.assertIn("release_status: not_final_pending_real_hardware_validation_and_final_release_packaging", text)
+        self.assertIn(
+            "release_status: not_final_pending_real_hardware_validation_and_final_release_packaging",
+            text,
+        )
         self.assertIn("software merge-complete candidate", text)
         self.assertIn("not a hardware-validated final release", text)
         self.assertIn("Real hardware validation", text)
@@ -68,9 +73,14 @@ class TestBuild12MergeComplianceReview(unittest.TestCase):
             self.assertIn(phrase, text)
 
     def test_build12_docs_record_no_new_external_sources(self):
-        self.assertIn("No new external web sources were used for Release 2.2.0", self.read("web-references.md"))
+        self.assertIn(
+            "No new external web sources were used for Release 2.2.0",
+            self.read("web-references.md"),
+        )
         self.assertIn("Version 2.2.0 Release 2.2.0", self.read("README.md"))
-        self.assertIn("Release 2.2.0 is a final software merge-compliance review", self.read("reference.md"))
+        self.assertIn(
+            "Release 2.2.0 is a final software merge-compliance review", self.read("reference.md")
+        )
 
     def test_build12_audit_requires_evidence(self):
         path = ROOT / "tools" / "audit_release.py"

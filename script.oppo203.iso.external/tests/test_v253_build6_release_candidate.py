@@ -1,13 +1,15 @@
 """v2.5.3 Build 6 - pre-hardware release-candidate freeze."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 LIB = ROOT / "resources" / "lib"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -47,7 +49,9 @@ def test_build6_docs_are_updated_for_release_candidate_freeze():
 
 
 def test_build6_release_audit_requires_build6_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -66,7 +70,9 @@ def test_build6_release_audit_requires_build6_evidence():
 
 
 def test_build6_runtime_zip_excludes_prehardware_and_build_evidence(tmp_path):
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -83,7 +89,9 @@ def test_build6_runtime_zip_excludes_prehardware_and_build_evidence(tmp_path):
     )
     for suffix in forbidden_suffixes:
         assert f"script.oppo203.iso.external/{suffix}" not in names
-    assert "script.oppo203.iso.external/resources/lib/oppo/hardware_validation_readiness.py" in names
+    assert (
+        "script.oppo203.iso.external/resources/lib/oppo/hardware_validation_readiness.py" in names
+    )
     with zipfile.ZipFile(out) as zf:
         addon_text = zf.read("script.oppo203.iso.external/addon.xml").decode("utf-8")
     assert "Build 6" in addon_text

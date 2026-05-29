@@ -1,4 +1,5 @@
 """v2.9.1 Build 16 - diagnostic logging fallback refactor tests."""
+
 from __future__ import annotations
 
 import importlib
@@ -42,7 +43,9 @@ def test_kodi_logging_adapter_preserves_xbmc_log_behavior():
     from resources.lib import diagnostic_logging
 
     fake = FakeXbmc()
-    formatted = diagnostic_logging.log_to_xbmc(fake, "wizard", "adapter path", level=fake.LOGWARNING)
+    formatted = diagnostic_logging.log_to_xbmc(
+        fake, "wizard", "adapter path", level=fake.LOGWARNING
+    )
 
     assert formatted == "[OPPO203][WIZARD] adapter path"
     assert fake.calls == [("[OPPO203][WIZARD] adapter path", fake.LOGWARNING)]
@@ -77,7 +80,9 @@ def test_addon_metadata_and_version_source_identify_build11():
 
 
 def test_release_audit_requires_build11_manifest_and_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release_build11", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build11", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)

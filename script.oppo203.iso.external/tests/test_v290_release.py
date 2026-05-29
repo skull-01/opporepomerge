@@ -1,13 +1,15 @@
 """v2.9.0 release rebuild tests."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import find_project_file, read_project_file
+
 LIB = ROOT / "resources" / "lib"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -51,7 +53,9 @@ def test_v290_docs_are_updated():
 
 
 def test_v290_release_audit_requires_release_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -70,7 +74,9 @@ def test_v290_release_audit_requires_release_evidence():
 
 
 def test_v290_runtime_zip_excludes_release_evidence(tmp_path):
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)

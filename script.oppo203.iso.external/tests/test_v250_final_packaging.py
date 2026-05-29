@@ -1,9 +1,10 @@
 """v2.5.0 Final - final packaging checks."""
+
 from __future__ import annotations
 
+import unittest
 import xml.etree.ElementTree as ET
 from pathlib import Path
-import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file

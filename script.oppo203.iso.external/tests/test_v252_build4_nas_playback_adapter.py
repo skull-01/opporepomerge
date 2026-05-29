@@ -1,9 +1,10 @@
 """v2.5.2 Build 4 - OPPO/Chinoppo NAS playback trigger adapter by family."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import find_project_file
@@ -13,7 +14,10 @@ def test_build4_metadata_and_release_evidence():
     text = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.5.2 Build 4" in text
     assert "OPPO/Chinoppo NAS playback trigger adapter by family" in text
-    assert "Version 2.5.2 Build 2 optimized runtime installable package policy remains preserved" in text
+    assert (
+        "Version 2.5.2 Build 2 optimized runtime installable package policy remains preserved"
+        in text
+    )
 
     for rel in [
         "BUILD_NOTES_v2.5.2_BUILD4.md",
@@ -24,7 +28,9 @@ def test_build4_metadata_and_release_evidence():
     ]:
         assert find_project_file(ROOT, rel).exists(), rel
 
-    spec = importlib.util.spec_from_file_location("audit_release_v252_build4", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_v252_build4", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(audit)
     results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
@@ -40,13 +46,15 @@ def test_oppo20x_plan_uses_stock_wake_and_http_trigger():
     from resources.lib.path_mapper import PathMappingRule
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "udp_203",
-        "oppo_jailbreak_enabled": "true",
-        "oppo_firmware_version": "20X-65-0131",
-        "oppo_ip": "192.168.1.50",
-        "nas_playback_trigger_mode": "http_api",
-    })
+    settings = Settings(
+        {
+            "oppo_hardware_model": "udp_203",
+            "oppo_jailbreak_enabled": "true",
+            "oppo_firmware_version": "20X-65-0131",
+            "oppo_ip": "192.168.1.50",
+            "nas_playback_trigger_mode": "http_api",
+        }
+    )
     rules = [PathMappingRule("smb://truenas/media", "/mnt/nas/media")]
     plan = build_nas_playback_plan(settings, "smb://truenas/media/Movies/Test.iso", rules)
 
@@ -64,12 +72,16 @@ def test_chinoppo_plan_uses_eject_wake_and_preserves_confirmation_warning():
     from resources.lib.path_mapper import PathMappingRule
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "chinoppo_m9702",
-        "nas_playback_confirmed": "false",
-        "oppo_ip": "192.168.1.51",
-    })
-    plan = build_nas_playback_plan(settings, "/kodi/media/Movie.mkv", [PathMappingRule("/kodi/media", "/mnt/nas/media")])
+    settings = Settings(
+        {
+            "oppo_hardware_model": "chinoppo_m9702",
+            "nas_playback_confirmed": "false",
+            "oppo_ip": "192.168.1.51",
+        }
+    )
+    plan = build_nas_playback_plan(
+        settings, "/kodi/media/Movie.mkv", [PathMappingRule("/kodi/media", "/mnt/nas/media")]
+    )
 
     assert plan["ready"] is True
     assert plan["adapter"]["name"] == "ChinoppoNasAdapter"
@@ -97,12 +109,14 @@ def test_trigger_dry_run_does_not_call_clients():
     from resources.lib.path_mapper import PathMappingRule
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "udp_205",
-        "oppo_jailbreak_enabled": "true",
-        "oppo_firmware_version": "20X-65-0131",
-        "oppo_ip": "192.168.1.50",
-    })
+    settings = Settings(
+        {
+            "oppo_hardware_model": "udp_205",
+            "oppo_jailbreak_enabled": "true",
+            "oppo_firmware_version": "20X-65-0131",
+            "oppo_ip": "192.168.1.50",
+        }
+    )
     calls = []
 
     def wake(settings, command):
@@ -131,12 +145,14 @@ def test_trigger_invokes_wake_and_playback_clients_by_family():
     from resources.lib.path_mapper import PathMappingRule
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "chinoppo_m9205c",
-        "nas_playback_confirmed": "true",
-        "oppo_ip": "192.168.1.51",
-        "nas_playback_power_on_before_trigger": "true",
-    })
+    settings = Settings(
+        {
+            "oppo_hardware_model": "chinoppo_m9205c",
+            "nas_playback_confirmed": "true",
+            "oppo_ip": "192.168.1.51",
+            "nas_playback_power_on_before_trigger": "true",
+        }
+    )
     calls = []
 
     def wake(settings, command):
@@ -167,12 +183,14 @@ def test_trigger_blocks_and_strict_raises_for_not_ready():
     from resources.lib.nas_playback_adapter import NasPlaybackNotReady, trigger_nas_playback
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "udp_203",
-        "oppo_jailbreak_enabled": "false",
-        "oppo_firmware_version": "20X-54-1127",
-        "oppo_ip": "192.168.1.50",
-    })
+    settings = Settings(
+        {
+            "oppo_hardware_model": "udp_203",
+            "oppo_jailbreak_enabled": "false",
+            "oppo_firmware_version": "20X-54-1127",
+            "oppo_ip": "192.168.1.50",
+        }
+    )
     result = trigger_nas_playback(settings, "smb://truenas/media/Test.iso", [])
     assert result["success"] is False
     assert result["action"] == "blocked"
@@ -187,14 +205,20 @@ def test_unsupported_trigger_mode_and_missing_oppo_ip_are_blockers():
     from resources.lib.path_mapper import PathMappingRule
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "udp_203",
-        "oppo_jailbreak_enabled": "true",
-        "oppo_firmware_version": "20X-65-0131",
-        "oppo_ip": "",
-        "nas_playback_trigger_mode": "telnet_future",
-    })
-    plan = build_nas_playback_plan(settings, "smb://truenas/media/Test.iso", [PathMappingRule("smb://truenas/media", "/mnt/nas/media")])
+    settings = Settings(
+        {
+            "oppo_hardware_model": "udp_203",
+            "oppo_jailbreak_enabled": "true",
+            "oppo_firmware_version": "20X-65-0131",
+            "oppo_ip": "",
+            "nas_playback_trigger_mode": "telnet_future",
+        }
+    )
+    plan = build_nas_playback_plan(
+        settings,
+        "smb://truenas/media/Test.iso",
+        [PathMappingRule("smb://truenas/media", "/mnt/nas/media")],
+    )
     assert plan["ready"] is False
     assert "unsupported_nas_playback_trigger_mode" in plan["blockers"]
     assert "oppo_ip_required" in plan["blockers"]
@@ -204,13 +228,15 @@ def test_settings_rules_are_used_when_explicit_rules_are_omitted():
     from resources.lib.nas_playback_adapter import build_nas_playback_plan
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "chinoppo_m9702",
-        "nas_playback_confirmed": "true",
-        "oppo_ip": "192.168.1.51",
-        "nas_kodi_path_prefix": "smb://truenas/media",
-        "nas_player_path_prefix": "/mnt/nas/media",
-    })
+    settings = Settings(
+        {
+            "oppo_hardware_model": "chinoppo_m9702",
+            "nas_playback_confirmed": "true",
+            "oppo_ip": "192.168.1.51",
+            "nas_kodi_path_prefix": "smb://truenas/media",
+            "nas_player_path_prefix": "/mnt/nas/media",
+        }
+    )
     plan = build_nas_playback_plan(settings, "smb://truenas/media/Concerts/Show.mkv")
     assert plan["ready"] is True
     assert plan["player_path"] == "/mnt/nas/media/Concerts/Show.mkv"
@@ -218,7 +244,9 @@ def test_settings_rules_are_used_when_explicit_rules_are_omitted():
 
 
 def test_runtime_zip_includes_adapter_but_excludes_build4_evidence(tmp_path):
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     packager = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(packager)
     output = tmp_path / "runtime.zip"
@@ -254,9 +282,10 @@ def test_adapter_private_getters_cover_non_settings_inputs():
 
 
 def test_default_wake_and_playback_clients_use_existing_oppo_control(monkeypatch):
+    from resources.lib.settings_reader import Settings
+
     from resources.lib import nas_playback_adapter as adapter
     from resources.lib import oppo_control
-    from resources.lib.settings_reader import Settings
 
     calls = []
 
@@ -281,7 +310,14 @@ def test_default_wake_and_playback_clients_use_existing_oppo_control(monkeypatch
     monkeypatch.setattr(oppo_control, "signin_http_api", fake_signin)
     monkeypatch.setattr(oppo_control, "play_media_http_api", fake_play)
 
-    settings = Settings({"oppo_ip": "1.2.3.4", "oppo_port": "24", "oppo_socket_timeout": "4", "oppo_command_delay": "0"})
+    settings = Settings(
+        {
+            "oppo_ip": "1.2.3.4",
+            "oppo_port": "24",
+            "oppo_socket_timeout": "4",
+            "oppo_command_delay": "0",
+        }
+    )
     assert adapter._default_wake_client(settings, "#PON") == ["ok"]
     assert adapter._default_playback_client(settings, "/mnt/nas/media/Movie.iso") == "played"
     assert calls == [
@@ -297,13 +333,15 @@ def test_trigger_can_skip_power_on_before_playback():
     from resources.lib.path_mapper import PathMappingRule
     from resources.lib.settings_reader import Settings
 
-    settings = Settings({
-        "oppo_hardware_model": "udp_203",
-        "oppo_jailbreak_enabled": "true",
-        "oppo_firmware_version": "20X-65-0131",
-        "oppo_ip": "192.168.1.50",
-        "nas_playback_power_on_before_trigger": "false",
-    })
+    settings = Settings(
+        {
+            "oppo_hardware_model": "udp_203",
+            "oppo_jailbreak_enabled": "true",
+            "oppo_firmware_version": "20X-65-0131",
+            "oppo_ip": "192.168.1.50",
+            "nas_playback_power_on_before_trigger": "false",
+        }
+    )
     calls = []
     result = trigger_nas_playback(
         settings,
@@ -326,4 +364,3 @@ def test_build4_covers_path_mapper_edges_used_by_adapter():
         rules_from_settings({"nas_kodi_path_prefix": "smb://truenas/media"})
     except Exception as exc:
         assert "player_prefix is required" in str(exc)
-

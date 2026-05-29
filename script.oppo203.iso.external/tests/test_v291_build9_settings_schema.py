@@ -1,4 +1,5 @@
 """v2.9.1 Build 16 settings schema and typed validation regression tests."""
+
 from __future__ import annotations
 
 from resources.lib import settings_reader as sr
@@ -27,13 +28,15 @@ def test_settings_schema_is_exposed_and_covers_core_runtime_fields():
 
 
 def test_schema_reports_invalid_numbers_enums_and_bools_without_throwing():
-    settings = sr.Settings({
-        "oppo_port": "99999",
-        "oppo_socket_timeout": "not-a-float",
-        "kodi_startup_power_on": "maybe",
-        "oppo_start_mode": "bad-mode",
-        "playback_architecture": "bad-arch",
-    })
+    settings = sr.Settings(
+        {
+            "oppo_port": "99999",
+            "oppo_socket_timeout": "not-a-float",
+            "kodi_startup_power_on": "maybe",
+            "oppo_start_mode": "bad-mode",
+            "playback_architecture": "bad-arch",
+        }
+    )
     issues = settings.schema_issues()
     by_key = {(issue.key, issue.code) for issue in issues}
     assert ("oppo_port", "above_maximum") in by_key
@@ -44,13 +47,15 @@ def test_schema_reports_invalid_numbers_enums_and_bools_without_throwing():
 
 
 def test_schema_coerce_matches_existing_safe_getter_fallbacks():
-    settings = sr.Settings({
-        "oppo_port": "70000",
-        "oppo_socket_timeout": "bad",
-        "kodi_startup_power_on": "true",
-        "kodi_startup_power_on_retries": "999",
-        "oppo_command_delay": BadStr(),
-    })
+    settings = sr.Settings(
+        {
+            "oppo_port": "70000",
+            "oppo_socket_timeout": "bad",
+            "kodi_startup_power_on": "true",
+            "kodi_startup_power_on_retries": "999",
+            "oppo_command_delay": BadStr(),
+        }
+    )
     typed = settings.typed_values()
     assert typed["oppo_port"] == 65535
     assert typed["oppo_socket_timeout"] == 3.0
@@ -58,15 +63,20 @@ def test_schema_coerce_matches_existing_safe_getter_fallbacks():
     assert typed["kodi_startup_power_on_retries"] == 20
     assert typed["oppo_command_delay"] == 0.1
     assert settings.get_int("oppo_port", 23, minimum=1, maximum=65535) == typed["oppo_port"]
-    assert settings.get_float("oppo_socket_timeout", 3.0, minimum=0.1, maximum=120.0) == typed["oppo_socket_timeout"]
+    assert (
+        settings.get_float("oppo_socket_timeout", 3.0, minimum=0.1, maximum=120.0)
+        == typed["oppo_socket_timeout"]
+    )
 
 
 def test_validation_summary_includes_schema_issue_metadata_but_preserves_legacy_keys():
-    settings = sr.Settings({
-        "oppo_port": "not-int",
-        "oppo_start_mode": "bad-mode",
-        "playback_architecture": "bad-arch",
-    })
+    settings = sr.Settings(
+        {
+            "oppo_port": "not-int",
+            "oppo_start_mode": "bad-mode",
+            "playback_architecture": "bad-arch",
+        }
+    )
     summary = settings.validation_summary()
     assert summary["ok"] is False
     assert "missing" in summary

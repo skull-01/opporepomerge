@@ -1,10 +1,11 @@
 """v2.9.1 Build 8 settings exception narrowing regression tests."""
+
 from __future__ import annotations
 
 import inspect
-from pathlib import Path
 import tempfile
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 
@@ -32,7 +33,7 @@ def test_low_risk_settings_parsers_no_longer_catch_broad_exception():
     for method_name in ("get_int", "get_float"):
         start = cls_source.index(f"    def {method_name}")
         following = cls_source.find("\n    def ", start + 1)
-        method_source = cls_source[start: following if following != -1 else len(cls_source)]
+        method_source = cls_source[start : following if following != -1 else len(cls_source)]
         assert "except Exception" not in method_source
 
 

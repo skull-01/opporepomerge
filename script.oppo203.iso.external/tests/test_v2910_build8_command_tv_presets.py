@@ -1,10 +1,11 @@
 """v2.9.10 Build 16 - command/custom TV preset polish."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 LIB = ROOT / "resources" / "lib"
 for path in (ROOT, LIB):
     if str(path) not in sys.path:
@@ -16,8 +17,8 @@ from tv_backends import (  # noqa: E402
     TV_BACKEND_LG_COMMAND,
     TV_BACKEND_SAMSUNG_COMMAND,
 )
-from resources.lib import version  # noqa: E402
 
+from resources.lib import version  # noqa: E402
 
 REQUIRED_COMMAND_PRESETS = {
     "lg_webos_command": TV_BACKEND_LG_COMMAND,
@@ -59,7 +60,9 @@ def test_command_presets_are_backend_filterable():
     assert "lg_webos_command" in tv_presets.presets_for_backend(TV_BACKEND_LG_COMMAND)
     assert "samsung_command" in tv_presets.presets_for_backend(TV_BACKEND_SAMSUNG_COMMAND)
     custom_ids = set(tv_presets.presets_for_backend(TV_BACKEND_CUSTOM_COMMAND))
-    assert {"panasonic_custom_command", "vizio_custom_command", "generic_custom_command"}.issubset(custom_ids)
+    assert {"panasonic_custom_command", "vizio_custom_command", "generic_custom_command"}.issubset(
+        custom_ids
+    )
 
 
 def test_preset_registry_validates_command_tv_polish_without_warnings():
@@ -77,7 +80,11 @@ def test_build8_metadata_and_documentation_identity():
     for rel in ("addon.xml", "README.md", "reference.md", "web-references.md"):
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 11" in text
-        assert "Command TV preset polish" in text or "command TV preset polish" in text or "command/custom TV preset" in text
+        assert (
+            "Command TV preset polish" in text
+            or "command TV preset polish" in text
+            or "command/custom TV preset" in text
+        )
 
 
 def test_build8_preserves_prior_tv_preset_layers():

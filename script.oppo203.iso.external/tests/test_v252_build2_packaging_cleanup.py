@@ -1,17 +1,20 @@
 """v2.5.2 Build 2 - runtime ZIP cleanup and evidence handoff policy."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
-import zipfile
 import xml.etree.ElementTree as ET
+import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import find_project_file
 
 
 def _package_tool():
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -118,7 +121,9 @@ def test_build2_evidence_is_preserved_in_source_and_audit_not_installable_zip(tm
     ]:
         assert find_project_file(ROOT, rel).exists(), rel
 
-    spec = importlib.util.spec_from_file_location("audit_release_v252_build2", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_v252_build2", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(audit)
     results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")

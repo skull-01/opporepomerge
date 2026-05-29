@@ -1,19 +1,23 @@
 """v2.9.1 Build 16 - docs metadata/rendering pipeline tests."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
 def _load_render_docs():
-    spec = importlib.util.spec_from_file_location("render_docs_build13", ROOT / "tools" / "render_docs.py")
+    spec = importlib.util.spec_from_file_location(
+        "render_docs_build13", ROOT / "tools" / "render_docs.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -21,7 +25,9 @@ def _load_render_docs():
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build13", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build13", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -57,8 +63,7 @@ def test_render_docs_cli_check_passes_without_rewriting():
         [sys.executable, str(ROOT / "tools" / "render_docs.py"), "--root", str(ROOT), "--check"],
         check=False,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "OK: README.md: generated metadata block is current" in result.stdout
@@ -80,7 +85,9 @@ def test_release_audit_requires_build13_manifest_docs_metadata_and_evidence():
 
 
 def test_runtime_zip_policy_excludes_docs_and_render_tool():
-    spec = importlib.util.spec_from_file_location("package_installable_zip_build13", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip_build13", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)

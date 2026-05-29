@@ -1,4 +1,5 @@
 """v2.9.10 Build 16 - Denon/Marantz AVR driver."""
+
 from __future__ import annotations
 
 import socket
@@ -53,19 +54,23 @@ def test_build12_denon_command_builders_are_safe_and_expected():
 def test_build12_factory_returns_denon_controller_only_when_enabled_and_complete():
     disabled = settings_reader.Settings({})
     assert avr_control.controller_factory(disabled) is None
-    incomplete = settings_reader.Settings({"avr_control_enabled": "true", "avr_backend": "denon_marantz"})
+    incomplete = settings_reader.Settings(
+        {"avr_control_enabled": "true", "avr_backend": "denon_marantz"}
+    )
     assert avr_control.controller_factory(incomplete) is None
     validation = avr_control.validate_avr_settings(incomplete).as_dict()
     assert validation["ok"] is False
     assert validation["driver_available"] is True
     assert validation["missing"] == ("avr_host", "avr_player_input")
 
-    complete = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "denon_marantz",
-        "avr_host": "192.168.1.80",
-        "avr_player_input": "BD",
-    })
+    complete = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "denon_marantz",
+            "avr_host": "192.168.1.80",
+            "avr_player_input": "BD",
+        }
+    )
     controller = avr_control.controller_factory(complete)
     assert isinstance(controller, avr_denon_marantz.DenonMarantzAvrController)
     validation = avr_control.validate_avr_settings(complete).as_dict()
@@ -148,19 +153,27 @@ def test_build12_denon_driver_metadata_does_not_enable_avr_by_default_or_hook_pl
     assert preset["input_select_prefix"] == "SI"
     summary = avr_presets.avr_support_summary()
     assert summary["driver_execution_added"] is True
-    assert summary["driver_execution_families"] == ("denon_marantz", "yamaha_yxc", "onkyo_eiscp", "pioneer_eiscp", "sony_audio_api")
+    assert summary["driver_execution_families"] == (
+        "denon_marantz",
+        "yamaha_yxc",
+        "onkyo_eiscp",
+        "pioneer_eiscp",
+        "sony_audio_api",
+    )
     assert summary["playback_sequencing_hooked"] is True
     assert summary["hardware_validation_claimed"] is False
 
 
 def test_build12_non_denon_families_remain_metadata_only():
     for backend in ("sony_audio_api",):
-        settings = settings_reader.Settings({
-            "avr_control_enabled": "true",
-            "avr_backend": backend,
-            "avr_host": "192.168.1.83",
-            "avr_player_input": "BD",
-        })
+        settings = settings_reader.Settings(
+            {
+                "avr_control_enabled": "true",
+                "avr_backend": backend,
+                "avr_host": "192.168.1.83",
+                "avr_player_input": "BD",
+            }
+        )
         validation = avr_control.validate_avr_settings(settings).as_dict()
         assert validation["ok"] is False
         assert validation["driver_available"] is True
@@ -179,8 +192,13 @@ def test_build12_metadata_and_documentation_identity():
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 12" in text
         assert "Denon / Marantz AVR driver" in text
-    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD12.md").exists() or (ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD12.md").exists()
-    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD12.md").exists() or (ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD12.md").exists()
+    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD12.md").exists() or (
+        ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD12.md"
+    ).exists()
+    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD12.md").exists() or (
+        ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD12.md"
+    ).exists()
+
 
 class CloseRaisesSocket(FakeSocket):
     def close(self) -> None:
@@ -229,6 +247,7 @@ def test_build12_denon_missing_host_invalid_command_and_driver_error_are_nonfata
     class BrokenSocket:
         def sendall(self, data):
             raise RuntimeError("boom")
+
         def close(self):
             pass
 

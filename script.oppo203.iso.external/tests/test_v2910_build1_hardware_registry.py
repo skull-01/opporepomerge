@@ -1,8 +1,9 @@
 """v2.9.10 Build 3 - unified hardware registry foundation."""
-from pathlib import Path
+
 import importlib.util
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -45,9 +46,16 @@ def test_build1_does_not_mutate_existing_oppo_command_map_or_settings_count():
     settings_reader = _load("settings_reader_build1", "resources/lib/kodi/settings_reader.py")
     loaded = command_map.load_default_command_map()
     assert len(loaded) == 76
-    assert not any(token in value for value in loaded.values() for token in ("#SIS", "#PGU", "#PGD"))
+    assert not any(
+        token in value for value in loaded.values() for token in ("#SIS", "#PGU", "#PGD")
+    )
     settings_xml = (ROOT / "resources/settings.xml").read_text(encoding="utf-8")
-    enum_values = settings_xml.split('id="oppo_hardware_model"', 1)[1].split('values="', 1)[1].split('"', 1)[0].split("|")
+    enum_values = (
+        settings_xml.split('id="oppo_hardware_model"', 1)[1]
+        .split('values="', 1)[1]
+        .split('"', 1)[0]
+        .split("|")
+    )
     assert len(enum_values) == len(settings_reader.HARDWARE_COMPAT)
 
 
@@ -96,7 +104,9 @@ def test_runtime_zip_excludes_build1_development_evidence(tmp_path):
 
 def test_build1_registry_helpers_cover_default_and_unknown_paths():
     profiles = _load("hardware_profiles_build1_extra", "resources/lib/oppo/hardware_profiles.py")
-    caps = _load("hardware_capabilities_build1_extra", "resources/lib/oppo/hardware_capabilities.py")
+    caps = _load(
+        "hardware_capabilities_build1_extra", "resources/lib/oppo/hardware_capabilities.py"
+    )
     all_profiles = profiles.list_profiles()
     assert "UDP-203" in all_profiles
     assert profiles.get_profile("missing", {"role": "unknown"}) == {"role": "unknown"}
@@ -132,14 +142,18 @@ def test_build1_covers_settings_schema_boundary_validation():
     assert schema_mod.parse_bool("", default=True) is True
     assert schema_mod.parse_float("-1", minimum=0.5) == 0.5
     assert schema_mod.parse_float("99", maximum=5.0) == 5.0
-    schema = schema_mod.SettingsSchema([
-        schema_mod.SettingSpec("i_low", "int", "0", minimum=1, maximum=10),
-        schema_mod.SettingSpec("i_high", "int", "0", minimum=1, maximum=10),
-        schema_mod.SettingSpec("f_low", "float", "0", minimum=1.5, maximum=5.5),
-        schema_mod.SettingSpec("f_high", "float", "0", minimum=1.5, maximum=5.5),
-        schema_mod.SettingSpec("b_bad", "bool", "false"),
-    ])
-    issues = schema.validate({"i_low": "0", "i_high": "11", "f_low": "1.0", "f_high": "6.0", "b_bad": "maybe"})
+    schema = schema_mod.SettingsSchema(
+        [
+            schema_mod.SettingSpec("i_low", "int", "0", minimum=1, maximum=10),
+            schema_mod.SettingSpec("i_high", "int", "0", minimum=1, maximum=10),
+            schema_mod.SettingSpec("f_low", "float", "0", minimum=1.5, maximum=5.5),
+            schema_mod.SettingSpec("f_high", "float", "0", minimum=1.5, maximum=5.5),
+            schema_mod.SettingSpec("b_bad", "bool", "false"),
+        ]
+    )
+    issues = schema.validate(
+        {"i_low": "0", "i_high": "11", "f_low": "1.0", "f_high": "6.0", "b_bad": "maybe"}
+    )
     codes = {(item.key, item.code) for item in issues}
     assert ("i_low", "below_minimum") in codes
     assert ("i_high", "above_maximum") in codes
@@ -163,12 +177,15 @@ def test_build1_covers_diagnostic_logging_stream_refresh(capsys):
 def test_build1_covers_preset_manager_unparseable_versions():
     mod = _load("preset_manager_build1_extra", "resources/lib/kodi/preset_manager.py")
     assert mod.compare_versions("not-a-version", "1.0") is None
+
     class BadMatch:
         def group(self, index):
             return "1.bad"
+
     class BadRegex:
         def match(self, value):
             return BadMatch()
+
     old = mod._VERSION_RE
     mod._VERSION_RE = BadRegex()
     try:

@@ -3,7 +3,10 @@
 Adds resources/lib and tools to sys.path so test modules can import
 addon code by short name (e.g. `import discovery`).
 """
-import os, sys
+
+import os
+import sys
+
 _ROOT = os.path.dirname(os.path.abspath(__file__))
 for sub in ("resources/lib", "tools", "tests"):
     p = os.path.join(_ROOT, sub)

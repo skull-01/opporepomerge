@@ -1,9 +1,10 @@
 """v2.9.1 Build 4 - dynamic audit evidence manifest discovery."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -13,7 +14,9 @@ if str(ROOT) not in sys.path:
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build4", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build4", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -71,7 +74,9 @@ def test_manifest_reader_rejects_unsafe_entries(tmp_path):
 
 
 def test_runtime_zip_policy_excludes_evidence_manifests():
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)

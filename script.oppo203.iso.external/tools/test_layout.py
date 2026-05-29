@@ -5,12 +5,13 @@ Build 14 intentionally avoids a risky mass move of historical tests.  Instead,
 it defines the forward-looking version/build directory shape and a marker policy
 while accepting the inherited flat ``tests/test_*.py`` layout during transition.
 """
+
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import re
-from typing import Iterable
+from collections.abc import Iterable
+from pathlib import Path
 
 FUTURE_TEST_RE = re.compile(r"^tests/v\d+_\d+_\d+/build\d+/test_[^/]+\.py$")
 LEGACY_FLAT_RE = re.compile(r"^tests/test_[^/]+\.py$")
@@ -121,7 +122,9 @@ def check_layout(root: Path) -> tuple[bool, list[str]]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Check transitional test-layout policy")
     parser.add_argument("--root", default=".")
-    parser.add_argument("--check", action="store_true", help="check layout policy; default behavior")
+    parser.add_argument(
+        "--check", action="store_true", help="check layout policy; default behavior"
+    )
     args = parser.parse_args(argv)
     root = project_root(Path(args.root))
     ok, messages = check_layout(root)

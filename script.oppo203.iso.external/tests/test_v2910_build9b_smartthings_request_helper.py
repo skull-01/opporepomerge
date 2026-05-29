@@ -1,18 +1,19 @@
 """v2.9.10 Build 16 - SmartThings experimental settings skeleton."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 LIB = ROOT / "resources" / "lib"
 for path in (ROOT, LIB):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
 import smartthings_control  # noqa: E402
-import tv_presets  # noqa: E402
 import tv_control  # noqa: E402
+import tv_presets  # noqa: E402
 from tv_backends import (  # noqa: E402
     TV_BACKEND_SMARTTHINGS,
     backend_target_setting,
@@ -21,8 +22,8 @@ from tv_backends import (  # noqa: E402
     list_backends,
     normalize_backend_id,
 )
-from resources.lib import settings_reader, version  # noqa: E402
 
+from resources.lib import settings_reader, version  # noqa: E402
 
 REQUIRED_SMARTTHINGS_PRESETS = {
     "samsung_smartthings_experimental",
@@ -91,11 +92,13 @@ def test_smartthings_token_redaction_and_validation_metadata_never_expose_token(
     assert sanitized["smartthings_token"] == "abcd...90"
     assert token not in str(sanitized)
 
-    metadata = smartthings_control.validation_metadata({
-        "smartthings_experimental_acknowledged": "true",
-        "smartthings_token": token,
-        "smartthings_device_id": "device-1",
-    })
+    metadata = smartthings_control.validation_metadata(
+        {
+            "smartthings_experimental_acknowledged": "true",
+            "smartthings_token": token,
+            "smartthings_device_id": "device-1",
+        }
+    )
     assert metadata["acknowledged"] is True
     assert metadata["live_api_calls_enabled"] is True
     assert metadata["token_redacted"] == "abcd...90"
@@ -115,39 +118,49 @@ def test_smartthings_validation_requires_ack_token_and_device_without_network_io
     }
 
 
-
 class FakeResponse:
     def __init__(self, status=200, body='{"ok":true}'):
         self.status = status
         self._body = body.encode("utf-8")
+
     def __enter__(self):
         return self
+
     def __exit__(self, exc_type, exc, tb):
         return False
+
     def read(self):
         return self._body
 
 
 def _ack_settings():
     settings = dict(settings_reader.DEFAULTS)
-    settings.update({
-        "tv_backend": "smartthings",
-        "smartthings_experimental_acknowledged": "true",
-        "smartthings_token": "abcdef1234567890",
-        "smartthings_device_id": "device/with spaces",
-        "smartthings_oppo_input_id": "HDMI1",
-        "smartthings_kodi_input_id": "HDMI2",
-        "smartthings_api_base_url": "https://example.invalid/v1",
-    })
+    settings.update(
+        {
+            "tv_backend": "smartthings",
+            "smartthings_experimental_acknowledged": "true",
+            "smartthings_token": "abcdef1234567890",
+            "smartthings_device_id": "device/with spaces",
+            "smartthings_oppo_input_id": "HDMI1",
+            "smartthings_kodi_input_id": "HDMI2",
+            "smartthings_api_base_url": "https://example.invalid/v1",
+        }
+    )
     return settings
 
 
 def test_smartthings_request_helper_requires_ack_before_network_call():
     calls = []
+
     def opener(*args, **kwargs):
         calls.append(args)
         return FakeResponse()
-    result = smartthings_control.switch_input({"smartthings_token": "abcdef1234567890", "smartthings_device_id": "device-1"}, "HDMI1", opener=opener)
+
+    result = smartthings_control.switch_input(
+        {"smartthings_token": "abcdef1234567890", "smartthings_device_id": "device-1"},
+        "HDMI1",
+        opener=opener,
+    )
     assert result["ok"] is False
     assert result["nonfatal"] is True
     assert result["network_called"] is False
@@ -158,6 +171,7 @@ def test_smartthings_request_helper_requires_ack_before_network_call():
 
 def test_smartthings_request_helper_posts_sanitized_fake_api_request():
     captured = {}
+
     def opener(request, timeout=0):
         captured["url"] = request.full_url
         captured["method"] = request.get_method()
@@ -165,6 +179,7 @@ def test_smartthings_request_helper_posts_sanitized_fake_api_request():
         captured["authorization"] = request.headers.get("Authorization")
         captured["timeout"] = timeout
         return FakeResponse(200, '{"status":"ACCEPTED"}')
+
     settings = _ack_settings()
     result = smartthings_control.switch_input(settings, "HDMI1", opener=opener, timeout=3)
     assert result["ok"] is True
@@ -183,8 +198,12 @@ def test_smartthings_request_helper_posts_sanitized_fake_api_request():
 
 def test_smartthings_request_helper_handles_401_403_without_leaking_token():
     import urllib.error
+
     def opener(request, timeout=0):
-        raise urllib.error.HTTPError(request.full_url, 403, "Forbidden abcdef1234567890", hdrs=None, fp=None)
+        raise urllib.error.HTTPError(
+            request.full_url, 403, "Forbidden abcdef1234567890", hdrs=None, fp=None
+        )
+
     settings = _ack_settings()
     result = smartthings_control.switch_input(settings, "HDMI1", opener=opener)
     assert result["ok"] is False
@@ -207,6 +226,7 @@ def test_tv_control_uses_guarded_smartthings_helper_nonfatally_without_ack():
     assert result["hardware_validation_claimed"] is False
     assert "abcdef1234567890" not in str(result)
 
+
 def test_build10_metadata_and_documentation_identity():
     assert version.BUILD_ID == "v2.9.13 Final"
     assert version.BUILD_NUMBER == 22
@@ -223,34 +243,55 @@ def test_smartthings_helper_validation_failure_paths_are_nonfatal_and_sanitized(
     assert smartthings_control.redact_secret_in_text(None, None) == ""
     assert smartthings_control.sanitized_settings({"other": "ok"}) == {"other": "ok"}
 
-    missing_token = smartthings_control.switch_input({**acknowledged, "smartthings_device_id": "device-1"}, "HDMI1")
+    missing_token = smartthings_control.switch_input(
+        {**acknowledged, "smartthings_device_id": "device-1"}, "HDMI1"
+    )
     assert missing_token["error_code"] == "smartthings_token_missing"
     assert missing_token["network_called"] is False
 
-    missing_device = smartthings_control.switch_input({**acknowledged, "smartthings_token": "abcdef1234567890"}, "HDMI1")
+    missing_device = smartthings_control.switch_input(
+        {**acknowledged, "smartthings_token": "abcdef1234567890"}, "HDMI1"
+    )
     assert missing_device["error_code"] == "smartthings_device_id_missing"
     assert "abcdef1234567890" not in str(missing_device)
 
-    missing_input = smartthings_control.switch_input({**acknowledged, "smartthings_token": "abcdef1234567890", "smartthings_device_id": "device-1"}, "")
+    missing_input = smartthings_control.switch_input(
+        {
+            **acknowledged,
+            "smartthings_token": "abcdef1234567890",
+            "smartthings_device_id": "device-1",
+        },
+        "",
+    )
     assert missing_input["error_code"] == "smartthings_input_id_missing"
     assert "abcdef1234567890" not in str(missing_input)
 
 
 def test_smartthings_request_helper_handles_non_auth_http_network_and_target_paths():
     import urllib.error
+
     settings = _ack_settings()
 
-    result_202 = smartthings_control.switch_target(settings, "kodi", opener=lambda request, timeout=0: FakeResponse(202, '{"status":"queued"}'))
+    result_202 = smartthings_control.switch_target(
+        settings, "kodi", opener=lambda request, timeout=0: FakeResponse(202, '{"status":"queued"}')
+    )
     assert result_202["ok"] is True
     assert result_202["status_code"] == 202
 
-    result_500 = smartthings_control.switch_input(settings, "HDMI1", opener=lambda request, timeout=0: FakeResponse(500, "server error abcdef1234567890"))
+    result_500 = smartthings_control.switch_input(
+        settings,
+        "HDMI1",
+        opener=lambda request, timeout=0: FakeResponse(500, "server error abcdef1234567890"),
+    )
     assert result_500["ok"] is False
     assert result_500["error_code"] == "smartthings_http_error"
     assert "abcdef1234567890" not in str(result_500)
 
     def http_500(request, timeout=0):
-        raise urllib.error.HTTPError(request.full_url, 500, "Server abcdef1234567890", hdrs=None, fp=None)
+        raise urllib.error.HTTPError(
+            request.full_url, 500, "Server abcdef1234567890", hdrs=None, fp=None
+        )
+
     result_http_error = smartthings_control.switch_input(settings, "HDMI1", opener=http_500)
     assert result_http_error["error_code"] == "smartthings_http_error"
     assert result_http_error["status_code"] == 500
@@ -258,6 +299,7 @@ def test_smartthings_request_helper_handles_non_auth_http_network_and_target_pat
 
     def url_error(request, timeout=0):
         raise urllib.error.URLError("network abcdef1234567890")
+
     result_url_error = smartthings_control.switch_input(settings, "HDMI1", opener=url_error)
     assert result_url_error["error_code"] == "smartthings_network_error"
     assert "abcdef1234567890" not in str(result_url_error)
@@ -276,14 +318,16 @@ def test_tv_control_smartthings_acknowledged_path_still_returns_nonfatal_result_
 def test_smartthings_and_command_registry_warning_branches_are_covered():
     original = tv_presets.TV_PRESETS["samsung_smartthings_experimental"]
     mutated = dict(original)
-    mutated.update({
-        "backend": "adb",
-        "experimental": False,
-        "requires_explicit_acknowledgement": False,
-        "live_api_calls_enabled": False,
-        "request_helper_available": False,
-        "token_redaction_required": False,
-    })
+    mutated.update(
+        {
+            "backend": "adb",
+            "experimental": False,
+            "requires_explicit_acknowledgement": False,
+            "live_api_calls_enabled": False,
+            "request_helper_available": False,
+            "token_redaction_required": False,
+        }
+    )
     tv_presets.TV_PRESETS["samsung_smartthings_experimental"] = mutated
     try:
         warnings = tv_presets.validate_preset_registry()
@@ -298,12 +342,14 @@ def test_smartthings_and_command_registry_warning_branches_are_covered():
 
     original_command = tv_presets.TV_PRESETS["generic_custom_command"]
     mutated_command = dict(original_command)
-    mutated_command.update({
-        "backend": "adb",
-        "command_template_editable": False,
-        "missing_command_validation_warning": False,
-        "native_protocol_added": True,
-    })
+    mutated_command.update(
+        {
+            "backend": "adb",
+            "command_template_editable": False,
+            "missing_command_validation_warning": False,
+            "native_protocol_added": True,
+        }
+    )
     tv_presets.TV_PRESETS["generic_custom_command"] = mutated_command
     try:
         warnings = tv_presets.validate_preset_registry()

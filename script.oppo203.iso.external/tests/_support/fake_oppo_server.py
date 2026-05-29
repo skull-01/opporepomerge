@@ -82,8 +82,8 @@ class FakeOppoServer:
                         positions = [p for p in (buf.find(b"\r"), buf.find(b"\n")) if p >= 0]
                         idx = min(positions)
                         raw = buf[:idx]
-                        sep_len = 2 if buf[idx:idx+2] == b"\r\n" else 1
-                        buf = buf[idx + sep_len:]
+                        sep_len = 2 if buf[idx : idx + 2] == b"\r\n" else 1
+                        buf = buf[idx + sep_len :]
                         command = raw.decode("ascii", errors="replace").strip()
                         if not command:
                             continue

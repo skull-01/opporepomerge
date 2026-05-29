@@ -1,11 +1,12 @@
 """v2.5.3 Build 4 - playercorefactory merge/backup/rollback hardening."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import sys
 import xml.etree.ElementTree as ET
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
@@ -68,17 +69,24 @@ def test_build4_merge_is_idempotent_for_player_and_all_option4_rules():
     rules = root.find("rules").findall("rule")
     assert [p.get("name") for p in players].count("OPPO_External_chinoppo") == 1
     names = [r.get("name") for r in rules if r.get("player") == "OPPO_External_chinoppo"]
-    assert sorted(names) == sorted([
-        "OPPO_External_chinoppo_rule_iso",
-        "OPPO_External_chinoppo_rule_bdmv",
-        "OPPO_External_chinoppo_rule_mpls",
-    ])
+    assert sorted(names) == sorted(
+        [
+            "OPPO_External_chinoppo_rule_iso",
+            "OPPO_External_chinoppo_rule_bdmv",
+            "OPPO_External_chinoppo_rule_mpls",
+        ]
+    )
 
 
 def test_build4_merge_backs_up_existing_before_write():
     existing = "<playercorefactory><players/><rules action='prepend'/></playercorefactory>"
     fs = FakeFS({"/u/playercorefactory.xml": existing})
-    out = pcf.merge("/u/playercorefactory.xml", pcf.snippet_for("oppo203", player_path="/x"), fs=fs, now=lambda: 0)
+    out = pcf.merge(
+        "/u/playercorefactory.xml",
+        pcf.snippet_for("oppo203", player_path="/x"),
+        fs=fs,
+        now=lambda: 0,
+    )
     assert out["backup"].endswith(".bak")
     assert fs._store[out["backup"]] == existing
     assert out["post_write_validated"] is True
@@ -89,7 +97,12 @@ def test_build4_merge_rolls_back_if_write_fails_after_backup():
     existing = "<playercorefactory><players/><rules action='prepend'/></playercorefactory>"
     fs = FakeFS({"/u/playercorefactory.xml": existing}, fail_write=True)
     try:
-        pcf.merge("/u/playercorefactory.xml", pcf.snippet_for("oppo203", player_path="/x"), fs=fs, now=lambda: 0)
+        pcf.merge(
+            "/u/playercorefactory.xml",
+            pcf.snippet_for("oppo203", player_path="/x"),
+            fs=fs,
+            now=lambda: 0,
+        )
     except OSError as exc:
         assert "simulated write failure" in str(exc)
     else:  # pragma: no cover - defensive failure assertion
@@ -102,7 +115,12 @@ def test_build4_merge_rolls_back_if_post_write_validation_fails():
     existing = "<playercorefactory><players/><rules action='prepend'/></playercorefactory>"
     fs = FakeFS({"/u/playercorefactory.xml": existing}, corrupt_after_write=True)
     try:
-        pcf.merge("/u/playercorefactory.xml", pcf.snippet_for("oppo203", player_path="/x"), fs=fs, now=lambda: 0)
+        pcf.merge(
+            "/u/playercorefactory.xml",
+            pcf.snippet_for("oppo203", player_path="/x"),
+            fs=fs,
+            now=lambda: 0,
+        )
     except ValueError as exc:
         assert "failed validation" in str(exc)
     else:  # pragma: no cover - defensive failure assertion
@@ -111,7 +129,9 @@ def test_build4_merge_rolls_back_if_post_write_validation_fails():
 
 
 def test_build4_release_audit_requires_build4_evidence():
-    spec = importlib.util.spec_from_file_location("audit_release", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -126,7 +146,9 @@ def test_build4_release_audit_requires_build4_evidence():
 
 
 def test_runtime_zip_policy_still_excludes_build4_evidence(tmp_path):
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)

@@ -6,16 +6,19 @@ small dependency-free YAML subset from docs/sources.yaml and updates only a
 clearly marked generated block in README.md, reference.md, and
 web-references.md. Existing hand-written documentation remains preserved.
 """
+
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any
 
 DOCS_SOURCE = Path("docs/sources.yaml")
 MANAGED_FILES = ("README.md", "reference.md", "web-references.md")
-BEGIN_RE = re.compile(r"<!-- BEGIN GENERATED DOCS METADATA -->.*?<!-- END GENERATED DOCS METADATA -->\n?", re.DOTALL)
+BEGIN_RE = re.compile(
+    r"<!-- BEGIN GENERATED DOCS METADATA -->.*?<!-- END GENERATED DOCS METADATA -->\n?", re.DOTALL
+)
 BEGIN = "<!-- BEGIN GENERATED DOCS METADATA -->"
 END = "<!-- END GENERATED DOCS METADATA -->"
 
@@ -23,7 +26,9 @@ END = "<!-- END GENERATED DOCS METADATA -->"
 def project_root(start: Path | None = None) -> Path:
     start = (start or Path.cwd()).resolve()
     for candidate in (start, *start.parents):
-        if (candidate / "addon.xml").exists() and (candidate / "resources" / "settings.xml").exists():
+        if (candidate / "addon.xml").exists() and (
+            candidate / "resources" / "settings.xml"
+        ).exists():
             return candidate
     raise RuntimeError("Could not find add-on root containing addon.xml and resources/settings.xml")
 
@@ -127,7 +132,9 @@ def check_document(path: Path, block: str) -> tuple[bool, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Render/check generated documentation metadata blocks")
+    parser = argparse.ArgumentParser(
+        description="Render/check generated documentation metadata blocks"
+    )
     parser.add_argument("--root", default=".", help="project root")
     parser.add_argument("--write", action="store_true", help="write generated metadata blocks")
     parser.add_argument("--check", action="store_true", help="check generated metadata blocks")

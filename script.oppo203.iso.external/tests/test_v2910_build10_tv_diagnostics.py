@@ -1,4 +1,5 @@
 """v2.9.10 Build 16 - TV diagnostics and dry-run validator."""
+
 from __future__ import annotations
 
 import json
@@ -7,27 +8,31 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 LIB = ROOT / "resources" / "lib"
 for path in (str(ROOT), str(LIB)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
 import tv_diagnostics  # noqa: E402
+
 from resources.lib import settings_reader, version  # noqa: E402
 
 
 def _smartthings_settings():
     data = dict(settings_reader.DEFAULTS)
-    data.update({
-        "tv_backend": "smartthings",
-        "smartthings_experimental_acknowledged": "true",
-        "smartthings_token": "abcdef1234567890",
-        "smartthings_device_id": "device-1",
-        "smartthings_oppo_input_id": "HDMI1",
-        "smartthings_kodi_input_id": "HDMI2",
-        "sony_psk": "sony-secret",
-        "custom_oppo_command": "curl --header abcdef1234567890 http://example.invalid",
-    })
+    data.update(
+        {
+            "tv_backend": "smartthings",
+            "smartthings_experimental_acknowledged": "true",
+            "smartthings_token": "abcdef1234567890",
+            "smartthings_device_id": "device-1",
+            "smartthings_oppo_input_id": "HDMI1",
+            "smartthings_kodi_input_id": "HDMI2",
+            "sony_psk": "sony-secret",
+            "custom_oppo_command": "curl --header abcdef1234567890 http://example.invalid",
+        }
+    )
     return data
 
 
@@ -49,7 +54,9 @@ def test_build10_validates_selected_backend_without_network_io():
 
 
 def test_build10_command_preset_missing_command_produces_warning():
-    result = tv_diagnostics.validate_tv_settings({"tv_backend": "custom_command", "custom_oppo_command": "", "custom_kodi_command": ""})
+    result = tv_diagnostics.validate_tv_settings(
+        {"tv_backend": "custom_command", "custom_oppo_command": "", "custom_kodi_command": ""}
+    )
     assert result["ok"] is False
     assert "missing_command:oppo" in result["warnings"]
     assert "missing_command:kodi" in result["warnings"]
@@ -99,7 +106,9 @@ def test_build10_explicit_switch_actions_are_nonfatal_and_sanitized():
     assert "abcdef1234567890" not in str(result)
     assert "sony-secret" not in str(result)
 
-    result_ok = tv_diagnostics.test_switch_to_kodi(settings, switcher=lambda _settings: {"stdout": "abcdef1234567890"})
+    result_ok = tv_diagnostics.test_switch_to_kodi(
+        settings, switcher=lambda _settings: {"stdout": "abcdef1234567890"}
+    )
     assert result_ok["ok"] is True
     assert result_ok["result"]["stdout"] == "<redacted>"
 
@@ -107,7 +116,11 @@ def test_build10_explicit_switch_actions_are_nonfatal_and_sanitized():
 def test_build10_save_report_uses_writer_and_default_name():
     calls = []
     path = tv_diagnostics.export_tv_diagnostic_report(
-        {"tv_backend": "adb", "oppo_input_adb_shell": "am start", "kodi_input_adb_shell": "am start"},
+        {
+            "tv_backend": "adb",
+            "oppo_input_adb_shell": "am start",
+            "kodi_input_adb_shell": "am start",
+        },
         "/tmp/addon-data",
         now=0,
         writer=lambda output_path, text: calls.append((output_path, text)),
@@ -129,7 +142,11 @@ def test_build10_metadata_and_documentation_identity():
 
 def test_build10_settings_object_and_edge_validation_paths(tmp_path):
     class WithData:
-        data = {"tv_backend": "adb", "oppo_input_adb_shell": "am start", "kodi_input_adb_shell": "am start"}
+        data = {
+            "tv_backend": "adb",
+            "oppo_input_adb_shell": "am start",
+            "kodi_input_adb_shell": "am start",
+        }
 
     class BadItems:
         def items(self):
@@ -138,17 +155,29 @@ def test_build10_settings_object_and_edge_validation_paths(tmp_path):
     assert tv_diagnostics.selected_backend_id(None) == "adb"
     assert tv_diagnostics.selected_backend_id(WithData()) == "adb"
     assert tv_diagnostics.sanitize_text("abc", BadItems()) == "abc"
-    assert tv_diagnostics.validate_tv_settings({"tv_backend": "does_not_exist"})["warnings"] == ["tv_backend_unsupported"]
+    assert tv_diagnostics.validate_tv_settings({"tv_backend": "does_not_exist"})["warnings"] == [
+        "tv_backend_unsupported"
+    ]
 
-    adb_missing = tv_diagnostics.validate_tv_settings({"tv_backend": "adb", "oppo_input_adb_shell": "", "kodi_input_adb_shell": ""})
+    adb_missing = tv_diagnostics.validate_tv_settings(
+        {"tv_backend": "adb", "oppo_input_adb_shell": "", "kodi_input_adb_shell": ""}
+    )
     assert "missing_oppo_target_setting" in adb_missing["warnings"]
     assert "missing_kodi_target_setting" in adb_missing["warnings"]
 
-    sony_missing = tv_diagnostics.validate_tv_settings({"tv_backend": "sony_bravia", "sony_oppo_hdmi_port": "1", "sony_kodi_hdmi_port": "2"})
+    sony_missing = tv_diagnostics.validate_tv_settings(
+        {"tv_backend": "sony_bravia", "sony_oppo_hdmi_port": "1", "sony_kodi_hdmi_port": "2"}
+    )
     assert "tv_ip_missing" in sony_missing["warnings"]
     assert "sony_psk_missing" in sony_missing["warnings"]
 
-    report = tv_diagnostics.build_diagnostic_report({"tv_backend": "adb", "oppo_input_adb_shell": "am start", "kodi_input_adb_shell": "am start"})
+    report = tv_diagnostics.build_diagnostic_report(
+        {
+            "tv_backend": "adb",
+            "oppo_input_adb_shell": "am start",
+            "kodi_input_adb_shell": "am start",
+        }
+    )
     output = tv_diagnostics.save_report(report, str(tmp_path), now=0)
     assert Path(output).exists()
     assert "hardware_validation_claimed" in Path(output).read_text(encoding="utf-8")

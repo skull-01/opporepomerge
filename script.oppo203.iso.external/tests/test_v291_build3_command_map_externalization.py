@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -10,9 +10,10 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from resources.lib import command_map
 from resources.lib.constants import OPPO_COMMAND_MAP_SIZE
 from resources.lib.settings_reader import DEFAULTS
+
+from resources.lib import command_map
 
 
 def test_default_command_map_json_file_exists_and_has_canonical_size():
@@ -65,6 +66,7 @@ def test_user_command_map_override_still_merges_with_defaults():
     class FakeSettings:
         def __init__(self, raw: str):
             self.raw = raw
+
         def get(self, key, default=None):
             if key == "oppo_remote_command_map":
                 return self.raw

@@ -1,11 +1,14 @@
 """Minimal Kodi xbmcvfs stub for local tests."""
+
 import os
 from pathlib import Path
 
 
 def translatePath(path):
     text = str(path)
-    return text.replace("special://profile", "/tmp/kodi-profile").replace("special://home", "/tmp/kodi-home")
+    return text.replace("special://profile", "/tmp/kodi-profile").replace(
+        "special://home", "/tmp/kodi-home"
+    )
 
 
 def mkdirs(path):

@@ -1,4 +1,5 @@
 """v2.9.10 Build 16 - Yamaha MusicCast/YXC AVR driver."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -38,20 +39,26 @@ def test_build13_factory_returns_yamaha_controller_only_when_enabled_and_complet
     disabled = settings_reader.Settings({})
     assert avr_control.controller_factory(disabled) is None
 
-    incomplete = settings_reader.Settings({"avr_control_enabled": "true", "avr_backend": "yamaha_yxc"})
+    incomplete = settings_reader.Settings(
+        {"avr_control_enabled": "true", "avr_backend": "yamaha_yxc"}
+    )
     assert avr_control.controller_factory(incomplete) is None
     validation = avr_control.validate_avr_settings(incomplete).as_dict()
     assert validation["ok"] is False
     assert validation["driver_available"] is True
     assert validation["missing"] == ("avr_host", "avr_player_input")
 
-    complete = settings_reader.Settings({
-        "avr_control_enabled": "true",
-        "avr_backend": "yamaha_yxc",
-        "avr_host": "192.168.1.91",
-        "avr_player_input": "hdmi1",
-    })
-    controller = avr_control.controller_factory(complete, http_get=lambda url, timeout: '{"response_code": 0}')
+    complete = settings_reader.Settings(
+        {
+            "avr_control_enabled": "true",
+            "avr_backend": "yamaha_yxc",
+            "avr_host": "192.168.1.91",
+            "avr_player_input": "hdmi1",
+        }
+    )
+    controller = avr_control.controller_factory(
+        complete, http_get=lambda url, timeout: '{"response_code": 0}'
+    )
     assert isinstance(controller, avr_yamaha.YamahaYxcAvrController)
     validation = avr_control.validate_avr_settings(complete).as_dict()
     assert validation["ok"] is True
@@ -84,7 +91,9 @@ def test_build13_yamaha_controller_uses_get_helpers_and_parses_response_code():
 
 def test_build13_yamaha_nonzero_invalid_json_and_network_errors_are_nonfatal():
     nonzero = avr_yamaha.send_yamaha_get(
-        "avr.local", "/YamahaExtendedControl/v1/main/getStatus", http_get=lambda url, timeout: '{"response_code": 4}'
+        "avr.local",
+        "/YamahaExtendedControl/v1/main/getStatus",
+        http_get=lambda url, timeout: '{"response_code": 4}',
     ).as_dict()
     assert nonzero["ok"] is False
     assert nonzero["command_sent"] is True
@@ -93,7 +102,9 @@ def test_build13_yamaha_nonzero_invalid_json_and_network_errors_are_nonfatal():
     assert nonzero["message"] == "yamaha_yxc_response_code_4"
 
     invalid_json = avr_yamaha.send_yamaha_get(
-        "avr.local", "/YamahaExtendedControl/v1/main/getStatus", http_get=lambda url, timeout: "not-json"
+        "avr.local",
+        "/YamahaExtendedControl/v1/main/getStatus",
+        http_get=lambda url, timeout: "not-json",
     ).as_dict()
     assert invalid_json["ok"] is False
     assert invalid_json["command_sent"] is True
@@ -119,7 +130,9 @@ def test_build13_yamaha_invalid_host_input_dispatch_and_driver_errors_are_nonfat
     assert missing["message"] == "avr_host_missing"
     assert missing["command_sent"] is False
 
-    invalid_host = avr_yamaha.send_yamaha_get("avr.local/path", "/YamahaExtendedControl/v1/main/getStatus").as_dict()
+    invalid_host = avr_yamaha.send_yamaha_get(
+        "avr.local/path", "/YamahaExtendedControl/v1/main/getStatus"
+    ).as_dict()
     assert invalid_host["ok"] is False
     assert invalid_host["message"] == "invalid_yamaha_yxc_host"
 
@@ -132,7 +145,9 @@ def test_build13_yamaha_invalid_host_input_dispatch_and_driver_errors_are_nonfat
     assert broken["ok"] is False
     assert "avr_driver_error_nonfatal" in broken["warnings"]
 
-    controller = avr_yamaha.YamahaYxcAvrController("avr.local", player_input="hdmi1", http_get=lambda url, timeout: '{"response_code": 0}')
+    controller = avr_yamaha.YamahaYxcAvrController(
+        "avr.local", player_input="hdmi1", http_get=lambda url, timeout: '{"response_code": 0}'
+    )
     assert controller.run("on").as_dict()["command_sent"] is True
     assert controller.run("select_input", input_name="hdmi3").as_dict()["command_sent"] is True
     assert controller.run("status").as_dict()["command_sent"] is True
@@ -159,17 +174,25 @@ def test_build13_yamaha_metadata_defaults_and_other_families_remain_safe():
     assert preset["hardware_validation_claimed"] is False
 
     summary = avr_presets.avr_support_summary()
-    assert summary["driver_execution_families"] == ("denon_marantz", "yamaha_yxc", "onkyo_eiscp", "pioneer_eiscp", "sony_audio_api")
+    assert summary["driver_execution_families"] == (
+        "denon_marantz",
+        "yamaha_yxc",
+        "onkyo_eiscp",
+        "pioneer_eiscp",
+        "sony_audio_api",
+    )
     assert summary["playback_sequencing_hooked"] is True
     assert summary["hardware_validation_claimed"] is False
 
     for backend in ("sony_audio_api",):
-        settings = settings_reader.Settings({
-            "avr_control_enabled": "true",
-            "avr_backend": backend,
-            "avr_host": "192.168.1.93",
-            "avr_player_input": "BD",
-        })
+        settings = settings_reader.Settings(
+            {
+                "avr_control_enabled": "true",
+                "avr_backend": backend,
+                "avr_host": "192.168.1.93",
+                "avr_player_input": "BD",
+            }
+        )
         validation = avr_control.validate_avr_settings(settings).as_dict()
         assert validation["ok"] is False
         assert validation["driver_available"] is True
@@ -188,8 +211,12 @@ def test_build13_metadata_and_documentation_identity():
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 13" in text
         assert "Yamaha MusicCast / YXC AVR driver" in text
-    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD13.md").exists() or (ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD13.md").exists()
-    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD13.md").exists() or (ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD13.md").exists()
+    assert (ROOT / "BUILD_NOTES_v2.9.10_BUILD13.md").exists() or (
+        ROOT / "docs" / "release-history" / "BUILD_NOTES_v2.9.10_BUILD13.md"
+    ).exists()
+    assert (ROOT / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD13.md").exists() or (
+        ROOT / "docs" / "release-history" / "HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.10_BUILD13.md"
+    ).exists()
 
 
 def test_build13_yamaha_edge_parsing_default_get_and_bad_json_shapes(monkeypatch):
@@ -209,8 +236,10 @@ def test_build13_yamaha_edge_parsing_default_get_and_bad_json_shapes(monkeypatch
     class FakeResponse:
         def __enter__(self):
             return self
+
         def __exit__(self, *args):
             return False
+
         def read(self):
             return b'{"response_code": 0}'
 

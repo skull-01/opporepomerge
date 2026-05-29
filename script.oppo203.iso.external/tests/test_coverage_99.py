@@ -3,15 +3,16 @@
 These tests cover meaningful defensive and edge paths using local fakes only.
 They do not require real Kodi, OPPO, TV, ADB, sockets, or external services.
 """
+
 import io
 import os
-from contextlib import redirect_stdout
-from pathlib import Path
 import runpy
 import sys
 import tempfile
 import types
 import unittest
+from contextlib import redirect_stdout
+from pathlib import Path
 from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -58,14 +59,20 @@ class TestFinal99CoveragePaths(unittest.TestCase):
             calls.append(args)
             return Proc()
 
-        settings = FakeSettings({
-            "adb_path": "adb",
-            "tv_ip": "192.0.2.10",
-            "tv_adb_port": "5555",
-            "adb_connect_before_switch": "false",
-        })
-        self.assertEqual(adb_control.switch_input(settings, "input keyevent 3", runner=runner), "ok")
-        self.assertEqual(calls, [["adb", "-s", "192.0.2.10:5555", "shell", "input", "keyevent", "3"]])
+        settings = FakeSettings(
+            {
+                "adb_path": "adb",
+                "tv_ip": "192.0.2.10",
+                "tv_adb_port": "5555",
+                "adb_connect_before_switch": "false",
+            }
+        )
+        self.assertEqual(
+            adb_control.switch_input(settings, "input keyevent 3", runner=runner), "ok"
+        )
+        self.assertEqual(
+            calls, [["adb", "-s", "192.0.2.10:5555", "shell", "input", "keyevent", "3"]]
+        )
 
         result = arch_benchmark.benchmark("external", trials=1, probe=lambda candidate: None)
         self.assertTrue(result["all_ok"])
@@ -77,13 +84,19 @@ class TestFinal99CoveragePaths(unittest.TestCase):
         class TruthyBlank:
             def __bool__(self):
                 return True
+
             def __str__(self):
                 return ""
 
         self.assertIsNone(discovery.parse_ssdp_response(TruthyBlank()))
-        parsed = discovery.parse_ssdp_response("NOTIFY * HTTP/1.1\nNOT-A-HEADER\nSERVER: OPPO UDP-203\n")
+        parsed = discovery.parse_ssdp_response(
+            "NOTIFY * HTTP/1.1\nNOT-A-HEADER\nSERVER: OPPO UDP-203\n"
+        )
         self.assertIsNone(parsed["ip"])
-        self.assertEqual(discovery.discover(ssdp=lambda: ["NOTIFY * HTTP/1.1\nSERVER: OPPO UDP-203\n"], now=1.0), [])
+        self.assertEqual(
+            discovery.discover(ssdp=lambda: ["NOTIFY * HTTP/1.1\nSERVER: OPPO UDP-203\n"], now=1.0),
+            [],
+        )
 
         with tempfile.TemporaryDirectory() as td:
             path = os.path.join(td, "cache", "devices.json")
@@ -113,12 +126,24 @@ class TestFinal99CoveragePaths(unittest.TestCase):
             self.assertFalse(fs.exists(old_dst))
 
         class FS:
-            def __init__(self): self.files = {}
-            def exists(self, p): return p in self.files
-            def size(self, p): return len(self.files.get(p, ""))
-            def append(self, p, text): self.files[p] = self.files.get(p, "") + text
-            def rename(self, src, dst): self.files[dst] = self.files.pop(src)
-            def remove(self, p): self.files.pop(p, None)
+            def __init__(self):
+                self.files = {}
+
+            def exists(self, p):
+                return p in self.files
+
+            def size(self, p):
+                return len(self.files.get(p, ""))
+
+            def append(self, p, text):
+                self.files[p] = self.files.get(p, "") + text
+
+            def rename(self, src, dst):
+                self.files[dst] = self.files.pop(src)
+
+            def remove(self, p):
+                self.files.pop(p, None)
+
         fs = FS()
         logger = logging_v116.Logger("missing", fs=fs)
         logger.rotate()
@@ -130,23 +155,44 @@ class TestFinal99CoveragePaths(unittest.TestCase):
         self.assertEqual(oc._parse_response("@NOP OK"), "")
         with mock.patch.object(oc, "get_playback_info", return_value=[]):
             self.assertEqual(oc.get_playback_status(FakeSettings({})), "")
-        with mock.patch.object(oc, "get_playback_info", return_value={"result": "not-a-dict", "playinfo": {"status": "play"}}):
+        with mock.patch.object(
+            oc,
+            "get_playback_info",
+            return_value={"result": "not-a-dict", "playinfo": {"status": "play"}},
+        ):
             self.assertEqual(oc.get_playback_status(FakeSettings({})), "PLAY")
         self.assertFalse(oc.http_info_is_definitive_stop({"result": "not-a-dict"}))
-        self.assertTrue(oc.http_info_indicates_playing({"result": "not-a-dict", "playinfo": {"e_play_status": "56"}}))
-        self.assertFalse(oc.http_info_indicates_playing({"result": "not-a-dict", "playinfo": {"e_play_status": "garbage"}}))
+        self.assertTrue(
+            oc.http_info_indicates_playing(
+                {"result": "not-a-dict", "playinfo": {"e_play_status": "56"}}
+            )
+        )
+        self.assertFalse(
+            oc.http_info_indicates_playing(
+                {"result": "not-a-dict", "playinfo": {"e_play_status": "garbage"}}
+            )
+        )
 
         original = sys.modules.get("settings_reader")
-        sys.modules["settings_reader"] = types.SimpleNamespace(hardware_profile=lambda model: (_ for _ in ()).throw(RuntimeError("boom")))
+        sys.modules["settings_reader"] = types.SimpleNamespace(
+            hardware_profile=lambda model: (_ for _ in ()).throw(RuntimeError("boom"))
+        )
         try:
-            self.assertEqual(oc._resolve_hardware_wake_command(FakeSettings({"oppo_hardware_model": "M9702"}), "#PON"), "#PON")
+            self.assertEqual(
+                oc._resolve_hardware_wake_command(
+                    FakeSettings({"oppo_hardware_model": "M9702"}), "#PON"
+                ),
+                "#PON",
+            )
         finally:
             if original is not None:
                 sys.modules["settings_reader"] = original
             else:
                 sys.modules.pop("settings_reader", None)
 
-        with mock.patch.object(oc, "_http_get", return_value='{"audio_list":{"a":{"index":1,"name":"Main"}}}'):
+        with mock.patch.object(
+            oc, "_http_get", return_value='{"audio_list":{"a":{"index":1,"name":"Main"}}}'
+        ):
             self.assertEqual(oc.get_audio_tracks(FakeSettings({}))[0]["name"], "Main")
         self.assertFalse(oc._first_bool({"flag": "file"}, "missing", "flag"))
         self.assertEqual(oc._guess_size_from_fields(["size=bad", "42"]), 42)
@@ -158,25 +204,33 @@ class TestFinal99CoveragePaths(unittest.TestCase):
         with tempfile.NamedTemporaryFile(delete=False) as fh:
             stop_file = fh.name
         try:
-            ep.hold_playback(FakeSettings({"hold_mode": "manual_file", "manual_stop_file": stop_file}))
+            ep.hold_playback(
+                FakeSettings({"hold_mode": "manual_file", "manual_stop_file": stop_file})
+            )
             self.assertFalse(os.path.exists(stop_file))
         finally:
             if os.path.exists(stop_file):
                 os.remove(stop_file)
 
-
     def test_oppo_tcp_client_line_split_and_oserror_paths(self):
         import oppo_tcp_client
 
         class TimeoutThenOSErrorSock:
-            def __init__(self): self.calls = 0; self.closed = False
-            def sendall(self, data): pass
+            def __init__(self):
+                self.calls = 0
+                self.closed = False
+
+            def sendall(self, data):
+                pass
+
             def recv(self, n):
                 self.calls += 1
                 if self.calls == 1:
                     raise oppo_tcp_client.socket.timeout()
                 raise OSError("down")
-            def close(self): self.closed = True
+
+            def close(self):
+                self.closed = True
 
         sock = TimeoutThenOSErrorSock()
         sock.settimeout = lambda timeout: None
@@ -199,7 +253,10 @@ class TestFinal99CoveragePaths(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as td:
             path = os.path.join(td, "custom.json")
-            Path(path).write_text('{"presets":{"mine":{"label":"Mine","start_commands":"#PON","stop_commands":"#STP"}}}', encoding="utf-8")
+            Path(path).write_text(
+                '{"presets":{"mine":{"label":"Mine","start_commands":"#PON","stop_commands":"#STP"}}}',
+                encoding="utf-8",
+            )
             self.assertIn("mine", pm.load_custom(path))
             out = os.path.join(td, "nested", "out.json")
             pm._RealFS().write(out, "{}")
@@ -223,7 +280,16 @@ class TestFinal99CoveragePaths(unittest.TestCase):
         try:
             # Discovery: apply port 23 path.
             fake_gui.push_yesno(True)
-            with mock.patch.dict(sys.modules, {"oppo_control": types.SimpleNamespace(discover_oppo=lambda timeout=5: [{"ip":"192.0.2.30","port":23,"name":"OPPO","raw":""}])}):
+            with mock.patch.dict(
+                sys.modules,
+                {
+                    "oppo_control": types.SimpleNamespace(
+                        discover_oppo=lambda timeout=5: [
+                            {"ip": "192.0.2.30", "port": 23, "name": "OPPO", "raw": ""}
+                        ]
+                    )
+                },
+            ):
                 installer.run_oppo_discovery()
             self.assertEqual(fake_addon.getSetting("oppo_ip"), "192.0.2.30")
             self.assertEqual(fake_addon.getSetting("oppo_port"), "23")
@@ -235,14 +301,30 @@ class TestFinal99CoveragePaths(unittest.TestCase):
             fake_addon.setSetting("oppo_experimental_filelist_enabled", "true")
             fake_oc = types.SimpleNamespace(
                 get_file_list_raw=lambda settings, path="/": "raw",
-                parse_undocumented_file_list=lambda raw, base_path=None: [{"name":"Movie.iso","entry_type":"file","is_dir":False,"is_file":True,"size_bytes":123,"disc_type":"iso","extension":"iso","path":"/Movie.iso"}],
+                parse_undocumented_file_list=lambda raw, base_path=None: [
+                    {
+                        "name": "Movie.iso",
+                        "entry_type": "file",
+                        "is_dir": False,
+                        "is_file": True,
+                        "size_bytes": 123,
+                        "disc_type": "iso",
+                        "extension": "iso",
+                        "path": "/Movie.iso",
+                    }
+                ],
             )
             fake_sr = types.SimpleNamespace(read_settings=lambda addon_data: FakeSettings({}))
-            with mock.patch.dict(sys.modules, {"oppo_control": fake_oc, "settings_reader": fake_sr}):
+            with mock.patch.dict(
+                sys.modules, {"oppo_control": fake_oc, "settings_reader": fake_sr}
+            ):
                 installer.run_experimental_filelist_diagnostic()
-            self.assertTrue(any(call[0] == "textviewer" and "Movie.iso" in call[2] for call in fake_gui.calls()))
+            self.assertTrue(
+                any(call[0] == "textviewer" and "Movie.iso" in call[2] for call in fake_gui.calls())
+            )
         finally:
             sys.path[:] = original_path
+
 
 class TestFinal99AdditionalBranches(unittest.TestCase):
     def test_no_kodi_import_fallbacks(self):
@@ -250,15 +332,22 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
         import importlib.util
 
         real_import = builtins.__import__
+
         def fake_import(name, *args, **kwargs):
             if name.startswith("xbmc"):
                 raise ImportError(name)
             return real_import(name, *args, **kwargs)
 
         module_specs = [
-            ("autoscript_helper_no_kodi", ROOT / "resources" / "lib" / "oppo" / "autoscript_helper.py"),
+            (
+                "autoscript_helper_no_kodi",
+                ROOT / "resources" / "lib" / "oppo" / "autoscript_helper.py",
+            ),
             ("i18n_no_kodi", ROOT / "resources" / "lib" / "kodi" / "i18n.py"),
-            ("resources.lib.oppo.oppo_remote_no_kodi", ROOT / "resources" / "lib" / "oppo" / "oppo_remote.py"),
+            (
+                "resources.lib.oppo.oppo_remote_no_kodi",
+                ROOT / "resources" / "lib" / "oppo" / "oppo_remote.py",
+            ),
         ]
         with mock.patch("builtins.__import__", side_effect=fake_import):
             for name, path in module_specs:
@@ -287,24 +376,45 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
         self.assertTrue(oc.http_info_indicates_playing({"playinfo": {"play_status": 0}}))
         with mock.patch.object(oc, "_http_get", side_effect=ValueError("bad json")):
             self.assertEqual(oc.get_subtitle_tracks(FakeSettings({})), [])
-        with mock.patch.object(oc, "_http_get", return_value='{"subtitle_list":{"s":{"index":2,"name":"Sub"}}}'):
+        with mock.patch.object(
+            oc, "_http_get", return_value='{"subtitle_list":{"s":{"index":2,"name":"Sub"}}}'
+        ):
             self.assertEqual(oc.get_subtitle_tracks(FakeSettings({}))[0]["name"], "Sub")
         self.assertTrue(oc._first_bool({"flag": "0"}, "flag") is False)
         self.assertEqual(oc._infer_entry_type(path="/Movies/"), "directory")
         self.assertEqual(oc._infer_disc_type(name="movie.iso", extension="iso"), "iso")
 
         class FakeSock:
-            def __init__(self, timeout=False): self.closed = False; self.timeout = timeout
-            def setsockopt(self, *a): pass
-            def settimeout(self, *a): pass
-            def sendto(self, *a): pass
-            def recvfrom(self, n): raise oc.socket.timeout()
-            def close(self): self.closed = True
+            def __init__(self, timeout=False):
+                self.closed = False
+                self.timeout = timeout
+
+            def setsockopt(self, *a):
+                pass
+
+            def settimeout(self, *a):
+                pass
+
+            def sendto(self, *a):
+                pass
+
+            def recvfrom(self, n):
+                raise oc.socket.timeout()
+
+            def close(self):
+                self.closed = True
+
         made = []
+
         def fake_socket(*args):
-            s = FakeSock(); made.append(s); return s
-        with mock.patch.object(oc.socket, "socket", side_effect=fake_socket), \
-             mock.patch.object(oc.time, "time", side_effect=[0, 1]):
+            s = FakeSock()
+            made.append(s)
+            return s
+
+        with (
+            mock.patch.object(oc.socket, "socket", side_effect=fake_socket),
+            mock.patch.object(oc.time, "time", side_effect=[0, 1]),
+        ):
             self.assertEqual(oc.discover_oppo(timeout=1), [])
         self.assertTrue(all(s.closed for s in made))
 
@@ -313,10 +423,14 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
         import oppo_tcp_client
 
         states = [False, True]
-        with mock.patch.object(ep.os.path, "exists", side_effect=lambda path: states.pop(0)), \
-             mock.patch.object(ep.os, "remove"), \
-             mock.patch.object(ep.time, "sleep") as sleep:
-            ep.hold_playback(FakeSettings({"hold_mode": "manual_file", "manual_stop_file": "/tmp/stop"}))
+        with (
+            mock.patch.object(ep.os.path, "exists", side_effect=lambda path: states.pop(0)),
+            mock.patch.object(ep.os, "remove"),
+            mock.patch.object(ep.time, "sleep") as sleep,
+        ):
+            ep.hold_playback(
+                FakeSettings({"hold_mode": "manual_file", "manual_stop_file": "/tmp/stop"})
+            )
         sleep.assert_called_once_with(2)
 
         c = oppo_tcp_client.OppoTcpClient("127.0.0.1", 23)
@@ -325,6 +439,7 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
 
     def test_oppo_remote_stock_power_and_i18n_none_branch(self):
         import i18n
+
         from resources.lib import oppo_remote
 
         old_xbmcaddon = i18n.xbmcaddon
@@ -338,17 +453,21 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as td:
             Path(td, "oppo203iso-active").write_text("1", encoding="utf-8")
-            settings = FakeSettings({
-                "addon_data_dir": td,
-                "remote_bridge_only_when_active": "true",
-                "oppo_remote_command_map": '{"power_on":"#PON"}',
-                "oppo_hardware_model": "udp_203",
-                "oppo_ip": "127.0.0.1",
-                "oppo_port": "23",
-                "oppo_socket_timeout": "0.01",
-            })
-            with mock.patch.object(oppo_remote, "_load_settings", return_value=settings), \
-                 mock.patch.object(oppo_remote, "send_commands", return_value=["@OK"]) as send:
+            settings = FakeSettings(
+                {
+                    "addon_data_dir": td,
+                    "remote_bridge_only_when_active": "true",
+                    "oppo_remote_command_map": '{"power_on":"#PON"}',
+                    "oppo_hardware_model": "udp_203",
+                    "oppo_ip": "127.0.0.1",
+                    "oppo_port": "23",
+                    "oppo_socket_timeout": "0.01",
+                }
+            )
+            with (
+                mock.patch.object(oppo_remote, "_load_settings", return_value=settings),
+                mock.patch.object(oppo_remote, "send_commands", return_value=["@OK"]) as send,
+            ):
                 oppo_remote.send_remote_key("power_on")
             self.assertEqual(send.call_args.args[2], ["#PON"])
 
@@ -357,11 +476,14 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
         import settings_reader as sr
 
         snippet = "<playercorefactory><players><player name='New'/></players><rules><rule name='R'/></rules></playercorefactory>"
-        merged, added = pcf._merge_xml("<playercorefactory><players></players><rules></rules></playercorefactory>", snippet)
+        merged, added = pcf._merge_xml(
+            "<playercorefactory><players></players><rules></rules></playercorefactory>", snippet
+        )
         self.assertEqual(added, 1)
         self.assertIn("rule", merged)
         elem = sr.ET.fromstring("<setting><child /><value>child</value></setting>")
         self.assertEqual(sr._setting_value(elem), "child")
+
 
 class TestBuild7RawCoverageBranches(unittest.TestCase):
     """Extra branch tests for Build 7 raw line+branch coverage improvement."""
@@ -382,31 +504,39 @@ class TestBuild7RawCoverageBranches(unittest.TestCase):
         _logp.start()
         self.addCleanup(_logp.stop)
 
-        settings = FakeSettings({
-            "hold_mode": "http_poll",
-            "http_poll_interval": "1",
-            "http_poll_timeout_minutes": "1",
-            "http_poll_idle_confirmations": "1",
-            "trickplay_suppress_seconds": "0",
-        })
-        with mock.patch.object(ep, "get_playback_info", return_value=[]), \
-             mock.patch.object(ep.time, "time", side_effect=[0, 0, 0]), \
-             mock.patch.object(ep.time, "sleep") as sleep:
+        settings = FakeSettings(
+            {
+                "hold_mode": "http_poll",
+                "http_poll_interval": "1",
+                "http_poll_timeout_minutes": "1",
+                "http_poll_idle_confirmations": "1",
+                "trickplay_suppress_seconds": "0",
+            }
+        )
+        with (
+            mock.patch.object(ep, "get_playback_info", return_value=[]),
+            mock.patch.object(ep.time, "time", side_effect=[0, 0, 0]),
+            mock.patch.object(ep.time, "sleep") as sleep,
+        ):
             ep.hold_playback(settings)
         sleep.assert_not_called()
 
-        tcp_settings = FakeSettings({
-            "hold_mode": "tcp_qpl_poll",
-            "oppo_ip": "127.0.0.1",
-            "oppo_port": "23",
-            "oppo_socket_timeout": "0.1",
-            "qpl_poll_interval": "1",
-            "qpl_poll_timeout_minutes": "1",
-            "qpl_poll_idle_confirmations": "2",
-        })
-        with mock.patch.object(ep, "query_playback_status", side_effect=["STOP", "STOP"]), \
-             mock.patch.object(ep.time, "time", side_effect=[0, 0, 0, 0]), \
-             mock.patch.object(ep.time, "sleep") as sleep:
+        tcp_settings = FakeSettings(
+            {
+                "hold_mode": "tcp_qpl_poll",
+                "oppo_ip": "127.0.0.1",
+                "oppo_port": "23",
+                "oppo_socket_timeout": "0.1",
+                "qpl_poll_interval": "1",
+                "qpl_poll_timeout_minutes": "1",
+                "qpl_poll_idle_confirmations": "2",
+            }
+        )
+        with (
+            mock.patch.object(ep, "query_playback_status", side_effect=["STOP", "STOP"]),
+            mock.patch.object(ep.time, "time", side_effect=[0, 0, 0, 0]),
+            mock.patch.object(ep.time, "sleep") as sleep,
+        ):
             ep.hold_playback(tcp_settings)
         sleep.assert_called_once_with(1)
 
@@ -419,7 +549,16 @@ class TestBuild7RawCoverageBranches(unittest.TestCase):
         try:
             fake_addon.setSetting("oppo_port", "23")
             fake_gui.push_yesno(True)
-            with mock.patch.dict(sys.modules, {"oppo_control": types.SimpleNamespace(discover_oppo=lambda timeout=5: [{"ip":"192.0.2.77","port":7624,"name":"OPPO","raw":""}])}):
+            with mock.patch.dict(
+                sys.modules,
+                {
+                    "oppo_control": types.SimpleNamespace(
+                        discover_oppo=lambda timeout=5: [
+                            {"ip": "192.0.2.77", "port": 7624, "name": "OPPO", "raw": ""}
+                        ]
+                    )
+                },
+            ):
                 installer.run_oppo_discovery()
             self.assertEqual(fake_addon.getSetting("oppo_ip"), "192.0.2.77")
             self.assertEqual(fake_addon.getSetting("oppo_port"), "23")
@@ -429,10 +568,21 @@ class TestBuild7RawCoverageBranches(unittest.TestCase):
             sys.path[:] = [p for p in sys.path if p != lib_path]
             fake_oc = types.SimpleNamespace(
                 get_file_list_raw=lambda settings, path: b"movie.iso\x00size=5",
-                parse_undocumented_file_list=lambda raw, base_path=None: [{"entry_type":"file","name":"movie.iso","size_bytes":5,"extension":"iso","disc_type":"iso","path":"/movie.iso"}],
+                parse_undocumented_file_list=lambda raw, base_path=None: [
+                    {
+                        "entry_type": "file",
+                        "name": "movie.iso",
+                        "size_bytes": 5,
+                        "extension": "iso",
+                        "disc_type": "iso",
+                        "path": "/movie.iso",
+                    }
+                ],
             )
             fake_sr = types.SimpleNamespace(read_settings=lambda addon_data: FakeSettings({}))
-            with mock.patch.dict(sys.modules, {"oppo_control": fake_oc, "settings_reader": fake_sr}):
+            with mock.patch.dict(
+                sys.modules, {"oppo_control": fake_oc, "settings_reader": fake_sr}
+            ):
                 installer.run_experimental_filelist_diagnostic()
             self.assertIn(lib_path, sys.path)
         finally:
@@ -442,28 +592,52 @@ class TestBuild7RawCoverageBranches(unittest.TestCase):
         import oppo_control as oc
 
         self.assertEqual(oc._parse_response("@QPW"), "@QPW")
-        self.assertEqual(oc._filter_commands_for_mode(FakeSettings({}), "oppo_stop_commands", ["#STP"]), ["#STP"])
-        self.assertEqual(oc._filter_commands_for_mode(FakeSettings({"oppo_already_on_mode": "false"}), "oppo_start_commands", ["#PON", "#PLA"]), ["#PON", "#PLA"])
+        self.assertEqual(
+            oc._filter_commands_for_mode(FakeSettings({}), "oppo_stop_commands", ["#STP"]), ["#STP"]
+        )
+        self.assertEqual(
+            oc._filter_commands_for_mode(
+                FakeSettings({"oppo_already_on_mode": "false"}),
+                "oppo_start_commands",
+                ["#PON", "#PLA"],
+            ),
+            ["#PON", "#PLA"],
+        )
         self.assertEqual(oc._join_base_path("", "movie.iso"), "movie.iso")
         self.assertEqual(oc._extension_for("folder/movie"), "")
         self.assertEqual(oc._infer_entry_type(type_hint="plain file"), "file")
 
         class TimeoutSock:
-            def __init__(self): self.closed = False
-            def setsockopt(self, *args): pass
-            def settimeout(self, timeout): pass
-            def sendto(self, data, addr): pass
-            def recvfrom(self, size): raise oc.socket.timeout()
-            def close(self): self.closed = True
+            def __init__(self):
+                self.closed = False
+
+            def setsockopt(self, *args):
+                pass
+
+            def settimeout(self, timeout):
+                pass
+
+            def sendto(self, data, addr):
+                pass
+
+            def recvfrom(self, size):
+                raise oc.socket.timeout()
+
+            def close(self):
+                self.closed = True
+
         sock = TimeoutSock()
-        with mock.patch.object(oc.socket, "socket", return_value=sock), \
-             mock.patch.object(oc.time, "time", side_effect=[0, 0]):
+        with (
+            mock.patch.object(oc.socket, "socket", return_value=sock),
+            mock.patch.object(oc.time, "time", side_effect=[0, 0]),
+        ):
             self.assertEqual(oc.discover_oppo(timeout=1), [])
         self.assertTrue(sock.closed)
 
     def test_oppo_remote_no_xbmc_log_fallback_and_preset_bad_version(self):
-        from resources.lib import oppo_remote
         import preset_manager as pm
+
+        from resources.lib import oppo_remote
 
         old_xbmc = oppo_remote.xbmc
         oppo_remote.xbmc = None
@@ -477,24 +651,27 @@ class TestBuild7RawCoverageBranches(unittest.TestCase):
 
         self.assertIsNone(pm._parse_version("bad"))
 
+
 class TestBuild8RawCoverageBranches(unittest.TestCase):
     """Additional meaningful branch tests to raise raw post-99 coverage."""
 
     def test_external_player_main_module_entrypoint_with_local_fakes(self):
         import runpy
 
-        fake_settings = FakeSettings({
-            "addon_data_dir": "",
-            "oppo_preflight_enabled": "false",
-            "fast_changeover": "false",
-            "tv_backend": "none",
-            "oppo_start_mode": "tcp_commands",
-            "oppo_start_commands": "",
-            "oppo_stop_commands": "",
-            "hold_mode": "fixed_timeout",
-            "fixed_timeout_minutes": "0",
-            "switch_back_on_exit": "false",
-        })
+        fake_settings = FakeSettings(
+            {
+                "addon_data_dir": "",
+                "oppo_preflight_enabled": "false",
+                "fast_changeover": "false",
+                "tv_backend": "none",
+                "oppo_start_mode": "tcp_commands",
+                "oppo_start_commands": "",
+                "oppo_stop_commands": "",
+                "hold_mode": "fixed_timeout",
+                "fixed_timeout_minutes": "0",
+                "switch_back_on_exit": "false",
+            }
+        )
         fake_oc = types.SimpleNamespace(
             get_playback_info=lambda settings: {},
             get_playback_status=lambda settings: "",
@@ -509,16 +686,30 @@ class TestBuild8RawCoverageBranches(unittest.TestCase):
             tcp_qpl_is_idle=lambda status: True,
         )
         fake_sr = types.SimpleNamespace(read_settings=lambda addon_data: fake_settings)
-        fake_tv = types.SimpleNamespace(switch_to_kodi=lambda settings: None, switch_to_oppo=lambda settings: None)
-        saved = {name: sys.modules.get(name) for name in ("oppo_control", "settings_reader", "tv_control")}
+        fake_tv = types.SimpleNamespace(
+            switch_to_kodi=lambda settings: None, switch_to_oppo=lambda settings: None
+        )
+        saved = {
+            name: sys.modules.get(name)
+            for name in ("oppo_control", "settings_reader", "tv_control")
+        }
         argv = sys.argv[:]
         try:
             sys.modules["oppo_control"] = fake_oc
             sys.modules["settings_reader"] = fake_sr
             sys.modules["tv_control"] = fake_tv
-            sys.argv = ["external_player.py", "--addon-data", tempfile.mkdtemp(), "--file", "/movie.iso"]
+            sys.argv = [
+                "external_player.py",
+                "--addon-data",
+                tempfile.mkdtemp(),
+                "--file",
+                "/movie.iso",
+            ]
             with self.assertRaises(SystemExit) as cm, mock.patch("time.sleep"):
-                runpy.run_path(str(ROOT / "resources" / "lib" / "kodi" / "external_player.py"), run_name="__main__")
+                runpy.run_path(
+                    str(ROOT / "resources" / "lib" / "kodi" / "external_player.py"),
+                    run_name="__main__",
+                )
             self.assertEqual(cm.exception.code, 0)
         finally:
             sys.argv = argv
@@ -535,7 +726,9 @@ class TestBuild8RawCoverageBranches(unittest.TestCase):
         self.assertFalse(fs.exists("/path/that/does/not/exist"))
         self.assertFalse(fs.isdir("/path/that/does/not/exist"))
         self.assertEqual(intercept._norm(None), "")
-        self.assertFalse(intercept.should_intercept("/Movie.ISO", blacklist=["not-here", "movie.iso"]))
+        self.assertFalse(
+            intercept.should_intercept("/Movie.ISO", blacklist=["not-here", "movie.iso"])
+        )
         self.assertTrue(intercept.should_intercept("/Movie.ISO", whitelist=["", "movie"]))
 
     def test_logging_rename_ignores_remove_error(self):
@@ -547,25 +740,37 @@ class TestBuild8RawCoverageBranches(unittest.TestCase):
             Path(src).write_text("new", encoding="utf-8")
             Path(dst).write_text("old", encoding="utf-8")
             fs = logging_v116._RealFS()
-            with mock.patch.object(logging_v116.os, "remove", side_effect=OSError("locked")), \
-                 mock.patch.object(logging_v116.os, "replace") as replaced:
+            with (
+                mock.patch.object(logging_v116.os, "remove", side_effect=OSError("locked")),
+                mock.patch.object(logging_v116.os, "replace") as replaced,
+            ):
                 fs.rename(src, dst)
             replaced.assert_called_once_with(src, dst)
 
     def test_oppo_control_remaining_low_level_edges(self):
         import oppo_control as oc
 
-        self.assertEqual(oc._resolve_hardware_wake_command(FakeSettings({}), object()).__class__, object)
-        self.assertEqual(oc.run_configured_commands(FakeSettings({"oppo_ip":"127.0.0.1", "oppo_start_commands":""}), "oppo_start_commands"), [])
-        self.assertFalse(oc.http_info_is_definitive_stop({"result":"bad", "playinfo":"also-bad"}))
-        self.assertFalse(oc.http_info_indicates_playing({"result":"bad", "playinfo":"also-bad"}))
-        self.assertTrue(oc.http_info_indicates_playing({"playinfo":{"e_play_status":0}}))
+        self.assertEqual(
+            oc._resolve_hardware_wake_command(FakeSettings({}), object()).__class__, object
+        )
+        self.assertEqual(
+            oc.run_configured_commands(
+                FakeSettings({"oppo_ip": "127.0.0.1", "oppo_start_commands": ""}),
+                "oppo_start_commands",
+            ),
+            [],
+        )
+        self.assertFalse(oc.http_info_is_definitive_stop({"result": "bad", "playinfo": "also-bad"}))
+        self.assertFalse(oc.http_info_indicates_playing({"result": "bad", "playinfo": "also-bad"}))
+        self.assertTrue(oc.http_info_indicates_playing({"playinfo": {"e_play_status": 0}}))
         with mock.patch.object(oc, "_http_get", side_effect=ValueError("bad audio")):
             self.assertEqual(oc.get_audio_tracks(FakeSettings({})), [])
-        with mock.patch.object(oc, "_http_get", return_value='{"audio_list":[{"index":3,"name":"List"}]}'):
+        with mock.patch.object(
+            oc, "_http_get", return_value='{"audio_list":[{"index":3,"name":"List"}]}'
+        ):
             self.assertEqual(oc.get_audio_tracks(FakeSettings({}))[0]["index"], 3)
         self.assertEqual(oc._guess_size_from_fields(["size=7", "42"]), 7)
-        self.assertIsNone(oc._first_bool({"flag":"maybe"}, "flag"))
+        self.assertIsNone(oc._first_bool({"flag": "maybe"}, "flag"))
         self.assertEqual(oc._infer_entry_type(explicit_is_dir=True), "directory")
         self.assertEqual(oc._infer_entry_type(explicit_is_dir=False), "file")
 
@@ -574,15 +779,24 @@ class TestBuild8RawCoverageBranches(unittest.TestCase):
         import playercorefactory_merge as pcf
 
         class NoSeparatorThenCloseSock:
-            def __init__(self): self.calls = 0; self.closed = False
-            def settimeout(self, timeout): pass
-            def sendall(self, data): pass
+            def __init__(self):
+                self.calls = 0
+                self.closed = False
+
+            def settimeout(self, timeout):
+                pass
+
+            def sendall(self, data):
+                pass
+
             def recv(self, n):
                 self.calls += 1
                 if self.calls == 1:
                     return b"partial-without-newline"
                 return b""
-            def close(self): self.closed = True
+
+            def close(self):
+                self.closed = True
 
         sock = NoSeparatorThenCloseSock()
         client = oppo_tcp_client.OppoTcpClient("127.0.0.1", 23, send_svm=False)
@@ -599,6 +813,7 @@ class TestBuild8RawCoverageBranches(unittest.TestCase):
 
     def test_preset_settings_edges(self):
         import preset_manager as pm
+
         from resources.lib import settings_reader as sr
 
         self.assertIsNone(pm._parse_version("bad"))

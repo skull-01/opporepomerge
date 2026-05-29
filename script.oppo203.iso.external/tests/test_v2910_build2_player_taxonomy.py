@@ -1,8 +1,9 @@
 """v2.9.10 Build 3 - OPPO clone taxonomy and aliases."""
-from pathlib import Path
+
 import importlib.util
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -30,7 +31,9 @@ def test_build2_registry_contains_new_clone_and_successor_models():
 
 def test_build2_aliases_normalize_to_canonical_models():
     profiles = _load("hardware_profiles_build2_aliases", "resources/lib/oppo/hardware_profiles.py")
-    settings_reader = _load("settings_reader_build2_aliases", "resources/lib/kodi/settings_reader.py")
+    settings_reader = _load(
+        "settings_reader_build2_aliases", "resources/lib/kodi/settings_reader.py"
+    )
     aliases = {
         "m9702_v1": "M9702",
         "m9702-v2": "M9702",
@@ -50,7 +53,12 @@ def test_build2_aliases_normalize_to_canonical_models():
 def test_build2_settings_dropdown_and_compatibility_matrix_match():
     settings_reader = _load("settings_reader_build2", "resources/lib/kodi/settings_reader.py")
     settings_xml = (ROOT / "resources/settings.xml").read_text(encoding="utf-8")
-    values = settings_xml.split('id="oppo_hardware_model"', 1)[1].split('values="', 1)[1].split('"', 1)[0].split("|")
+    values = (
+        settings_xml.split('id="oppo_hardware_model"', 1)[1]
+        .split('values="', 1)[1]
+        .split('"', 1)[0]
+        .split("|")
+    )
     normalized = {settings_reader.normalize_hardware_model(value) for value in values}
     assert normalized == set(settings_reader.HARDWARE_COMPAT)
     assert len(settings_reader.HARDWARE_COMPAT) == 17
@@ -59,6 +67,7 @@ def test_build2_settings_dropdown_and_compatibility_matrix_match():
 def test_build2_clone_models_use_eject_wake_and_stock_oppo_stays_passthrough():
     settings_reader = _load("settings_reader_build2_clone", "resources/lib/kodi/settings_reader.py")
     from resources.lib import oppo_remote as remote
+
     for model in ("M9200", "M9205", "CineUltra-V203", "CineUltra-V204"):
         profile = settings_reader.hardware_profile(model)
         assert profile["is_clone"] is True
@@ -70,9 +79,14 @@ def test_build2_clone_models_use_eject_wake_and_stock_oppo_stays_passthrough():
 
 
 def test_build2_successors_do_not_receive_clone_wake_behavior():
-    settings_reader = _load("settings_reader_build2_successor", "resources/lib/kodi/settings_reader.py")
-    caps = _load("hardware_capabilities_build2_successor", "resources/lib/oppo/hardware_capabilities.py")
+    settings_reader = _load(
+        "settings_reader_build2_successor", "resources/lib/kodi/settings_reader.py"
+    )
+    caps = _load(
+        "hardware_capabilities_build2_successor", "resources/lib/oppo/hardware_capabilities.py"
+    )
     from resources.lib import oppo_remote as remote
+
     profile = settings_reader.hardware_profile("magnetar_udp900")
     assert profile["protocol_compatible"] is False
     assert profile["is_clone"] is False

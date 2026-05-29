@@ -5,6 +5,7 @@ and into docs/release-history/ and docs/ai-handoff/. Older regression tests
 still verify the content, so they resolve files through this helper instead of
 requiring root-level historical clutter.
 """
+
 from __future__ import annotations
 
 from pathlib import Path

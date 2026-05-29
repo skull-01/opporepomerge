@@ -1,12 +1,13 @@
 """v2.9.1 Build 5 - version single source of truth."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -16,7 +17,9 @@ from resources.lib import version
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build5", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build5", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -24,7 +27,9 @@ def _load_audit():
 
 
 def _load_sync_version():
-    spec = importlib.util.spec_from_file_location("sync_version_build5", ROOT / "tools" / "sync_version.py")
+    spec = importlib.util.spec_from_file_location(
+        "sync_version_build5", ROOT / "tools" / "sync_version.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -58,11 +63,18 @@ def test_sync_version_check_reports_consistency():
 
 def test_sync_version_cli_check_passes():
     result = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "sync_version.py"), "--root", str(ROOT), "--check", "--expected-version", "2.9.13"],
+        [
+            sys.executable,
+            str(ROOT / "tools" / "sync_version.py"),
+            "--root",
+            str(ROOT),
+            "--check",
+            "--expected-version",
+            "2.9.13",
+        ],
         check=False,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert "OK: version_consistency" in result.stdout
@@ -82,7 +94,9 @@ def test_release_audit_checks_version_source_and_build5_evidence():
 
 
 def test_runtime_zip_policy_excludes_version_tool_and_evidence_but_includes_runtime_version_module():
-    spec = importlib.util.spec_from_file_location("package_installable_zip", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -98,12 +112,21 @@ def test_sync_version_write_only_changes_addon_attribute_in_copy(tmp_path):
 
     sandbox = tmp_path / "project"
     sandbox.mkdir()
-    stale_text = re.sub(r'(<addon\b[^>]*\bversion=")([^"]+)(")', r'\g<1>0.0.0\g<3>', addon_text, count=1)
+    stale_text = re.sub(
+        r'(<addon\b[^>]*\bversion=")([^"]+)(")', r"\g<1>0.0.0\g<3>", addon_text, count=1
+    )
     (sandbox / "addon.xml").write_text(stale_text, encoding="utf-8")
     (sandbox / "resources" / "lib").mkdir(parents=True)
-    (sandbox / "resources" / "lib" / "version.py").write_text('ADDON_VERSION = "2.9.10"\n', encoding="utf-8")
+    (sandbox / "resources" / "lib" / "version.py").write_text(
+        'ADDON_VERSION = "2.9.10"\n', encoding="utf-8"
+    )
 
     written = tool.write_addon_xml_version(sandbox)
     assert written == "2.9.13"
     assert ET.parse(sandbox / "addon.xml").getroot().attrib["version"] == "2.9.13"
-    assert (sandbox / "addon.xml").read_text(encoding="utf-8").splitlines()[0].startswith('<?xml version="1.0"')
+    assert (
+        (sandbox / "addon.xml")
+        .read_text(encoding="utf-8")
+        .splitlines()[0]
+        .startswith('<?xml version="1.0"')
+    )

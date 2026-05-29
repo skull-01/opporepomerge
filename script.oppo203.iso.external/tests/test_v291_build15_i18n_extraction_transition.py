@@ -1,17 +1,20 @@
 """v2.9.1 Build 16 - Babel/gettext extraction transition tests."""
+
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import subprocess
 import sys
 import zipfile
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def _load_i18n_extract():
-    spec = importlib.util.spec_from_file_location("i18n_extract_build16", ROOT / "tools" / "i18n_extract.py")
+    spec = importlib.util.spec_from_file_location(
+        "i18n_extract_build16", ROOT / "tools" / "i18n_extract.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -19,7 +22,9 @@ def _load_i18n_extract():
 
 
 def _load_make_pot():
-    spec = importlib.util.spec_from_file_location("make_pot_build16", ROOT / "tools" / "make_pot.py")
+    spec = importlib.util.spec_from_file_location(
+        "make_pot_build16", ROOT / "tools" / "make_pot.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -27,7 +32,9 @@ def _load_make_pot():
 
 
 def _load_package_tool():
-    spec = importlib.util.spec_from_file_location("package_installable_zip_build16", ROOT / "tools" / "package_installable_zip.py")
+    spec = importlib.util.spec_from_file_location(
+        "package_installable_zip_build16", ROOT / "tools" / "package_installable_zip.py"
+    )
     tool = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(tool)
@@ -35,7 +42,9 @@ def _load_package_tool():
 
 
 def _load_audit():
-    spec = importlib.util.spec_from_file_location("audit_release_build16", ROOT / "tools" / "audit_release.py")
+    spec = importlib.util.spec_from_file_location(
+        "audit_release_build16", ROOT / "tools" / "audit_release.py"
+    )
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
@@ -69,8 +78,7 @@ def test_i18n_extract_cli_check_is_non_writing_and_safe():
         [sys.executable, str(ROOT / "tools" / "i18n_extract.py"), "--root", str(ROOT), "--check"],
         check=False,
         text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
     )
     after = (ROOT / "resources" / "language" / "strings.pot").exists()
     assert result.returncode == 0, result.stdout + result.stderr

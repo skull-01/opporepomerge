@@ -1,18 +1,19 @@
 """v2.9.10 Build 16 - SmartThings experimental settings skeleton."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 from tests._support.project_files import read_project_file
+
 LIB = ROOT / "resources" / "lib"
 for path in (ROOT, LIB):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
 import smartthings_control  # noqa: E402
-import tv_presets  # noqa: E402
 import tv_control  # noqa: E402
+import tv_presets  # noqa: E402
 from tv_backends import (  # noqa: E402
     TV_BACKEND_SMARTTHINGS,
     backend_target_setting,
@@ -21,8 +22,8 @@ from tv_backends import (  # noqa: E402
     list_backends,
     normalize_backend_id,
 )
-from resources.lib import settings_reader, version  # noqa: E402
 
+from resources.lib import settings_reader, version  # noqa: E402
 
 REQUIRED_SMARTTHINGS_PRESETS = {
     "samsung_smartthings_experimental",
@@ -91,11 +92,13 @@ def test_smartthings_token_redaction_and_validation_metadata_never_expose_token(
     assert sanitized["smartthings_token"] == "abcd...90"
     assert token not in str(sanitized)
 
-    metadata = smartthings_control.validation_metadata({
-        "smartthings_experimental_acknowledged": "true",
-        "smartthings_token": token,
-        "smartthings_device_id": "device-1",
-    })
+    metadata = smartthings_control.validation_metadata(
+        {
+            "smartthings_experimental_acknowledged": "true",
+            "smartthings_token": token,
+            "smartthings_device_id": "device-1",
+        }
+    )
     assert metadata["acknowledged"] is True
     assert metadata["live_api_calls_enabled"] is True
     assert metadata["token_redacted"] == "abcd...90"
