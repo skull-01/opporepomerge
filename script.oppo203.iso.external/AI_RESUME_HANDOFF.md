@@ -167,80 +167,96 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-29 (PM bulk-merge — done for the day):** no in-flight code; clean
-stopping point. Tests on `main` at `bc79649`: **865 passed, 3 skipped in 9.95s**;
-coverage **99.05%**.
+**As of 2026-05-29 (EOD — ENH-#43 lib sub-package split session):** two open
+draft PRs, both CI-green and mergeable; clean stopping point. `main` not touched
+(still `4e91924`; operational state `bc79649` — **865 passed, 3 skipped**,
+coverage **99.05%**). This session drove PR #46 to green (a CI unblock) and
+delivered ENH-#43 on PR #47.
 
-- **Shipped this session (PM bulk-merge):**
-  - [PR #40](https://github.com/skull-01/script.oppo203.iso.external/pull/40) —
-    *Strip the in-Kodi setup wizard from the addon* — **merged at `59eb511`**.
-    44 files, +313/−5814: removed
-    [`resources/lib/wizard.py`](resources/lib/wizard.py),
-    [`resources/lib/wizard_polish.py`](resources/lib/wizard_polish.py),
-    [`resources/lib/first_run_wizard.py`](resources/lib/first_run_wizard.py),
-    13 wizard test files; renamed `<category id="wizard">` → `playback` in
-    [`resources/settings.xml`](resources/settings.xml); reduced `service.py`
-    `Monitor` to a lifecycle-only shell;
-    [`resources/lib/i18n.py`](resources/lib/i18n.py) `_EN` fallback table now
-    empty; 12 PO files trimmed (`#30910/#30920/#30930/#30940/#30950` and
-    `#31000-#31061` deleted). **#40's Phase A on-device verification was NOT
-    performed** — operator skipped per the bulk-merge directive. The
-    `Monitor.onSettingsChanged` removal (auto-apply of compatibility presets
-    when hardware model changes) is the headline behavioural change worth
-    verifying on real hardware. Revert path: `git revert 59eb511`.
-  - [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) —
-    *docs: 'configurator owns add-on configuration' policy (ENH-#41 Part A)* —
-    **merged at `816bde2`**. 3 files: [`AGENTS.md`](AGENTS.md) gained
-    `## Configuration is owned by the configurator` after `## Scope discipline`;
-    [`CONTRIBUTING.md`](CONTRIBUTING.md) gained `## Configuration ownership`
-    framed for external contributors;
-    [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
-    Phase A entry filed. The merge-resolution at `5ffa50b` preserved both #40
-    and #45 Phase A entries in the checklist.
+- **In flight (two open draft PRs, both CI-green + mergeable):**
+  - [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47)
+    — *refactor(addon): split `resources/lib` into tv/oppo/avr/kodi
+    sub-packages (ENH-#43)* — branch `claude/enh43-lib-subpackages-r9k2m4x7`,
+    tip `69e32b3`. **Draft, CI green, mergeable.** All 46 `resources/lib`
+    modules moved into `tv/` (7) / `oppo/` (14) / `avr/` (9) / `kodi/` (16);
+    `version.py` → `kodi/`. **File moves + import rewiring only — no function
+    or public-API renames.**
+    - A lazy `sys.meta_path` alias finder in
+      [`resources/lib/__init__.py`](resources/lib/__init__.py) keeps legacy
+      flat names (`resources.lib.oppo_control`, bare `oppo_control`) resolving
+      to the **same** canonical `resources.lib.<bucket>.<module>` objects. It
+      imports nothing eagerly (installer's `xbmcaddon.Addon()` stays lazy), so
+      the ~20 test files + CI tooling that import flat names needed no changes.
+    - Convention: module-top cross-family imports are explicit
+      (`from ..oppo.oppo_control import …`); lazy in-function imports stay bare
+      (finder-resolved, mock-friendly). `command_map.py`'s data path bumped
+      `parents[1]` → `parents[2]` (module one level deeper).
+    - `version.py` move updated `sync_version.py`'s project-root **sentinel** +
+      the `resources.lib.version` importers in `.github/workflows/package.yml`,
+      `scripts/package_release.sh`, `scripts/verify.sh`, `tools/audit_release.py`
+      → `resources.lib.kodi.version`.
+    - Test harness: new [`tests/__init__.py`](tests/__init__.py) installs the
+      finder for the `unittest discover` path (bypasses conftest);
+      [`tests/_support/lib_buckets.py`](tests/_support/lib_buckets.py) lets the
+      kodi-stub contexts purge the canonical bucket module alongside the legacy
+      alias (else stale stub-bound modules leak); ~70 flat-path test literals
+      updated to bucket paths; 12 `# pragma: no cover` added to now-dead
+      bare-name fallback branches; a per-test isolation fixture in
+      `test_v253_build5_hardware_readiness` removes `-n auto` flakiness the move
+      exposed (commit `69e32b3`).
+    - Gates: `pytest -n auto` **865/3** (green across repeated runs); serial
+      coverage **99.07%**; ruff check + format clean; `unittest discover`
+      **484 OK**; `audit_release` **580/580**; runtime ZIP 70 files (50
+      bucketed, `version.py` in `kodi/`, no dev dirs). SHA `18a97a6` commented
+      on issue
+      [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43#issuecomment-4570716269);
+      Phase A + Phase C steps queued in
+      [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md).
+      Software-verified only; not run against real hardware.
+  - [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46)
+    — *feat(addon): in-add-on configurator-owner hint + overwrite warning
+    (ENH-#41 Parts B + C)* — branch `claude/enh41-bc-config-hint-a4n9k2m`, tip
+    `52f1cd7`. **Draft, CI green, mergeable.** Unblocked this session: a
+    `ruff format` fix to `service.py`'s `CONFIGURATOR_MANAGED_KEYS` tuple
+    (`52f1cd7`) cleared the previously-failing "Lint and format checks" CI job
+    (the PR's local gate had run `ruff check` but not `ruff format --check`);
+    SHA commented on
+    [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41#issuecomment-4570163859).
+    Substance unchanged from the prior session (static lsep banner +
+    once-per-session toast + 42-key overwrite warning).
 
-- **Carried open after this session:**
-  - **[#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
-    Parts B + C are now unblocked** since PR #40 merged. Per the §21 Q&A logged
-    on 2026-05-29:
-    - **Part B** — in-add-on guidance hint on settings open. Both mechanisms:
-      static label at top of [`resources/settings.xml`](resources/settings.xml)
-      *plus* a `service.py` first-open-per-session
-      `xbmcgui.Dialog().notification` tracked via
-      `xbmcgui.Window(10000).setProperty(...)` (clears on Kodi restart).
-    - **Part C** — settings-file ownership marker. Configurator writes
-      `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` in
-      `resources/settings.xml`; add-on warns when a configurator-managed key is
-      overwritten via Kodi's UI. The configurator-side writer change lives in
-      the configurator area but the add-on warning logic is addon work.
-  - **Five `area:addon` ENH issues still open:**
-    [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
-    (336-error ruff backlog, 3-PR incremental plan in the issue body),
-    [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
-    (Parts B + C still pending — Part A landed),
-    [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42)
-    (in-add-on settings menu),
-    [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43)
-    (split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages),
-    [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
-    (hardware-validation testing — lending, donations, tester reports wanted).
+- **What to resume next session:**
+  - Operator review → merge of **PR #47** (ENH-#43) and **PR #46** (ENH-#41
+    B+C). No ordering dependency — they touch disjoint files.
+  - Phase A on-device verification of #46, #47, and the still-deferred #40
+    (whenever hardware is to hand) — all queued in the manual checklist.
+  - With `resources/lib` bucketed (once #47 merges), **ENH-#42** (in-add-on
+    settings menu) can land in the right layout.
+  - Configurator side of ENH-#41 Part C (the
+    `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` marker) — configurator
+    area, separate session.
+
+- **Carried open after this session (all `area:addon`):**
+  [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
+  (ruff backlog),
+  [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
+  (configurator-owns-config — Parts B+C on draft #46),
+  [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42)
+  (in-add-on settings menu),
+  [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43)
+  (lib split — implemented on draft #47),
+  [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
+  (hardware-validation testing). Only the operator closes issues.
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **ENH-#41 Parts B + C** — finishes the configurator-owns-config theme.
-     Touches `resources/settings.xml` (Part B static label, Part C marker
-     comment) + [`service.py`](service.py) (Part B notification). Now safe to
-     attempt since #40 already landed the `settings.xml` rename.
-  2. **Phase A device verification for #40** — operator runs the merged
-     wizard-strip on real hardware per
-     [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md);
-     no agent code work, just operator action + post-verify row archive. Could
-     pair with theme 1 in one session if hardware is to hand.
-  3. **ENH-#43 — split `resources/lib`** into TV / Oppo / AVR / Kodi
-     sub-packages. Best done *before* #42 so the in-add-on settings menu lands
-     in the right layout from day one. Independent of #41.
-  4. **ENH-#42 — minimal in-add-on settings menu**. Depends on #43's layout.
-  5. **#38 ruff backlog PR 1 (auto-fix sweep)** — `ruff check --fix .`, ~172
-     mechanical fixes, 336 → ~164 errors. Independent of everything above; can
-     run in a parallel session.
+  1. **Drive PR #47 + PR #46 through review → merge** — both green and
+     mergeable; lead item.
+  2. **Phase A device verification** for #40 / #46 / #47 — operator action on
+     real hardware, no agent code.
+  3. **ENH-#42 — minimal in-add-on settings menu** — now unblocked by #43's
+     bucket layout (best after #47 merges).
+  4. **#38 ruff backlog PR 1 (auto-fix sweep)** — independent; can run in a
+     parallel session.
 
 ## §3b Configurator work — in progress
 
@@ -398,6 +414,14 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   (`CLAUDE.md`, `AGENTS.md`, `AI_RESUME_HANDOFF.md`, `docs/MANUAL_VERIFICATION_CHECKLIST.md`)
   per operator's job_finder_ri norms. Existing spine docs replaced wholesale. Issue model
   set to hybrid (Issues for bug/enhancement tracking, PRs for delivery).
+- **2026-05-29** — ENH-#43: split the flat `resources/lib` (46 modules) into
+  `tv/` / `oppo/` / `avr/` / `kodi/` sub-packages, canonical name
+  `resources.lib.<bucket>.<module>`. A lazy `sys.meta_path` alias finder in
+  `resources/lib/__init__.py` preserves legacy flat names (`resources.lib.X`
+  and bare `X`) as same-object aliases during a deprecation window; `version.py`
+  → `kodi/`. Draft PR #47. Established convention: module-top cross-family
+  imports explicit (`from ..oppo… import`), lazy in-function imports bare
+  (finder-resolved, mock-friendly).
 
 ---
 
@@ -425,15 +449,15 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-29 (PM bulk-merge)**.
+Last refreshed: **2026-05-29 (EOD — ENH-#43 lib sub-package split session)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
 | 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`, merged via #40 at `59eb511`) | closed by operator |
 | 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not started |
-| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | `1ed15a3` (Part A) merged via [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) at `816bde2`. Parts B + C pending. | Phase A queued |
+| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | `1ed15a3` (Part A) merged via [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) at `816bde2`. Parts B + C addon side at `52f1cd7` (CI-green ruff-format fix this session) on draft [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46). Configurator side of Part C pending (separate session). | Phase A queued (×2: #45, #46) |
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | — | not started |
-| 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | — | not started |
+| 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | `18a97a6` (+ test-isolation `69e32b3`) on draft [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) | Phase A queued |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
 
 ---
@@ -555,6 +579,80 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   updated. **No new code commits, no new issues, no new branches.** Tree
   clean; `pytest -n auto --basetemp=build\_pt` on `main` re-confirmed at 865
   passed / 3 skipped / 9.95s.
+- **2026-05-29 (EOD — ENH-#41 Parts B + C addon session)** — Single-theme
+  addon session that implemented the addon-side of
+  [ENH-#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
+  Parts B (in-add-on guidance hint) and C (configurator-managed-key
+  overwrite warning). PR
+  [#46](https://github.com/skull-01/script.oppo203.iso.external/pull/46) on
+  `claude/enh41-bc-config-hint-a4n9k2m` (tip `3ccd9f1`) opened as draft. 17
+  files changed, +697 / -3:
+  [`service.py`](service.py) gained the `CONFIGURATOR_MANAGED_KEYS`
+  constant (42 keys), `_snapshot_managed_settings` /
+  `_changed_managed_keys` / `_resolve_localized` /
+  `_notify_config_hint_once_per_session` /
+  `_warn_overwritten_managed_keys` helpers, and a new `Monitor.__init__`
+  + `Monitor.onSettingsChanged` that fires Part B's once-per-session
+  toast and Part C's per-key warning (the class docstring records the
+  no-state-mutation invariant preserved from PR #40);
+  [`resources/settings.xml`](resources/settings.xml) gained one `<setting
+  id="config_owner_hint" label="30290" type="lsep"/>` at the top of
+  `<category id="connection">` (`tests/test_all.py` settings-count
+  assertion bumped 97 → 98); 12 PO files gained four new strings (#30290
+  banner, #30291 notification body, #30292 per-key warning template with
+  `{key}` placeholder, #30293 notification title — non-en_gb files use
+  msgid=msgstr fallback per convention);
+  [`tests/test_v2914_build1_config_owner_hint.py`](tests/test_v2914_build1_config_owner_hint.py)
+  is new with 21 tests across 5 classes (`TManagedKeysContent`,
+  `TSnapshotAndDiff`, `TNotificationHelpers`, `TMonitor`,
+  `TSettingsXmlAndPo`);
+  [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
+  gained a Phase A entry with a six-step Phase C on-device verification
+  script for #46. Tests on the work branch: **886 passed, 3 skipped** in
+  ~9.5s (the +21 over `main`'s 865 are this PR's new tests); ruff clean
+  on touched Python files (257 pre-existing repo-wide errors covered by
+  [ENH-#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)).
+  SHA `3ccd9f1` commented on issue #41 per the only-operator-closes
+  norm. Kodi-API caveat documented in the PR body: there is no "settings
+  dialog opened" event; Part B's "first-open" notification is
+  implemented as "first **change** per session", with the always-visible
+  lsep banner as the on-open counterpart. **§3a rewritten** to record
+  open draft PR #46, what's done, what's left, and refreshed candidate
+  themes. **§3b not touched** (no configurator work this session).
+  **§17a row for #41 updated** to record the Parts B + C SHA on draft
+  PR #46 (configurator side of Part C still pending). **Header
+  unchanged** — "Last sync" stays at `bc79649` and tests-on-`main` at
+  865/3/99.05% because `main` had no operational changes this session.
+  Phase A on-device verification of #46 deferred to next session; Phase
+  A of #40 still deferred from PM bulk-merge.
+- **2026-05-29 (EOD — ENH-#43 lib sub-package split session)** — Two-part
+  addon session. (1) **Drove PR #46 to green:** the ENH-#41 B+C PR's "Lint and
+  format checks" CI job was failing on a `ruff format` diff in `service.py`'s
+  `CONFIGURATOR_MANAGED_KEYS` tuple (the PR's local gate had run `ruff check`
+  but not `ruff format --check`); committed `52f1cd7` to fix it — all 7 PR
+  checks now green and mergeable. (2) **Implemented ENH-#43** on draft
+  [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47)
+  (`claude/enh43-lib-subpackages-r9k2m4x7`, tip `69e32b3`): moved all 46
+  `resources/lib` modules into `tv/`/`oppo/`/`avr/`/`kodi/` (incl. `version.py`
+  → `kodi/`); added a lazy `sys.meta_path` alias finder in
+  `resources/lib/__init__.py` so legacy flat names (`resources.lib.X` + bare
+  `X`) resolve to the same canonical objects; made module-top cross-family
+  imports explicit while keeping lazy in-function imports bare; updated the
+  `version.py` importers in `sync_version.py` (project-root sentinel),
+  `package.yml`, `package_release.sh`, `verify.sh`, `audit_release.py`; updated
+  ~70 flat-path test literals + the kodi-stub contexts (new
+  `tests/_support/lib_buckets.py`) + new `tests/__init__.py` for the
+  unittest-discover path; pragma'd 12 now-dead bare-name fallback branches;
+  added a per-test isolation fixture (`69e32b3`) to remove `-n auto` flakiness
+  the move exposed. Gates: `pytest -n auto` 865/3 (green across repeats),
+  serial coverage **99.07%**, ruff check+format clean, `unittest discover`
+  484 OK, `audit_release` 580/580, runtime ZIP 70 files (50 bucketed). SHA
+  `18a97a6` commented on issue #43. **§3a rewritten** to record both in-flight
+  PRs (#46 + #47); **§3b untouched** (no configurator work). **§15** gained an
+  ENH-#43 journey bullet; **§17a** #43 row + #41 tip + "Last refreshed"
+  updated. **Header unchanged** — `main` had no operational changes this
+  session (ENH-#43 lives on the branch / PR #47, not merged). Software-verified
+  only; Phase A + Phase C steps for #47 queued in the manual checklist.
 
 ---
 

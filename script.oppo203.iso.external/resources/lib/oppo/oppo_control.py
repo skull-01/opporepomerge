@@ -559,7 +559,7 @@ def _resolve_hardware_wake_command(settings, command):
     if command.strip().upper() not in ("#PON", "#POW"):
         return command
     try:
-        from .settings_reader import hardware_profile
+        from settings_reader import hardware_profile
 
         profile = hardware_profile(settings.get("oppo_hardware_model", "udp_203"))
         wake = profile.get("wake_command")

@@ -20,7 +20,7 @@ except ImportError:  # top-level/audit import compatibility
     from constants import OPPO_COMMAND_MAP_SIZE  # type: ignore
 
 FORBIDDEN_COMMAND_TOKENS: tuple[str, ...] = ("#SIS", "#PGU", "#PGD")
-DEFAULT_COMMAND_MAP_PATH = Path(__file__).resolve().parents[1] / "data" / "oppo_command_map.json"
+DEFAULT_COMMAND_MAP_PATH = Path(__file__).resolve().parents[2] / "data" / "oppo_command_map.json"
 
 
 @dataclass(frozen=True)

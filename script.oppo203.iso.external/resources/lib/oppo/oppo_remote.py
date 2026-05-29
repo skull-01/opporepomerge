@@ -20,14 +20,18 @@ from .oppo_control import (
     set_play_time,
     set_subtitle_track,
 )
-from .settings_reader import DEFAULTS, Settings, read_settings
+
+try:
+    from ..kodi.settings_reader import DEFAULTS, Settings, read_settings
+except ImportError:  # pragma: no cover - top-level test/import compatibility
+    from settings_reader import DEFAULTS, Settings, read_settings
 
 try:
     from .command_map import load_default_command_map
 except ImportError:  # pragma: no cover - top-level test/import compatibility
     from command_map import load_default_command_map
 try:
-    from .diagnostic_logging import format_log_message, log_to_xbmc
+    from ..kodi.diagnostic_logging import format_log_message, log_to_xbmc
 except ImportError:  # pragma: no cover - top-level test/import compatibility
     from diagnostic_logging import format_log_message, log_to_xbmc
 
@@ -98,7 +102,7 @@ def send_remote_key(key):
 
     if command:
         try:
-            from .settings_reader import warn_if_unsupported
+            from settings_reader import warn_if_unsupported
 
             warn = warn_if_unsupported(command, settings.get("oppo_hardware_model", "udp_203"))
             if warn:
@@ -216,7 +220,7 @@ def resolve_power_on_token(token, hardware_model):
     if token.strip().upper() not in ("#PON", "#POW"):
         return token
     try:
-        from .settings_reader import hardware_profile
+        from settings_reader import hardware_profile
 
         profile = hardware_profile(hardware_model)
         wake = profile.get("wake_command")

@@ -8,12 +8,34 @@ from pathlib import Path
 import sys
 import zipfile
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(LIB) not in sys.path:
     sys.path.insert(0, str(LIB))
+
+
+@pytest.fixture(autouse=True)
+def _fresh_addon_modules():
+    """Per-test isolation for the resources.lib.* tree.
+
+    The kodi-stub export tests below load stub-bound modules via monkeypatch
+    (no sys.modules teardown), which can otherwise leak a stub-bound
+    resources.lib.* module onto an xdist worker and break a later test that
+    imports the same module normally. Purge before and after so neither prior
+    pollution nor this file's stubs cross test boundaries.
+    """
+
+    def _purge():
+        for _name in [k for k in list(sys.modules) if k.startswith("resources.lib.")]:
+            sys.modules.pop(_name, None)
+
+    _purge()
+    yield
+    _purge()
 
 
 def test_build5_readiness_report_is_non_claiming_and_contains_tester_checklist():
@@ -72,7 +94,8 @@ def test_build5_installer_exposes_export_action_with_kodi_stubs(tmp_path, monkey
     monkeypatch.syspath_prepend(str(stubs))
     monkeypatch.syspath_prepend(str(ROOT))
     monkeypatch.syspath_prepend(str(LIB))
-    for name in ("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer"):
+    from tests._support.lib_buckets import with_canonical
+    for name in with_canonical(("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")):
         sys.modules.pop(name, None)
     import xbmcaddon  # type: ignore
     import xbmcvfs  # type: ignore
@@ -110,7 +133,7 @@ def test_runtime_zip_includes_readiness_helper_but_excludes_build5_evidence(tmp_
     spec.loader.exec_module(tool)
     out = tmp_path / "runtime.zip"
     names = tool.create_installable_zip(ROOT, out)
-    assert "script.oppo203.iso.external/resources/lib/hardware_validation_readiness.py" in names
+    assert "script.oppo203.iso.external/resources/lib/oppo/hardware_validation_readiness.py" in names
     assert "script.oppo203.iso.external/BUILD_NOTES_v2.5.3_BUILD5.md" not in names
     assert "script.oppo203.iso.external/HARDWARE_VALIDATION_READINESS_v2.5.3_BUILD5.md" not in names
     with zipfile.ZipFile(out) as zf:
@@ -147,7 +170,8 @@ def test_build5_installer_export_failure_is_non_fatal(monkeypatch):
     monkeypatch.syspath_prepend(str(stubs))
     monkeypatch.syspath_prepend(str(ROOT))
     monkeypatch.syspath_prepend(str(LIB))
-    for name in ("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer"):
+    from tests._support.lib_buckets import with_canonical
+    for name in with_canonical(("xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "resources.lib.installer", "installer")):
         sys.modules.pop(name, None)
     import xbmcaddon  # type: ignore
     xbmcaddon.reset(info={"path": str(ROOT), "id": "script.oppo203.iso.external"})

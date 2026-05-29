@@ -6,21 +6,38 @@ import threading
 import time
 import traceback
 
-from avr_sequence import post_playback_sequence, pre_playback_sequence
-from diagnostic_logging import log_to_xbmc
-from oppo_control import (
-    get_playback_info,
-    http_info_indicates_playing,
-    http_info_is_definitive_stop,
-    http_status_is_idle,
-    query_playback_status,
-    run_configured_commands,
-    run_preflight,
-    run_start,
-    tcp_qpl_is_idle,
-)
-from settings_reader import read_settings
-from tv_control import switch_to_kodi, switch_to_oppo
+try:
+    from ..avr.avr_sequence import post_playback_sequence, pre_playback_sequence
+    from ..oppo.oppo_control import (
+        get_playback_info,
+        http_info_indicates_playing,
+        http_info_is_definitive_stop,
+        http_status_is_idle,
+        query_playback_status,
+        run_configured_commands,
+        run_preflight,
+        run_start,
+        tcp_qpl_is_idle,
+    )
+    from ..tv.tv_control import switch_to_kodi, switch_to_oppo
+    from .diagnostic_logging import log_to_xbmc
+    from .settings_reader import read_settings
+except ImportError:  # pragma: no cover - run as __main__ via runpy / bare-name fallback
+    from avr_sequence import post_playback_sequence, pre_playback_sequence
+    from diagnostic_logging import log_to_xbmc
+    from oppo_control import (
+        get_playback_info,
+        http_info_indicates_playing,
+        http_info_is_definitive_stop,
+        http_status_is_idle,
+        query_playback_status,
+        run_configured_commands,
+        run_preflight,
+        run_start,
+        tcp_qpl_is_idle,
+    )
+    from settings_reader import read_settings
+    from tv_control import switch_to_kodi, switch_to_oppo
 
 
 def log(message):

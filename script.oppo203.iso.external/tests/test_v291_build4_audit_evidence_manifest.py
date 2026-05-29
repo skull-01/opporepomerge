@@ -78,7 +78,7 @@ def test_runtime_zip_policy_excludes_evidence_manifests():
     assert tool.is_runtime_member("release-evidence/v2.9.1-build4/MANIFEST.txt") is False
     assert tool.is_runtime_member("BUILD_NOTES_v2.9.1_BUILD4.md") is False
     assert tool.is_runtime_member("tools/audit_release.py") is False
-    assert tool.is_runtime_member("resources/lib/command_map.py") is True
+    assert tool.is_runtime_member("resources/lib/oppo/command_map.py") is True
 
 
 def test_addon_metadata_mentions_build4_audit_manifest_transition():

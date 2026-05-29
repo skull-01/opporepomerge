@@ -14,7 +14,7 @@ from typing import Callable, Protocol
 
 try:
     from .avr_types import AVR_BACKEND_DENON_MARANTZ, AvrResult
-except ImportError:  # top-level/audit/test compatibility
+except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     from avr_types import AVR_BACKEND_DENON_MARANTZ, AvrResult  # type: ignore
 
 DEFAULT_DENON_MARANTZ_PORT = 23

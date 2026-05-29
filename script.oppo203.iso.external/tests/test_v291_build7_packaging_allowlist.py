@@ -79,8 +79,8 @@ def test_runtime_allowlist_includes_only_root_runtime_files_and_resources():
         "service.py",
         "resources/settings.xml",
         "resources/data/oppo_command_map.json",
-        "resources/lib/version.py",
-        "resources/lib/disc_classification.py",
+        "resources/lib/kodi/version.py",
+        "resources/lib/kodi/disc_classification.py",
         "resources/language/resource.language.en_gb/strings.po",
     ]
     for rel in included:

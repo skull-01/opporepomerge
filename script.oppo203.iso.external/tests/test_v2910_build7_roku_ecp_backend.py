@@ -36,7 +36,7 @@ class _Response:
 
 
 def test_build7_adds_roku_ecp_backend_with_strict_metadata():
-    backends = _load("tv_backends_build7", "resources/lib/tv_backends.py")
+    backends = _load("tv_backends_build7", "resources/lib/tv/tv_backends.py")
     assert "roku_ecp" in backends.list_backends()
     assert backends.normalize_backend_id("roku_tv") == "roku_ecp"
     assert backends.normalize_backend_id("tcl_roku_tv") == "roku_ecp"
@@ -55,7 +55,7 @@ def test_build7_adds_roku_ecp_backend_with_strict_metadata():
 
 
 def test_build7_roku_ecp_helper_posts_only_allowlisted_keypress_paths():
-    roku = _load("roku_ecp_control_build7", "resources/lib/roku_ecp_control.py")
+    roku = _load("roku_ecp_control_build7", "resources/lib/tv/roku_ecp_control.py")
     settings = {"tv_ip": "192.0.2.60", "roku_ecp_port": "8060"}
     seen = []
 
@@ -101,7 +101,7 @@ def test_build7_tv_control_dispatches_roku_nonfatal_backend_without_touching_adb
 
 
 def test_build7_roku_presets_are_software_only_and_require_local_control():
-    presets = _load("tv_presets_build7", "resources/lib/tv_presets.py")
+    presets = _load("tv_presets_build7", "resources/lib/tv/tv_presets.py")
     expected = ("roku_tv", "tcl_roku_tv", "hisense_roku_tv", "generic_roku_tv")
     assert presets.list_roku_tv_presets() == expected
     summary = presets.preset_registry_summary()
@@ -123,7 +123,7 @@ def test_build7_roku_presets_are_software_only_and_require_local_control():
 
 
 def test_build7_settings_add_roku_backend_defaults_without_changing_player_behavior():
-    sr = _load("settings_reader_build7", "resources/lib/settings_reader.py")
+    sr = _load("settings_reader_build7", "resources/lib/kodi/settings_reader.py")
     assert sr.DEFAULTS["tv_backend"] == "adb"
     assert "roku_ecp" in sr.ENUM_VALUES["tv_backend"]
     assert sr.DEFAULTS["roku_ecp_port"] == "8060"
@@ -135,7 +135,7 @@ def test_build7_settings_add_roku_backend_defaults_without_changing_player_behav
 
 
 def test_build7_docs_and_audit_evidence_identity():
-    version = _load("version_build7", "resources/lib/version.py")
+    version = _load("version_build7", "resources/lib/kodi/version.py")
     assert version.BUILD_ID == "v2.9.13 Final"
     assert version.BUILD_NUMBER == 22
     for rel in ("addon.xml", "README.md", "reference.md", "web-references.md"):
@@ -162,8 +162,8 @@ def test_build7_runtime_zip_includes_roku_helper_but_excludes_evidence(tmp_path)
     package_tool = _load("package_installable_zip_build7", "tools/package_installable_zip.py")
     output = tmp_path / "runtime.zip"
     names = package_tool.create_installable_zip(ROOT, output)
-    assert "script.oppo203.iso.external/resources/lib/roku_ecp_control.py" in names
-    assert "script.oppo203.iso.external/resources/lib/tv_backends.py" in names
+    assert "script.oppo203.iso.external/resources/lib/tv/roku_ecp_control.py" in names
+    assert "script.oppo203.iso.external/resources/lib/tv/tv_backends.py" in names
     with zipfile.ZipFile(output) as zf:
         assert zf.testzip() is None
         bad = [
@@ -174,7 +174,7 @@ def test_build7_runtime_zip_includes_roku_helper_but_excludes_evidence(tmp_path)
 
 
 def test_build7_roku_preset_edge_paths_for_coverage(monkeypatch):
-    presets = _load("tv_presets_build7_edges", "resources/lib/tv_presets.py")
+    presets = _load("tv_presets_build7_edges", "resources/lib/tv/tv_presets.py")
     monkeypatch.setitem(presets.TV_PRESETS, "bad_roku", {"backend": "adb", "editable": True, "key_allowlist_required": True})
     monkeypatch.setattr(presets, "ROKU_TV_PRESET_IDS", presets.ROKU_TV_PRESET_IDS + ("bad_roku",))
     warnings = presets.validate_preset_registry()
@@ -186,7 +186,7 @@ def test_build7_roku_preset_edge_paths_for_coverage(monkeypatch):
 
 def test_build7_roku_helper_error_paths_and_injected_urlopen(monkeypatch):
     import urllib.error
-    roku = _load("roku_ecp_control_build7_errors", "resources/lib/roku_ecp_control.py")
+    roku = _load("roku_ecp_control_build7_errors", "resources/lib/tv/roku_ecp_control.py")
     for bad_key in (None,):
         try:
             roku.normalize_roku_key(bad_key)
@@ -238,7 +238,7 @@ def test_build7_roku_helper_error_paths_and_injected_urlopen(monkeypatch):
 
 
 def test_build7_support_matrix_helpers_and_unmatched_backend_branch(monkeypatch):
-    presets = _load("tv_presets_build7_matrix", "resources/lib/tv_presets.py")
+    presets = _load("tv_presets_build7_matrix", "resources/lib/tv/tv_presets.py")
     assert len(presets.android_google_tv_support_matrix()) == 9
     assert len(presets.roku_tv_support_matrix()) == 4
 

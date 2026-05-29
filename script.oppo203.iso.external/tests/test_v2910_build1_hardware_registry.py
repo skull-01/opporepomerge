@@ -17,7 +17,7 @@ def _load(name, rel):
 
 
 def test_hardware_profiles_define_three_roles_and_player_classes():
-    profiles = _load("hardware_profiles_build1", "resources/lib/hardware_profiles.py")
+    profiles = _load("hardware_profiles_build1", "resources/lib/oppo/hardware_profiles.py")
     assert profiles.list_roles() == ("player", "tv", "avr")
     assert profiles.HARDWARE_CLASS_STOCK_OPPO == "stock_oppo"
     assert profiles.HARDWARE_CLASS_CHINOPPO_CLONE == "chinoppo_clone"
@@ -29,7 +29,7 @@ def test_hardware_profiles_define_three_roles_and_player_classes():
 
 
 def test_hardware_capabilities_are_read_only_and_do_not_claim_validation():
-    caps = _load("hardware_capabilities_build1", "resources/lib/hardware_capabilities.py")
+    caps = _load("hardware_capabilities_build1", "resources/lib/oppo/hardware_capabilities.py")
     summary = caps.hardware_registry_summary()
     assert summary["runtime_behavior_changed"] is False
     assert summary["hardware_validation_claimed"] is False
@@ -41,8 +41,8 @@ def test_hardware_capabilities_are_read_only_and_do_not_claim_validation():
 
 
 def test_build1_does_not_mutate_existing_oppo_command_map_or_settings_count():
-    command_map = _load("command_map_build1", "resources/lib/command_map.py")
-    settings_reader = _load("settings_reader_build1", "resources/lib/settings_reader.py")
+    command_map = _load("command_map_build1", "resources/lib/oppo/command_map.py")
+    settings_reader = _load("settings_reader_build1", "resources/lib/kodi/settings_reader.py")
     loaded = command_map.load_default_command_map()
     assert len(loaded) == 76
     assert not any(token in value for value in loaded.values() for token in ("#SIS", "#PGU", "#PGD"))
@@ -52,7 +52,7 @@ def test_build1_does_not_mutate_existing_oppo_command_map_or_settings_count():
 
 
 def test_build1_version_docs_and_evidence_identity():
-    version = _load("version_build1", "resources/lib/version.py")
+    version = _load("version_build1", "resources/lib/kodi/version.py")
     assert version.ADDON_VERSION == "2.9.13"
     assert version.BUILD_ID == "v2.9.13 Final"
     assert version.BUILD_NUMBER == 22
@@ -95,8 +95,8 @@ def test_runtime_zip_excludes_build1_development_evidence(tmp_path):
 
 
 def test_build1_registry_helpers_cover_default_and_unknown_paths():
-    profiles = _load("hardware_profiles_build1_extra", "resources/lib/hardware_profiles.py")
-    caps = _load("hardware_capabilities_build1_extra", "resources/lib/hardware_capabilities.py")
+    profiles = _load("hardware_profiles_build1_extra", "resources/lib/oppo/hardware_profiles.py")
+    caps = _load("hardware_capabilities_build1_extra", "resources/lib/oppo/hardware_capabilities.py")
     all_profiles = profiles.list_profiles()
     assert "UDP-203" in all_profiles
     assert profiles.get_profile("missing", {"role": "unknown"}) == {"role": "unknown"}
@@ -105,7 +105,7 @@ def test_build1_registry_helpers_cover_default_and_unknown_paths():
 
 
 def test_build1_covers_command_map_validation_failure_paths(tmp_path):
-    mod = _load("command_map_build1_extra", "resources/lib/command_map.py")
+    mod = _load("command_map_build1_extra", "resources/lib/oppo/command_map.py")
     valid = mod.load_default_command_map()
     bad_value = dict(valid)
     first = next(iter(bad_value))
@@ -127,7 +127,7 @@ def test_build1_covers_command_map_validation_failure_paths(tmp_path):
 
 
 def test_build1_covers_settings_schema_boundary_validation():
-    schema_mod = _load("settings_schema_build1_extra", "resources/lib/settings_schema.py")
+    schema_mod = _load("settings_schema_build1_extra", "resources/lib/kodi/settings_schema.py")
     assert schema_mod.parse_bool(True) is True
     assert schema_mod.parse_bool("", default=True) is True
     assert schema_mod.parse_float("-1", minimum=0.5) == 0.5
@@ -149,7 +149,7 @@ def test_build1_covers_settings_schema_boundary_validation():
 
 
 def test_build1_covers_diagnostic_logging_stream_refresh(capsys):
-    mod = _load("diagnostic_logging_build1_extra", "resources/lib/diagnostic_logging.py")
+    mod = _load("diagnostic_logging_build1_extra", "resources/lib/kodi/diagnostic_logging.py")
     logger = mod.fallback_logger()
     logger.handlers.clear()
     mod.fallback_logger().info("first stream")
@@ -161,7 +161,7 @@ def test_build1_covers_diagnostic_logging_stream_refresh(capsys):
 
 
 def test_build1_covers_preset_manager_unparseable_versions():
-    mod = _load("preset_manager_build1_extra", "resources/lib/preset_manager.py")
+    mod = _load("preset_manager_build1_extra", "resources/lib/kodi/preset_manager.py")
     assert mod.compare_versions("not-a-version", "1.0") is None
     class BadMatch:
         def group(self, index):

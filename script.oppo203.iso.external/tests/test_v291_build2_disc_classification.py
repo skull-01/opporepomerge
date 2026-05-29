@@ -127,8 +127,8 @@ def test_v291_build2_runtime_zip_policy_includes_runtime_helpers_and_excludes_ev
         "tools/audit_release.py",
     ):
         assert tool.is_runtime_member(suffix) is False
-    assert tool.is_runtime_member("resources/lib/disc_classification.py") is True
-    assert tool.is_runtime_member("resources/lib/constants.py") is True
+    assert tool.is_runtime_member("resources/lib/kodi/disc_classification.py") is True
+    assert tool.is_runtime_member("resources/lib/oppo/constants.py") is True
     assert tool.is_runtime_member("addon.xml") is True
 
 

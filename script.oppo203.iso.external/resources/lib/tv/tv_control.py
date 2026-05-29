@@ -4,8 +4,8 @@ import subprocess
 import urllib.error
 import urllib.request
 
-from adb_control import switch_input as adb_switch_input
-from roku_ecp_control import switch_input as roku_switch_input
+from .adb_control import switch_input as adb_switch_input
+from .roku_ecp_control import switch_input as roku_switch_input
 
 try:
     from smartthings_control import switch_input as smartthings_switch_input
@@ -16,7 +16,7 @@ except ImportError:  # pragma: no cover - package-import fallback (only taken on
 
 try:
     from .tv_backends import backend_target_setting, is_supported_backend, normalize_backend_id
-except ImportError:  # top-level/audit import compatibility
+except ImportError:  # pragma: no cover - top-level/audit import compatibility
     from tv_backends import (  # type: ignore
         backend_target_setting,
         is_supported_backend,

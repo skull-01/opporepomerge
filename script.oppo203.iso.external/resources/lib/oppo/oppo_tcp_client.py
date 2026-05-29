@@ -216,7 +216,7 @@ class OppoTcpClient:
         """
         try:
             from . import reconnect_backoff as rb
-        except (ImportError, ValueError):
+        except (ImportError, ValueError):  # pragma: no cover - top-level/test compatibility
             import reconnect_backoff as rb
 
         if _sleep is None:

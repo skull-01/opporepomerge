@@ -16,9 +16,9 @@ import xml.etree.ElementTree as ET
 def project_root(start: Path | None = None) -> Path:
     start = (start or Path.cwd()).resolve()
     for candidate in (start, *start.parents):
-        if (candidate / "addon.xml").exists() and (candidate / "resources" / "lib" / "version.py").exists():
+        if (candidate / "addon.xml").exists() and (candidate / "resources" / "lib" / "kodi" / "version.py").exists():
             return candidate
-    raise RuntimeError("Could not find add-on root containing addon.xml and resources/lib/version.py")
+    raise RuntimeError("Could not find add-on root containing addon.xml and resources/lib/kodi/version.py")
 
 
 def _import_version(root: Path):
@@ -26,7 +26,7 @@ def _import_version(root: Path):
         if path not in sys.path:
             sys.path.insert(0, path)
     try:
-        from resources.lib import version as version_module  # type: ignore
+        from resources.lib.kodi import version as version_module  # type: ignore
     except Exception:
         import version as version_module  # type: ignore
     return version_module

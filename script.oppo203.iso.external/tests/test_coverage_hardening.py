@@ -44,11 +44,13 @@ class FakeSettings(dict):
 
 @contextlib.contextmanager
 def kodi_stubs(*targets):
+    from tests._support.lib_buckets import with_canonical
     names = {
         "xbmc", "xbmcaddon", "xbmcgui", "xbmcvfs", "xbmcplugin", "xbmcdrm",
         "resources.lib.installer", "resources.lib.oppo_remote", "autoscript_helper",
     }
     names.update(targets)
+    names = with_canonical(names)
     old_path = list(sys.path)
     saved = {name: sys.modules.get(name) for name in names}
     try:
@@ -1136,15 +1138,15 @@ class TCoverageGateFourthPassGradual99(unittest.TestCase):
             remote.send_remote_key("missing")
         self.assertIn(["#SRC 6"], calls)
         # Cover hardware profile import-failure fallback in the resolver.
-        original = sys.modules.get("resources.lib.settings_reader")
-        sys.modules["resources.lib.settings_reader"] = None
+        original = sys.modules.get("settings_reader")
+        sys.modules["settings_reader"] = None
         try:
             self.assertEqual(remote.resolve_power_on_token("#PON", "chinoppo_m9702"), "#PON")
         finally:
             if original is not None:
-                sys.modules["resources.lib.settings_reader"] = original
+                sys.modules["settings_reader"] = original
             else:
-                sys.modules.pop("resources.lib.settings_reader", None)
+                sys.modules.pop("settings_reader", None)
 
     def test_small_manager_logger_and_playercore_edges(self):
         import logging_v116, playercorefactory_merge as pcf, preset_manager as pm

@@ -256,9 +256,9 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
             return real_import(name, *args, **kwargs)
 
         module_specs = [
-            ("autoscript_helper_no_kodi", ROOT / "resources" / "lib" / "autoscript_helper.py"),
-            ("i18n_no_kodi", ROOT / "resources" / "lib" / "i18n.py"),
-            ("resources.lib.oppo_remote_no_kodi", ROOT / "resources" / "lib" / "oppo_remote.py"),
+            ("autoscript_helper_no_kodi", ROOT / "resources" / "lib" / "oppo" / "autoscript_helper.py"),
+            ("i18n_no_kodi", ROOT / "resources" / "lib" / "kodi" / "i18n.py"),
+            ("resources.lib.oppo.oppo_remote_no_kodi", ROOT / "resources" / "lib" / "oppo" / "oppo_remote.py"),
         ]
         with mock.patch("builtins.__import__", side_effect=fake_import):
             for name, path in module_specs:
@@ -518,7 +518,7 @@ class TestBuild8RawCoverageBranches(unittest.TestCase):
             sys.modules["tv_control"] = fake_tv
             sys.argv = ["external_player.py", "--addon-data", tempfile.mkdtemp(), "--file", "/movie.iso"]
             with self.assertRaises(SystemExit) as cm, mock.patch("time.sleep"):
-                runpy.run_path(str(ROOT / "resources" / "lib" / "external_player.py"), run_name="__main__")
+                runpy.run_path(str(ROOT / "resources" / "lib" / "kodi" / "external_player.py"), run_name="__main__")
             self.assertEqual(cm.exception.code, 0)
         finally:
             sys.argv = argv
