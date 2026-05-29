@@ -4,6 +4,8 @@
 // add-on's Kodi-bound Python, so the deterministic template output is reproduced here. Keep
 // in sync with installer.py if the add-on's templates change.
 
+import { xmlEscape } from "./xml";
+
 export type KodiPlatform = "coreelec" | "android" | "windows" | "linux";
 
 export type KodiTarget = {
@@ -50,14 +52,6 @@ export function kodiTargetForPlatform(platform: KodiPlatform, pythonPath?: strin
 /** The Kodi userdata directory for a platform (where playercorefactory.xml + keymaps/ live). */
 export function userdataDirForPlatform(platform: KodiPlatform): string {
   return PATHS_BY_PLATFORM[platform].userdata;
-}
-
-function xmlEscape(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
 
 function indent(text: string, prefix: string): string {

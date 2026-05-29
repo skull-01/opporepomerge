@@ -19,6 +19,11 @@ describe("serializeSettingsXml", () => {
   it("exposes the addon_data settings path", () => {
     expect(ADDON_DATA_SETTINGS_REL).toBe("addon_data/script.oppo203.iso.external/settings.xml");
   });
+
+  it("writes the configurator provenance marker (ENH-#41 Part C)", () => {
+    const xml = serializeSettingsXml({ oppo_ip: "10.0.1.77" });
+    expect(xml).toContain("Managed by the OppoKodiAddon Configurator");
+  });
 });
 
 describe("mergeSettingsXml", () => {

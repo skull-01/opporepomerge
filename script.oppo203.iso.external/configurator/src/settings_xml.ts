@@ -1,16 +1,17 @@
 import type { AddonSettings } from "./mapping";
+import { xmlEscape } from "./xml";
 
 /** Path of the add-on's runtime settings file relative to Kodi userdata/. */
 export const ADDON_DATA_SETTINGS_REL = "addon_data/script.oppo203.iso.external/settings.xml";
 
-function xmlEscape(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
+/**
+ * Provenance marker written into the generated settings.xml (ENH-#41 Part C, configurator
+ * side). Pairs with the add-on's "managed by the configurator" overwrite warning. Static (no
+ * timestamp) so the output stays deterministic and the merge stays idempotent.
+ */
+const PROVENANCE_COMMENT =
+  "<!-- Managed by the OppoKodiAddon Configurator. Changes made directly in Kodi may be " +
+  "overwritten the next time the configurator runs. -->";
 
 /**
  * Serialize add-on settings into Kodi's runtime userdata/addon_data settings.xml (v2 format,
@@ -23,6 +24,8 @@ export function serializeSettingsXml(settings: AddonSettings): string {
     .map((id) => `    <setting id="${xmlEscape(id)}">${xmlEscape(settings[id])}</setting>`);
   return (
     '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' +
+    PROVENANCE_COMMENT +
+    "\n" +
     '<settings version="2">\n' +
     lines.join("\n") +
     "\n</settings>\n"
