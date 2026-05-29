@@ -526,8 +526,39 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
   or hardware behavior change.
 - **Rollout status:** PRs 4–7 take the gate **28 → 46**; the ENH-#51 idiom + cascade scope is
-  complete. Only `playercorefactory_merge` (never in scope) and top-level `service.py` /
-  `default.py` remain ungated — candidates for a future follow-up.
+  complete. The last ungated source (`playercorefactory_merge`, top-level `service.py` /
+  `default.py`) is handled by PR 8 below.
+
+### ENH-#51 — mypy --strict allowlist expansion (PR 8 of N: the last ungated source)
+
+- **Implementing SHA:** `fae98cb` on `claude/enh51-mypy-pr8-m3k9p2qv` (draft PR #69;
+  commented on issue #51). **Stacked on PR #66** (base = the PR 7 branch); **merge
+  #63 → #64 → #65 → #66 → #69 in order**, retargeting #69 to `main` before #66's branch is
+  deleted to avoid the stacked-PR auto-close.
+- **Scope:** the final ENH-#51 batch. Annotates the last ungated add-on source to zero strict
+  errors and gates it (46 → 49): top-level `service.py` (85 errors), `default.py` (8), and
+  `resources/lib/kodi/playercorefactory_merge.py` (28). After this, **no ungated
+  `resources/lib` or top-level source remains** — the ENH-#51 source rollout is complete.
+- **What changed (type-only, behaviour-preserving):**
+  - [`mypy.ini`](../mypy.ini) + [`pyproject.toml`](../pyproject.toml) mirror: 3 modules added.
+  - `service.py`: signatures on `log`/`Monitor`/`InterceptionPlayer`/`_service_main` + the
+    startup-power helpers; two `no-any-return` pinned locals; `# type: ignore[misc]` on the
+    conditional `xbmc.Player`/`xbmc.Monitor` base classes; `# type: ignore[attr-defined]` on
+    the `oppo_control` hub re-export. `default.py`: signatures on `run_diagnostics_dashboard`
+    + nested probes; `cast` on `diag.save_report`; `# type: ignore[attr-defined]` on the
+    `diagnostics` hub re-export. `playercorefactory_merge.py`: signatures throughout +
+    `# type: ignore[attr-defined]` on the `disc_classification` re-export.
+- **CI / gates (software-verified only; hardware validation not claimed):**
+  `tools/type_check.py --gate` **49 files, 0 errors**; `pytest -n auto` **938 passed /
+  3 skipped**; serial coverage **99.05%** (≥ 99% floor); `ruff check` + `ruff format --check`
+  clean; the pre-push hook re-ran the 99% coverage gate.
+- **Phase A review focus:**
+  - Confirm `service.py` is signature/typing-only — no change to the service loop, the
+    `Monitor.onSettingsChanged` no-state-mutation invariant, or the startup-power control flow.
+  - Confirm the two `no-any-return` pinned locals (`_translate`, `_resolve_localized`) and the
+    `default.py` `cast(str, diag.save_report(...))` are behaviour-neutral pass-throughs.
+- **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
+  or hardware behavior change.
 
 ## Phase B — post-merge sanity
 
