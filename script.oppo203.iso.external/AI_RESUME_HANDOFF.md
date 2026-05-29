@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `bc79649` (origin/main, 2026-05-29 — Merge PR #37 two-area spine revision; landed atop PM bulk-merge of #40/#45/#33/#34/#35) · **Tests on `main`:** 865 passed, 3 skipped (`pytest -n auto`, ~10s; coverage 99.05%)
+**Last sync:** commit `f21033b` (origin/main, 2026-05-29 — Merge PR #46 ENH-#41 B+C atop PR #47 ENH-#43 lib split) · **Tests on `main`:** 886 passed, 3 skipped (`pytest -n auto`, ~10s; coverage 99.07%)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -167,96 +167,81 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-29 (EOD — ENH-#43 lib sub-package split session):** two open
-draft PRs, both CI-green and mergeable; clean stopping point. `main` not touched
-(still `4e91924`; operational state `bc79649` — **865 passed, 3 skipped**,
-coverage **99.05%**). This session drove PR #46 to green (a CI unblock) and
-delivered ENH-#43 on PR #47.
+**As of 2026-05-29 (EOD — PR #47 + #46 merge session):** both formerly-in-flight
+draft PRs are **merged to `main`**; clean stopping point, no in-flight addon code.
+`main` advanced `23d43ae` → **`f21033b`** — **886 passed, 3 skipped**, coverage
+**99.07%**. This session reviewed both PRs, merged ENH-#43 (#47), integrated
+ENH-#41 B+C (#46) onto the post-#47 `main`, and verified the **combination**
+before landing it.
 
-- **In flight (two open draft PRs, both CI-green + mergeable):**
+- **Shipped this session — both PRs merged via `gh pr merge --merge --delete-branch`:**
   - [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47)
-    — *refactor(addon): split `resources/lib` into tv/oppo/avr/kodi
-    sub-packages (ENH-#43)* — branch `claude/enh43-lib-subpackages-r9k2m4x7`,
-    tip `69e32b3`. **Draft, CI green, mergeable.** All 46 `resources/lib`
-    modules moved into `tv/` (7) / `oppo/` (14) / `avr/` (9) / `kodi/` (16);
-    `version.py` → `kodi/`. **File moves + import rewiring only — no function
-    or public-API renames.**
-    - A lazy `sys.meta_path` alias finder in
-      [`resources/lib/__init__.py`](resources/lib/__init__.py) keeps legacy
-      flat names (`resources.lib.oppo_control`, bare `oppo_control`) resolving
-      to the **same** canonical `resources.lib.<bucket>.<module>` objects. It
-      imports nothing eagerly (installer's `xbmcaddon.Addon()` stays lazy), so
-      the ~20 test files + CI tooling that import flat names needed no changes.
-    - Convention: module-top cross-family imports are explicit
-      (`from ..oppo.oppo_control import …`); lazy in-function imports stay bare
-      (finder-resolved, mock-friendly). `command_map.py`'s data path bumped
-      `parents[1]` → `parents[2]` (module one level deeper).
-    - `version.py` move updated `sync_version.py`'s project-root **sentinel** +
-      the `resources.lib.version` importers in `.github/workflows/package.yml`,
-      `scripts/package_release.sh`, `scripts/verify.sh`, `tools/audit_release.py`
-      → `resources.lib.kodi.version`.
-    - Test harness: new [`tests/__init__.py`](tests/__init__.py) installs the
-      finder for the `unittest discover` path (bypasses conftest);
-      [`tests/_support/lib_buckets.py`](tests/_support/lib_buckets.py) lets the
-      kodi-stub contexts purge the canonical bucket module alongside the legacy
-      alias (else stale stub-bound modules leak); ~70 flat-path test literals
-      updated to bucket paths; 12 `# pragma: no cover` added to now-dead
-      bare-name fallback branches; a per-test isolation fixture in
-      `test_v253_build5_hardware_readiness` removes `-n auto` flakiness the move
-      exposed (commit `69e32b3`).
-    - Gates: `pytest -n auto` **865/3** (green across repeated runs); serial
-      coverage **99.07%**; ruff check + format clean; `unittest discover`
-      **484 OK**; `audit_release` **580/580**; runtime ZIP 70 files (50
-      bucketed, `version.py` in `kodi/`, no dev dirs). SHA `18a97a6` commented
-      on issue
-      [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43#issuecomment-4570716269);
-      Phase A + Phase C steps queued in
-      [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md).
-      Software-verified only; not run against real hardware.
+    — *split `resources/lib` into tv/oppo/avr/kodi sub-packages (ENH-#43)* —
+    **merged at `3ba5009`**. 46 modules bucketed (`version.py` → `kodi/`); legacy
+    flat names (`resources.lib.X` + bare `X`) keep resolving via the lazy
+    `sys.meta_path` alias finder in
+    [`resources/lib/__init__.py`](resources/lib/__init__.py).
   - [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46)
-    — *feat(addon): in-add-on configurator-owner hint + overwrite warning
-    (ENH-#41 Parts B + C)* — branch `claude/enh41-bc-config-hint-a4n9k2m`, tip
-    `52f1cd7`. **Draft, CI green, mergeable.** Unblocked this session: a
-    `ruff format` fix to `service.py`'s `CONFIGURATOR_MANAGED_KEYS` tuple
-    (`52f1cd7`) cleared the previously-failing "Lint and format checks" CI job
-    (the PR's local gate had run `ruff check` but not `ruff format --check`);
-    SHA commented on
-    [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41#issuecomment-4570163859).
-    Substance unchanged from the prior session (static lsep banner +
-    once-per-session toast + 42-key overwrite warning).
+    — *in-add-on configurator-owner hint + overwrite warning (ENH-#41 Parts B+C)*
+    — **merged at `f21033b`**. Static lsep banner + once-per-session toast +
+    42-key (`CONFIGURATOR_MANAGED_KEYS`) overwrite warning in
+    `service.Monitor.onSettingsChanged` (logging/notification only, no state
+    mutation).
+
+- **Merge mechanics (lesson for future multi-PR sessions):** the prior §3a
+  claimed these two PRs touched "disjoint files" — **wrong.** They overlapped on
+  `service.py`, `tests/test_all.py`, and `docs/MANUAL_VERIFICATION_CHECKLIST.md`;
+  GitHub reported both MERGEABLE only because each was diffed against the *old*
+  `main`. Handled by merging #47 first, then merging the new `main` into #46's
+  branch locally (clean auto-merge — the insertions fell in distinct regions),
+  running the **full gate on the integrated tree** (commit `126bac9`), pushing,
+  waiting for CI green, then merging #46. **Lesson:** when two open PRs both look
+  mergeable, verify the *combination* locally — don't trust two independent green
+  CIs.
+
+- **Verified on combined `main`** (`f21033b`, tree-identical to gated `126bac9`):
+  `pytest -n auto` **886/3**; serial coverage **99.07%** (≥99% floor); ruff
+  check+format clean on `resources default.py service.py`; `unittest discover`
+  **505 OK**; `audit_release` **580/580**; doc/version/layout/i18n `--check` OK;
+  `main` push-CI green (incl. the Ubuntu-only `package_release.sh`). Merge SHAs
+  commented on
+  [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43#issuecomment-4571133909)
+  and
+  [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41#issuecomment-4571134996).
+  Software-verified only; Phase A/C on-device steps still queued in the manual
+  checklist.
 
 - **What to resume next session:**
-  - Operator review → merge of **PR #47** (ENH-#43) and **PR #46** (ENH-#41
-    B+C). No ordering dependency — they touch disjoint files.
-  - Phase A on-device verification of #46, #47, and the still-deferred #40
-    (whenever hardware is to hand) — all queued in the manual checklist.
-  - With `resources/lib` bucketed (once #47 merges), **ENH-#42** (in-add-on
-    settings menu) can land in the right layout.
-  - Configurator side of ENH-#41 Part C (the
-    `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` marker) — configurator
-    area, separate session.
+  - **Operator: verify + close #43 and #41** (merge SHAs commented; only the
+    operator closes issues). #41 is **only partly done** — its addon side (Parts
+    B+C) shipped, but the **configurator side of Part C** (writing the
+    `<!-- generated by configurator vX.Y.Z YYYY-MM-DD -->` marker into the
+    generated `settings.xml`) is still open → `area:configurator` session.
+  - **ENH-#42** (minimal in-add-on settings menu) is now **unblocked** by #43's
+    bucket layout — strongest addon lead.
+  - Phase A on-device verification of #40 / #46 / #47 (whenever hardware is to
+    hand) — all queued in the manual checklist.
 
 - **Carried open after this session (all `area:addon`):**
   [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
   (ruff backlog),
   [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41)
-  (configurator-owns-config — Parts B+C on draft #46),
+  (configurator-owns-config — addon B+C **merged** at `f21033b`; configurator
+  side of Part C still open),
   [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42)
-  (in-add-on settings menu),
+  (in-add-on settings menu — now unblocked),
   [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43)
-  (lib split — implemented on draft #47),
+  (lib split — **merged** at `3ba5009`, awaiting operator close),
   [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
   (hardware-validation testing). Only the operator closes issues.
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **Drive PR #47 + PR #46 through review → merge** — both green and
-     mergeable; lead item.
-  2. **Phase A device verification** for #40 / #46 / #47 — operator action on
+  1. **ENH-#42 — minimal in-add-on settings menu** — now unblocked by #43's
+     bucket layout; clean lead.
+  2. **#38 ruff backlog PR 1 (auto-fix sweep)** — independent; parallel-session
+     friendly.
+  3. **Phase A device verification** for #40 / #46 / #47 — operator action on
      real hardware, no agent code.
-  3. **ENH-#42 — minimal in-add-on settings menu** — now unblocked by #43's
-     bucket layout (best after #47 merges).
-  4. **#38 ruff backlog PR 1 (auto-fix sweep)** — independent; can run in a
-     parallel session.
 
 ## §3b Configurator work — in progress
 
@@ -422,6 +407,13 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   → `kodi/`. Draft PR #47. Established convention: module-top cross-family
   imports explicit (`from ..oppo… import`), lazy in-function imports bare
   (finder-resolved, mock-friendly).
+- **2026-05-29** — Merged the two in-flight addon PRs onto `main`: **ENH-#43**
+  lib split (PR #47 at `3ba5009`) and **ENH-#41 Parts B+C** configurator-owner
+  hint (PR #46 at `f21033b`). The PRs overlapped on `service.py` /
+  `tests/test_all.py` / the manual checklist despite the prior §3a "disjoint"
+  note; integrated #46 onto the post-#47 `main` locally, ran the full gate on the
+  combined tree (commit `126bac9`: 886/3, coverage 99.07%), then merged. `main`
+  `23d43ae` → `f21033b`; test count 865 → 886.
 
 ---
 
@@ -449,15 +441,15 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-29 (EOD — ENH-#43 lib sub-package split session)**.
+Last refreshed: **2026-05-29 (EOD — PR #47 + #46 merge session)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
 | 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`, merged via #40 at `59eb511`) | closed by operator |
 | 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not started |
-| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | `1ed15a3` (Part A) merged via [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) at `816bde2`. Parts B + C addon side at `52f1cd7` (CI-green ruff-format fix this session) on draft [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46). Configurator side of Part C pending (separate session). | Phase A queued (×2: #45, #46) |
+| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | Part A `816bde2` (PR #45). Addon side of Parts B + C **merged** via [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46) at `f21033b`. **Configurator side of Part C still pending** (separate `area:configurator` session). | Phase A queued (#45, #46) |
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | — | not started |
-| 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | `18a97a6` (+ test-isolation `69e32b3`) on draft [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) | Phase A queued |
+| 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | **Merged** via [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) at `3ba5009` (impl `18a97a6` + test-isolation `69e32b3`) | Phase A queued |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
 
 ---
@@ -653,6 +645,24 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   updated. **Header unchanged** — `main` had no operational changes this
   session (ENH-#43 lives on the branch / PR #47, not merged). Software-verified
   only; Phase A + Phase C steps for #47 queued in the manual checklist.
+- **2026-05-29 (EOD — PR #47 + #46 merge session)** — Addon session that drove
+  the two in-flight draft PRs to merge. Reviewed both; found the prior §3a
+  "disjoint files" claim was wrong (they overlap on `service.py` /
+  `tests/test_all.py` / `docs/MANUAL_VERIFICATION_CHECKLIST.md`). Merged **PR #47**
+  (ENH-#43 lib split) at `3ba5009`; then integrated the new `main` into **PR #46**'s
+  branch locally (clean auto-merge), ran the **full gate on the combined tree**
+  (commit `126bac9`: `pytest -n auto` 886/3, serial coverage 99.07%, ruff clean,
+  `unittest discover` 505 OK, `audit_release` 580/580, doc/version/i18n/layout
+  `--check` OK), pushed (pre-push hook re-ran the coverage gate), waited for CI
+  green, then merged **PR #46** (ENH-#41 Parts B+C) at `f21033b`. Both
+  `claude/enh4*` branches deleted. Merge SHAs commented on issues #43 and #41
+  (left open for operator). **§3a rewritten** to the merged state + a "verify the
+  combination, not two green CIs" lesson; **§3b untouched** (no configurator
+  work). **§15** gained a merge bullet; **§17a** rows #41/#43 + "Last refreshed"
+  updated. **Header** "Last sync" `bc79649` → `f21033b`, tests `865` → **886
+  passed, 3 skipped**, coverage `99.05%` → **99.07%**. No new issues/branches;
+  ENH-#42 now unblocked by #43's bucket layout. Phase A/C on-device verification
+  of #40/#46/#47 still deferred.
 
 ---
 
