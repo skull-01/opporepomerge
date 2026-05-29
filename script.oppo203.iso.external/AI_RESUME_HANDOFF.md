@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `c48bb43` (origin/main, 2026-05-29 — Merge PR #62 EOD handoff) + this 2026-05-30 EOD doc · **ENH-#51 PRs #63–#66 open as stacked drafts** (the mypy `--strict` idiom + cascade rollout, gate 28→46, not yet merged — merge #63→#64→#65→#66) · **Tests on `main`:** 938 passed, 3 skipped (`pytest -n auto`; coverage 99.07%; mypy `--gate` **28 modules / 0 errors** on `main` — the 46-module gate lives on the unmerged ENH-#51 PRs; full CI green incl. 3.9/3.10/3.12 smokes)
+**Last sync:** commit `4525d86` (origin/main, 2026-05-30 — Merge PR #69, last of the ENH-#51 stack) + this 2026-05-30 PM EOD doc · **ENH-#51 mypy `--strict` source rollout COMPLETE and merged** (PRs #63→#64→#65→#66→#69 all landed in order; gate 28→**49**) · **Tests on `main`:** 938 passed, 3 skipped (`pytest -n auto`; coverage 99.05%; mypy `--gate` **49 modules / 0 errors** — every `resources/lib` module + top-level `service.py`/`default.py` now gated; full CI green incl. 3.9/3.10/3.12 smokes)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -167,16 +167,27 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-30 (EOD — ENH-#51 mypy `--strict` PRs 4–7: leaves, hubs, cascade, idiom modules):**
-**4 stacked draft PRs open, awaiting operator review/merge.** `main` is unchanged
-(`c48bb43`); all of this session's rollout work lives on the four PR branches. Each PR was
-verified green locally (`mypy --gate` 0 errors, `pytest -n auto` 938/3, coverage 99.04–99.05%,
-ruff clean).
+**As of 2026-05-30 (PM EOD — ENH-#51 mypy `--strict` rollout COMPLETE + full stack merged):**
+**Clean stopping point. The entire ENH-#51 source rollout is done and on `main`** (`4525d86`).
+This PM session built PR 8 (the last ungated source) and then, on the operator's "merge
+everything" directive, merged the whole stack #63→#64→#65→#66→#69 in order. Post-merge `main`
+re-verified green: `mypy --gate` **49/0**, `pytest -n auto` **938/3**, serial coverage **99.05%**.
 
-- **Shipped this session — the ENH-#51 idiom + cascade scope, gate 28 → 46 modules.** On
-  `resume` the operator picked ENH-#51, said "do all of these" (the no-redef idiom modules +
-  the cascade group), then chose "everything now (PR 6+7)" at the mid-session checkpoint. Four
-  **stacked** drafts — **merge in order #63 → #64 → #65 → #66:**
+- **Shipped this session — ENH-#51 PR 8 + merged PRs 4–8 (gate 28 → 49 modules).** On `resume`
+  the operator picked "Addon #1 — ENH-#51 PR 8" then chose to base it on #66 ("all three, based
+  on #66"); PR 8 ([#69](https://github.com/skull-01/script.oppo203.iso.external/pull/69),
+  `fae98cb`) gated the last ungated source — `service.py` (85 errors), `default.py` (8),
+  `playercorefactory_merge.py` (28) → gate 46→49, annotations/casts/`# type: ignore` only.
+  Then **merged the full stack to `main`** (each child retargeted to `main` before its parent's
+  branch was deleted, to dodge the stacked-PR auto-close):
+  - **PR 4** [#63] → merge `77305ee` (leaf modules, 28→33)
+  - **PR 5** [#64] → merge `8dca608` (settings_reader + oppo_control hubs, 33→35)
+  - **PR 6** [#65] → merge `b636d30` (cascade group, 35→42)
+  - **PR 7** [#66] → merge `3f4d5cb` (hub-dependent idiom modules, 42→46)
+  - **PR 8** [#69] → merge `4525d86` (service.py/default.py/playercorefactory_merge, 46→49)
+
+  _(Historical PR-by-PR scope detail, now all merged — kept for the record:)_
+  - **PR 4** `7568f89`: import-fallback **leaf** modules `__init__` / `intercept` / `tv_diagnostics`
   - **PR 4** [#63](https://github.com/skull-01/script.oppo203.iso.external/pull/63) `7568f89`
     (base `main`): import-fallback **leaf** modules `__init__` / `intercept` / `tv_diagnostics`
     / `avr_control` / `oppo_tcp_client` (28→33). Settled the **`no-redef` strategy** =
@@ -198,17 +209,12 @@ ruff clean).
     `docs/MANUAL_VERIFICATION_CHECKLIST.md` (those entries ride the PR branches and land on
     `main` when each PR merges).
 
-- **Resume here next:**
-  1. **Operator merges #63 → #64 → #65 → #66 in order.** They are stacked (each based on the
-     prior branch), so only `claude-review` runs on #64–#66 until the base merges and GitHub
-     retargets to `main`; the full test/types/coverage CI then appears per PR. The full gate
-     was run locally for each.
-  2. After they land, **ENH-#51's idiom + cascade scope is complete** (gate 46). The only
-     un-gated `resources/lib` leftover is `playercorefactory_merge` (~28 errors, never in the
-     requested scope); top-level `service.py` (~82) / `default.py` are also ungated.
-  3. Recipe + all idioms (the no-redef strategy, `Settings.get -> Any`, the parallel-sub-agent
-     technique, coverage pragmas for Protocol/overload/TYPE_CHECKING stubs) are in memory
-     `mypy-strict-gate-rollout`.
+- **Resume here next:** **ENH-#51 is fully shipped — nothing to resume on it.** Every
+  `resources/lib` module plus top-level `service.py`/`default.py` is gated (49 modules), CI
+  `types` job enforces it. #51 stays open for the operator to close. Recipe + all idioms (the
+  no-redef strategy, `Settings.get -> Any`, conditional-Kodi-base `# type: ignore[misc]`,
+  `X | None` over `Optional` for ruff `UP045`, the parallel-sub-agent technique) are in memory
+  `mypy-strict-gate-rollout`.
 
 - **Carried open (all `area:addon`):** #38, #41, #42, #43,
   [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
@@ -217,11 +223,11 @@ ruff clean).
   queued for #40/#42/#46–#49/#52/#53/#56/#57 in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **ENH-#51 PR 8 (optional finish):** gate `playercorefactory_merge` + the top-level
-     `service.py` / `default.py` — the last ungated source. Closes the rollout.
-  2. **Phase A/C on-device verification** of the merged work — operator action on real
+  1. **Phase A/C on-device verification** of the merged work — operator action on real
      hardware, no agent code.
-  3. **ENH-#44 hardware-validation testing** solicitation (community/operator; not started).
+  2. **ENH-#44 hardware-validation testing** solicitation (community/operator; not started).
+  3. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is now
+     complete, so the addon is at a clean baseline for a fresh feature/bug theme.
 
 ## §3b Configurator work — in progress
 
@@ -267,7 +273,8 @@ isolated worktree, **no uncommitted work**. `main` is unchanged by this work
 
 - **Prior merged scaffold/work (unchanged):** PR #30 scaffold, #33 window-control
   IPC, #34 `%APPDATA%` state, #35 cargo-unblock + icon stub, #52 icon + first
-  installers (`859238e`).
+  installers (`859238e`). Operator commit `384d180` ("Add files via upload") added
+  `configurator/CONFIGURATOR_HANDOFF.md` + `configurator/OppoKodi Addon Installer.zip` direct to `main` (no PR).
 
 - **No `area:configurator` issues open.** PR #68 is untracked-theme delivery; its
   description + this entry are the record.
@@ -491,6 +498,24 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   #51; Phase-A entries per PR in the manual checklist. `main` unchanged (`c48bb43`) — all work
   on the unmerged PR branches. Memory `mypy-strict-gate-rollout` updated.
 
+- **2026-05-30 (PM)** — ENH-#51 mypy `--strict` **rollout completed + full stack merged**
+  (`area:addon`). On `resume` the operator picked ENH-#51 PR 8 and chose to base it on #66;
+  built PR 8 ([#69](https://github.com/skull-01/script.oppo203.iso.external/pull/69) `fae98cb`)
+  gating the last ungated source — `service.py` / `default.py` / `playercorefactory_merge`
+  (gate 46→49, annotations/casts/`# type: ignore` only). Then on the operator's "merge
+  everything", merged the whole stack to `main` in order: #63 `77305ee` → #64 `8dca608` →
+  #65 `b636d30` → #66 `3f4d5cb` → #69 `4525d86` — **each child retargeted to `main` before its
+  parent's branch was deleted**, avoiding the stacked-PR auto-close that bit #55. Post-merge
+  `main` (`4525d86`) re-verified green: `mypy --gate` **49/0**, `pytest -n auto` 938/3, serial
+  coverage 99.05%. Merge SHAs commented on #51 (stays open per the only-operator-closes norm).
+  **ENH-#51 source rollout COMPLETE — every `resources/lib` module + top-level
+  `service.py`/`default.py` is gated.** PR #68 (configurator wizard-state mapping) was left
+  **open** — out of scope of the ENH-#51 merge, needs an in-area configurator session.
+  **Tool-channel instability** recurred hard this session (Read / Grep / Bash+PowerShell stdout
+  intermittently returned stale or fabricated content); mitigated by file-redirect readbacks,
+  cross-channel checks, byte-validated Edits, and never reusing a pre-commit SHA. Memory
+  `mypy-strict-gate-rollout` updated.
+
 ---
 
 # §16 Open questions (strategic decisions blocking work)
@@ -517,7 +542,7 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-30 (EOD — ENH-#51 PRs 4–7: idiom modules + hubs + cascade)**.
+Last refreshed: **2026-05-30 (PM EOD — ENH-#51 PRs 4–8 merged; rollout complete)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
@@ -527,7 +552,8 @@ Last refreshed: **2026-05-30 (EOD — ENH-#51 PRs 4–7: idiom modules + hubs + 
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | **Merged** via [PR #48](https://github.com/skull-01/script.oppo203.iso.external/pull/48) at `16eda5e` (network/IP editor) + [PR #49](https://github.com/skull-01/script.oppo203.iso.external/pull/49) at `3765862` (language switcher) | Phase A/C queued; awaiting operator close |
 | 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | **Merged** via [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) at `3ba5009` (impl `18a97a6` + test-isolation `69e32b3`) | Phase A queued |
 | 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
-| 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | PRs 1–3 merged (`aa0cf68`/`56b7a17`/`aa4143f`, gate→28). **PRs 4–7 open as stacked drafts 2026-05-30** (gate 28→46): [#63](https://github.com/skull-01/script.oppo203.iso.external/pull/63) `7568f89` (leaves →33), [#64](https://github.com/skull-01/script.oppo203.iso.external/pull/64) `8b06744` (hubs →35), [#65](https://github.com/skull-01/script.oppo203.iso.external/pull/65) `8406b43` (cascade →42), [#66](https://github.com/skull-01/script.oppo203.iso.external/pull/66) `6fed436` (idiom modules →46). **Merge #63→#64→#65→#66.** | awaiting operator merge + close (multi-PR rollout, stays open) |
+| 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | **ROLLOUT COMPLETE — all merged to `main` 2026-05-30 PM (gate→49).** PRs 1–3 (`aa0cf68`/`56b7a17`/`aa4143f`, →28), then PRs 4–8 merged in order: #63 `77305ee` (→33), #64 `8dca608` (→35), #65 `b636d30` (→42), #66 `3f4d5cb` (→46), #69 `4525d86` (service.py/default.py/playercorefactory_merge →49). Post-merge `main` green: gate 49/0, pytest 938/3, coverage 99.05%. | awaiting operator close (rollout done) |
+| 68 | configurator: map wizard state to add-on setting IDs (slice 1) | configurator | _untracked theme (PR-only)_ | OPEN (draft) | [PR #68](https://github.com/skull-01/script.oppo203.iso.external/pull/68) `claude/configurator-wizard-wiring-q7m3k9x2` — +2858/−155 / 22 files, all CI green; **left open 2026-05-30** (out of scope of the ENH-#51 merge; needs an in-area configurator session to review/verify) | not agent-verified; awaiting configurator session |
 | 52 | (no issue) configurator app icon + first MSI/NSIS bundle | configurator | _untracked theme_ | MERGED 2026-05-29 | [PR #52](https://github.com/skull-01/script.oppo203.iso.external/pull/52) at `859238e` — real icon set replaces the PR #35 stub; fixes a latent `bundle.icon` build-breaker; MSI 3.0 MB + NSIS 1.9 MB | Phase C on-device (install, confirm icon + launch) queued |
 | 57 | ENH-: change-scoped fast local test loop (pytest-testmon) | addon | `area:addon` | OPEN | **Merged** via [PR #59](https://github.com/skull-01/script.oppo203.iso.external/pull/59) at `9f102a3` (`tools/dev_test.py` + `pytest-testmon` dev dep + 5 guard tests); py3.9-marker fix [PR #61](https://github.com/skull-01/script.oppo203.iso.external/pull/61) `2fdf869` | awaiting operator close (Phase C software check queued) |
 
@@ -763,6 +789,16 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   **938/3**). Memory `mypy-strict-gate-rollout` updated (PRs 4–7 + the parallel-sub-agent
   technique). **§21** gained the scope-decision Q&A. This EOD doc pushed via a doc-only PR
   (direct-to-`main` push is harness-blocked).
+- **2026-05-30 (PM EOD — ENH-#51 stack merge + done-for-the-day)** — Operator: "merge
+  everything and done for the day." Merged the ENH-#51 stack #63→#64→#65→#66→#69 to `main`
+  (tip `4525d86`), retargeting each child to `main` first to avoid the stacked-PR auto-close;
+  left configurator PR #68 open (out of scope). Post-merge `main` re-verified (gate 49/0,
+  938/3, coverage 99.05%); merge SHAs commented on #51. **Header** "Last sync" `c48bb43` →
+  `4525d86`, gate **28 → 49**, coverage 99.07% → 99.05%. **§3a** rewritten to the
+  completed-and-merged state; **§3b** gained a PM note (open PR #68 + the operator `384d180`
+  upload of `configurator/CONFIGURATOR_HANDOFF.md` + installer zip); **§17a** #51 row →
+  COMPLETE/merged, new #68 row, "Last refreshed" bumped; **§15** gained a merge-session bullet.
+  This doc pushed via a doc-only PR (direct-to-`main` push is harness-blocked).
 
 ---
 
