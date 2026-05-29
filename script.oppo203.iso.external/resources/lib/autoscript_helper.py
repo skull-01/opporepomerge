@@ -2,21 +2,6 @@
 
 import os
 
-try:
-    import xbmc
-    import xbmcaddon
-    import xbmcgui
-    import xbmcvfs
-except ImportError:
-    xbmc = xbmcaddon = xbmcgui = xbmcvfs = None
-ADDON_ID = "script.oppo203.iso.external"
-
-
-def _profile(addon):
-    if addon is None or xbmcvfs is None:
-        return os.path.join(os.path.expanduser("~"), ".kodi-" + ADDON_ID)
-    return xbmcvfs.translatePath(addon.getAddonInfo("profile"))
-
 
 def _safe_int(v, default):
     try:
@@ -107,67 +92,3 @@ def write_script(path, body):
     except Exception:
         pass
     return path
-
-
-def _yn(t, m):
-    return bool(xbmcgui.Dialog().yesno(t, m)) if xbmcgui else False
-
-
-def _ok(t, m):
-    if xbmcgui:
-        xbmcgui.Dialog().ok(t, m)
-
-
-def _in(t, d=""):
-    if xbmcgui:
-        v = xbmcgui.Dialog().input(t, d)
-        return v if v else d
-    return d
-
-
-def _sel(t, opts):
-    if xbmcgui:
-        i = xbmcgui.Dialog().select(t, opts)
-        return i if i >= 0 else 0
-    return 0
-
-
-def run_autoscript_wizard(addon=None):
-    if addon is None:
-        addon = xbmcaddon.Addon(ADDON_ID) if xbmcaddon else None
-    _ok("Chinoppo AutoScript", "Generate autoexec.sh.")
-    et = _yn("Telnet", "Enable telnetd 2323?")
-    pr = _yn("Passwordless root", "Enable passwordless root?")
-    mt_idx = _sel("Mount", ["No mount", "NFS", "CIFS"])
-    mt = ["none", "nfs", "cifs"][mt_idx]
-    mr = cu = cp = ""
-    if mt == "nfs":
-        mr = _in("NFS host:/path", "192.168.1.10:/srv/movies")
-    elif mt == "cifs":
-        mr = _in("CIFS //host/share", "//192.168.1.10/movies")
-        cu = _in("Username", "")
-        if cu:
-            cp = _in("Password", "")
-    hb = _in("Heartbeat", "/tmp/usb/sda1/oppo_autoexec_ran")
-    ea = _yn("ADB", "Enable ADB on TCP 5555?")
-    body = generate(
-        {
-            "enable_telnet": et,
-            "passwordless_root": pr,
-            "mount_type": mt,
-            "mount_remote": mr,
-            "cifs_user": cu,
-            "cifs_pass": cp,
-            "heartbeat_path": hb,
-            "enable_adb": ea,
-        }
-    )
-    out_dir = _profile(addon)
-    try:
-        os.makedirs(out_dir, exist_ok=True)
-    except Exception:
-        pass
-    out = os.path.join(out_dir, "autoexec.sh")
-    write_script(out, body)
-    _ok("AutoScript generated", "Wrote: " + out)
-    return out

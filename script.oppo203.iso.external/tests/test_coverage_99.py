@@ -214,7 +214,7 @@ class TestFinal99CoveragePaths(unittest.TestCase):
         elem = sr.ET.fromstring("<setting><value>child</value></setting>")
         self.assertEqual(sr._setting_value(elem), "child")
 
-    def test_installer_wizard_and_filelist_branches(self):
+    def test_installer_discovery_and_filelist_branches(self):
         import installer
 
         fake_gui = installer.xbmcgui
@@ -241,23 +241,8 @@ class TestFinal99CoveragePaths(unittest.TestCase):
             with mock.patch.dict(sys.modules, {"oppo_control": fake_oc, "settings_reader": fake_sr}):
                 installer.run_experimental_filelist_diagnostic()
             self.assertTrue(any(call[0] == "textviewer" and "Movie.iso" in call[2] for call in fake_gui.calls()))
-
-            # Main wizard failure with architecture already chosen skips fallback dialog.
-            fake_addon.setSetting("wizard_completed", "false")
-            fake_addon.setSetting("architecture_choice_made", "true")
-            failing_w = types.SimpleNamespace(run_wizard=lambda: (_ for _ in ()).throw(RuntimeError("wizard fail")))
-            with mock.patch.dict(sys.modules, {"wizard": failing_w}):
-                fake_gui.push_select(-1)
-                installer.main()
         finally:
             sys.path[:] = original_path
-
-    def test_wizard_import_and_basic_branches(self):
-        import wizard
-
-        self.assertEqual(wizard._get(None, "missing", "fallback"), "fallback")
-        result = wizard._run_benchmark("127.0.0.1", 23, trials=1, timer=iter([0, 1, 1, 2]).__next__)
-        self.assertIn(result["recommendation"], ("external", "service", "tie"))
 
 class TestFinal99AdditionalBranches(unittest.TestCase):
     def test_no_kodi_import_fallbacks(self):
@@ -274,7 +259,6 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
             ("autoscript_helper_no_kodi", ROOT / "resources" / "lib" / "autoscript_helper.py"),
             ("i18n_no_kodi", ROOT / "resources" / "lib" / "i18n.py"),
             ("resources.lib.oppo_remote_no_kodi", ROOT / "resources" / "lib" / "oppo_remote.py"),
-            ("wizard_no_kodi", ROOT / "resources" / "lib" / "wizard.py"),
         ]
         with mock.patch("builtins.__import__", side_effect=fake_import):
             for name, path in module_specs:
@@ -286,30 +270,12 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
                 finally:
                     sys.modules.pop(name, None)
 
-    def test_autoscript_cifs_without_credentials_and_wizard_cifs(self):
+    def test_autoscript_cifs_without_credentials(self):
         import autoscript_helper as ah
-        import xbmcgui
 
         body = ah.generate({"mount_type": "cifs", "mount_remote": "//nas/movies", "cifs_user": ""})
         self.assertIn("mount -t cifs", body)
         self.assertNotIn("username=", body)
-
-        class Addon:
-            def __init__(self): self.settings = {}; self.profile = tempfile.mkdtemp()
-            def getAddonInfo(self, key): return self.profile if key == "profile" else ""
-            def setSetting(self, k, v): self.settings[k] = v
-
-        addon = Addon()
-        xbmcgui.reset()
-        xbmcgui.push_yesno(False)  # telnet
-        xbmcgui.push_yesno(False)  # passwordless root
-        xbmcgui.push_select(2)     # CIFS
-        xbmcgui.push_input("//nas/movies")
-        xbmcgui.push_input("")    # username: no password prompt branch
-        xbmcgui.push_input(os.path.join(addon.profile, "heartbeat"))
-        xbmcgui.push_yesno(False)  # ADB
-        out = ah.run_autoscript_wizard(addon)
-        self.assertTrue(os.path.exists(out))
 
     def test_more_oppo_control_branches(self):
         import oppo_control as oc
@@ -364,7 +330,9 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
         old_xbmcaddon = i18n.xbmcaddon
         i18n.xbmcaddon = None
         try:
-            self.assertEqual(i18n.L(31000), "Welcome")
+            # Empty fallback table returns "" by default, or the explicit default.
+            self.assertEqual(i18n.L(31000), "")
+            self.assertEqual(i18n.L(31000, "fallback"), "fallback")
         finally:
             i18n.xbmcaddon = old_xbmcaddon
 
@@ -398,25 +366,10 @@ class TestFinal99AdditionalBranches(unittest.TestCase):
 class TestBuild7RawCoverageBranches(unittest.TestCase):
     """Extra branch tests for Build 7 raw line+branch coverage improvement."""
 
-    def test_autoscript_wizard_no_mount_branch(self):
+    def test_autoscript_no_mount_branch(self):
         import autoscript_helper as ah
-        import xbmcgui
 
-        class Addon:
-            def __init__(self):
-                self.profile = tempfile.mkdtemp()
-            def getAddonInfo(self, key):
-                return self.profile if key == "profile" else ""
-
-        addon = Addon()
-        xbmcgui.reset()
-        xbmcgui.push_yesno(False)  # telnet
-        xbmcgui.push_yesno(False)  # passwordless root
-        xbmcgui.push_select(0)     # No mount: covers non-nfs/non-cifs wizard branch
-        xbmcgui.push_input(os.path.join(addon.profile, "heartbeat"))
-        xbmcgui.push_yesno(False)  # ADB
-        out = ah.run_autoscript_wizard(addon)
-        body = Path(out).read_text(encoding="utf-8")
+        body = ah.generate({"mount_type": "none"})
         self.assertNotIn("mount -t", body)
 
     def test_external_player_http_poll_nondict_and_tcp_confirmation_branch(self):
@@ -644,41 +597,9 @@ class TestBuild8RawCoverageBranches(unittest.TestCase):
         self.assertEqual(added, 0)
         self.assertIn("playercorefactory", merged)
 
-    def test_preset_settings_and_wizard_edges(self):
+    def test_preset_settings_edges(self):
         import preset_manager as pm
         from resources.lib import settings_reader as sr
-        import wizard
 
         self.assertIsNone(pm._parse_version("bad"))
         self.assertTrue(sr.Settings({"x": None}).get_bool("x", True))
-
-        class Addon:
-            def __init__(self): self.values = {}
-            def setSetting(self, key, value): self.values[key] = value
-            def getSetting(self, key): return self.values.get(key, "")
-
-        addon = Addon()
-        wizard._set(None, "ignored", "value")
-        self.assertEqual(wizard._get(None, "missing", "fallback"), "fallback")
-
-        responses = iter([
-            True,   # prerequisites continue
-            False,  # jailbreak disabled
-            False,  # AutoScript shell handler disabled
-            False,  # Quick Start not enabled
-            True,   # auto power-on
-            True,   # Wake-on-LAN first
-            False,  # skip architecture auto-test
-            True,   # use External Player
-        ])
-        inputs = iter(["192.0.2.10", "23", "5", "3", ""])  # IP, port, delay, retries, blank MAC
-        with mock.patch.object(wizard, "_addon", return_value=addon), \
-             mock.patch.object(wizard, "_choose_mode", return_value="full"), \
-             mock.patch.object(wizard, "_probe", return_value=True), \
-             mock.patch.object(wizard, "_sel", return_value=0), \
-             mock.patch.object(wizard, "_yn", side_effect=lambda *a, **k: next(responses)), \
-             mock.patch.object(wizard, "_in", side_effect=lambda *a, **k: next(inputs)), \
-             mock.patch.object(wizard, "_ok"):
-            self.assertTrue(wizard.run_wizard())
-        self.assertEqual(addon.values.get("kodi_startup_power_on_use_wol"), "true")
-        self.assertNotIn("oppo_mac", addon.values)

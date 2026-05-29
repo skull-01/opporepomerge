@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `394f9fc` (origin/main, 2026-05-29 — Merge PR #30 configurator scaffold) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~11s)
+**Last sync:** commit `7b65ed2` (origin/main, 2026-05-29 — docs: end-of-day handoff 2026-05-29 (strip-wizard session)) · **Tests on `main`:** 987 passed, 3 skipped (`pytest -n auto`, ~11s)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -145,6 +145,12 @@ operator action the resume command will not perform (auth flows, browser-redirec
 | 13 | **Configurator icon** (placeholder OK) | `Test-Path configurator\src-tauri\icons\icon.ico` | auto-repo | generate from a placeholder PNG via `cd configurator; npm run tauri icon -- ../docs/installuidraft/.../placeholder.png` (or commit a stub `icon.ico`); blocks `cargo build` otherwise |
 | 14 | Repo has **`area:addon`** and **`area:configurator`** labels | `gh label list --json name --jq '.[].name' \| Select-String '^area:(addon\|configurator)$'` returns both | auto-repo | `gh label create area:addon --color 0E8A16 --description "Kodi add-on (Python)" --force; gh label create area:configurator --color 5319E7 --description "Windows configurator (Tauri 2)" --force` |
 
+**PATH gotcha on Windows after row 10 installs:** the cargo bin dir
+(`$env:USERPROFILE\.cargo\bin`) is NOT on the inherited PATH of fresh `PowerShell` tool
+calls until a shell restart. Prefix every cargo invocation in the same session as the
+install with `$env:PATH = "$env:USERPROFILE\.cargo\bin;" + [Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [Environment]::GetEnvironmentVariable("PATH","User"); `
+or call cargo by full path.
+
 Rows are checked in order; a missing row at any tier is acted on per its tier rule
 described above. There is no database; no external services to verify. (Memory note
 `tauri-env-installed` records that rows 10/11 already passed on 2026-05-29; row 13 is the
@@ -204,64 +210,36 @@ in-flight code.
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-29 (end of day):**
+**As of 2026-05-29 (end of day — config-owner-policy session, second EOD of the day):**
 
-- **PR #30 — *Scaffold OppoKodiAddon Configurator (Tauri 2 + React)*** — **MERGED** at
-  `394f9fc` on `main`. Tauri 2 + Vite + React + TS shell under `configurator/`, Direction
-  A "Warm Paper" tokens, persistent shell, all 23 wizard screens ported, `tsc --noEmit` +
-  `vite build` clean. The scaffold theme is done.
+**As of 2026-05-29 (PM bulk-merge):** scaffold + first three follow-ups landed; queue
+cleared of stale drafts. **§3b content is stale from #37's pre-merge view; the next
+EOD will refresh it.**
 
-- **Four follow-up PRs are open and need triage** (all draft, all created 2026-05-28
-  before today's spine revision — none carry `area:configurator` labels yet, back-apply
-  on next `resume`):
-  - [#33 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/33)
-    `configurator: wire window-control IPC on custom title bar` —
-    `claude/window-control-ipc-7q3xt`. Implements what was the §3b candidate-theme #2.
-  - [#34 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/34)
-    `configurator: persist WizardState to %APPDATA% across restarts` —
-    `claude/state-persistence-n3p2w`. Implements what was the §3b candidate-theme #3.
-  - [#35 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/35)
-    `configurator: unblock first-time cargo build (icon + lockfile + winget docs)` —
-    `claude/configurator-build-setup-k8m2x`. Addresses §2a row 13 (icon stub) and the
-    `configurator-icon-files-missing` memory.
-  - [#32 DRAFT](https://github.com/skull-01/script.oppo203.iso.external/pull/32)
-    `docs: align AGENTS.md ruff target with CI; refresh handoff §3 for #30 merge` —
-    `claude/doc-cleanup-r8m1d`. **Overlaps today's spine revision** — the §3 refresh
-    part is now redundant; the AGENTS.md ruff-target alignment may still be useful.
-    Reviewer should cherry-pick or close.
-  - [#36 OPEN](https://github.com/skull-01/script.oppo203.iso.external/pull/36)
-    `docs: end-of-day handoff 2026-05-29 (mid-day continuation)` —
-    `claude/eod-handoff-q9p2r`. A stale mid-day EOD that didn't account for today's
-    spine revision. Likely close in favor of today's EOD commit.
+- **PR #30** (Scaffold OppoKodiAddon Configurator) — **merged** earlier at `394f9fc`.
+- **PR #33** (window-control IPC on custom title bar) — **merged 2026-05-29 PM at
+  `45c6572`**.
+- **PR #34** (persist WizardState to `%APPDATA%`) — **merged 2026-05-29 PM at
+  `bc60074`**.
+- **PR #35** (unblock first-time cargo build — icon stub + lockfile + winget docs) —
+  **merged 2026-05-29 PM at `12e5b18`**. §2a row 13 (icon) and the
+  `configurator-icon-files-missing` memory are now satisfied; memory pruning is a small
+  follow-up task.
+- **PR #32** (docs: align AGENTS.md ruff target; refresh §3 for #30) — **closed without
+  merge** in the PM bulk-merge as superseded by subsequent §3 rewrites; the AGENTS.md
+  parenthetical was deemed in tension with `area:addon` issue #38 (ruff backlog).
+- **PR #36** (mid-day EOD handoff) — **closed without merge** as a stale snapshot
+  superseded by later EOD entries on `main`.
 
-- **This session revised the `resume` procedure for two work areas** (no configurator
-  code touched):
-  - Split §1 into addon + configurator parallel reporting; added `area:addon` /
-    `area:configurator` labels (auto-created by §2a row 14).
-  - Rewrote §2a for Windows with `auto-system` winget installs for rows 1, 3, 7, 10, 11,
-    12; added row 13 (icon stub — overlaps with PR #35) and row 14 (area labels).
-  - Split §3 into §3a (addon) / §3b (configurator) so `done for the day` overwrites each
-    independently.
-  - Updated [`AGENTS.md`](AGENTS.md), [`docs/ai-handoff/AI_RESUME_GUIDE.md`](docs/ai-handoff/AI_RESUME_GUIDE.md)
-    §9, [`.claude/commands/resume.md`](.claude/commands/resume.md), and the project memory
-    (`tauri-env-installed`, `MEMORY.md` session-continuity bullet) for consistency.
+- **No `area:configurator` issues open.** §17a cache has no configurator rows.
 
 - **Candidate themes for next configurator session** (pick one, per §4):
-  1. **Triage the four open draft PRs** (#32, #33, #34, #35) — close #32's §3-refresh
-     portion as redundant; decide whether #33/#34/#35 are ready to be promoted out of
-     draft. Likely the cleanest first move now that #30 is in.
-  2. **Promote one of #33/#34/#35 to ready** after spot-checking the diff and applying
-     the `area:configurator` label.
-  3. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
+  1. **Real side effects** behind the diag logs (SFTP probe for Tier A, SMB probe for
      Tier B, TCP port knock for TV-backend detection, OPPO `#EJT`/`#QPW` over port 23) —
-     multi-PR theme, its own session, blocked on #33 (IPC) and #34 (state) landing first.
-  4. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
-  5. **App icon + bundling** before any release build — covered by #35.
-
-- **Blockers:** none. §17a cache remains empty; the four open configurator PRs are not
-  in §17a because they're PRs, not Issues. **No `area:` labels are applied to anything
-  yet** (#22, #32-#36 all unlabeled) — next `resume` will auto-create the labels via §2a
-  row 14, but back-applying them to existing items is a manual triage step.
+     multi-PR theme, its own session. #33 (IPC) and #34 (state) are now landed.
+  2. **File generation** for `playercorefactory.xml` + remote-bridge keymap.
+  3. **App icon + bundling polish** — #35 landed a stub icon; the real icon work is
+     still open.
 
 ---
 
@@ -410,12 +388,16 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-29 (EOD #3)**.
+Last refreshed: **2026-05-29 (PM bulk-merge)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
-| 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` | closed by operator |
-| 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not yet started |
+| 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`, merged via #40 at `59eb511`) | closed by operator |
+| 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | — | not started |
+| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | `1ed15a3` (Part A) merged via [PR #45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) at `816bde2`. Parts B + C pending. | Phase A queued |
+| 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | — | not started |
+| 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | — | not started |
+| 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
 
 ---
 
@@ -443,54 +425,83 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (`build\_tmp` Windows-locked tmpdirs vs. `audit_release.py`); updated the header
   "Last sync" / "Tests on `main`" to `4e54c5d` / 987 passed, 3 skipped. PR #30 unchanged.
   §17a still empty (no issues opened/closed/retitled).
-- **2026-05-29** — **Revised `resume` procedure for two work areas.** §1 now reports
-  *Addon* and *Configurator* independently (last-5-created, last-5-closed, WIP, theme
-  recommendations); driven by new `area:addon` / `area:configurator` GitHub labels
-  filtered via `gh issue list --label area:<area>`. §2a was rewritten for Windows
-  (PowerShell checks + `winget install` for `auto-system` rows: git, Python, Node, Rust,
-  MSVC Build Tools, WebView2) and gained two new rows: 13 (configurator icon placeholder
-  — already tracked by `configurator-icon-files-missing` memory) and 14 (the two area
-  labels). §3 was split into §3a (addon) and §3b (configurator); today's configurator-
-  only WIP moved into §3b verbatim, §3a seeded with the v2.9.14 candidate theme so the
-  next `resume` has both branches populated. §17a cache gained an `Area` column. AGENTS.md
-  updated with a one-line area-label norm.
-- **2026-05-29 (EOD #2 — done for the day)** — End-of-day after the spine revision
-  above. Header "Last sync" updated from `4e54c5d` to `394f9fc` (origin/main; the merge
-  of PR #30 configurator scaffold which landed mid-day between today's first EOD and
-  this one). Tests `pytest -n auto`: **987 passed, 3 skipped in 11.07s** (parallel; no
-  TEMP override needed per §14). Refreshed §3a to record closure of issue #22 (the
-  wizard `No module named 'wizard'` bug; fix on `wip/wizard-ux` staged for v2.9.14).
-  Rewrote §3b for the new world: PR #30 is **merged**; four follow-up draft PRs
-  (#32, #33, #34, #35) and one stale EOD continuation (#36) are now open and need
-  triage — #32 overlaps today's §3 refresh, #33/#34/#35 implement what were §3b's
-  candidate themes 2/3/6. No `area:` labels back-applied yet to #22/#32-#36 — flagged
-  as the next-`resume` triage step. §1, §2, §2a, §4–§17a, §19, §20–§21 unchanged
-  beyond this entry. `docs/ai-handoff/AI_RESUME_GUIDE.md` §9 also updated to point at
-  this spine and stop describing the old single-list `resume` flow.
-- **2026-05-29 (EOD #3 — done for the day)** — First session under the revised
-  two-area `resume` spine. Worked **addon** themes 1 + 3 (small enough to bundle):
-  back-applied `area:addon` to issue #22, then audited `wip/wizard-ux` for v2.9.14
-  release prep. All release-gate `tools/*.py --check` ran clean; `py_compile` OK;
-  `pytest -n auto` = **999 passed, 3 skipped in 11.83s** on the branch (+12 vs
-  main's 987); coverage 99.10% via pre-push hook. Single +1 ruff `I001` in
-  `tools/dev_build.py` fixed and pushed as commit `9d633de` *style: sort imports
-  in tools/dev_build.py* — branch ruff count now matches main's 336 baseline
-  (+0 net contribution). Filed issue
-  [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
-  (`ENH-: clear ruff backlog on main`, `area:addon`) for the pre-existing 336-error
-  ruff backlog on main — out-of-scope for v2.9.14, 3-PR incremental plan in the
-  issue body. **§3a** rewritten to record this session's work + the v2.9.14
-  next-steps gating (main-side drift reconciliation + on-device verification).
-  **§3b** unchanged (configurator not touched this session). **§17a** backlog
-  audit cache populated for the first time — entries: #22 (closed, `area:addon`,
-  implementing SHA `b7471db` on `wip/wizard-ux`) and #38 (open, `area:addon`).
-  Header "Last sync" stays at `394f9fc` (no merge to main this session; the only
-  push was commit `9d633de` to `wip/wizard-ux`). Tests on `main` unchanged at
-  **987 passed, 3 skipped in 11.23s** (re-confirmed on the docs branch which is
-  docs-only-diff from main). EOD #3 itself rides on top of EOD #2's still-open
-  PR [#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37) on
-  `docs/eod-handoff-2026-05-29-pm` — one coherent PR covering the spine revision
-  + the first session under the new spine.
+- **2026-05-29 (spine-revision branch — EODs #2, #3)** — Parallel history on
+  `docs/eod-handoff-2026-05-29-pm` (PR #37). Authored the §3a/§3b two-area
+  restructure of §1, §2a, §3, AGENTS.md, `.claude/commands/resume.md`,
+  `docs/ai-handoff/AI_RESUME_GUIDE.md` §9; ran one addon session under the new
+  spine (audited `wip/wizard-ux` for v2.9.14, fixed a single ruff I001 in
+  `tools/dev_build.py`, filed issue #38 for the 336-error ruff backlog).
+  **Header "Last sync" on that branch was `394f9fc`** (the PR #30 merge); tests
+  on `wip/wizard-ux` were 999 passed / 3 skipped / 99.10% coverage. The §3a/§3b
+  content authored on that branch is preserved only via this entry — the actual
+  §3a/§3b on `main` was overwritten by the PM bulk-merge entry below.
+- **2026-05-29 (EOD — strip-wizard session)** — End-of-day after a single-theme
+  addon session that stripped the in-Kodi setup wizard from the add-on. PR
+  [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40) on
+  `claude/strip-wizard-g4feovqi` (tip `92a9408`) was open as draft. 44 files
+  changed, +313 / −5814. Tests: **865 passed, 3 skipped** in ~10s on the strip
+  branch; coverage **99.05%** (≥ 99% floor). Filed 4 new `area:addon` ENH
+  issues — #41 configurator-owns-config policy, #42 in-add-on settings menu,
+  #43 module split (TV/Oppo/AVR/Kodi), #44 hardware-testing solicitation.
+  Created [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) on `main` (commit
+  `3967cb6`) with the strategic direction + open-issue grid + suggested
+  ordering. Header "Last sync" updated from `4e54c5d` to `3967cb6`; tests on
+  `main` re-confirmed at **987 passed, 3 skipped** in ~12s. §3 rewritten to
+  record the strip-wizard PR + new issues; §17a backlog cache populated for
+  the first time (with Area column added) — six rows: #22 (closed), #38, #41,
+  #42, #43, #44.
+- **2026-05-29 (EOD — config-owner-policy session)** — Second `done for
+  the day` cycle on 2026-05-29, after the strip-wizard EOD at `7b65ed2`.
+  Single-theme addon session that drafted **Part A** (policy doc) of
+  [ENH-#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41).
+  PR [#45](https://github.com/skull-01/script.oppo203.iso.external/pull/45) on
+  `claude/config-owner-policy-a3k7m2nq` (tip `1ed15a3`) opened as draft.
+  3 files changed, +70 / −1: [`AGENTS.md`](AGENTS.md) gained
+  `## Configuration is owned by the configurator`,
+  [`CONTRIBUTING.md`](CONTRIBUTING.md) gained `## Configuration ownership`
+  (matching policy framed for external contributors),
+  [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md)
+  gained a Phase A row for the #45 review. Tests on the policy-doc branch:
+  **987 passed, 3 skipped** in 10.69s; coverage **99.08%**. SHA `1ed15a3`
+  commented on issue #41 per the only-operator-closes-issues norm. Parts B + C
+  of #41 deferred to the next session — both touch `resources/settings.xml`,
+  which PR #40 also modifies.
+- **2026-05-29 (PM — bulk-merge session)** — Operator typed `resume` then
+  directed "merge all pending, operator will skip review." Bulk-merged the
+  five mergeable PRs in dependency order:
+  [#40](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
+  strip-wizard at `59eb511`,
+  [#45](https://github.com/skull-01/script.oppo203.iso.external/pull/45)
+  config-owner-policy Part A at `816bde2` (after resolving a
+  `docs/MANUAL_VERIFICATION_CHECKLIST.md` conflict that preserved both #40 and
+  #45 Phase A entries),
+  [#33](https://github.com/skull-01/script.oppo203.iso.external/pull/33)
+  window-control IPC at `45c6572`,
+  [#34](https://github.com/skull-01/script.oppo203.iso.external/pull/34) state
+  persistence at `bc60074`,
+  [#35](https://github.com/skull-01/script.oppo203.iso.external/pull/35) cargo
+  unblock at `12e5b18`. Closed three superseded/stale PRs without merge:
+  [#39](https://github.com/skull-01/script.oppo203.iso.external/pull/39)
+  (wip/wizard-ux — predecessor of #40),
+  [#36](https://github.com/skull-01/script.oppo203.iso.external/pull/36) (stale
+  mid-day handoff),
+  [#32](https://github.com/skull-01/script.oppo203.iso.external/pull/32) (stale
+  §3 refresh + ruff-target line now in tension with #38). Resolved this PR
+  ([#37](https://github.com/skull-01/script.oppo203.iso.external/pull/37) the
+  two-area spine revision) against the new `main`: took #37's structural
+  changes (§1 step 2 multi-area wording, §2a's 14-row table with `auto-repo` /
+  `auto-system` / `manual` tiers, §3a/§3b split, AGENTS.md area-label rule,
+  `.claude/commands/resume.md` two-area procedure, AI_RESUME_GUIDE.md §9
+  update); took `main`'s §17a (6 rows); rewrote §3b to record the four
+  configurator-area PR outcomes this session; **§3a still carries the stale
+  wip/wizard-ux v2.9.14 content from #37 and will be overwritten by the next
+  EOD**. `pytest -n auto --basetemp=build\_pt` on `main` after the five
+  merges: **865 passed, 3 skipped in 10.40s** (test count dropped from 987 →
+  865 because #40 deleted the wizard test files; coverage **99.05%** ≥ 99%
+  floor). Phase A on-device verification of #40 was **NOT** performed —
+  operator chose to defer per the skip-review directive; revert remains
+  available if hardware testing later flags an issue. No `area:configurator`
+  labels back-applied to any prior items in this session.
 
 ---
 
@@ -528,3 +539,23 @@ defining terminology). Append after each substantive turn. Newest-last._
 
 - **Q:** GitHub Issues, PR-only, or hybrid?
   **A:** Hybrid — Issues for bug/enhancement tracking, PRs for delivery.
+
+### 2026-05-29 — Sequencing ENH-#41 against PR #40; in-add-on guidance hint mechanism
+
+- **Q:** Should ENH-#41 (configurator-owns-config) ship as one PR or be split
+  against PR #40 (strip-wizard, still draft)?
+  **A:** Split into three parts. **Part A** (policy doc to
+  [`AGENTS.md`](AGENTS.md) + [`CONTRIBUTING.md`](CONTRIBUTING.md)) ships now
+  from `main` — no overlap with #40's diff. **Parts B** (in-add-on guidance
+  hint on settings open) and **C** (settings.xml ownership marker) wait until
+  #40 merges; both modify `resources/settings.xml`, which #40 renames
+  (`<category id="wizard">` → `<category id="playback">`) and trims
+  (`wizard_mode` removed). Doing B + C now would create avoidable merge
+  friction.
+- **Q:** For Part B's in-add-on guidance hint, which mechanism — a static
+  label at the top of `settings.xml`, a `service.py` first-open-per-session
+  `xbmcgui.Dialog().notification`, or both?
+  **A:** Both. Static label is permanent visible guidance; the notification
+  draws attention exactly once per Kodi session (tracked via
+  `xbmcgui.Window(10000).setProperty(...)`, which clears on Kodi restart).
+  Most code, strongest UX guarantee.

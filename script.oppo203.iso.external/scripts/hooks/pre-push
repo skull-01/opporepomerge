@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pre-push gate: run the full test suite with the 99% coverage gate before any
-# push, so a coverage regression (e.g. new wizard/installer code without tests)
+# push, so a coverage regression (e.g. new installer/service code without tests)
 # is caught locally instead of in CI.
 #
 # Enable once per clone:   git config core.hooksPath scripts/hooks

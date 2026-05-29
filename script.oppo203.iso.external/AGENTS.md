@@ -76,6 +76,34 @@ Don't refactor, restructure, or "improve" code adjacent to your task. Don't add 
 abstractions, fallbacks, or validation beyond what the task requires. The smaller the
 diff, the easier the review. Prefer surfacing real errors over silent fallbacks.
 
+## Configuration is owned by the configurator
+
+The Windows configurator (`configurator/`) is the single source of truth for the
+add-on's persistent configuration — TV / OPPO / AVR / Kodi IPs, `playercorefactory.xml`,
+the remote-bridge keymap, and hardware presets. The Kodi add-on is **read-mostly**: it
+surfaces current values, accepts a small set of in-the-moment overrides, and routes the
+user to the configurator for anything that should persist across Kodi restarts.
+
+**Allowed in-add-on exceptions (don't open a discussion for these):**
+
+- Per-session toggles that should not survive a Kodi restart (e.g. verbose mode for a
+  single playback test).
+- The minimal in-add-on settings menu carved out by
+  [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42) — viewer for
+  TV / OPPO / AVR / Kodi IPs plus language selection.
+- Diagnostic exports already surfaced in `installer.main()` (AVR readiness reports,
+  file-list diagnostic, discovery probe).
+
+**Not allowed without an issue + operator sign-off:**
+
+- New persistent-setting categories in `resources/settings.xml`.
+- New first-run or setup dialogs in the add-on.
+- Add-on side writers for `playercorefactory.xml`, the remote-bridge keymap, or NAS
+  credentials.
+
+If a PR introduces add-on-side configuration outside an allowed exception, the operator
+will redirect it to the configurator.
+
 ## Never edit operator-only / secret files
 
 - `.claude/settings.local.json`

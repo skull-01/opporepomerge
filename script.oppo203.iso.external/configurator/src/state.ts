@@ -45,6 +45,25 @@ export type WizardState = {
   testMode: "disc" | "own" | null;
 };
 
+import { invoke } from "@tauri-apps/api/core";
+
+export async function loadPersistedState(): Promise<WizardState | null> {
+  try {
+    const loaded = await invoke<WizardState | null>("load_wizard_state");
+    return loaded ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function savePersistedState(state: WizardState): Promise<void> {
+  try {
+    await invoke("save_wizard_state", { state });
+  } catch {
+    // best-effort; persistence must never block the UI
+  }
+}
+
 export const INITIAL_STATE: WizardState = {
   kodiIp: "10.0.1.42",
   tier: null,

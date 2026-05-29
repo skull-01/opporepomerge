@@ -3,10 +3,9 @@ branch = True
 source = resources/lib
 
 [report]
-# Coverage floor restored to 99% with the UI/glue modules back in measurement
-# (wizard*/installer were already exercised by the suite; only a handful of
-# on-device package-import shims remain uncovered via `# pragma: no cover`).
-# See docs/testing-strategy.md.
+# Coverage floor: 99% across resources/lib. UI/glue modules are exercised by
+# the suite; only a handful of on-device package-import shims remain uncovered
+# via `# pragma: no cover`. See docs/testing-strategy.md.
 fail_under = 99
 show_missing = True
 exclude_lines =

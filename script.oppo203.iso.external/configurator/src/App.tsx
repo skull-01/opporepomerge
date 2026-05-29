@@ -1,9 +1,15 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { WinShell } from "./shell/WinShell";
 import { Chain } from "./shell/Chain";
 import { Progress } from "./shell/Progress";
 import { Sidebar } from "./shell/Sidebar";
-import { INITIAL_STATE, computeCompleted, type WizardState } from "./state";
+import {
+  INITIAL_STATE,
+  computeCompleted,
+  loadPersistedState,
+  savePersistedState,
+  type WizardState,
+} from "./state";
 import {
   SCREEN_TO_CHAIN,
   SCREEN_TO_STEP,
@@ -61,6 +67,19 @@ const SCREEN_RENDERERS: Record<ScreenId, (props: ScreenProps) => JSX.Element> = 
 export default function App() {
   const [screen, setScreen] = useState<ScreenId>("step0_gate");
   const [state, setState] = useState<WizardState>(INITIAL_STATE);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    void loadPersistedState().then((loaded) => {
+      if (loaded) setState(loaded);
+      setHydrated(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    void savePersistedState(state);
+  }, [state, hydrated]);
 
   const set = useCallback(
     (patch: Partial<WizardState>) => setState((s) => ({ ...s, ...patch })),
