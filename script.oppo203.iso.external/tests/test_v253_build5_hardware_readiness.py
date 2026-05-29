@@ -8,12 +8,34 @@ from pathlib import Path
 import sys
 import zipfile
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 if str(LIB) not in sys.path:
     sys.path.insert(0, str(LIB))
+
+
+@pytest.fixture(autouse=True)
+def _fresh_addon_modules():
+    """Per-test isolation for the resources.lib.* tree.
+
+    The kodi-stub export tests below load stub-bound modules via monkeypatch
+    (no sys.modules teardown), which can otherwise leak a stub-bound
+    resources.lib.* module onto an xdist worker and break a later test that
+    imports the same module normally. Purge before and after so neither prior
+    pollution nor this file's stubs cross test boundaries.
+    """
+
+    def _purge():
+        for _name in [k for k in list(sys.modules) if k.startswith("resources.lib.")]:
+            sys.modules.pop(_name, None)
+
+    _purge()
+    yield
+    _purge()
 
 
 def test_build5_readiness_report_is_non_claiming_and_contains_tester_checklist():
