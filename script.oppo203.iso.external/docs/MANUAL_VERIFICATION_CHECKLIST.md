@@ -582,6 +582,30 @@ _(none queued)_
   3. Edit one module, re-run → only that module's dependent tests run.
   4. `git status` shows `.testmondata` ignored (never staged).
 
+### Configurator config-write hardening — PR #68 review fixes (#72–#87) + ENH-#41 Part C
+
+- **Issues / SHAs:** fixed across `454e5ab` (PR #68: #72, #73, #74, #75, #76, #78, #79, #80,
+  #81, #82, #83, #84) and the follow-up configurator-cleanup PR (#85, #77, #86, #87, and the
+  configurator side of ENH-#41 Part C — a provenance marker in the generated `settings.xml`).
+- **What changed (software-verified):** merge/deploy paths never blind-overwrite user config —
+  all tiers read back and merge `playercorefactory.xml` + `settings.xml`, and a malformed file
+  is refused rather than replaced; the Rust SSH/probe/deploy commands validate host/user, read
+  OPPO replies until CR, verify the remote backup before overwriting, and write atomically; the
+  Step 3 IP-control test passes only when the player reports power `ON`; the persisted screen id
+  is validated. Verified: `tsc -b` + `vite build`, **63 vitest tests**, and `cargo check` all
+  green; the add-on 99% coverage gate stayed green on push.
+- **Operator confirm (Phase C — on real hardware, NOT done by the agent):**
+  1. **Tier B (SMB):** with an existing `playercorefactory.xml` containing your own `<player>`/
+     `<rule>` entries on the Kodi box, run Apply → your entries survive and the OPPO player +
+     rules are merged in; a timestamped `.bak` is left beside the file.
+  2. **Tier A (SSH):** same check over SSH (key auth) → merge (not overwrite), Kodi restarts,
+     and any other `settings.xml` values you had are preserved.
+  3. **Malformed-file refusal:** hand-break `playercorefactory.xml`, run Apply → expect a clear
+     "refusing to merge" error and the broken file left untouched (not replaced).
+  4. **IP-control test:** with the player in standby, run the Step 3 wake test → it should show
+     "Two-way IP control confirmed" only when the player actually powers ON.
+  5. **SSH input guard:** an IP/username beginning with `-` is rejected, not passed to `ssh`.
+
 ---
 
 ## Verified (archive)
