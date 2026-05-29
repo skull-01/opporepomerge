@@ -3,6 +3,7 @@
 pytest>=8,<9
 pytest-xdist>=3.8.0,<4
 pytest-cov>=7.1.0,<8
+pytest-testmon>=2.2,<3
 coverage[toml]>=7,<8
 PyYAML>=6,<7
 ruff>=0.5,<1

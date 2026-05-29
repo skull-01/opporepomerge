@@ -10,6 +10,9 @@ coverage.xml
 htmlcov/
 .tox/
 
+# pytest-testmon impact map (local fast-test loop; see tools/dev_test.py)
+.testmondata*
+
 # Build/package output
 dist/
 build/
