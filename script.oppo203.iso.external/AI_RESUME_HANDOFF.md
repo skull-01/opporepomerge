@@ -833,7 +833,7 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-30 (later EOD — added #103/#104 TV-DB-v2, #105/#106 players-DB, and the #107 configurator `v0.3.0` release rows. Two ENH opened + delivered this session (#103, #105), SHAs commented, awaiting operator verify/close; #44 remains the only pre-existing open issue; 0 open PRs)**.
+Last refreshed: **2026-05-30 (later still — AVR configurator session, `v0.4.0` + `v0.5.0`. No issues opened/closed/retitled: #109 (AVR DB + Step 5) and #110 (Step 5 wired into the add-on `settings.xml`) were PR-only delivery, the configurator's established untracked-delivery pattern. #44 remains the only open issue; 0 open PRs)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
