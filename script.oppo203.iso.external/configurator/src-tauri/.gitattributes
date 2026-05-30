@@ -1,0 +1,3 @@
+# The Tauri bundler rewrites Cargo.toml with CRLF on a Windows `tauri build`;
+# pin it to LF so a local build doesn't leave it showing as modified.
+Cargo.toml text eol=lf
