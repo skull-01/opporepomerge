@@ -1,4 +1,5 @@
 import type { KodiPlatform } from "./generate";
+import type { TvRegion } from "./tvdb";
 
 export type Tier = "A" | "B" | "C";
 
@@ -36,6 +37,7 @@ export type WizardState = {
   sshUser: string;
 
   tvBrand: string | null;
+  tvRegion: TvRegion | null;
   tvModel: string | null;
   tvBackend: TvBackend | null;
   tvPlatform: string | null;
@@ -78,6 +80,7 @@ export const INITIAL_STATE: WizardState = {
   smbSharePath: "\\\\10.0.1.42\\Kodi",
   sshUser: "root",
   tvBrand: null,
+  tvRegion: null,
   tvModel: null,
   tvBackend: null,
   tvPlatform: null,
