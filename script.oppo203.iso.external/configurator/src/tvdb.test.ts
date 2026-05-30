@@ -4,14 +4,15 @@ import {
   isNewer,
   lineupFor,
   modelsForBrand,
+  modelsForRegion,
   parseTvDb,
   resolveBackend,
   type TvDbModel,
 } from "./tvdb";
 
 describe("BUNDLED_TV_DB", () => {
-  it("has schema_version 1 and non-empty lineups + models", () => {
-    expect(BUNDLED_TV_DB.schema_version).toBe(1);
+  it("has schema_version 2 and non-empty lineups + models", () => {
+    expect(BUNDLED_TV_DB.schema_version).toBe(2);
     expect(BUNDLED_TV_DB.lineups.length).toBeGreaterThan(0);
     expect(BUNDLED_TV_DB.models.length).toBeGreaterThan(0);
   });
@@ -21,53 +22,89 @@ describe("BUNDLED_TV_DB", () => {
       expect(lineupFor(BUNDLED_TV_DB, m), `model ${m.id}`).not.toBeNull();
     }
   });
+
+  it("every model carries at least one region", () => {
+    for (const m of BUNDLED_TV_DB.models) {
+      expect(m.regions.length, `model ${m.id}`).toBeGreaterThan(0);
+    }
+  });
 });
 
 describe("resolveBackend", () => {
-  it("resolves a TCL Google TV model to adb via its lineup", () => {
-    const m = BUNDLED_TV_DB.models.find((x) => x.id === "tcl-65q9-2023")!;
-    expect(resolveBackend(BUNDLED_TV_DB, m)).toBe("adb");
-  });
-
-  it("resolves a TCL Roku model to roku_ecp", () => {
-    const m = BUNDLED_TV_DB.models.find((x) => x.id === "tcl-55r5-2022")!;
+  it("resolves a Roku TV model to roku_ecp via its primary backend", () => {
+    const m = BUNDLED_TV_DB.models.find((x) => x.id === "hisense-r6-roku-tv-2018")!;
     expect(resolveBackend(BUNDLED_TV_DB, m)).toBe("roku_ecp");
   });
 
-  it("honors a per-model backend_override", () => {
+  it("resolves a Samsung model to samsung_command", () => {
+    const m = BUNDLED_TV_DB.models.find((x) => x.id === "samsung-nu8000-crystal-uhd-2018")!;
+    expect(resolveBackend(BUNDLED_TV_DB, m)).toBe("samsung_command");
+  });
+
+  it("prefers the per-model primary_backend over the lineup backend", () => {
     const m: TvDbModel = {
       id: "x",
       brand: "tcl",
       name: "X",
       year: 2024,
-      size: '55"',
-      lineup: "tcl-googletv",
-      backend_override: "custom_command",
+      size: "various",
+      lineup: "tcl-roku",
+      regions: ["US"],
+      primary_backend: "custom_command",
     };
     expect(resolveBackend(BUNDLED_TV_DB, m)).toBe("custom_command");
+  });
+
+  it("falls back to the lineup backend when no primary_backend is set", () => {
+    const m: TvDbModel = {
+      id: "y",
+      brand: "tcl",
+      name: "Y",
+      year: 2024,
+      size: "various",
+      lineup: "tcl-roku",
+      regions: ["US"],
+    };
+    expect(resolveBackend(BUNDLED_TV_DB, m)).toBe("roku_ecp");
   });
 });
 
 describe("modelsForBrand", () => {
   it("returns only the requested brand", () => {
-    const tcl = modelsForBrand(BUNDLED_TV_DB, "tcl");
-    expect(tcl.length).toBeGreaterThan(0);
-    expect(tcl.every((m) => m.brand === "tcl")).toBe(true);
+    const lg = modelsForBrand(BUNDLED_TV_DB, "lg");
+    expect(lg.length).toBeGreaterThan(0);
+    expect(lg.every((m) => m.brand === "lg")).toBe(true);
   });
 
-  it("returns empty for a brand with lineups but no seeded models", () => {
-    expect(modelsForBrand(BUNDLED_TV_DB, "lg")).toEqual([]);
+  it("returns empty for a brand not in the database", () => {
+    expect(modelsForBrand(BUNDLED_TV_DB, "vizio")).toEqual([]);
+  });
+});
+
+describe("modelsForRegion", () => {
+  it("keeps only models mapped to the region", () => {
+    const all = modelsForBrand(BUNDLED_TV_DB, "hisense");
+    const us = modelsForRegion(all, "US");
+    expect(us.length).toBeGreaterThan(0);
+    expect(us.every((m) => m.regions.includes("US"))).toBe(true);
+    expect(us.length).toBeLessThanOrEqual(all.length);
+  });
+
+  it("passes everything through for a null region", () => {
+    const all = modelsForBrand(BUNDLED_TV_DB, "hisense");
+    expect(modelsForRegion(all, null)).toEqual(all);
   });
 });
 
 describe("parseTvDb", () => {
-  it("accepts a valid db", () => {
+  it("accepts a valid v2 db", () => {
     expect(parseTvDb(BUNDLED_TV_DB)).not.toBeNull();
   });
 
   it("rejects a wrong schema_version or shape", () => {
-    expect(parseTvDb({ schema_version: 2, lineups: [], models: [] })).toBeNull();
-    expect(parseTvDb({ schema_version: 1, lineups: {}, models: [] })).toBeNull();
+    expect(parseTvDb({ schema_version: 1, lineups: [], models: [] })).toBeNull();
+    expect(parseTvDb({ schema_version: 3, lineups: [], models: [] })).toBeNull();
+    expect(parseTvDb({ schema_version: 2, lineups: {}, models: [] })).toBeNull();
     expect(parseTvDb(null)).toBeNull();
     expect(parseTvDb("nope")).toBeNull();
   });

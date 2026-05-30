@@ -5,7 +5,11 @@ import bundled from "./tv-db/tv-models.json";
 // docs/configurator/tv-db/tv-models.json and is fetched from its raw GitHub URL on demand.
 // Keep the two in sync when editing.
 
-export type TvDbTier = "probe" | "command";
+export type TvDbTier = "preferred" | "fallback" | "probe";
+
+export type TvRegion = "US" | "UK" | "EU" | "Asia";
+
+export type TvMappingConfidence = "high" | "medium" | "low";
 
 export type TvDbLineup = {
   id: string;
@@ -16,6 +20,11 @@ export type TvDbLineup = {
   tier: TvDbTier;
   years: [number, number];
   validated: boolean;
+  fallback_backends?: TvBackend[];
+  notes?: string;
+  regions?: TvRegion[];
+  release_regions?: TvRegion[];
+  region_notes?: string;
 };
 
 export type TvDbModel = {
@@ -25,8 +34,24 @@ export type TvDbModel = {
   year: number;
   size: string;
   lineup: string;
-  backend_override?: TvBackend | null;
+  regions: TvRegion[];
+  platform?: string;
+  primary_backend?: TvBackend;
+  fallback_backends?: TvBackend[];
+  mapping_confidence?: TvMappingConfidence;
   validated?: boolean;
+  notes?: string;
+  release_regions?: TvRegion[];
+  region_notes?: string;
+};
+
+export type TvRegionSchema = {
+  field: string;
+  type: string;
+  allowed_values: TvRegion[];
+  meaning?: string;
+  usage?: string;
+  validation_status?: string;
 };
 
 export type TvDb = {
@@ -34,6 +59,7 @@ export type TvDb = {
   db_version: string;
   lineups: TvDbLineup[];
   models: TvDbModel[];
+  region_schema?: TvRegionSchema;
 };
 
 export const BUNDLED_TV_DB = bundled as unknown as TvDb;
@@ -45,14 +71,15 @@ export function lineupFor(db: TvDb, model: TvDbModel): TvDbLineup | null {
   return db.lineups.find((l) => l.id === model.lineup) ?? null;
 }
 
-/** Resolved control backend: a per-model override wins, otherwise the lineup's backend. */
+/** Resolved control backend: a per-model primary backend wins, otherwise the lineup's backend. */
 export function resolveBackend(db: TvDb, model: TvDbModel): TvBackend | null {
-  if (model.backend_override) return model.backend_override;
+  if (model.primary_backend) return model.primary_backend;
   return lineupFor(db, model)?.backend ?? null;
 }
 
+/** Resolved platform: the model's specific platform wins, otherwise the lineup's. */
 export function resolvePlatform(db: TvDb, model: TvDbModel): string | null {
-  return lineupFor(db, model)?.platform ?? null;
+  return model.platform ?? lineupFor(db, model)?.platform ?? null;
 }
 
 export function resolveTier(db: TvDb, model: TvDbModel): TvDbTier | null {
@@ -63,11 +90,21 @@ export function modelsForBrand(db: TvDb, brand: string): TvDbModel[] {
   return db.models.filter((m) => m.brand === brand);
 }
 
+export const TV_REGIONS: readonly TvRegion[] = ["US", "UK", "EU", "Asia"];
+
+/** Models released/mapped to a given region; a null region passes everything through. */
+export function modelsForRegion(models: TvDbModel[], region: TvRegion | null): TvDbModel[] {
+  if (!region) return models;
+  return models.filter((m) => m.regions.includes(region));
+}
+
 /** Parse + lightly validate a fetched DB; returns null on any structural problem. */
 export function parseTvDb(value: unknown): TvDb | null {
   if (!value || typeof value !== "object") return null;
   const v = value as Record<string, unknown>;
-  if (v.schema_version !== 1) return null;
+  // schema_version is the breaking-change gate. Additive optional fields ride through the
+  // cast below without a bump (bump db_version instead); only a structural break bumps this.
+  if (v.schema_version !== 2) return null;
   if (!Array.isArray(v.lineups) || !Array.isArray(v.models)) return null;
   return v as unknown as TvDb;
 }
