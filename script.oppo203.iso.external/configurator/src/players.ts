@@ -1,6 +1,7 @@
 import type { PlayerBrand } from "./state";
+import { BUNDLED_PLAYERS_DB, modelsForFamily, type PlayerPosture } from "./playersdb";
 
-export type BrandPosture = "stock" | "wake-rewrite" | "warning";
+export type BrandPosture = PlayerPosture;
 export type PlayerModelDef = { label: string; hw: string | null };
 export type PlayerBrandDef = {
   id: PlayerBrand;
@@ -12,101 +13,22 @@ export type PlayerBrandDef = {
 };
 
 /**
- * Single source of truth for player brands: display metadata (name, logo char, posture), the
- * model labels shown in the picker, and the `oppo_hardware_model` enum value each model maps to
- * (verified against resources/settings.xml). Both the Step 2 brand picker and mapping.ts derive
- * from this — neither keeps its own copy, so a model added here can't silently fail to map.
+ * Single source of truth for player brands: derived from the canonical players database
+ * (configurator/src/players-db/players.json). Display metadata (name, logo char, posture)
+ * and the model picker labels + their `oppo_hardware_model` enum value all come from the DB,
+ * so the Step 2 picker and mapping.ts can't drift from the add-on's hardware taxonomy. The
+ * `other` family carries explicit ui_models (UX aliases onto an existing hw value).
  */
-export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
-  {
-    id: "oppo",
-    name: "OPPO",
-    ch: "O",
-    color: "#046A38",
-    posture: "stock",
-    models: [
-      { label: "UDP-203", hw: "udp_203" },
-      { label: "UDP-205", hw: "udp_205" },
-    ],
-  },
-  {
-    id: "chinoppo",
-    name: "Chinoppo",
-    ch: "C",
-    color: "#0E7490",
-    posture: "wake-rewrite",
-    models: [
-      { label: "M9201", hw: "chinoppo_m9201" },
-      { label: "M9203", hw: "chinoppo_m9203" },
-      { label: "M9205 V1", hw: "chinoppo_m9205_v1" },
-      { label: "M9205C", hw: "chinoppo_m9205c" },
-      { label: "M9200", hw: "chinoppo_m9200" },
-      { label: "M9205", hw: "chinoppo_m9205" },
-      { label: "M9702", hw: "chinoppo_m9702" },
-    ],
-  },
-  {
-    id: "magnetar",
-    name: "Magnetar",
-    ch: "M",
-    color: "#5B21B6",
-    posture: "warning",
-    models: [
-      { label: "UDP800", hw: "magnetar_udp800" },
-      { label: "UDP900", hw: "magnetar_udp900" },
-    ],
-  },
-  {
-    id: "reavon",
-    name: "Reavon",
-    ch: "R",
-    color: "#B45309",
-    posture: "warning",
-    models: [
-      { label: "UBR-X100", hw: "reavon_ubrx100" },
-      { label: "UBR-X110", hw: "reavon_ubrx110" },
-      { label: "UBR-X200", hw: "reavon_ubrx200" },
-    ],
-  },
-  {
-    id: "cineultra",
-    name: "CineUltra",
-    ch: "CU",
-    color: "#0F766E",
-    posture: "wake-rewrite",
-    models: [
-      { label: "V203", hw: "cineultra_v203" },
-      { label: "V204", hw: "cineultra_v204" },
-    ],
-  },
-  {
-    id: "ipuk",
-    name: "iPUK",
-    ch: "iP",
-    color: "#1428A0",
-    posture: "wake-rewrite",
-    models: [{ label: "UHD8592", hw: "ipuk_uhd8592" }],
-  },
-  {
-    id: "giec",
-    name: "Giec",
-    ch: "G",
-    color: "#C2410C",
-    posture: "wake-rewrite",
-    models: [{ label: "BDP-G5300", hw: "giec_bdp_g5300" }],
-  },
-  {
-    id: "other",
-    name: "Other / clone",
-    ch: "?",
-    color: "#6B7280",
-    posture: "stock",
-    models: [
-      { label: "Conservative default", hw: "udp_203" },
-      { label: "Chinoppo eject-to-wake", hw: "chinoppo_m9205" },
-    ],
-  },
-];
+export const PLAYER_BRANDS: readonly PlayerBrandDef[] = BUNDLED_PLAYERS_DB.families.map((f) => ({
+  id: f.id as PlayerBrand,
+  name: f.name,
+  ch: f.ch,
+  color: f.color,
+  posture: f.posture,
+  models: f.ui_models
+    ? f.ui_models.map((m) => ({ label: m.label, hw: m.hw }))
+    : modelsForFamily(BUNDLED_PLAYERS_DB, f.id).map((m) => ({ label: m.ui_label, hw: m.hw })),
+}));
 
 export function brandDef(id: PlayerBrand | null): PlayerBrandDef | undefined {
   return PLAYER_BRANDS.find((b) => b.id === id);
