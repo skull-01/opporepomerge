@@ -48,6 +48,59 @@ installer→configurator"). **Don't mix themes within a session** — proven in 
 mixing themes is where bugs slip in. If the operator nudges into a second theme, suggest
 finishing the current one and resuming next session. Soft cap **≤ 4 PRs per session.**
 
+## Plan format — the canonical planning output
+
+When the operator asks for a **plan** — or you reach a multi-PR / multi-step build theme —
+produce it in the format below, **every time, at this level of detail**. A plan is a
+**deliverable, not a sketch**. **Ground first, plan second, then STOP for a Go** before
+writing any code.
+
+### Ground before you plan (don't plan from the doc alone)
+
+- Read the authoritative sources: the relevant issues, the handoff WIP (§3a/§3b), and
+  [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) if it exists.
+- Open the **actual current code** and confirm every anchor as `file:line`. Line numbers
+  drift after merges — verify them, don't trust the doc's.
+- Read the central functions/modules so scope is precise, not hand-waved.
+- **Diagnose-first for bugs:** locate (and where you can, reproduce) the exact failing
+  code path before proposing a fix.
+- **Report findings honestly:** confirm the behavior, call out what's **already
+  implemented** (don't re-plan done work), and refine the scope/LOC estimate up or down vs
+  the doc — lighter-than-expected is a finding, so is heavier.
+
+### The output (every plan contains all of these)
+
+1. **Theme line** — `<id / title> — "<short imperative theme>"`, plus one line of scope +
+   constraint: what's in scope, and what is **frozen** and by which guard test
+   (e.g. "engine/scoring frozen, pinned by `tests/test_matcher_guardrail.py`").
+2. **Per-PR scope blocks** — one block per PR:
+   `PR <id> — <title> (~<LOC>) — <issue refs>`, then a bullet per issue giving the
+   concrete `file:line` anchor and the exact change, then a `Tests:` line naming the
+   regression assertions that PR adds.
+3. **Dependency chain** — an ASCII tree showing PR order and what builds on what.
+4. **📊 Plan rollup** — a table `PR | Issues | ~LOC | Risk`, one row per PR, each with a
+   one-line risk rationale.
+5. **⚠️ Risk callouts** — named risks + mitigations: the frozen-behavior guard, the
+   **live-verify caveat** (what you *cannot* verify in-session and how you gate it instead
+   — e.g. render/unit guards when the real Kodi box / OPPO / TV is out of reach), and any
+   overlap with other in-flight work.
+6. **Verification regime** — state the per-PR gate explicitly for this repo: add-on
+   `pytest -n auto` + `ruff check` + `ruff format --check` + `mypy --gate` + the **serial
+   99% coverage gate**; configurator `tsc --noEmit` + `vitest` + `npm run build`. Then a
+   draft PR (software-only signature), SHA-comment + a Phase A/B/C row in
+   [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md), and
+   **only the operator closes**.
+7. **✅ Go / 🛑 Wait / 🔁 Replan** — end every plan with this explicit question. **Do not
+   start building until the operator says Go.**
+
+### Quality bar
+
+Grounded (real `file:line` anchors, not hand-waving) · honest (claim only verified scope;
+flag already-done work; refine the estimate) · risk-aware (name the safety nets and what
+you can't verify) · decision-gated (Go/Wait/Replan before any code). The
+one-theme-per-session, soft-cap-≤-4-PRs rule above still holds — a plan that needs more is
+two sessions.
+
 ## Test link — every completed change ends with one copy-paste line
 
 Every change you report as done ends with:

@@ -11,7 +11,8 @@ session-continuity spine. Then [`AGENTS.md`](AGENTS.md) for the agent norms.
 
 `AGENTS.md` rules override defaults. See §1 of the handoff for the full trigger
 vocabulary (`confirmation queue`, `bugs`, `enhancements`, `backlog audit`, `dev note:`,
-`build plan`, `refresh the build plan`).
+`build plan`, `refresh the build plan`, `plan` / `scope this`). Plan requests follow the
+canonical **Plan format** in `AGENTS.md` (ground → per-PR scope → rollup → risks → Go/Wait/Replan).
 
 ## Hard rules
 

@@ -82,6 +82,7 @@ When the operator types **`resume`** (alone), do exactly this:
 | **`backlog audit`** | Report from §17a cache first; ask before re-scanning live GitHub state (per operator norm #10). |
 | **`build plan`** | Show contents of [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) (create as stub on first use). |
 | **`refresh the build plan`** | Regenerate `docs/BUILD_PLAN.md` from live open issues. |
+| **`plan`** / **`create a plan`** / **`scope this`** | Produce a plan in the **canonical Plan format** ([`AGENTS.md`](AGENTS.md) → "Plan format"): ground against the current code first (confirm `file:line` anchors, flag already-done work), then **theme → per-PR scope blocks → dependency chain → 📊 rollup → ⚠️ risk callouts → verification regime → ✅ Go / 🛑 Wait / 🔁 Replan**. STOP for a Go before building. |
 | **`dev note: <text>`** | Append `<text>` VERBATIM (dated, no editing, no summarizing) to §20. |
 | **`update AI_RESUME_HANDOFF.md`** | Run the maintenance recipe at the end of §2. |
 
@@ -294,6 +295,12 @@ only** — not run in the live app, **no hardware validation** (Kodi box / OPPO 
 - **Session shape — one theme per session, soft cap ≤ 4 PRs.** Mixing themes within a
   session is where bugs slip in (proven in retros). If the operator nudges into a second
   theme, suggest finishing the current one and resuming next session.
+- **Plans are deliverables, not sketches.** Any plan request (or any multi-PR theme)
+  follows the **canonical Plan format** in [`AGENTS.md`](AGENTS.md): ground against the
+  current code first (`file:line` anchors, flag already-done work), then theme → per-PR
+  scope blocks (each with anchors + a `Tests:` line) → dependency chain → 📊 rollup →
+  ⚠️ risk callouts → verification regime → **✅ Go / 🛑 Wait / 🔁 Replan**. Don't start
+  building until the operator says Go.
 - **No inline code comments by default.** Add only when the WHY is non-obvious (subtle
   invariant, workaround for a specific bug). Never explain WHAT — identifiers do that.
 - **Lint/test backstop** — `pytest -n auto` + `ruff check .` must pass before promoting a
@@ -834,6 +841,14 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   review→fix→merge entry; **§17a** #68 → MERGED, new #72–#87 row, #41/#44 rows updated, "Last
   refreshed" bumped. All 18 issues SHA-commented (none closed — operator's call). Doc pushed via
   a doc-only PR (direct-to-`main` push is harness-blocked).
+- **2026-05-30 (norm addition — canonical plan format)** — Operator: "every time I ask for
+  a plan, follow this level of detail/quality/output", citing an example multi-PR plan from
+  another repo. Distilled it (adapted to this repo's gates) into a new **`## Plan format`**
+  section in [`AGENTS.md`](AGENTS.md) (ground-first → theme → per-PR scope blocks →
+  dependency chain → 📊 rollup → ⚠️ risk callouts → verification regime → ✅/🛑/🔁), plus a
+  §1 trigger row + a §4 build-norm bullet here and a `plan` / `scope this` entry in the
+  `CLAUDE.md` trigger-vocabulary pointer. Docs-only; no code touched. Shipped via a doc-only
+  PR (direct-to-`main` push is harness-blocked).
 
 ---
 
