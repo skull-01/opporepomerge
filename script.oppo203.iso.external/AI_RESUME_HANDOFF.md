@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `4525d86` (origin/main, 2026-05-30 — Merge PR #69, last of the ENH-#51 stack) + this 2026-05-30 PM EOD doc · **ENH-#51 mypy `--strict` source rollout COMPLETE and merged** (PRs #63→#64→#65→#66→#69 all landed in order; gate 28→**49**) · **Tests on `main`:** 938 passed, 3 skipped (`pytest -n auto`; coverage 99.05%; mypy `--gate` **49 modules / 0 errors** — every `resources/lib` module + top-level `service.py`/`default.py` now gated; full CI green incl. 3.9/3.10/3.12 smokes)
+**Last sync:** commit `9401fb3` (origin/main, 2026-05-30 — Merge PR #89) + this 2026-05-30 EOD doc · **Configurator wizard wiring (PR #68) merged + hardened** — its `/code-review` bugs (#72–#87) fixed across PRs #68/#88, plus ENH-#41 Part C and the ENH-#44 solicitation doc · **ENH-#51 mypy `--strict` rollout still COMPLETE** (gate **49/0**) · **Tests on `main`:** 938 passed, 3 skipped (`pytest -n auto`; coverage 99.05%; mypy `--gate` 49/0; full CI green incl. 3.9/3.10/3.12 smokes) · **Configurator:** 63 vitest + `tsc -b`/`vite build` + `cargo check` all green (no configurator CI — local gates only)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -167,13 +167,14 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-30 (PM EOD — ENH-#51 mypy `--strict` rollout COMPLETE + full stack merged):**
-**Clean stopping point. The entire ENH-#51 source rollout is done and on `main`** (`4525d86`).
-This PM session built PR 8 (the last ungated source) and then, on the operator's "merge
-everything" directive, merged the whole stack #63→#64→#65→#66→#69 in order. Post-merge `main`
-re-verified green: `mypy --gate` **49/0**, `pytest -n auto` **938/3**, serial coverage **99.05%**.
+**As of 2026-05-30 (EOD — configurator-led session; addon touches were docs/policy):**
+**Clean stopping point, no addon code in flight.** This session was configurator-led (see
+§3b); the addon-area deliverables, both merged, were:
+- **ENH-#44 hardware-validation solicitation** ([PR #89](https://github.com/skull-01/script.oppo203.iso.external/pull/89), `9401fb3`): new `docs/HARDWARE_VALIDATION.md` (per-family validation-status matrix + how to help via tester reports / lending / donations) + a README pointer. Standing community call; SHA on #44.
+- **ENH-#41 Part C (configurator side)** (in PR #88, `d48b0c7`): the configurator now writes a provenance marker into the generated `settings.xml`, pairing with the add-on's "managed by the configurator" overwrite warning. SHA on #41.
+- **ENH-#51 mypy `--strict` rollout: COMPLETE** on `main` (gate **49/0**; every `resources/lib` module + `service.py`/`default.py` gated; CI `types` job enforces it). Full PR-by-PR detail below + in §15.
 
-- **Shipped this session — ENH-#51 PR 8 + merged PRs 4–8 (gate 28 → 49 modules).** On `resume`
+- **ENH-#51 (shipped in the prior PM session) — PR 8 + merged PRs 4–8 (gate 28 → 49 modules).** On `resume`
   the operator picked "Addon #1 — ENH-#51 PR 8" then chose to base it on #66 ("all three, based
   on #66"); PR 8 ([#69](https://github.com/skull-01/script.oppo203.iso.external/pull/69),
   `fae98cb`) gated the last ungated source — `service.py` (85 errors), `default.py` (8),
@@ -216,30 +217,27 @@ re-verified green: `mypy --gate` **49/0**, `pytest -n auto` **938/3**, serial co
   `X | None` over `Optional` for ruff `UP045`, the parallel-sub-agent technique) are in memory
   `mypy-strict-gate-rollout`.
 
-- **Carried open (all `area:addon`):** #38, #41, #42, #43,
-  [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44)
-  (hardware-validation testing — not started), #51 (this rollout — stays open for the
-  operator), #57. Only the operator closes issues. Phase A/C on-device verification still
-  queued for #40/#42/#46–#49/#52/#53/#56/#57 in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
+- **Carried open (all `area:addon`, all merged & SHA-commented — awaiting operator close):**
+  #38 (ruff), #42 (settings menu), #43 (lib split), #57 (fast test loop), #51 (mypy rollout),
+  #41 (now incl. Part C config-side), #44 (solicitation merged — standing community call).
+  Only the operator closes issues. Phase A/C on-device steps queued in
+  `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
 
 - **Candidate themes for next addon session** (pick one, per §4):
   1. **Phase A/C on-device verification** of the merged work — operator action on real
      hardware, no agent code.
-  2. **ENH-#44 hardware-validation testing** solicitation (community/operator; not started).
-  3. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is now
-     complete, so the addon is at a clean baseline for a fresh feature/bug theme.
+  2. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is
+     complete and the configurator now owns config, so the addon is at a clean baseline.
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-30 (EOD — configurator wiring-layer session):** the wizard UI is
-now wired to the add-on contract. Delivered on the **open draft
-[PR #68](https://github.com/skull-01/script.oppo203.iso.external/pull/68)**
-(`claude/configurator-wizard-wiring-q7m3k9x2`, off `main`); developed in an
-isolated worktree, **no uncommitted work**. `main` is unchanged by this work
-(PR #68 unmerged). **Software-verified only** — not run against real hardware
-(Kodi box / OPPO / TV) and not click-tested in the live app.
+**As of 2026-05-30 (EOD — wizard wiring reviewed, hardened, and merged):** **clean stopping
+point, no configurator work in flight, no open configurator PRs.** PR #68 (the wizard wiring)
+was reviewed via `/code-review`, its findings fixed, and **merged** to `main` (`454e5ab`); two
+follow-up PRs (#88 cleanup, #89 docs) then landed. `main` is `9401fb3`. **Software-verified
+only** — not run in the live app, **no hardware validation** (Kodi box / OPPO / TV).
 
-- **Shipped on PR #68 — 7 slices, one commit each** (per
+- **Delivered by PR #68 (merged `454e5ab`) — 7 slices** (per
   [`configurator/CONFIGURATOR_HANDOFF.md`](configurator/CONFIGURATOR_HANDOFF.md)):
   1. `mapping.ts` — `WizardState` → add-on setting IDs (verified vs `settings.xml`);
      screen-resume persistence; Step-1 architecture chooser; brand→model fix.
@@ -255,17 +253,26 @@ isolated worktree, **no uncommitted work**. `main` is unchanged by this work
      (key auth, `BatchMode`); Step-1 Tier A test wired.
   7. `apply.ts` — end-of-wizard **Apply to Kodi** (composes settings.xml + merged
      playercorefactory + keymap; deploys via the chosen tier).
-- **Verified:** `tsc -b` + `vite build` clean; `cargo check` clean (std-only Rust,
-  no new crates); **46 vitest unit tests**; the add-on coverage gate ran green on
-  every push (938/3, 99.07%). Decisions A–E from the handoff Q&A captured in the
-  PR body + code comments.
+- **Review → fix → merge:** a `/code-review` of #68 filed **16 bugs (#72–#87)**. The 12
+  high/med were fixed **on the branch before #68 merged** (commits `6d68206` Rust hardening /
+  `7120439` config-write safety / `46d4ca8` IP-test + state): all tiers read-back + merge
+  `playercorefactory.xml`/`settings.xml` and refuse a malformed file (never blind-overwrite);
+  ssh host/user validated; OPPO read-until-CR; verified backup; atomic write; IP test passes
+  only on power ON; persisted screen validated. The 5 low findings + **ENH-#41 Part C**
+  (settings.xml provenance marker) landed in cleanup **PR #88** (`a4ad7ad`): shared `xmlEscape`
+  (`src/xml.ts`) #85, parsed `db_version` #77, TV-switch gated on a backend #86, single-source
+  player catalog (`src/players.ts`) #87.
+- **Verified (software only):** `tsc -b` + `vite build` clean; `cargo check` clean; **63 vitest
+  tests**; add-on 99% coverage gate green on every push (938/3). SHAs commented on all 18 issues
+  (#72–#87, #41, #44); Phase-C on-device steps in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. **The
+  configurator has no CI of its own** (CI is Python-only) — these local gates are the check.
 
 - **Resume here next (configurator):**
   1. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B
      SMB, Tier C copy) against a real Kodi box / OPPO / TV — operator action; the
      paths are software-verified only.
   2. **Confirm the Chinoppo `M9205 V1` vs `M9205`** collapse to `chinoppo_m9205`
-     (flagged in PR #68) and split them in `configurator/src/mapping.ts` if distinct.
+     (now in `configurator/src/players.ts`) and split them if they are distinct devices.
   3. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (seed is small,
      all `validated:false`; lineups carry the platform→backend mapping; unseeded
      brands fall through to the not-found probe path).
@@ -276,8 +283,9 @@ isolated worktree, **no uncommitted work**. `main` is unchanged by this work
   installers (`859238e`). Operator commit `384d180` ("Add files via upload") added
   `configurator/CONFIGURATOR_HANDOFF.md` + `configurator/OppoKodi Addon Installer.zip` direct to `main` (no PR).
 
-- **No `area:configurator` issues open.** PR #68 is untracked-theme delivery; its
-  description + this entry are the record.
+- **Open `area:configurator` issues:** the 16 review bugs **#72–#87** (`type:bug`), all
+  fixed + merged (PR #68 + #88), **awaiting operator close** (Phase C on-device pending). PR #68
+  itself was untracked (PR-only delivery).
 
 ---
 
@@ -515,6 +523,21 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   intermittently returned stale or fabricated content); mitigated by file-redirect readbacks,
   cross-channel checks, byte-validated Edits, and never reusing a pre-commit SHA. Memory
   `mypy-strict-gate-rollout` updated.
+- **2026-05-30 (EOD — configurator review → fix → merge → close-out)** — Operator: `resume`
+  → merged the two pending EOD docs (#70/#71, resolving a §3b add/add conflict by keeping #71's
+  detailed §3b and folding in #70's `384d180` note) → `/code-review` of the wizard-wiring
+  **PR #68** (filed 16 bugs **#72–#87**, `type:bug`/`area:configurator`) → "create a plan to
+  close them all" → executed a 3-phase plan. **Phase 2:** fixed the 12 high/med bugs on the #68
+  branch (commits `6d68206` Rust hardening / `7120439` config-write safety / `46d4ca8` IP-test +
+  state) and **merged #68** (`454e5ab`). **Phase 3:** cleanup **PR #88** (`a4ad7ad`) —
+  #85/#77/#86/#87 + ENH-#41 Part C (commits `d48b0c7`/`9acb6a1`/`384e3d4`; new `src/xml.ts` +
+  `src/players.ts`). **Phase 4:** **PR #89** (`9401fb3`) — ENH-#44 hardware-validation
+  solicitation (`docs/HARDWARE_VALIDATION.md` + README). All 18 issues SHA-commented + Phase-C
+  checklist entries; none closed (operator's call). Configurator: 63 vitest + tsc/vite/cargo
+  green; add-on 938/3, coverage 99.05%, mypy gate 49/0 unchanged. Recreated a wiped `.venv`
+  mid-session (pre-push hook needs it). `main` `4525d86` → `9401fb3`. Key gotcha logged:
+  PowerShell 5.1 splits native args containing `"` and mojibakes non-ASCII in inline scripts —
+  use `--body-file` / Edit/Write for issue/PR/doc content, keep inline scripts ASCII.
 
 ---
 
@@ -542,20 +565,21 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-30 (PM EOD — ENH-#51 PRs 4–8 merged; rollout complete)**.
+Last refreshed: **2026-05-30 (EOD — configurator review fixes merged: PR #68 landed + cleanup #88 + #44 doc #89)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
 | 22 | [Bug]: wizard launch failure (`No module named 'wizard'`) | addon | `bug`, `area:addon` | CLOSED 2026-05-28 | `b7471db` on `wip/wizard-ux` (wizard now removed entirely by `3abf486` on `claude/strip-wizard-g4feovqi`, merged via #40 at `59eb511`) | closed by operator |
 | 38 | ENH-: clear ruff backlog on main (336 errors, 172 auto-fixable, 66% in 3 test files) | addon | `area:addon` | OPEN | **Resolved** by [PR #50](https://github.com/skull-01/script.oppo203.iso.external/pull/50) at `092444a` — `ruff check .` + `ruff format --check .` clean whole-codebase, enforced in CI | awaiting operator close |
-| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | Part A `816bde2` (PR #45). Addon side of Parts B + C **merged** via [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46) at `f21033b`. **Configurator side of Part C still pending** (a `area:configurator` session — see §3b candidate theme 4). | Phase A queued (#45, #46) |
+| 41 | ENH-: configurator owns add-on configuration; add-on is read-mostly | addon | `area:addon` | OPEN | Part A `816bde2` (PR #45). Addon side of Parts B + C **merged** via [PR #46](https://github.com/skull-01/script.oppo203.iso.external/pull/46) at `f21033b`. **Configurator side of Part C done** via PR #88 (`d48b0c7`) — provenance marker written into the generated settings.xml. | Phase A/C queued; awaiting operator close |
 | 42 | ENH-: minimal in-add-on settings menu (TV/OPPO/AVR/Kodi IPs + language) | addon | `area:addon` | OPEN | **Merged** via [PR #48](https://github.com/skull-01/script.oppo203.iso.external/pull/48) at `16eda5e` (network/IP editor) + [PR #49](https://github.com/skull-01/script.oppo203.iso.external/pull/49) at `3765862` (language switcher) | Phase A/C queued; awaiting operator close |
 | 43 | ENH-: split `resources/lib` into TV / Oppo / AVR / Kodi sub-packages | addon | `area:addon` | OPEN | **Merged** via [PR #47](https://github.com/skull-01/script.oppo203.iso.external/pull/47) at `3ba5009` (impl `18a97a6` + test-isolation `69e32b3`) | Phase A queued |
-| 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | — | not started |
+| 44 | ENH-: hardware-validation testing — lending, donations, tester reports wanted | addon | `area:addon` | OPEN | **Solicitation merged** via [PR #89](https://github.com/skull-01/script.oppo203.iso.external/pull/89) at `9401fb3` — `docs/HARDWARE_VALIDATION.md` (per-family status matrix + how to help) + README pointer | awaiting operator (standing community call) |
 | 51 | ENH-: roll out mypy --strict across add-on source (curated allowlist, leaf-first) | addon | `area:addon` | OPEN | **ROLLOUT COMPLETE — all merged to `main` 2026-05-30 PM (gate→49).** PRs 1–3 (`aa0cf68`/`56b7a17`/`aa4143f`, →28), then PRs 4–8 merged in order: #63 `77305ee` (→33), #64 `8dca608` (→35), #65 `b636d30` (→42), #66 `3f4d5cb` (→46), #69 `4525d86` (service.py/default.py/playercorefactory_merge →49). Post-merge `main` green: gate 49/0, pytest 938/3, coverage 99.05%. | awaiting operator close (rollout done) |
-| 68 | configurator: map wizard state to add-on setting IDs (slice 1) | configurator | _untracked theme (PR-only)_ | OPEN (draft) | [PR #68](https://github.com/skull-01/script.oppo203.iso.external/pull/68) `claude/configurator-wizard-wiring-q7m3k9x2` — +2858/−155 / 22 files, all CI green; **left open 2026-05-30** (out of scope of the ENH-#51 merge; needs an in-area configurator session to review/verify) | not agent-verified; awaiting configurator session |
+| 68 | configurator: wire the wizard to the add-on contract (slices 1–7) | configurator | _untracked theme (PR-only)_ | MERGED 2026-05-30 | [PR #68](https://github.com/skull-01/script.oppo203.iso.external/pull/68) at `454e5ab` — 7-slice wizard wiring; a /code-review filed 16 bugs (#72–#87), the 12 high/med fixed on-branch before merge (`6d68206`/`7120439`/`46d4ca8`) | software-verified; Phase C on-device queued |
 | 52 | (no issue) configurator app icon + first MSI/NSIS bundle | configurator | _untracked theme_ | MERGED 2026-05-29 | [PR #52](https://github.com/skull-01/script.oppo203.iso.external/pull/52) at `859238e` — real icon set replaces the PR #35 stub; fixes a latent `bundle.icon` build-breaker; MSI 3.0 MB + NSIS 1.9 MB | Phase C on-device (install, confirm icon + launch) queued |
 | 57 | ENH-: change-scoped fast local test loop (pytest-testmon) | addon | `area:addon` | OPEN | **Merged** via [PR #59](https://github.com/skull-01/script.oppo203.iso.external/pull/59) at `9f102a3` (`tools/dev_test.py` + `pytest-testmon` dev dep + 5 guard tests); py3.9-marker fix [PR #61](https://github.com/skull-01/script.oppo203.iso.external/pull/61) `2fdf869` | awaiting operator close (Phase C software check queued) |
+| 72–87 | configurator PR #68 review bugs (config-write safety, ssh/probe/deploy hardening, IP-control test, persisted state, + cleanups) | configurator | `type:bug`, `area:configurator` | OPEN (16 issues) | Fixed across [PR #68](https://github.com/skull-01/script.oppo203.iso.external/pull/68) `454e5ab` (12 high/med — `6d68206`/`7120439`/`46d4ca8`) + [PR #88](https://github.com/skull-01/script.oppo203.iso.external/pull/88) `a4ad7ad` (5 cleanups + ENH-#41 Part C). SHA commented on each. | software-verified; Phase C on-device queued; awaiting operator close |
 
 ---
 
@@ -799,6 +823,17 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   upload of `configurator/CONFIGURATOR_HANDOFF.md` + installer zip); **§17a** #51 row →
   COMPLETE/merged, new #68 row, "Last refreshed" bumped; **§15** gained a merge-session bullet.
   This doc pushed via a doc-only PR (direct-to-`main` push is harness-blocked).
+- **2026-05-30 (EOD — configurator review/fix/merge + done-for-the-day)** — After merging the
+  two pending EOD docs (#70/#71), ran `/code-review` on PR #68 (filed #72–#87), then executed a
+  3-phase close-out: fixed the 12 high/med bugs on the #68 branch and merged #68 (`454e5ab`);
+  cleanup PR #88 (`a4ad7ad`, #85/#77/#86/#87 + ENH-#41 Part C); doc PR #89 (`9401fb3`, ENH-#44).
+  **Header** "Last sync" `4525d86` → `9401fb3` + configurator-hardening summary + a 63-vitest
+  line. **§3a** reframed to this configurator-led EOD (addon touches = #44 + #41 Part C; mypy
+  still complete). **§3b** rewritten — #68 merged + hardened, #88 cleanup, no configurator work
+  in flight, the 16 review bugs listed as open-awaiting-close. **§15** gained a
+  review→fix→merge entry; **§17a** #68 → MERGED, new #72–#87 row, #41/#44 rows updated, "Last
+  refreshed" bumped. All 18 issues SHA-commented (none closed — operator's call). Doc pushed via
+  a doc-only PR (direct-to-`main` push is harness-blocked).
 
 ---
 
