@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `1b31941` (origin/main, 2026-05-30 — Merge #100) · **Configurator `v0.2.0` shipped + published as the repo's GitHub "Latest"** — integrated an operator-uploaded design-revision changeset: the wizard rename so files/ids/components/labels match the displayed steps (**Player = step 2, TV = step 3, HDMI Input = step 4**; `step35.tsx`→`step4.tsx`), the design-review pass (reordered stepper/chain, animated chain icons, Step 0 prep table, Tier A SSH note), real `simple-icons` brand badges (new `BrandIcon.tsx`), and the AGENTS.md "names match the UI" norm — via [PR #99](https://github.com/skull-01/script.oppo203.iso.external/pull/99) `32ae49c`; then bumped `0.1.0 → 0.2.0` + recorded build evidence via [PR #100](https://github.com/skull-01/script.oppo203.iso.external/pull/100) `6fa8c76`, and published release **`configurator-v0.2.0`** (MSI + NSIS + SHA-256, unsigned, software-verified only). The repo-wide "Latest" badge **moved** from add-on `v2.9.13` → `configurator-v0.2.0` (operator's done-for-the-day choice; reversible). · **Tests on `main`@`1b31941`:** addon **943 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 49/0); configurator **64 vitest + `tsc --noEmit` green** (cargo re-run — the v0.2.0 binary built clean this session)
+**Last sync:** commit `d89f0ae` (origin/main, 2026-05-30 — Merge #101) · **Configurator `v0.2.0` shipped + published as the repo's GitHub "Latest"** — integrated an operator-uploaded design-revision changeset: the wizard rename so files/ids/components/labels match the displayed steps (**Player = step 2, TV = step 3, HDMI Input = step 4**; `step35.tsx`→`step4.tsx`), the design-review pass (reordered stepper/chain, animated chain icons, Step 0 prep table, Tier A SSH note), real `simple-icons` brand badges (new `BrandIcon.tsx`), and the AGENTS.md "names match the UI" norm — via [PR #99](https://github.com/skull-01/script.oppo203.iso.external/pull/99) `32ae49c`; then bumped `0.1.0 → 0.2.0` + recorded build evidence via [PR #100](https://github.com/skull-01/script.oppo203.iso.external/pull/100) `6fa8c76`, and published release **`configurator-v0.2.0`** (MSI + NSIS + SHA-256, unsigned, software-verified only). The repo-wide "Latest" badge **moved** from add-on `v2.9.13` → `configurator-v0.2.0` (operator's done-for-the-day choice; reversible). · **Tests on `main`@`d89f0ae`:** addon **943 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 49/0); configurator **64 vitest + `tsc --noEmit` green** · **2026-05-30 (later):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
 **Latest release:** add-on `v2.9.13`; configurator `configurator-v0.2.0` (now holds the
 repo-wide GitHub **"Latest"** badge) · **Issue model:** **hybrid** — GitHub Issues for
 bug/enhancement tracking, PRs for delivery; every issue tagged `area:addon` or
@@ -170,10 +170,23 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-30 (evening — merge/release session; both areas touched).** **Clean
-stopping point, no addon code in flight.** This session merged the 2026-05-30 PM session's
-6-PR draft stack and published the first configurator binary (see §3b + §15). The addon-area
-deliverable was:
+**As of 2026-05-30 (later — teaching-commentary session; addon area).** **Work in flight: the
+cross-area teaching-commentary theme (§3c), Step 2.** `resources/lib/kodi/external_player.py` is
+now commented to the teaching bar — module docstring + numbered end-to-end playback-flow overview,
+import-shim explanation, beginner-facing docstrings on every previously-undocumented function, and
+one trick-play gloss — **comments/docstrings only, zero logic change** (+171 lines, 1 file).
+Checkpointed as a `wip:` commit `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9`
+(pushed; **not** on `main`, **not** merged). Backstop green: `ruff check` + `ruff format --check`
+clean, full suite **943 passed / 3 skipped**. **What's left:** the operator's Step-2 *style
+sign-off* (the gate before any further files); then continue in small reviewable batches starting
+with `oppo_control.py`. **Found while reading (not fixed):** `hold_playback`'s `verbose_push`
+fallback sets `mode='tcp_qpl_poll'` but that branch sits physically above it, so a failed
+verbose-push hold silently degrades to `fixed_timeout` (default 180 min) instead of QPL-polling —
+see §3c's resume note. Do **not** push/merge the wip branch unprompted; the operator reviews and
+pushes commentary.
+
+**Prior context (durable) — 2026-05-30 evening merge/release session:** the addon-area deliverable
+was:
 
 - **Chinoppo `M9205 V1` split into a distinct hardware model** ([PR #91](https://github.com/skull-01/script.oppo203.iso.external/pull/91), merge `36f9cbd`): new `oppo_hardware_model` enum value `chinoppo_m9205_v1`, **appended** to `resources/settings.xml` (existing stored enum indices preserved) and mirrored through `settings_reader` / `hardware_profiles` / `hardware_capabilities` as an **exact `M9205` clone** (`#EJT` eject-to-wake, clone-safe, `http_api_436=False`); configurator `players.ts` re-pointed (plain `M9205` still → `chinoppo_m9205`); taxonomy count guards 17→18; new `tests/test_chinoppo_m9205_v1_split.py` (5 tests). Additive — **no behavior change to existing models.** PR-only (no tracked issue); Phase-A/C entry in the manual checklist. **Software-verified only** — the V1 mirror assumes identical protocol per the operator's confirmation; if real hardware shows it differs, its `HARDWARE_COMPAT` / profile entries need distinct values.
 
@@ -188,12 +201,13 @@ deliverable was:
   community call for tester reports / lending / donations).
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **Teaching-commentary pass (cross-area, PAUSED mid-flight)** — beginner-facing teaching
-     docstrings + end-to-end flow commentary across the add-on (and the configurator); Step 1
-     (repo + flow map) done, Step 2 (`external_player.py`, the first file) not started, on hold
-     per operator. **Full exact plan + flow map + batch breakdown + suspect list in §3c; when
-     proposing this theme, reproduce §3c's verbatim briefing EXACTLY (operator directive) — do
-     not paraphrase.** ← resume here.
+  1. **Teaching-commentary pass (cross-area, IN FLIGHT — awaiting Step-2 style sign-off)** —
+     Step 1 (repo + flow map) done; **Step 2 done**: `external_player.py` commented (`wip:`
+     `62b22eb` on `claude/teaching-comments-extplayer-r3k8m2x9`, pushed, not on `main`). **Next:
+     the operator signs off on the Step-2 style, then continue to `oppo_control.py` in small
+     batches (commit `docs: …`, do NOT push).** Full exact plan + flow map + batch breakdown +
+     suspect list in §3c; when proposing this theme, reproduce §3c's verbatim briefing EXACTLY
+     (operator directive) — do not paraphrase. ← resume here.
   2. **Phase A/C on-device verification** of the merged work (incl. the M9205 V1 split) —
      operator action on real hardware, no agent code.
   3. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is
@@ -249,11 +263,15 @@ unit-tested (`tsc` + 64 vitest), **not** run in the live app, **no hardware vali
   pattern. The 16 review bugs **#72–#87** remain **closed by the operator 2026-05-30** (Phase
   C on-device still queued in the checklist).
 
-## §3c Active cross-area theme — teaching-commentary pass (PAUSED before Step 2)
+## §3c Active cross-area theme — teaching-commentary pass (Step 2 written — awaiting style sign-off)
 
-**As of 2026-05-30 (post-EOD — operator pivoted to a code-commentary theme that spans BOTH
-areas).** **No code or comments written — paused at the operator's "hold it" right before
-Step 2.** Step 1 (repo + real end-to-end flow map) is DONE; the exact plan is saved here so a
+**As of 2026-05-30 (later — teaching-commentary session; operator picked this theme on `resume`).**
+**Step 1 (repo + real end-to-end flow map) DONE; Step 2 now WRITTEN and checkpointed, awaiting the
+operator's style sign-off.** `resources/lib/kodi/external_player.py` was commented to the bar
+(module docstring + numbered end-to-end flow + import-shim note + beginner docstrings on every
+previously-undocumented function + one trick-play gloss), comments/docstrings only — committed as
+`wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed; **not** on `main`,
+**not** merged). Backstop green (`ruff` clean; suite 943/3). The exact plan is saved here so a
 future session resumes it verbatim. **This theme intentionally INVERTS the repo's default
 "no inline comments / don't state the obvious" norm** (AGENTS.md → *No inline code comments by
 default*) — it is operator-directed for one specific reader (see mandate). Honor it for this
@@ -293,8 +311,10 @@ theme only; the default norm still governs all other work.
    (saved below).
 2. **Comment ONE playback-chain file** to the bar above (including its place in the flow), then
    **STOP and show the diff** — wait for style sign-off ("written for a non-coder, taught from
-   the comments alone") before touching anything else. **← RESUME HERE.** First file =
-   `resources/lib/kodi/external_player.py`.
+   the comments alone") before touching anything else. First file =
+   `resources/lib/kodi/external_player.py` — **✅ DONE this session** (commented + diff shown
+   in-session; `wip:` `62b22eb` on `claude/teaching-comments-extplayer-r3k8m2x9`, pushed, awaiting
+   the operator's style sign-off). **← RESUME at that sign-off**, then go to Step 3.
 3. After style approval, work in **small reviewable batches** (a module or a few related files),
    **show the diff before each commit**, commit messages `docs: add commentary to <module>`,
    and **do NOT push** — the operator reviews and pushes.
@@ -381,12 +401,19 @@ Two honest framings — my hands-on work vs. wall-clock (which your review caden
 ````
 
 ### Resume instructions
-On `resume`, if the operator picks this theme: re-read this §3c, **reproduce the verbatim briefing
-above exactly** (operator directive — no paraphrase), then go straight to **Step 2** — comment
-`resources/lib/kodi/external_player.py` to the bar (module docstring + the numbered end-to-end flow
-overview at the top + function docstrings + handoff/assumption notes), STOP, and show the diff for
-style sign-off. **Do NOT push.** The subagent subsystem maps that informed this (OPPO control /
-Kodi routing / TV+AVR) live in the 2026-05-30 post-EOD session transcript.
+On `resume`, if the operator (re)picks this theme: re-read this §3c and **reproduce the verbatim
+briefing above exactly** (operator directive — no paraphrase). **Status: Step 2 is already
+written** for `resources/lib/kodi/external_player.py` (`wip:` `62b22eb` on
+`claude/teaching-comments-extplayer-r3k8m2x9`, pushed, **awaiting the operator's style sign-off**).
+So: (a) if the operator **approves the style**, retitle that file's commit to `docs: add commentary
+to kodi.external_player` and continue Step 3 in small batches — **next file `oppo_control.py`** (the
+protocol core) — showing the diff before each commit and **not pushing** (the operator reviews and
+pushes); (b) if the operator **wants style changes**, revise `external_player.py` first, re-show the
+diff, and re-gate. **Do NOT push/merge the wip branch unprompted.** Suspect found in Step 2 (not
+fixed): `hold_playback`'s `verbose_push` failure path sets `mode='tcp_qpl_poll'` but that branch
+sits above it, so the fallback silently degrades to `fixed_timeout` (default 180 min) instead of
+QPL-polling. The subagent subsystem maps that informed this (OPPO control / Kodi routing / TV+AVR)
+live in the 2026-05-30 post-EOD session transcript.
 
 ---
 
@@ -701,6 +728,16 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   choice). Software-verified only (cargo built clean; `tsc` + 64 vitest green); not run live /
   no hardware validation. One cosmetic follow-up noted: Sony's white mark on the white badge
   renders invisible (`styles.css:769`), left as-authored.
+- **2026-05-30 (later — teaching-commentary Step 2)** — Addon session under the cross-area
+  teaching-commentary theme (§3c). Commented `resources/lib/kodi/external_player.py` to the teaching
+  bar — module docstring + numbered end-to-end playback-flow overview, import-shim explanation,
+  beginner docstrings on every previously-undocumented function in the pipeline, and one trick-play
+  gloss. **Comments/docstrings only — no logic, renames, reindents, or reordering** (+171 lines, 1
+  file). Backstop: `ruff check` + `ruff format --check` clean; full suite **943 passed / 3 skipped**.
+  Checkpointed as `wip:` `62b22eb` on `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not**
+  on `main`, **not** merged) — awaiting the operator's Step-2 style sign-off before continuing to
+  `oppo_control.py`. Flagged one latent bug found while reading (not fixed): `hold_playback`'s
+  `verbose_push` fallback degrades to `fixed_timeout` instead of `tcp_qpl_poll`. `main` unchanged.
 
 ---
 
@@ -1075,6 +1112,19 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (direct-to-`main` push is harness-blocked). **No new feature work.** Also noted the untracked
   `.claude/launch.json` (a local dev-server launch config, pre-existing — not this session's
   work) left unstaged.
+- **2026-05-30 (later EOD — teaching-commentary Step 2; `done for the day`)** — Single-theme
+  `area:addon` session under the cross-area teaching-commentary theme (§3c). Commented
+  `resources/lib/kodi/external_player.py` (comments/docstrings only, +171 lines); checkpointed as
+  `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (**pushed**; the pre-push
+  hook ran the suite — **943 passed / 3 skipped**). Per §3c the commentary is the operator's to
+  review/push, so it was **NOT** merged to `main` — the wip branch is the off-machine backup,
+  awaiting the operator's Step-2 style sign-off. This refresh: **header** "Last sync"
+  `1b31941`→`d89f0ae` (Merge #101) + a teaching-Step-2 clause; **§3a** overwritten to the in-flight
+  Step-2 checkpoint; **§3c** status moved "PAUSED before Step 2" → "Step 2 written — awaiting style
+  sign-off" (verbatim briefing block untouched), incl. the `verbose_push`-fallback suspect; **§15**
+  gained a Step-2 journey bullet; **§3b unchanged** (configurator untouched); **§17a unchanged** (no
+  issue opened/closed/retitled — only #44 open). Doc pushed via a doc-only PR (direct-to-`main` push
+  is harness-blocked). The untracked `.claude/launch.json` left unstaged. **No new feature work.**
 
 ---
 
