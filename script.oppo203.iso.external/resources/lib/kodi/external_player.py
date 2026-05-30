@@ -1,4 +1,65 @@
 #!/usr/bin/env python3
+"""External-player bridge: hand a 4K disc to the OPPO and hold Kodi's place until it stops.
+
+WHERE THIS FILE SITS
+--------------------
+This is the load-bearing file of the add-on. When a 4K disc is started in Kodi, this script
+is what actually drives the home theatre: it points the TV at the OPPO, (optionally) preps
+the audio/video receiver, tells the physical OPPO Blu-ray player to start the disc, then
+"holds" Kodi in a busy state until the OPPO reports it has stopped, and finally puts the TV
+and receiver back the way they were.
+
+A few terms, defined once here (they recur throughout the file):
+  * "external player" -- Kodi does not decode the disc itself; it launches a separate
+    program to play it. Here that program is THIS script, which in turn commands a real OPPO
+    box over the home network. Kodi just waits for the script to return.
+  * playercorefactory.xml -- a Kodi configuration file (written once during setup) that
+    tells Kodi "for a file that looks like a 4K disc, launch this script instead of playing
+    it yourself." We do not edit it here; we are the script it launches.
+  * This add-on does NOT stream, and does NOT call Kodi's setResolvedUrl (the usual way an
+    add-on says "here is a video URL, play it"). Nothing is streamed -- a physical disc
+    plays in a physical OPPO on the LAN while Kodi merely keeps its playback slot occupied.
+  * The codes we send: the OPPO has a plain-text control channel on TCP port 23. We send
+    short codes such as #PON (power on), #EJT (eject -- used to wake some clone players),
+    #SVM (turn on verbose status messages), and #QPW / #QIS / #QPL (query power / input /
+    playback status). Some boxes instead expose an HTTP API on port 436. Other terms:
+    AVR = audio/video receiver; ADB = Android Debug Bridge, one way to tell an Android TV to
+    switch its input; Wake-on-LAN = a special network packet that powers a sleeping box on.
+
+THE END-TO-END FLOW (what actually happens when a 4K disc is played)
+--------------------------------------------------------------------
+1. The user plays a disc file (.iso / a BDMV folder / a .mpls playlist) whose *filename*
+   contains a 4K tag such as "4K", "UHD", or "2160p".
+2. Kodi's own engine (NOT this code) matches that filename against the rule in
+   playercorefactory.xml and launches this file as a separate process, roughly:
+       external_player.py --addon-data <settings dir> --file "<the disc file>"
+   So our only two inputs are a settings directory and the file path. We ASSUME Kodi only
+   launches us for files that really are 4K discs -- the matching already happened upstream.
+3. main() runs the pipeline (see main() for the exact guarantees):
+     a. read_settings(<dir>)     -> load the user's saved configuration.
+     b. run_preflight() [opt.]   -> ask the OPPO over TCP whether it is already on and what
+                                    input it is using (#QPW / #QIS), if preflight is enabled.
+     c. mark_session_active()    -> write a small sentinel file so the rest of the add-on
+                                    can tell that an OPPO session is in progress.
+     d. fast_start()             -> TV -> AVR -> OPPO, in that order (see fast_start()).
+     e. hold_playback()          -> block here, watching, until the OPPO says it stopped
+                                    (one of five strategies).
+     f. fast_return()            -> stop the OPPO, restore the AVR, switch the TV back.
+     g. clear_session_active()   -> delete the sentinel file.
+   Steps f and g run inside a finally block, so they happen even if a step above fails.
+
+WHY THE ORDER, AND THE "NON-FATAL" RULE, MATTER
+-----------------------------------------------
+The TV switch and the AVR prep are deliberately *non-fatal*: if the TV or receiver does not
+respond, we log it and carry on, because the one thing that must still happen is starting
+(and later stopping) the OPPO and cleaning up the sentinel. A flaky TV must never strand the
+system half-up. Watch for that pattern in _safe_tv_switch() and in fast_start()/fast_return().
+
+(The add-on has a second architecture, "service interception" mode, which lives in
+service.py. It reaches the exact same fast_start -> hold_playback -> fast_return steps, so
+this file is the shared core of both.)
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -13,6 +74,11 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 if TYPE_CHECKING:  # pragma: no cover
     from .settings_reader import Settings
 
+# Import shim: when this file is imported as part of the add-on package, the relative
+# imports below ("from ..oppo ...") resolve normally. But Kodi can also launch this file as
+# a standalone script (its "external player"), in which case Python has no package context
+# and those relative imports fail -- so the except branch re-imports the very same names by
+# their bare module names instead. Same code, loaded two different ways.
 try:
     from ..avr.avr_sequence import post_playback_sequence, pre_playback_sequence
     from ..oppo.oppo_control import (
@@ -48,14 +114,31 @@ except ImportError:  # pragma: no cover - run as __main__ via runpy / bare-name 
 
 
 def log(message: str) -> None:
+    """Write one line to Kodi's log under the "player" category.
+
+    A thin wrapper so the rest of this file can just call log("..."). Side effect: appends to
+    Kodi's log file. It never raises, so logging can never interrupt playback.
+    """
     log_to_xbmc(None, "player", message)
 
 
 def session_file(settings: Settings) -> str:
+    """Return the full path of the "a session is active" sentinel file.
+
+    The sentinel is just a marker file named "oppo203iso-active" kept in the add-on's data
+    directory. Returns "" (empty string) if no data directory is configured, which the
+    callers below treat as "skip the sentinel entirely".
+    """
     return os.path.join(settings.get("addon_data_dir", ""), "oppo203iso-active")
 
 
 def mark_session_active(settings: Settings) -> None:
+    """Create the sentinel file that means "an OPPO playback session is in progress".
+
+    Other parts of the add-on check for this file so they do not step on an active session.
+    Side effect: writes a file to disk (its contents are just the current timestamp). Does
+    nothing if no data directory is configured.
+    """
     path = session_file(settings)
     if not path:
         return
@@ -64,12 +147,28 @@ def mark_session_active(settings: Settings) -> None:
 
 
 def clear_session_active(settings: Settings) -> None:
+    """Delete the sentinel file, marking the session finished.
+
+    Side effect: removes the file written by mark_session_active(). Safe to call even if the
+    file was never created. main() calls this last, inside a finally block, so the marker is
+    cleared even when playback fails partway through.
+    """
     path = session_file(settings)
     if path and os.path.exists(path):
         os.remove(path)
 
 
 def run_parallel(tasks: Iterable[tuple[str, Callable[[], object]]]) -> None:
+    """Run several named tasks at the same time (one thread each) and wait for all of them.
+
+    Each task is a (name, function) pair. Every function runs on its own background thread,
+    and this call blocks until they all finish. If one or more raise, every error is logged
+    and the FIRST exception is then re-raised so the caller still sees a failure.
+
+    Takes: an iterable of (name, zero-argument callable) pairs.
+    Can go wrong: whatever the task functions themselves do; their exceptions are captured
+    per task rather than crashing the other threads.
+    """
     errors: list[tuple[str, Exception, str]] = []
 
     def runner(name: str, func: Callable[[], object]) -> None:
@@ -96,6 +195,15 @@ def run_parallel(tasks: Iterable[tuple[str, Callable[[], object]]]) -> None:
 def start_oppo_after_optional_delay(
     settings: Settings, media_file: str, preflight_result: dict[str, object] | None = None
 ) -> None:
+    """Wait an optional configured delay, then tell the OPPO to start playing.
+
+    Some setups need a short pause (for example, to let the TV finish switching inputs)
+    before the player is woken. "startup_delay" is a number of SECONDS (0 = no wait); a
+    larger value simply delays playback. Side effects: may sleep, then sends start commands
+    to the OPPO over the network via run_start(). preflight_result, when present, lets
+    run_start() reuse what main()'s preflight step already learned (power/input) instead of
+    re-asking the player.
+    """
     startup_delay = int(settings.get("startup_delay", "0"))
     if startup_delay > 0:
         log(f"Waiting {startup_delay} second(s) before starting Oppo.")
@@ -142,6 +250,18 @@ def _safe_tv_switch(settings: Settings, target: str) -> str | dict[str, object] 
 def fast_start(
     settings: Settings, media_file: str, preflight_result: dict[str, object] | None = None
 ) -> None:
+    """Bring the home theatre up for playback, in a deliberate, failure-tolerant order.
+
+    The order is TV -> AVR -> OPPO:
+      1. _safe_tv_switch(..., "oppo")          -- point the TV at the OPPO's HDMI input.
+      2. pre_playback_sequence(...)            -- prep the audio/video receiver (off by
+                                                  default; a warning here is non-fatal).
+      3. start_oppo_after_optional_delay(...)  -- wake the OPPO and start the disc.
+    Steps 1 and 2 are NON-FATAL by design: a TV or receiver that does not answer is logged
+    and skipped, so it can never block the OPPO from starting. Side effects: talks to the
+    TV, the receiver, and the OPPO over the network. The handoff to the OPPO assumes
+    media_file is exactly the path Kodi gave us on the command line.
+    """
     # v2 MVP Slice 3: make startup order deterministic and safe.
     # TV switching is attempted before OPPO/external playback handoff, but TV
     # failures are non-fatal so they do not corrupt playback or cleanup.
@@ -155,6 +275,15 @@ def fast_start(
 
 
 def fast_return(settings: Settings) -> None:
+    """Tear the session down and put everything back the way it was.
+
+    Runs after playback -- main() calls it inside a finally block, so it runs even on error:
+      1. Send the OPPO its configured stop commands.
+      2. Restore the audio/video receiver (off by default).
+      3. If "switch_back_on_exit" is set, point the TV back at Kodi's input.
+    The TV and AVR steps are non-fatal, the same as in fast_start(). Side effects: network
+    commands to the OPPO, the receiver, and the TV.
+    """
     log("Sending Oppo stop commands.")
     run_configured_commands(settings, "oppo_stop_commands")
     avr_result = post_playback_sequence(settings)
@@ -165,9 +294,35 @@ def fast_return(settings: Settings) -> None:
 
 
 def hold_playback(settings: Settings) -> None:
+    """Block here, watching, until the OPPO reports it has stopped playing.
+
+    Why this exists: Kodi believes IT is playing something (it launched us as its "player"),
+    so we must not return until the real disc actually finishes. Returning early would make
+    Kodi think playback ended and move on while the disc is still playing. This function is
+    that wait.
+
+    The "hold_mode" setting picks one of five strategies for answering "has it stopped yet?":
+      * http_poll     -- ask the OPPO over its HTTP API every few seconds and read its status.
+      * tcp_qpl_poll  -- ask over TCP using the #QPL ("query playback") code instead.
+      * verbose_push  -- open a TCP connection and LISTEN for the OPPO to push status updates
+                         (@UPW / @UPL); falls back to tcp_qpl_poll if that connection fails.
+      * manual_file   -- wait until the user (or a script) creates a chosen "stop" file.
+      * fixed_timeout -- the default: simply sleep for a fixed number of minutes.
+    Every polling mode also carries a safety timeout, so a missed "stopped" signal can never
+    hold Kodi forever. Side effects: repeated network queries to the OPPO and, in every mode,
+    blocking (sleeping) for as long as the disc plays.
+
+    Reading the numbers below: intervals are in SECONDS and the large timeouts are in
+    MINUTES. "idle confirmations" means the OPPO must look stopped N times in a row before we
+    believe it, so a single momentary blip does not end playback prematurely.
+    """
     mode = settings.get("hold_mode", "fixed_timeout")
 
     if mode == "http_poll":
+        # "Trick-play" below = fast-forward, rewind, pause, or sitting in a disc menu. During
+        # those the OPPO can briefly report "idle/stopped" even though the user is still
+        # watching, so after any real play activity we ignore idle readings for a few seconds
+        # (the "suppress window") to avoid ending the hold too early.
         interval = max(1, int(settings.get("http_poll_interval", "5")))
         timeout = max(1, int(settings.get("http_poll_timeout_minutes", "240"))) * 60
         confirmations_needed = max(1, int(settings.get("http_poll_idle_confirmations", "2")))
@@ -319,6 +474,22 @@ def hold_playback(settings: Settings) -> None:
 
 
 def main() -> int:
+    """Entry point: run the whole start -> hold -> stop pipeline for one disc, safely.
+
+    Kodi launches this with two command-line arguments: --addon-data (the settings folder)
+    and --file (the disc to play). It then:
+      1. Loads settings and records the data directory on them.
+      2. Optionally runs preflight queries (#QPW power, #QIS input) if enabled in settings.
+      3. Inside a try/finally: marks the session active, runs fast_start(), then
+         hold_playback() (which blocks until the disc stops).
+      4. NO MATTER WHAT (the finally block): runs fast_return() to stop the OPPO and restore
+         the TV/AVR, then clears the session sentinel.
+    Returns 0 on success, or 1 if start/hold raised. The try/finally is the key safety net:
+    even if startup or the hold crashes, the OPPO is still told to stop and the sentinel is
+    still removed, so the system is never left half-up. Side effects: everything downstream
+    -- network commands to the TV/AVR/OPPO, a sentinel file written then deleted, and
+    blocking for the full duration of the disc.
+    """
     parser = argparse.ArgumentParser(
         description="Kodi external-player wrapper for Oppo UDP-203 ISO playback."
     )
