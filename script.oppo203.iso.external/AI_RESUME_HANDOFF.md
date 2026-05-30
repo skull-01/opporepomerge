@@ -6,8 +6,12 @@ file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
 **Last sync:** commit `55bf6fa` (origin/main, 2026-05-30 — Merge #107) · **Configurator `v0.3.0` shipped + published as the repo's GitHub "Latest"** — two enhancements merged then released: **TV database → schema v2** (the 8-row seed → **296 model families** 2018–2025 with per-model region/platform/backend metadata; region-first Step 3 filtering; [#103](https://github.com/skull-01/script.oppo203.iso.external/issues/103) via [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104) `5380425`) and a **canonical players DB** (`players.json` consolidating the OPPO/clone taxonomy + candidate regions; Step 2 surfaces the new attributes; a Python consistency guard pins the JSON to the live registries; [#105](https://github.com/skull-01/script.oppo203.iso.external/issues/105) via [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106) `81c3eb5`) — then bumped `0.2.0 → 0.3.0` + build evidence via release [PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107) `55bf6fa` and published **`configurator-v0.3.0`** (MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256, unsigned, software-verified only). Add-on side was **test-only** (no runtime change → no add-on release). The repo-wide "Latest" badge now sits on `configurator-v0.3.0` (auto-assigned as newest; flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`55bf6fa`:** addon **950 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 52/0); configurator **74 vitest + `tsc --noEmit` green + `npm run build` OK** · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
-**Latest release:** add-on `v2.9.13`; configurator `configurator-v0.3.0` (now holds the
-repo-wide GitHub **"Latest"** badge) · **Issue model:** **hybrid** — GitHub Issues for
+**Latest release:** add-on `v2.9.13`; configurator **`configurator-v0.4.0`** (now holds the
+repo-wide GitHub **"Latest"** badge) — added an **AVR control database** (224 AV-receiver model
+families 2018–2025, the TV-DB twin) + an optional **Step 5 (AV Receiver)** picker; configurator-only,
+no add-on change; [PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`; MSI 3,174,400 B + NSIS 2,069,995 B + SHA-256, unsigned,
+software-verified only (published assets re-downloaded + verified byte-identical). Prior:
+`configurator-v0.3.0` (TV DB v2 + players DB). · **Issue model:** **hybrid** — GitHub Issues for
 bug/enhancement tracking, PRs for delivery; every issue tagged `area:addon` or
 `area:configurator`.
 

@@ -30,7 +30,7 @@ their identity so the release artifacts are verifiable.
 | Artifact | Size | SHA-256 |
 |---|---|---|
 | `OppoKodiAddon Configurator_0.4.0_x64_en-US.msi` (MSI) | 3,174,400 B | `338349c4962e781e16458c2de5a7182e71b7e67ff97eb7fc4d5e6e7f37210b90` |
-| `OppoKodiAddon Configurator_0.4.0_x64-setup.exe` (NSIS) | 2,067,124 B | `af319ac306b62ba0b95e5fa92a7e0498c4f7c1b8d93becd0e0c5dced14c45ce2` |
+| `OppoKodiAddon Configurator_0.4.0_x64-setup.exe` (NSIS) | 2,069,995 B | `af319ac306b62ba0b95e5fa92a7e0498c4f7c1b8d93becd0e0c5dced14c45ce2` |
 
 Verify after download (PowerShell): `Get-FileHash <file> -Algorithm SHA256`.
 
