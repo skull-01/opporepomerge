@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `6fc8615` (origin/main, 2026-05-30 — Merge #96) + this EOD backlog-clear doc · **PM-session 6-PR stack merged (#91–#96) + first configurator binary published** — `configurator-v0.1.0` is now a public GitHub **pre-release** (MSI + NSIS, unsigned, software-verified only); landed the Chinoppo `M9205 V1` split (#91), the build recipe (#94) + binary evidence (#95), the canonical Plan-format norm (#92), and the `BUILD_PLAN.md` refresh (#93) · **Backlog cleared** — the operator closed all 21 delivered issues (addon #38/#41/#42/#43/#57 + configurator #72–#87) ahead of hardware testing, plus **ENH-#51** (mypy `--strict`, gate **49/0**); only **#44** (hardware-validation call) stays open · **Tests on `main`:** 943 passed, 3 skipped (`pytest -n auto`; coverage 99%; mypy `--gate` 49/0; per-PR CI green pre-merge incl. 3.9/3.10/3.12 smokes; `main`@`6fc8615` CI green) · **Configurator:** 64 vitest + `tsc -b`/`vite build` green (cargo not re-run; the published v0.1.0 binary built clean in the PM session)
+**Last sync:** commit `6fc8615` (origin/main, 2026-05-30 — Merge #96) + an EOD save of the code-commentary plan (PAUSED theme, §3c; no code touched this session) · **PM-session 6-PR stack merged (#91–#96) + first configurator binary published** — `configurator-v0.1.0` is now a public GitHub **pre-release** (MSI + NSIS, unsigned, software-verified only); landed the Chinoppo `M9205 V1` split (#91), the build recipe (#94) + binary evidence (#95), the canonical Plan-format norm (#92), and the `BUILD_PLAN.md` refresh (#93) · **Backlog cleared** — the operator closed all 21 delivered issues (addon #38/#41/#42/#43/#57 + configurator #72–#87) ahead of hardware testing, plus **ENH-#51** (mypy `--strict`, gate **49/0**); only **#44** (hardware-validation call) stays open · **Tests on `main`:** 943 passed, 3 skipped (`pytest -n auto`; coverage 99%; mypy `--gate` 49/0; per-PR CI green pre-merge incl. 3.9/3.10/3.12 smokes; `main`@`6fc8615` CI green) · **Configurator:** 64 vitest + `tsc -b`/`vite build` green (cargo not re-run; the published v0.1.0 binary built clean in the PM session)
 **Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
 tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
 
@@ -186,9 +186,15 @@ deliverable was:
   community call for tester reports / lending / donations).
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **Phase A/C on-device verification** of the merged work (incl. the M9205 V1 split) —
+  1. **Teaching-commentary pass (cross-area, PAUSED mid-flight)** — beginner-facing teaching
+     docstrings + end-to-end flow commentary across the add-on (and the configurator); Step 1
+     (repo + flow map) done, Step 2 (`external_player.py`, the first file) not started, on hold
+     per operator. **Full exact plan + flow map + batch breakdown + suspect list in §3c; when
+     proposing this theme, reproduce §3c's verbatim briefing EXACTLY (operator directive) — do
+     not paraphrase.** ← resume here.
+  2. **Phase A/C on-device verification** of the merged work (incl. the M9205 V1 split) —
      operator action on real hardware, no agent code.
-  2. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is
+  3. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is
      complete and the configurator now owns config, so the addon is at a clean baseline.
 
 ## §3b Configurator work — in progress
@@ -219,19 +225,163 @@ clean machine.
   `384d180` added `configurator/CONFIGURATOR_HANDOFF.md` + an installer zip direct to `main`.
 
 - **Resume here next (configurator):**
-  1. **Install + smoke-test the published `v0.1.0` binary** on a clean Windows machine
+  1. **Teaching-commentary pass (cross-area, PAUSED mid-flight)** — the configurator's ~17 TS
+     files (`configurator/src/**`) are the lighter tail of the same commentary theme (same
+     mandate). Do the **add-on side first** — `external_player.py` is the style gate. **Full
+     exact plan in §3c; when proposing this theme, reproduce §3c's verbatim briefing EXACTLY
+     (operator directive) — do not paraphrase.** ← resume here.
+  2. **Install + smoke-test the published `v0.1.0` binary** on a clean Windows machine
      (MSI + NSIS), confirm launch + icon — operator action; the binary is build/unit-verified
      only (checklist entry already queued).
-  2. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B SMB, Tier C
+  3. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B SMB, Tier C
      copy) against a real Kodi box / OPPO / TV — operator action; software-verified only.
-  3. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (seed is small, all
+  4. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (seed is small, all
      `validated:false`; lineups carry the platform→backend mapping).
-  4. **Real test ISO** — swap the placeholder once the asset exists (decision E).
+  5. **Real test ISO** — swap the placeholder once the asset exists (decision E).
 
 - **Open `area:configurator` issues: none.** The 16 review bugs **#72–#87** were **closed by
   the operator 2026-05-30** (fixed + merged via PR #68 + #88, ahead of on-device verification;
   Phase C steps still queued in the checklist). The wizard wiring (#68), the build recipe +
   binary (#94/#95), and the M9205 split (#91) were PR-only themes (no tracked issue).
+
+## §3c Active cross-area theme — teaching-commentary pass (PAUSED before Step 2)
+
+**As of 2026-05-30 (post-EOD — operator pivoted to a code-commentary theme that spans BOTH
+areas).** **No code or comments written — paused at the operator's "hold it" right before
+Step 2.** Step 1 (repo + real end-to-end flow map) is DONE; the exact plan is saved here so a
+future session resumes it verbatim. **This theme intentionally INVERTS the repo's default
+"no inline comments / don't state the obvious" norm** (AGENTS.md → *No inline code comments by
+default*) — it is operator-directed for one specific reader (see mandate). Honor it for this
+theme only; the default norm still governs all other work.
+
+### The mandate (operator brief — faithful)
+- **Reader:** a near-beginner — almost no coding experience, no AV / playback-pipeline
+  background. The commentary is his **only** window into the system. Goal: after reading it he
+  can understand the system well enough to **spot bugs and propose better process flows**. So
+  **explain what a developer would find obvious** — but put the teaching in **docstrings +
+  block comments**, NOT a comment on every line; the code must stay readable underneath. Define
+  jargon inline the first time it appears (playercorefactory.xml, "external player",
+  `setResolvedUrl`, listitem, manifest/HLS/DASH, ADB/ECP/eISCP/PSK…) — one short clause each.
+- **Make the flow legible (the most important part):** trace the REAL end-to-end path in THIS
+  codebase and document it in **numbered plain English** at the top of the entry point and/or
+  the playback-pipeline file, naming the functions/files at each step. At every handoff explain
+  WHAT is passed to the next stage and WHAT that stage ASSUMES it is receiving — bugs and
+  better-flow ideas live in those handoffs/assumptions.
+- **Quality bar:** module docstring per file (what it's responsible for + where it sits in the
+  chain); function/class docstrings (plain what / in / out / what can go wrong / side effects —
+  especially Kodi/AV ones: shows a dialog, talks to the player, reads/writes settings, hits the
+  network, starts a stream); make assumptions + fragile points explicit ("breaks if X changes",
+  "assumes the stream is always HLS", "this is a timeout in seconds — too low and slow
+  connections fail"); document the non-obvious-but-intentional (AV/Kodi quirks, magic numbers,
+  ordering deps — "looks redundant but Kodi needs it because…"); weight heaviest on the playback
+  chain + entry points, lighter on trivial helpers; match the existing docstring style, else
+  Google-style.
+- **Hard constraints:** comments + docstrings ONLY — no logic changes, no renames, no refactors,
+  no reformatting/reflow, no reindent of untouched lines, no reordering. The diff is **added
+  comments, nothing else.**
+- **Suspect discipline:** found a bug / dead code / confusing flow while reading? **DON'T fix** —
+  add it to a running list with a plain-English why, and show the operator at the end. Keep the
+  commentary commits clean.
+
+### The process (operator's 3 steps)
+1. **Map the repo + the real flow** — show structure, flow, and the best first file. ✅ DONE
+   (saved below).
+2. **Comment ONE playback-chain file** to the bar above (including its place in the flow), then
+   **STOP and show the diff** — wait for style sign-off ("written for a non-coder, taught from
+   the comments alone") before touching anything else. **← RESUME HERE.** First file =
+   `resources/lib/kodi/external_player.py`.
+3. After style approval, work in **small reviewable batches** (a module or a few related files),
+   **show the diff before each commit**, commit messages `docs: add commentary to <module>`,
+   and **do NOT push** — the operator reviews and pushes.
+
+### Resume briefing — reproduce VERBATIM when proposing this theme on `resume`
+
+**Operator directive (2026-05-30):** when `resume` proposes this theme, do **not** paraphrase or
+summarize it — **reproduce the briefing inside the fenced block below exactly as written** (omit
+only the outer ```` ```` fence; the content already carries its own headings, code block, and
+table). This is the canonical Step-1 pitch the operator signed off on. (Working detail — mandate,
+process, resume steps — is above/below; this block is the operator-facing text.)
+
+````md
+I have the full map now — three subsystem agents plus my own read of the spine (`addon.xml`, `default.py`, `service.py`, `external_player.py`). Here's **Step 1**, then I'll answer your time question.
+
+## Repo structure (grouped, ~49 addon modules + ~17 configurator)
+
+```
+default.py        ← add-on menu + remote-key bridge entry (xbmc.python.script)
+service.py        ← background service: startup auto-power + (optional) interception (xbmc.service)
+resources/lib/
+  kodi/   external_player.py ★ (the pipeline), installer.py (builds routing file),
+          intercept.py + disc_classification.py (is-this-a-4K-disc?),
+          playercorefactory_merge.py, settings_reader.py (config+hardware map),
+          diagnostics.py, preset_manager.py, i18n.py, logging/version/…
+  oppo/   oppo_control.py ★ (TCP/HTTP protocol core), oppo_tcp_client.py (verbose-push),
+          oppo_remote.py (remote-key→command), nas_playback_adapter.py, discovery.py,
+          command_map.py, constants.py, hardware_{capabilities,profiles,presets}.py, …
+  tv/     tv_control.py (dispatcher) + adb/roku_ecp/sony/smartthings/command backends
+  avr/    avr_sequence.py (flow glue) + avr_control.py (factory) + denon/onkyo/yamaha/sony
+configurator/src/ … Tauri/React wizard (TS) — generates the same files from Windows
+```
+★ = the load-bearing playback-chain files.
+
+## The real end-to-end flow (what actually happens)
+
+**Important:** this add-on does **not** stream or use `setResolvedUrl`. "Playback" = handing a physical OPPO Blu-ray player a disc to play over the LAN, while Kodi just holds the slot. There are **two architectures** (setting `playback_architecture`); both converge on `external_player.py`.
+
+**Setup (one-time):** Kodi → `default.py` → `installer.main()` → pick architecture → generate `playercorefactory.xml` + remote keymap into `addon_data/generated/`, copy into Kodi's `userdata/`.
+
+**Play-time — External Player mode (default):**
+1. User plays a disc file (`.iso`/BDMV/`.mpls`) whose **filename carries a 4K tag** (`4K`/`UHD`/`2160p`).
+2. **Kodi's own playercorefactory engine** (not add-on code) matches the generated `<rule filetypes="iso/bdmv/mpls" filename=".*(4K|UHD|2160p…).*">` and launches `<player name="Oppo203ISO">` → runs `external_player.py --addon-data <dir> --file "<file>"` as a subprocess.
+3. `external_player.main()` (`external_player.py:321`):
+   - a. `read_settings()` → b. optional `run_preflight()` (TCP `#QPW`/`#QIS`) → c. `mark_session_active()` writes the `oppo203iso-active` sentinel.
+   - d. **`fast_start()` — order is TV → AVR → OPPO**, each *non-fatal*: `switch_to_oppo()` (tv_control→adb/sony/roku) flips the TV's HDMI input → `pre_playback_sequence()` (avr_sequence, off by default) → `run_start()` (oppo_control): Wake-on-LAN, `#SVM` verbose mode, then send `oppo_start_commands` over TCP:23 (`#PON`, or `#EJT` for clones) **or** the HTTP-API path (UDP `0x55`→:436 wake, signin, `/playnormalfile`).
+   - e. **`hold_playback()`** — occupy the Kodi slot until the OPPO reports stop, via `http_poll` / `tcp_qpl_poll` (`#QPL`) / `verbose_push` (`@UPW`/`@UPL` via oppo_tcp_client) / `manual_file` / `fixed_timeout`.
+   - f. **`fast_return()`** (finally) — `oppo_stop_commands` → AVR restore → switch TV back to Kodi → g. `clear_session_active()`.
+4. **During playback**, remote keys: keymap maps Kodi buttons → `RunScript(default.py, oppo_key, <key>)` → `oppo_remote.send_remote_key()` → 76-key command map → TCP:23 (audio/subtitle/seek fall back to HTTP).
+
+**Play-time — Service Interception mode (diverges at steps 1–3):** `service.py` holds an `InterceptionPlayer`; on play, `onAVStarted` → `_handle_started` reads `getPlayingFile()` → `should_intercept_4k_disc_source()` (tag AND disc-style) → **stops Kodi's player** → threads into the *same* `fast_start → hold_playback → fast_return`. (Service mode also wakes the player at Kodi startup via `_kodi_startup_power_on`.)
+
+## Recommended first file to comment: **`resources/lib/kodi/external_player.py`**
+
+It *is* the playback pipeline — both architectures converge here, so it's the right home for the numbered flow overview, and it's the hardest documentation case (the TV/AVR/OPPO handoffs, the 5-mode `hold_playback` state machine, the "non-fatal by design" invariants, and the magic timeouts). If a non-coder can follow the system from this file's comments, the style is proven. `oppo_control.py` (the protocol core) is the natural **second**.
+
+## Preliminary suspect list (tracking; full version at the end — not fixing any)
+- **Dead-at-runtime code:** `intercept.py` whitelist/blacklist API, `playercorefactory_merge.py`'s safe-merge engine, `nas_playback_adapter.trigger_nas_playback`, `oppo_tcp_client.wait_for_stop_persistent` — tested but no production caller.
+- **Real bug-smell:** `default.py` diagnostics `_http` probe checks **port 80**, but the OPPO HTTP API is **port 436**.
+- **`#POW` toggle not filtered when already-on** → could power the player *off* (`oppo_control._filter_commands_for_mode`).
+- **4 overlapping hardware/model registries**, only `settings_reader` drives runtime; an unknown/typo'd model fails *open* to stock `#PON` (wrong for a clone needing `#EJT`).
+- **TV defaults ON** (`adb`→`192.168.1.60`) but AVR defaults OFF; AVR powers on at start but never powers off (`avr_power_off_enabled`/`avr_volume_automation_enabled` have no consumer).
+- **Clone-wake logic duplicated** in `oppo_control` + `oppo_remote`; **no-op smartthings branch** in `tv_control._switch`; **XML regex vs substring-tag** drift.
+
+---
+
+## ⏱️ Time estimate (your question)
+
+Two honest framings — my hands-on work vs. wall-clock (which your review cadence drives, not my typing speed):
+
+| Phase | Files | My focused work |
+|---|---|---|
+| **Step 2** — `external_player.py` solo + diff for your style sign-off | 1 | **~10–15 min** (next thing I do) |
+| Core playback chain — `oppo_control`, `service`, `oppo_tcp_client`, `oppo_remote`, `intercept`+`disc_classification`, `installer`, `settings_reader`, `default` | ~11 | ~4–5 h (these carry the teaching weight; `oppo_control`/`installer` are big) |
+| OPPO support — discovery, command_map, constants, nas_adapter, path_mapper, hardware_* | ~10 | ~1.5 h |
+| TV subsystem | ~7 | ~1 h |
+| AVR subsystem | ~9 | ~1.5 h |
+| Kodi support — diagnostics, logging, i18n, preset_manager, version… | ~10 | ~1 h |
+| Configurator (TS) | ~17 | ~1.5–2 h |
+
+- **Total:** ~**15–18 reviewable batches**, **~10–13 hours** of my focused generation, weighted heavily to the ~12 core files (trivial helpers go in minutes).
+- **Wall-clock:** gated by your reviews. Same-day batch reviews → ~**3–5 working sessions**. The **Step-2 style sign-off is the pacing item** — everything after it inherits that template, so once you approve the `external_player.py` style, the rest moves fast.
+- **Backstop per batch** (no push): `ruff check`/`ruff format --check` + the source-introspection-sensitive tests (`test_chinoppo`, `build8`) so added docstrings never break the suite; configurator gets `tsc`/`vitest`.
+````
+
+### Resume instructions
+On `resume`, if the operator picks this theme: re-read this §3c, **reproduce the verbatim briefing
+above exactly** (operator directive — no paraphrase), then go straight to **Step 2** — comment
+`resources/lib/kodi/external_player.py` to the bar (module docstring + the numbered end-to-end flow
+overview at the top + function docstrings + handoff/assumption notes), STOP, and show the diff for
+style sign-off. **Do NOT push.** The subagent subsystem maps that informed this (OPPO control /
+Kodi routing / TV+AVR) live in the 2026-05-30 post-EOD session transcript.
 
 ---
 
@@ -520,6 +670,16 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   Then this done-for-the-day doc refresh: header "Last sync" `dce80cd` → `6fc8615`, §3a/§3b
   reflect the cleared backlog, §17a flipped the closed rows + "Last refreshed" bumped. No code
   changed; `main` stays green (943/3, 99%, mypy 49/0). Pushed via a doc-only PR.
+- **2026-05-30 (post-EOD — code-commentary theme scoped + Step-1 map; PAUSED)** — After the
+  backlog-clear EOD, the operator pivoted to a new theme: **teaching-grade code commentary for a
+  near-beginner reviewer** (comments + docstrings only; no behavior/format/reorder change; teach
+  the real end-to-end flow; running suspect list — see §3c). Ran **Step 1** only: mapped the repo
+  + the actual playback flow (two architectures converging on `external_player.py`; fan-out
+  sub-agents mapped OPPO control / Kodi routing / TV+AVR) and recommended `external_player.py` as
+  the first file. Operator then said **"hold it"** — **no code or comments were written.** The
+  exact plan (mandate + 3-step process + flow map + batch plan + estimate + preliminary suspect
+  list) is saved in **§3c** and now leads the §3a/§3b resume themes. `main` unchanged (943/3,
+  coverage 99%, mypy 49/0).
 
 ---
 
@@ -851,6 +1011,32 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   the #72–#87 row to CLOSED and bumped "Last refreshed"; **§15** gained a backlog-clear bullet. No
   code touched; `main` green (943/3, coverage 99%, mypy 49/0). Pushed via a doc-only PR
   (direct-to-`main` push is harness-blocked).
+- **2026-05-30 (post-EOD — save the code-commentary plan)** — Operator pivoted to a teaching-
+  commentary theme, ran Step-1 mapping, then paused ("hold it") before any edit. Per operator
+  request ("save exact plan in the ai handoff and add it to the proposed themes during resume"),
+  added **new §3c** (the exact plan: mandate + 3-step process + Step-1 flow map + batch plan +
+  estimate + preliminary suspect list) and led both the §3a addon and §3b configurator
+  candidate-theme lists with it (PAUSED / resume-here → §3c). **§15** gained a Step-1 journey
+  bullet. **No code or comments written; no header / §17a change** — `main` unchanged (943/3,
+  coverage 99%, mypy 49/0). This handoff edit is **saved to the working tree only**; commit/push
+  pending operator direction.
+- **2026-05-30 (post-EOD — verbatim resume briefing pinned)** — Follow-up operator directive:
+  "show this exact verbatim during resume when you propose this theme." Embedded the canonical
+  Step-1 briefing (repo map + real end-to-end flow + first-file pick + preliminary suspects +
+  time estimate) **verbatim** in §3c as a fenced block with a "reproduce exactly, no paraphrase"
+  directive; flagged the same on the §3a/§3b theme lines. Replaced §3c's earlier paraphrased
+  Step-1 / batch / suspect subsections with the verbatim block so there is a single canonical
+  source. Still saved to the working tree only; no code touched.
+- **2026-05-30 (EOD — done for the day; commentary plan pushed)** — Operator: `done for the day`.
+  **No code changed this session** (resume → held the earlier comment-strip plan → pivoted to the
+  teaching-commentary theme → Step-1 repo/flow map via 3 parallel sub-agents + spine read → saved
+  the plan). Committed + pushed the session's `AI_RESUME_HANDOFF.md` edits (the §3c plan + the
+  verbatim resume briefing + the §3a/§3b theme flags + the §15 bullet) via a doc-only PR
+  (direct-to-`main` push is harness-blocked) — this supersedes the two "saved to the working tree
+  only" notes above. Re-ran the suite as the EOD green-check: **943 passed, 3 skipped** in ~13s
+  (`pytest -n auto`); `main` otherwise unchanged (coverage 99%, mypy 49/0; §17a backlog unchanged —
+  only #44 open). Header "Last sync" trailing clause updated to this doc. **No new feature work;
+  the theme stays PAUSED at Step 2 (`external_player.py`).**
 
 ---
 
