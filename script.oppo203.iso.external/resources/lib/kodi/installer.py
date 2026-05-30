@@ -771,6 +771,41 @@ def export_hardware_validation_readiness() -> str | None:
         return None
 
 
+def run_player_status_probe() -> None:
+    """Diagnostic: query the documented OPPO status commands and show the replies.
+
+    Read-only. Sends the #Q.. query battery over TCP and best-effort reads the
+    HTTP getmovieplayinfo payload, then displays the parsed replies and saves a
+    copy to addon_data for retrieval. #QFN reports the current media file name --
+    the documented basis for verifying the OPPO is playing the requested file.
+    """
+    try:
+        from ..oppo.oppo_control import format_player_status_probe, probe_player_status
+        from .settings_reader import Settings
+    except ImportError:  # pragma: no cover - top-level Kodi import compatibility
+        from oppo_control import format_player_status_probe, probe_player_status  # type: ignore
+        from settings_reader import Settings  # type: ignore
+
+    settings = Settings(
+        {
+            "oppo_ip": get_setting("oppo_ip"),
+            "oppo_port": get_setting("oppo_port", "23"),
+            "oppo_socket_timeout": get_setting("oppo_socket_timeout", "3.0"),
+            "oppo_http_port": get_setting("oppo_http_port", "436"),
+            "oppo_http_broadcast": get_setting("oppo_http_broadcast", "255.255.255.255"),
+        }
+    )
+    result = probe_player_status(settings)
+    report = format_player_status_probe(result)
+    _, addon_data, _ = _paths()
+    report_path = os.path.join(addon_data, "oppo-status-probe.txt")
+    _write_text_file(report_path, report)
+    xbmcgui.Dialog().textviewer(
+        "OPPO player status probe",
+        report + "\n\nSaved to:\n" + report_path,
+    )
+
+
 NETWORK_SETTINGS_MANAGED_NOTE = (
     "These connection values are normally set by the configurator on your PC. "
     "You can override one here for a quick fix (for example after a router reboot "
@@ -934,6 +969,7 @@ def main() -> None:
         "Export AVR diagnostic report",
         "Network settings (TV / OPPO / AVR / Kodi)",
         "Add-on language",
+        "Probe OPPO player status (diagnostic)",
         "Cancel",
     ]
     choice = xbmcgui.Dialog().select("Oppo UDP-203 ISO External Player", actions)
@@ -963,3 +999,5 @@ def main() -> None:
         network_settings_menu()
     elif choice == 12:
         language_menu()
+    elif choice == 13:
+        run_player_status_probe()
