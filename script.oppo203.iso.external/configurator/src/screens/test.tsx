@@ -258,7 +258,7 @@ export function TestSetup({ go, state, set }: ScreenProps) {
 
       <FooterNav
         go={go}
-        back="step35_done"
+        back="step4_done"
         next={nextScreen}
         nextLabel={nextLabel}
       />
@@ -333,18 +333,18 @@ export function TestConfirm({ go }: ScreenProps) {
     : allYes
       ? "test_success"
       : answers.play === false
-        ? "step3_test"
+        ? "step2_test"
         : answers.switch === false
-          ? "step2_test"
+          ? "step3_test"
           : "step1_intro";
   const nextLabel = !allAnswered
     ? undefined
     : allYes
       ? "See the summary"
       : answers.play === false
-        ? "Fix routing → Step 3"
+        ? "Fix routing → Step 2"
         : answers.switch === false
-          ? "Fix TV → Step 2"
+          ? "Fix TV → Step 3"
           : "Fix keymap → Step 1";
 
   return (
@@ -360,14 +360,14 @@ export function TestConfirm({ go }: ScreenProps) {
         <Question
           n="1"
           label="Did the test disc start playing on your player?"
-          owner="Step 3 · Player / playercorefactory routing"
+          owner="Step 2 · Player / playercorefactory routing"
           value={answers.play}
           onChange={(v) => setAnswers({ ...answers, play: v })}
         />
         <Question
           n="2"
           label="Did your TV switch to the player's input?"
-          owner="Step 2 · TV / Step 3.5 input capture"
+          owner="Step 3 · TV / Step 4 input capture"
           value={answers.switch}
           onChange={(v) => setAnswers({ ...answers, switch: v })}
         />

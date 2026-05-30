@@ -242,13 +242,25 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
               </div>
             </div>
           )}
+          {tested && (
+            <div className="callout success">
+              <span className="callout-icon">
+                <Icon name="check" size={13} stroke={2.4} />
+              </span>
+              <div className="callout-body">
+                <strong>SSH is only needed during setup.</strong> Once everything is verified
+                at the end, you can safely turn SSH back off on your Kodi box — the handoff
+                itself doesn't use it.
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <FooterNav
         go={go}
         back="step1_intro"
         next={tested ? "step2_brand" : null}
-        nextLabel="Continue to TV"
+        nextLabel="Continue to Player"
         set={set}
         setKeys={{ kodiVerified: true }}
       />
@@ -368,7 +380,7 @@ export function Step1TierB({ go, state, set }: ScreenProps) {
         go={go}
         back="step1_intro"
         next={tested ? "step2_brand" : null}
-        nextLabel="Continue to TV"
+        nextLabel="Continue to Player"
         set={set}
         setKeys={{ kodiVerified: true }}
       />
@@ -519,7 +531,7 @@ export function Step1TierC({ go, state, set }: ScreenProps) {
         go={go}
         back="step1_intro"
         next="step2_brand"
-        nextLabel="Continue to TV"
+        nextLabel="Continue to Player"
         set={set}
         setKeys={{ kodiVerified: true }}
       />

@@ -3,7 +3,7 @@ import { coerceScreenId, INITIAL_STATE } from "./state";
 
 describe("coerceScreenId", () => {
   it("keeps a valid screen id", () => {
-    expect(coerceScreenId("step3_test")).toBe("step3_test");
+    expect(coerceScreenId("step2_test")).toBe("step2_test");
     expect(coerceScreenId("test_success")).toBe("test_success");
   });
 
