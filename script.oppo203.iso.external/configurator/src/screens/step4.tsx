@@ -5,17 +5,17 @@ import type { InputAddress } from "../state";
 import type { ScreenProps } from "./types";
 
 // ============================================================
-// STEP 3.5 — Input capture intro
+// STEP 4 — Input capture intro
 // ============================================================
-export function Step35Intro({ go, state }: ScreenProps) {
+export function Step4Intro({ go, state }: ScreenProps) {
   return (
     <div className="screen">
       <div className="screen-header">
         <h1 className="screen-title">Now the HDMI inputs.</h1>
         <p className="screen-subtitle">
           We need two: <strong>where your player is</strong> (to switch to on handoff) and{" "}
-          <strong>where your Kodi box is</strong> (to switch back on exit). The player is
-          awake now — good time to do this.
+          <strong>where your Kodi box is</strong> (to switch back on exit). Your player and
+          TV are both set up now — good time to pin these down.
         </p>
       </div>
       <div className="card">
@@ -59,7 +59,7 @@ export function Step35Intro({ go, state }: ScreenProps) {
       <FooterNav
         go={go}
         back="step3_test"
-        next={state.tvAdbWeak ? "step35_fallback" : "step35_ask"}
+        next={state.tvAdbWeak ? "step4_fallback" : "step4_ask"}
         nextLabel="Capture inputs"
       />
     </div>
@@ -67,9 +67,9 @@ export function Step35Intro({ go, state }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 3.5 — Ask-first
+// STEP 4 — Ask-first
 // ============================================================
-export function Step35Ask({ go, state, set }: ScreenProps) {
+export function Step4Ask({ go, state, set }: ScreenProps) {
   const [step, setStep] = useState<"oppo" | "kodi">("oppo");
   const [picked, setPicked] = useState<number | null>(null);
   const [confirmed, setConfirmed] = useState(false);
@@ -86,7 +86,7 @@ export function Step35Ask({ go, state, set }: ScreenProps) {
       setConfirmed(false);
     } else {
       set({ kodiInput: picked });
-      go("step35_done");
+      go("step4_done");
     }
   };
 
@@ -116,7 +116,7 @@ export function Step35Ask({ go, state, set }: ScreenProps) {
               </button>
             ))}
           </div>
-          <button className="btn outline" onClick={() => go("step35_fallback")}>
+          <button className="btn outline" onClick={() => go("step4_fallback")}>
             <Icon name="search" size={14} /> Not sure — find it for me
           </button>
         </div>
@@ -174,15 +174,15 @@ export function Step35Ask({ go, state, set }: ScreenProps) {
           )}
         </div>
       </div>
-      <FooterNav go={go} back="step35_intro" />
+      <FooterNav go={go} back="step4_intro" />
     </div>
   );
 }
 
 // ============================================================
-// STEP 3.5 — ADB-weak fallback funnel
+// STEP 4 — ADB-weak fallback funnel
 // ============================================================
-export function Step35Fallback({ go, set }: ScreenProps) {
+export function Step4Fallback({ go, set }: ScreenProps) {
   return (
     <div className="screen">
       <div className="screen-header">
@@ -206,7 +206,7 @@ export function Step35Fallback({ go, set }: ScreenProps) {
                   className="filter-pill"
                   onClick={() => {
                     set({ oppoInput: n, kodiInput: n === 1 ? 2 : 1 });
-                    go("step35_done");
+                    go("step4_done");
                   }}
                 >
                   HDMI {n}
@@ -225,7 +225,7 @@ export function Step35Fallback({ go, set }: ScreenProps) {
               className="btn outline sm"
               onClick={() => {
                 set({ oppoInput: "cec", kodiInput: 1 });
-                go("step35_done");
+                go("step4_done");
               }}
             >
               Use CEC fallback
@@ -242,7 +242,7 @@ export function Step35Fallback({ go, set }: ScreenProps) {
               className="btn outline sm"
               onClick={() => {
                 set({ oppoInput: "cycle:2", kodiInput: "cycle:1" });
-                go("step35_done");
+                go("step4_done");
               }}
             >
               Cycle now
@@ -259,7 +259,7 @@ export function Step35Fallback({ go, set }: ScreenProps) {
               className="btn ghost sm"
               onClick={() => {
                 set({ tvManualSwitch: true });
-                go("step35_done");
+                go("step4_done");
               }}
             >
               Manual switching
@@ -267,7 +267,7 @@ export function Step35Fallback({ go, set }: ScreenProps) {
           }
         />
       </div>
-      <FooterNav go={go} back="step35_intro" />
+      <FooterNav go={go} back="step4_intro" />
     </div>
   );
 }
@@ -317,14 +317,14 @@ function FallbackRung({
 }
 
 // ============================================================
-// STEP 3.5 — Done
+// STEP 4 — Done
 // ============================================================
 function describeInput(input: InputAddress, fallback: string) {
   if (input == null) return fallback;
   return typeof input === "number" ? String(input) : input;
 }
 
-export function Step35Done({ go, state }: ScreenProps) {
+export function Step4Done({ go, state }: ScreenProps) {
   const oppoLabel = describeInput(state.oppoInput, "3");
   const kodiLabel = describeInput(state.kodiInput, "1");
   const isCycle = typeof state.oppoInput === "string" && state.oppoInput.startsWith("cycle");
@@ -391,7 +391,7 @@ export function Step35Done({ go, state }: ScreenProps) {
       )}
       <FooterNav
         go={go}
-        back="step35_intro"
+        back="step4_intro"
         next="test_setup"
         nextLabel="Run the full setup test"
       />

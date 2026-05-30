@@ -10,10 +10,10 @@ type Node = {
 };
 
 const NODES: readonly Node[] = [
-  { id: "media", icon: "media", label: "Media" },
+  { id: "media", icon: "media", label: "ISO Playback" },
   { id: "kodi", icon: "kodi", label: "Kodi box" },
-  { id: "tv", icon: "tv", label: "TV" },
   { id: "player", icon: "player", label: "Player" },
+  { id: "tv", icon: "tv", label: "TV" },
 ];
 
 type Props = {
@@ -35,7 +35,7 @@ export function Chain({ active, completed }: Props) {
   };
 
   const edgeState = (a: Node["id"], b: Node["id"]) => {
-    if (active === "tv-player" && a === "tv" && b === "player") return "bidir";
+    if (active === "tv-player" && a === "player" && b === "tv") return "bidir";
     if (isActive(a) && completed[b]) return "active";
     if (isActive(b) && completed[a]) return "active";
     if (completed[a] && completed[b]) return "done";
@@ -45,12 +45,10 @@ export function Chain({ active, completed }: Props) {
   return (
     <div className="chain">
       {NODES.map((n, i) => {
-        const gated = n.id === "media" && completed.media && !isActive(n.id);
         const classes = [
           "chain-node",
           isActive(n.id) ? "active" : "",
           isDone(n.id) ? "done" : "",
-          gated ? "gated" : "",
         ]
           .filter(Boolean)
           .join(" ");

@@ -41,6 +41,25 @@ Default to **no comments**. Add one only when the WHY is non-obvious (a subtle i
 a workaround for a specific bug). Never explain WHAT — the identifiers do that. Never
 reference the current task or PR — that belongs in the PR description.
 
+## Names must match what the user sees — people read the files
+
+People read this code while looking at the running app, so **file names, identifiers,
+component names, and code comments must line up with the labels and numbers shown in the
+UI.** A mismatch (a file called `step35.tsx` for a screen labelled "Step 4", or `step2_*`
+ids behind a screen the UI calls "Step 3") is a real defect — it sends a reader to the
+wrong place and erodes trust in the rest of the code.
+
+- When a displayed label or step number changes, rename the matching files / ids /
+  components / comments **in the same change**, not "later". A half-renamed flow is worse
+  than either end state.
+- The single source of truth for wizard order, numbers, and labels is
+  `configurator/src/steps.ts` (`STEPS`). Names elsewhere follow it.
+- Keep human-facing strings (`"Fix TV → Step 3"`, `owner="Step 2 · Player …"`) in sync
+  with the same numbering — these don't move when you rename an id, so grep for them.
+- If a rename would be genuinely costly (e.g. it breaks persisted state or a public
+  contract), say so explicitly and leave a one-line comment at the definition explaining
+  the intentional divergence — don't leave it silent.
+
 ## Session shape — one theme per session, cap ≈ 4 PRs
 
 Each session sticks to **one theme** (e.g. "port screens", "wire SFTP probes", "rename

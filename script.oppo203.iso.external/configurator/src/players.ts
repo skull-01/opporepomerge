@@ -6,6 +6,7 @@ export type PlayerBrandDef = {
   id: PlayerBrand;
   name: string;
   ch: string;
+  color: string;
   posture: BrandPosture;
   models: readonly PlayerModelDef[];
 };
@@ -13,7 +14,7 @@ export type PlayerBrandDef = {
 /**
  * Single source of truth for player brands: display metadata (name, logo char, posture), the
  * model labels shown in the picker, and the `oppo_hardware_model` enum value each model maps to
- * (verified against resources/settings.xml). Both the Step 3 brand picker and mapping.ts derive
+ * (verified against resources/settings.xml). Both the Step 2 brand picker and mapping.ts derive
  * from this — neither keeps its own copy, so a model added here can't silently fail to map.
  */
 export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
@@ -21,6 +22,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "oppo",
     name: "OPPO",
     ch: "O",
+    color: "#046A38",
     posture: "stock",
     models: [
       { label: "UDP-203", hw: "udp_203" },
@@ -31,6 +33,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "chinoppo",
     name: "Chinoppo",
     ch: "C",
+    color: "#0E7490",
     posture: "wake-rewrite",
     models: [
       { label: "M9201", hw: "chinoppo_m9201" },
@@ -46,6 +49,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "magnetar",
     name: "Magnetar",
     ch: "M",
+    color: "#5B21B6",
     posture: "warning",
     models: [
       { label: "UDP800", hw: "magnetar_udp800" },
@@ -56,6 +60,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "reavon",
     name: "Reavon",
     ch: "R",
+    color: "#B45309",
     posture: "warning",
     models: [
       { label: "UBR-X100", hw: "reavon_ubrx100" },
@@ -67,6 +72,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "cineultra",
     name: "CineUltra",
     ch: "CU",
+    color: "#0F766E",
     posture: "wake-rewrite",
     models: [
       { label: "V203", hw: "cineultra_v203" },
@@ -77,6 +83,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "ipuk",
     name: "iPUK",
     ch: "iP",
+    color: "#1428A0",
     posture: "wake-rewrite",
     models: [{ label: "UHD8592", hw: "ipuk_uhd8592" }],
   },
@@ -84,6 +91,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "giec",
     name: "Giec",
     ch: "G",
+    color: "#C2410C",
     posture: "wake-rewrite",
     models: [{ label: "BDP-G5300", hw: "giec_bdp_g5300" }],
   },
@@ -91,6 +99,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     id: "other",
     name: "Other / clone",
     ch: "?",
+    color: "#6B7280",
     posture: "stock",
     models: [
       { label: "Conservative default", hw: "udp_203" },

@@ -3,7 +3,7 @@ export type StepId =
   | "step1"
   | "step2"
   | "step3"
-  | "step3_5"
+  | "step4"
   | "test";
 
 export type ScreenId =
@@ -14,19 +14,19 @@ export type ScreenId =
   | "step1_tierB"
   | "step1_tierC"
   | "step2_brand"
-  | "step2_model"
-  | "step2_notfound"
-  | "step2_probe"
-  | "step2_adb_warn"
   | "step2_test"
   | "step2_fail"
   | "step3_brand"
+  | "step3_model"
+  | "step3_notfound"
+  | "step3_probe"
+  | "step3_adb_warn"
   | "step3_test"
   | "step3_fail"
-  | "step35_intro"
-  | "step35_ask"
-  | "step35_fallback"
-  | "step35_done"
+  | "step4_intro"
+  | "step4_ask"
+  | "step4_fallback"
+  | "step4_done"
   | "test_setup"
   | "test_confirm"
   | "test_success";
@@ -45,13 +45,17 @@ export type Step = {
   num: string;
 };
 
+// Step ids match the displayed order and number: 0 prereq, 1 Kodi, 2 Player, 3 TV,
+// 4 HDMI Input, then the final test. Player precedes TV so the HDMI-input step sits next
+// to the TV step. The `step2_*` screens are the Player screens, `step3_*` are TV, `step4_*`
+// are HDMI — file names, ids, and labels all line up so the code reads the way the UI does.
 export const STEPS: readonly Step[] = [
-  { id: "step0", label: "Prerequisite", num: "0" },
+  { id: "step0", label: "Playback chain setup", num: "0" },
   { id: "step1", label: "Kodi box", num: "1" },
-  { id: "step2", label: "TV", num: "2" },
-  { id: "step3", label: "Player", num: "3" },
-  { id: "step3_5", label: "Inputs", num: "3.5" },
-  { id: "test", label: "Full test", num: "✓" },
+  { id: "step2", label: "Player", num: "2" },
+  { id: "step3", label: "TV", num: "3" },
+  { id: "step4", label: "HDMI Input", num: "4" },
+  { id: "test", label: "Playback Test", num: "✓" },
 ] as const;
 
 export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
@@ -62,19 +66,19 @@ export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
   step1_tierB: "step1",
   step1_tierC: "step1",
   step2_brand: "step2",
-  step2_model: "step2",
-  step2_notfound: "step2",
-  step2_probe: "step2",
-  step2_adb_warn: "step2",
   step2_test: "step2",
   step2_fail: "step2",
   step3_brand: "step3",
+  step3_model: "step3",
+  step3_notfound: "step3",
+  step3_probe: "step3",
+  step3_adb_warn: "step3",
   step3_test: "step3",
   step3_fail: "step3",
-  step35_intro: "step3_5",
-  step35_ask: "step3_5",
-  step35_fallback: "step3_5",
-  step35_done: "step3_5",
+  step4_intro: "step4",
+  step4_ask: "step4",
+  step4_fallback: "step4",
+  step4_done: "step4",
   test_setup: "test",
   test_confirm: "test",
   test_success: "test",
@@ -87,20 +91,20 @@ export const SCREEN_TO_CHAIN: Record<ScreenId, ChainTarget> = {
   step1_tierA: "kodi",
   step1_tierB: "kodi",
   step1_tierC: "kodi",
-  step2_brand: "tv",
-  step2_model: "tv",
-  step2_notfound: "tv",
-  step2_probe: "tv",
-  step2_adb_warn: "tv",
-  step2_test: "tv",
-  step2_fail: "tv",
-  step3_brand: "player",
-  step3_test: "player",
-  step3_fail: "player",
-  step35_intro: "tv-player",
-  step35_ask: "tv-player",
-  step35_fallback: "tv-player",
-  step35_done: "tv-player",
+  step2_brand: "player",
+  step2_test: "player",
+  step2_fail: "player",
+  step3_brand: "tv",
+  step3_model: "tv",
+  step3_notfound: "tv",
+  step3_probe: "tv",
+  step3_adb_warn: "tv",
+  step3_test: "tv",
+  step3_fail: "tv",
+  step4_intro: "tv-player",
+  step4_ask: "tv-player",
+  step4_fallback: "tv-player",
+  step4_done: "tv-player",
   test_setup: "all",
   test_confirm: "all",
   test_success: "all",
@@ -116,8 +120,8 @@ export function firstScreenOfStep(stepId: StepId): ScreenId {
       return "step2_brand";
     case "step3":
       return "step3_brand";
-    case "step3_5":
-      return "step35_intro";
+    case "step4":
+      return "step4_intro";
     case "test":
       return "test_setup";
   }
