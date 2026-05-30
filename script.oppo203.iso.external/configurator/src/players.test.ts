@@ -4,7 +4,7 @@ import { PLAYER_BRANDS, brandDef, hwModelFor, isWakeRewriteBrand } from "./playe
 describe("players catalog", () => {
   it("maps brand + model label to the oppo_hardware_model enum value", () => {
     expect(hwModelFor("oppo", "UDP-203")).toBe("udp_203");
-    expect(hwModelFor("chinoppo", "M9205 V1")).toBe("chinoppo_m9205");
+    expect(hwModelFor("chinoppo", "M9205 V1")).toBe("chinoppo_m9205_v1");
     expect(hwModelFor("reavon", "UBR-X110")).toBe("reavon_ubrx110");
   });
 

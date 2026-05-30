@@ -61,7 +61,7 @@ def test_build2_settings_dropdown_and_compatibility_matrix_match():
     )
     normalized = {settings_reader.normalize_hardware_model(value) for value in values}
     assert normalized == set(settings_reader.HARDWARE_COMPAT)
-    assert len(settings_reader.HARDWARE_COMPAT) == 17
+    assert len(settings_reader.HARDWARE_COMPAT) == 18
 
 
 def test_build2_clone_models_use_eject_wake_and_stock_oppo_stays_passthrough():

@@ -81,7 +81,7 @@
         </setting>
     </category>
     <category id="hardware" label="32101">  <!-- Hardware and commands -->
-        <setting id="oppo_hardware_model" type="enum" label="30150" values="udp_203|udp_205|chinoppo_m9201|chinoppo_m9203|chinoppo_m9205c|chinoppo_m9702|ipuk_uhd8592|giec_bdp_g5300|magnetar_udp800|reavon_ubrx100|reavon_ubrx110|reavon_ubrx200|chinoppo_m9200|chinoppo_m9205|cineultra_v203|cineultra_v204|magnetar_udp900" default="0" help="30151"/>
+        <setting id="oppo_hardware_model" type="enum" label="30150" values="udp_203|udp_205|chinoppo_m9201|chinoppo_m9203|chinoppo_m9205c|chinoppo_m9702|ipuk_uhd8592|giec_bdp_g5300|magnetar_udp800|reavon_ubrx100|reavon_ubrx110|reavon_ubrx200|chinoppo_m9200|chinoppo_m9205|cineultra_v203|cineultra_v204|magnetar_udp900|chinoppo_m9205_v1" default="0" help="30151"/>
         <setting id="oppo_jailbreak_enabled" type="bool" label="30160" default="false" help="30161"/>
         <setting id="oppo_autoscript_shell_handler" type="bool" label="30162" default="false" help="30163"/>
         <setting id="oppo_start_mode" type="enum" label="30114" values="tcp_commands|http_api|tcp_then_http" default="0" help="30115"/>

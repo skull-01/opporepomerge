@@ -31,6 +31,45 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator + add-on — Chinoppo M9205 V1 split into a distinct hardware model
+
+- **Branch / SHA:** `claude/chinoppo-m9205-v1-split-c7m2k9p4` — **no tracked issue**
+  (configurator §3b "M9205 V1 vs M9205" follow-up; PR-only). Operator confirmed on
+  `resume` that M9205 V1 and the plain M9205 are **distinct devices** that share the
+  M9205 eject-to-wake clone control protocol.
+- **What changed (software-verified only):**
+  - Add-on: new `oppo_hardware_model` enum value `chinoppo_m9205_v1`, **appended** to
+    `resources/settings.xml` so existing stored enum indices are unchanged, and wired
+    through `settings_reader.py` (`ENUM_VALUES`, aliases → `M9205-V1`, `HARDWARE_COMPAT`,
+    `CHINOPPO_NAS_PLAYBACK_MODELS`), `hardware_profiles.py`, and
+    `hardware_capabilities.py`. The new `M9205-V1` profile is an **exact mirror** of
+    `M9205` (eject-to-wake `#EJT`, clone-safe, `http_api_436=False`) — no new command
+    payloads. `hardware_presets.py` is unchanged (plain `M9205` has no preset entry and
+    falls through to `generic_oppo_clone`; the V1 mirrors that).
+  - Configurator: `players.ts` re-points the **M9205 V1** picker label to
+    `chinoppo_m9205_v1` (plain **M9205** still → `chinoppo_m9205`; the "Other / clone"
+    eject-to-wake default is unchanged). `CONFIGURATOR_HANDOFF.md` §4 enum order updated.
+  - Tests: new `tests/test_chinoppo_m9205_v1_split.py` (5 tests, end-to-end add-on side);
+    updated taxonomy-count guards (`test_all.py` 17→18, `test_v2910_build2` 17→18,
+    `test_v2910_build3` set + `M9205-V1`) and configurator `players.test.ts` /
+    `mapping.test.ts`.
+- **Software gates (this machine):** add-on `pytest -n auto` **943 passed / 3 skipped**;
+  coverage **99.06%** (≥99 gate); `ruff check` + `ruff format` clean; `mypy --gate`
+  **49/0**. Configurator `tsc --noEmit` clean; `vitest` **63/63**; `npm run build` exit 0.
+- **Phase A review focus:**
+  - Confirm the `M9205-V1` (canonical key) / `chinoppo_m9205_v1` (enum value) naming
+    reads right alongside the existing `M9205` / `M9205C` keys.
+  - Confirm "mirror M9205 exactly" is the intended behavior. If the V1 actually differs
+    at the protocol level, its `HARDWARE_COMPAT` / `hardware_profiles` entries need
+    distinct values (this PR assumes identical control per the operator's confirmation).
+- **Phase C — operator end-to-end (real hardware):**
+  1. In the configurator Step 2, pick brand **Chinoppo**, model **M9205 V1**; complete
+     the wizard and Apply. Confirm the deployed add-on `settings.xml` has
+     `oppo_hardware_model` = `chinoppo_m9205_v1` (distinct from plain `M9205`).
+  2. On the Kodi box, trigger a UHD-ISO handoff to the M9205 V1 player; confirm the
+     add-on wakes it with `#EJT` (eject-to-wake), matching plain M9205 behavior.
+  3. Confirm no regression for a plain **M9205** device (still `chinoppo_m9205` → `#EJT`).
+
 ### Configurator — real app icon + first MSI/NSIS bundle
 
 - **Branch / SHA:** `claude/configurator-icon-bundle-h4n7k2p9` — icon set at
