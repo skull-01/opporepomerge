@@ -645,6 +645,44 @@ _(none queued)_
      "Two-way IP control confirmed" only when the player actually powers ON.
   5. **SSH input guard:** an IP/username beginning with `-` is rejected, not passed to `ssh`.
 
+### ENH-#103 — TV database schema v2 (296 model families) + region filtering
+
+- **Issue / SHAs:** [#103](https://github.com/skull-01/script.oppo203.iso.external/issues/103) —
+  delivered by [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104),
+  merge `5380425` (impl `343041c`, `cde87c6`). Shipped in configurator **v0.3.0**.
+- **What changed (software-verified):** `tvdb.ts` migrated to schema v2 (tier
+  `preferred|fallback|probe`; `primary_backend`/`fallback_backends`/`regions`/`platform`/
+  `mapping_confidence`; `parseTvDb` gates `schema_version === 2`; `modelsForRegion`). Both
+  `tv-models.json` copies replaced with the 296-row 2018–2025 payload. Step 3 leads with a
+  Region selector and surfaces the new fields. No add-on/Python changes.
+- **Software gates (this machine):** `tsc --noEmit` clean; `vitest` **68/68**; `npm run build`
+  exit 0; browser-preview pass (region filter interactive US↔Asia on Hisense; zero console errors).
+- **Operator confirm (Phase C — real Windows host, NOT done by the agent):**
+  1. Install configurator v0.3.0; open Step 3, pick a brand, and toggle Region — confirm the
+     model list changes per market (e.g. Hisense **US** = Android TV + Roku; **Asia** = VIDAA).
+  2. Confirm each row shows platform · backend · fallback · regions · confidence + a tier chip.
+  3. Confirm all rows are presented as candidate (unvalidated) mappings — no hardware claim.
+
+### ENH-#105 — canonical players DB (players.json) + configurator adoption
+
+- **Issue / SHAs:** [#105](https://github.com/skull-01/script.oppo203.iso.external/issues/105) —
+  delivered by [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106),
+  merge `81c3eb5` (impl `4b7f63e`, `9ab2f61`, `18d423e`, `5675f70`). Shipped in configurator **v0.3.0**.
+- **What changed (software-verified):** new `players.json` (bundled + docs, byte-identical)
+  consolidating the 18-model player taxonomy + brand metadata + candidate regions; `playersdb.ts`
+  loader + `players.ts` derives `PLAYER_BRANDS` from it; Step 2 surfaces markets/wake/class/NAS.
+  Add-on side is **test-only**: a consistency guard pins the JSON to the live registries and the
+  two `== 18` counts derive from the DB. `settings.xml` ordering + `hardware_presets.py` unchanged.
+- **Software gates (this machine):** configurator `tsc` clean + `vitest` **74/74** + build OK;
+  add-on `pytest -n auto` **950 passed / 3 skipped**, `ruff` clean, `mypy --gate` clean (52 files),
+  serial coverage **99%**, `audit_release` **580/580**.
+- **Operator confirm (Phase C — real Windows host, NOT done by the agent):**
+  1. Open Step 2, pick brand + model — confirm the facts line shows markets, wake command,
+     hardware class, and NAS-playback candidacy, and the posture callout still matches.
+  2. Confirm every existing player still resolves to the same `oppo_hardware_model` value
+     (the picker labels are unchanged; only the per-brand order is enum-ordered now).
+  3. Add-on: nothing to verify on hardware (test-only); confirm `main` add-on still builds.
+
 ---
 
 ## Verified (archive)
