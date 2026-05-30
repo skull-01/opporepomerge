@@ -91,7 +91,7 @@ No settings. Conceptual gate (player must already reach media via SMB1/NFS/USB).
 ### Step 2 — Player (OPPO / clone)
 | Wizard field | Setting ID | Values / notes |
 |---|---|---|
-| Brand → model | `oppo_hardware_model` (enum) | Maps 1:1. Order: `udp_203, udp_205, chinoppo_m9201, chinoppo_m9203, chinoppo_m9205c, chinoppo_m9702, ipuk_uhd8592, giec_bdp_g5300, magnetar_udp800, reavon_ubrx100, reavon_ubrx110, reavon_ubrx200, chinoppo_m9200, chinoppo_m9205, cineultra_v203, cineultra_v204, magnetar_udp900`. |
+| Brand → model | `oppo_hardware_model` (enum) | Maps 1:1. Order: `udp_203, udp_205, chinoppo_m9201, chinoppo_m9203, chinoppo_m9205c, chinoppo_m9702, ipuk_uhd8592, giec_bdp_g5300, magnetar_udp800, reavon_ubrx100, reavon_ubrx110, reavon_ubrx200, chinoppo_m9200, chinoppo_m9205, cineultra_v203, cineultra_v204, magnetar_udp900, chinoppo_m9205_v1`. |
 | Player IP | `oppo_ip` (default `192.168.1.50`) | |
 | Port (23) | `oppo_port` (default `23`) | IP control. |
 | WoL (optional) | `oppo_use_wol`, `oppo_mac`, `oppo_wol_broadcast` | Best-effort wake. |

@@ -2873,13 +2873,15 @@ class TV2Build1(unittest.TestCase):
         self.assertEqual(command_map["page_up"], "#PUP")
         self.assertEqual(command_map["page_down"], "#PDN")
 
-    def test_hardware_compat_has_17_canonical_entries(self):
+    def test_hardware_compat_has_18_canonical_entries(self):
         from resources.lib.settings_reader import HARDWARE_COMPAT
 
-        self.assertEqual(len(HARDWARE_COMPAT), 17)
+        self.assertEqual(len(HARDWARE_COMPAT), 18)
         self.assertIn("M9702", HARDWARE_COMPAT)
         self.assertIn("M9200", HARDWARE_COMPAT)
         self.assertIn("M9205", HARDWARE_COMPAT)
+        self.assertIn("M9205-V1", HARDWARE_COMPAT)
+        self.assertEqual(HARDWARE_COMPAT["M9205-V1"], HARDWARE_COMPAT["M9205"])
         self.assertIn("CineUltra-V203", HARDWARE_COMPAT)
         self.assertIn("CineUltra-V204", HARDWARE_COMPAT)
         self.assertIn("Magnetar-UDP900", HARDWARE_COMPAT)

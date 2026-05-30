@@ -26,6 +26,7 @@ def test_build3_required_capability_sets_are_explicit_and_disjoint():
         "M9201",
         "M9203",
         "M9205",
+        "M9205-V1",
         "M9205C",
         "CineUltra-V203",
         "CineUltra-V204",

@@ -168,6 +168,7 @@ ENUM_VALUES = {
         "cineultra_v203",
         "cineultra_v204",
         "magnetar_udp900",
+        "chinoppo_m9205_v1",
     ],
 }
 
@@ -460,6 +461,9 @@ _HARDWARE_ALIASES = {
     "m9203": "M9203",
     "chinoppo_m9205": "M9205",
     "m9205": "M9205",
+    "chinoppo_m9205_v1": "M9205-V1",
+    "m9205_v1": "M9205-V1",
+    "m9205-v1": "M9205-V1",
     "chinoppo_m9205c": "M9205C",
     "m9205c": "M9205C",
     "cineultra_v203": "CineUltra-V203",
@@ -543,6 +547,15 @@ HARDWARE_COMPAT: dict[str, dict[str, object]] = {
         "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
     },
     "M9205": {
+        "wake_command": "#EJT",
+        "protocol_compatible": True,
+        "is_clone": True,
+        "is_reavon": False,
+        "http_api_436": False,
+        "src_supported": {"#SRC 0", "#SRC 3", "#SRC 4"},
+        "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
+    },
+    "M9205-V1": {
         "wake_command": "#EJT",
         "protocol_compatible": True,
         "is_clone": True,
@@ -688,6 +701,7 @@ CHINOPPO_NAS_PLAYBACK_MODELS = {
     "M9201",
     "M9203",
     "M9205",
+    "M9205-V1",
     "M9205C",
     "M9702",
     "CineUltra-V203",

@@ -35,9 +35,7 @@ export const PLAYER_BRANDS: readonly PlayerBrandDef[] = [
     models: [
       { label: "M9201", hw: "chinoppo_m9201" },
       { label: "M9203", hw: "chinoppo_m9203" },
-      // "M9205 V1" and "M9205" both map to chinoppo_m9205 pending maintainer confirmation that
-      // they are the same device (settings.xml has a single non-C M9205 enum value).
-      { label: "M9205 V1", hw: "chinoppo_m9205" },
+      { label: "M9205 V1", hw: "chinoppo_m9205_v1" },
       { label: "M9205C", hw: "chinoppo_m9205c" },
       { label: "M9200", hw: "chinoppo_m9200" },
       { label: "M9205", hw: "chinoppo_m9205" },

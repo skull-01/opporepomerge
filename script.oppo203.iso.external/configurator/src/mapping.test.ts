@@ -13,9 +13,12 @@ describe("playerHardwareModel", () => {
     ).toBe("udp_203");
   });
 
-  it("maps Chinoppo M9205 V1 to chinoppo_m9205", () => {
+  it("maps Chinoppo M9205 V1 to chinoppo_m9205_v1 (distinct from plain M9205)", () => {
     expect(
       playerHardwareModel(makeState({ playerBrand: "chinoppo", playerModel: "M9205 V1" })),
+    ).toBe("chinoppo_m9205_v1");
+    expect(
+      playerHardwareModel(makeState({ playerBrand: "chinoppo", playerModel: "M9205" })),
     ).toBe("chinoppo_m9205");
   });
 
