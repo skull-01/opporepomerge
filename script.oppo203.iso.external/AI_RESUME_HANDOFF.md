@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `55bf6fa` (origin/main, 2026-05-30 — Merge #107) · **Configurator `v0.3.0` shipped + published as the repo's GitHub "Latest"** — two enhancements merged then released: **TV database → schema v2** (the 8-row seed → **296 model families** 2018–2025 with per-model region/platform/backend metadata; region-first Step 3 filtering; [#103](https://github.com/skull-01/script.oppo203.iso.external/issues/103) via [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104) `5380425`) and a **canonical players DB** (`players.json` consolidating the OPPO/clone taxonomy + candidate regions; Step 2 surfaces the new attributes; a Python consistency guard pins the JSON to the live registries; [#105](https://github.com/skull-01/script.oppo203.iso.external/issues/105) via [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106) `81c3eb5`) — then bumped `0.2.0 → 0.3.0` + build evidence via release [PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107) `55bf6fa` and published **`configurator-v0.3.0`** (MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256, unsigned, software-verified only). Add-on side was **test-only** (no runtime change → no add-on release). The repo-wide "Latest" badge now sits on `configurator-v0.3.0` (auto-assigned as newest; flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`55bf6fa`:** addon **950 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 52/0); configurator **74 vitest + `tsc --noEmit` green + `npm run build` OK** · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
+**Last sync:** commit `d8ce705` (origin/main, 2026-05-30 — docs after Merge #110) · **Configurator `v0.5.0` shipped + published as the repo's GitHub "Latest"** — an **AVR (AV receiver) feature in two releases**: `v0.4.0` added an **AVR control database** (224 AV-receiver/processor **model families** 2018–2025 across 10 brands — Denon/Marantz/Yamaha/Onkyo/Pioneer/Integra/Sony/Anthem/Arcam/NAD — schema v2, the TV-DB twin) + a typed `avrdb.ts` loader + an **optional Step 5 (AV Receiver)** picker + 18 vitest ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`); then `v0.5.0` **wired Step 5 into the add-on `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum: Pioneer→`pioneer_eiscp`, Sony→`sony_audio_api` configured-but-off, custom_command no-op; conservative `avr_control_enabled`; Receiver-control card captures IP + player input) for true TV/Player parity ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`). Published **`configurator-v0.5.0`** (MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256, unsigned, software-verified only; published assets re-downloaded byte-identical). **No add-on code change** — like the TV DB, the AVR DB isn't loaded by the add-on at runtime, and the add-on already shipped the AVR settings + guarded drivers → no add-on release. Repo-wide "Latest" sits on `configurator-v0.5.0` (flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`d8ce705`:** addon **950 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 52/0); configurator **101 vitest + `tsc -b` green + `npm run build` OK** · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
 **Latest release:** add-on `v2.9.13`; configurator **`configurator-v0.5.0`** (now holds the
 repo-wide GitHub **"Latest"** badge) — **wires the AVR Step 5 selection into the add-on's
 `settings.xml`** (`avr_backend`/`avr_host`/`avr_player_input` + conservative `avr_control_enabled`;
@@ -230,19 +230,39 @@ pushes commentary.
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-30 (later — configurator `v0.3.0` shipped + published as the repo's
+**As of 2026-05-30 (later still — configurator `v0.5.0` shipped + published as the repo's
 GitHub "Latest").** **Clean stopping point — no configurator work in flight, no open
-configurator PRs.** This session migrated the **TV database to schema v2** (the 8-row seed →
-**296 model families** 2018–2025 with region/platform/backend metadata, region-first Step 3
-filtering; [#103](https://github.com/skull-01/script.oppo203.iso.external/issues/103) / [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104)) and added a **canonical players DB**
-(`players.json` consolidating the OPPO/clone taxonomy + candidate regions, Step 2 wiring, and a
-Python consistency guard pinning the JSON to the add-on's live registries;
-[#105](https://github.com/skull-01/script.oppo203.iso.external/issues/105) / [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106)), then cut the **third** Windows release
-**`configurator-v0.3.0`** ([PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107)): MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256; evidence at
-`configurator/release-evidence/v0.3.0/BUILD_NOTES.md`. **Software-verified only** — `tsc` +
-**74 vitest** + `npm run build`, plus a browser-preview pass of Step 2 + Step 3; **not** installed
-on a clean machine, **no hardware validation** (Kodi box / OPPO / TV). All TV rows + player regions
-are `validated:false` candidate mappings.
+configurator PRs.** This session delivered the **AVR (AV receiver) feature in two releases**:
+- **`v0.4.0` — AVR database + optional Step 5** ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109), merge `6251cdf`). Built from the operator's
+  fact-checked bundle: `configurator/src/avr-db/avr-models.json` (+ canonical `docs/` copy) with
+  **224 AV-receiver/processor model families** 2018–2025 across 10 brands (Denon, Marantz, Yamaha,
+  Onkyo, Pioneer, Integra, Sony, Anthem, Arcam, NAD), schema v2 — the **TV-DB twin** (lineups +
+  models + region_schema, all `validated:false`). New `avrdb.ts` loader (region filtering, backend
+  resolution, remote "Update list" refresh) + 18 vitest; new optional **Step 5 (AV Receiver)**
+  picker (ask → brand → region/year-filtered model list). The bundle→JSON transform is
+  `build/gen_avr_db.py` (git-ignored).
+- **`v0.5.0` — wired Step 5 into the add-on `settings.xml`** ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110), merge `bc3ad0e`), giving Step 5
+  true **TV/Player parity** (it was display-only in v0.4.0). A "Receiver control" card captures
+  receiver IP + player input; `mapping.avrAddonBackend()` maps the DB backend vocab onto the
+  add-on's `avr_backend` enum (verified vs `resources/lib/avr/avr_presets.py`): **Pioneer**
+  (DB folds it into `onkyo_eiscp`) → the add-on's distinct `pioneer_eiscp`; **Sony** `sony_audio`
+  → `sony_audio_api`. Conservative enable: `avr_control_enabled=true` only for a native non-gated
+  driver with host + input present; **Sony** configured-but-off (add-on gates it on ack + PSK);
+  **Anthem/Arcam/NAD** (`custom_command`) write no `avr_backend`. Skipping Step 5 emits nothing
+  AVR-related, so it never disturbs an existing add-on AVR config.
+
+Published **`configurator-v0.5.0`**: MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256; evidence at
+`configurator/release-evidence/v0.5.0/BUILD_NOTES.md` (v0.4.0 evidence under `…/v0.4.0/`).
+**Software-verified only** — `tsc -b` + **101 vitest** + `npm run build`, plus a browser-preview
+pass of Step 5 (Pioneer→`pioneer_eiscp` enable callout; Sony→configured-but-off); published assets
+re-downloaded **byte-identical**. **Not** installed on a clean machine, **no hardware validation**.
+All AVR rows are `validated:false` candidate mappings. **No add-on code change** (the AVR DB isn't
+loaded by the add-on at runtime; the add-on already ships the AVR settings + guarded drivers).
+**Gotcha this session:** publishing the v0.5.0 release was auto-mode-gated (Create-Public-Surface,
+because it came from a "continue" follow-up not the original "publish" ask) — approved, then
+published. Also a linter touched `step5.tsx` mid-edit and silently dropped the control-card UI on
+the first attempt; caught via browser preview, amended, rebuilt, re-verified (see
+[[avr-database-configurator]], [[configurator-release-process]]).
 
 - **Prior — configurator `v0.2.0`** ([release `configurator-v0.2.0`](https://github.com/skull-01/script.oppo203.iso.external/releases/tag/configurator-v0.2.0),
   full release marked **Latest**, unsigned; SmartScreen "unknown publisher" expected): MSI
@@ -272,17 +292,23 @@ are `validated:false` candidate mappings.
      (operator directive) — do not paraphrase.** ← resume here.
   2. **Sony brand-badge cosmetic fix** (white-on-white, `styles.css:769`) — small
      `styles.css` / `BrandIcon.tsx` tweak; confirm the other real marks still read.
-  3. **Install + smoke-test the published `v0.3.0` binary** on a clean Windows machine
-     (MSI + NSIS) — confirm launch + icon, the Step 3 **Region** filter (US↔Asia changes the
-     model list), and the Step 2 player facts line (markets / wake / class / NAS) — operator
-     action; build/unit + browser-preview verified only.
-  4. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B SMB, Tier C
-     copy) against a real Kodi box / OPPO / TV — operator action; software-verified only.
-  5. **(done this session) TV DB grown to schema v2 / 296 model families.** Optional
-     follow-ups: a players-DB "Update list" remote-refresh mirroring the TV DB's, or — if the
-     operator wants it — having the add-on Python registries *derive* from `players.json` at
-     import time (deferred this session for install-base safety; the consistency guard already
-     prevents drift).
+  3. **Install + smoke-test the published `v0.5.0` binary** on a clean Windows machine
+     (MSI + NSIS) — confirm launch + icon, the new **Step 5 (AV Receiver)**: "Yes" → brand →
+     region-filtered model list, the **Receiver control** card (IP + player input), and that the
+     enable/Sony-off/custom-no-op callouts behave; plus the existing Step 3 Region filter and
+     Step 2 player facts line — operator action; build/unit + browser-preview verified only.
+  4. **AVR on-hardware verification (NEW — software-verified only).** v0.5.0 makes the add-on
+     actually try to **power on + switch a real receiver** on handoff when control is enabled. All
+     backend/input mappings are `validated:false` candidates and the add-on's Sony/Pioneer drivers
+     are themselves experimental — confirm against a real Denon/Yamaha/Onkyo/Pioneer before
+     trusting. Then the deploy paths (Tier A SSH+restart, Tier B SMB, Tier C copy) against a real
+     Kodi box / OPPO / TV — operator action.
+  5. **Sony brand-badge cosmetic fix** (white-on-white, `styles.css:769`) — small `styles.css` /
+     `BrandIcon.tsx` tweak; the same white mark now also affects the Step 5 Sony AVR pill.
+  6. **AVR follow-ups (optional):** capture Sony's ack + PSK in Step 5 so Sony can auto-enable
+     (currently configured-but-off); add a Step-5 backend probe/control-test mirroring the TV
+     mute test; grow `avr-models.json` via `build/gen_avr_db.py` (keep both JSON copies identical,
+     bump `db_version`). See [[avr-database-configurator]].
 
 - **Open `area:configurator` issues: none.** #99 (design pass) and #100 (release prep) were
   PR-only themes (no tracked issue), consistent with the configurator's untracked-delivery
