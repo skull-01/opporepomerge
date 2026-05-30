@@ -5,8 +5,8 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `d89f0ae` (origin/main, 2026-05-30 — Merge #101) · **Configurator `v0.2.0` shipped + published as the repo's GitHub "Latest"** — integrated an operator-uploaded design-revision changeset: the wizard rename so files/ids/components/labels match the displayed steps (**Player = step 2, TV = step 3, HDMI Input = step 4**; `step35.tsx`→`step4.tsx`), the design-review pass (reordered stepper/chain, animated chain icons, Step 0 prep table, Tier A SSH note), real `simple-icons` brand badges (new `BrandIcon.tsx`), and the AGENTS.md "names match the UI" norm — via [PR #99](https://github.com/skull-01/script.oppo203.iso.external/pull/99) `32ae49c`; then bumped `0.1.0 → 0.2.0` + recorded build evidence via [PR #100](https://github.com/skull-01/script.oppo203.iso.external/pull/100) `6fa8c76`, and published release **`configurator-v0.2.0`** (MSI + NSIS + SHA-256, unsigned, software-verified only). The repo-wide "Latest" badge **moved** from add-on `v2.9.13` → `configurator-v0.2.0` (operator's done-for-the-day choice; reversible). · **Tests on `main`@`d89f0ae`:** addon **943 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 49/0); configurator **64 vitest + `tsc --noEmit` green** · **2026-05-30 (later):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
-**Latest release:** add-on `v2.9.13`; configurator `configurator-v0.2.0` (now holds the
+**Last sync:** commit `55bf6fa` (origin/main, 2026-05-30 — Merge #107) · **Configurator `v0.3.0` shipped + published as the repo's GitHub "Latest"** — two enhancements merged then released: **TV database → schema v2** (the 8-row seed → **296 model families** 2018–2025 with per-model region/platform/backend metadata; region-first Step 3 filtering; [#103](https://github.com/skull-01/script.oppo203.iso.external/issues/103) via [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104) `5380425`) and a **canonical players DB** (`players.json` consolidating the OPPO/clone taxonomy + candidate regions; Step 2 surfaces the new attributes; a Python consistency guard pins the JSON to the live registries; [#105](https://github.com/skull-01/script.oppo203.iso.external/issues/105) via [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106) `81c3eb5`) — then bumped `0.2.0 → 0.3.0` + build evidence via release [PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107) `55bf6fa` and published **`configurator-v0.3.0`** (MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256, unsigned, software-verified only). Add-on side was **test-only** (no runtime change → no add-on release). The repo-wide "Latest" badge now sits on `configurator-v0.3.0` (auto-assigned as newest; flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`55bf6fa`:** addon **950 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 52/0); configurator **74 vitest + `tsc --noEmit` green + `npm run build` OK** · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
+**Latest release:** add-on `v2.9.13`; configurator `configurator-v0.3.0` (now holds the
 repo-wide GitHub **"Latest"** badge) · **Issue model:** **hybrid** — GitHub Issues for
 bug/enhancement tracking, PRs for delivery; every issue tagged `area:addon` or
 `area:configurator`.
@@ -185,8 +185,16 @@ verbose-push hold silently degrades to `fixed_timeout` (default 180 min) instead
 see §3c's resume note. Do **not** push/merge the wip branch unprompted; the operator reviews and
 pushes commentary.
 
-**Prior context (durable) — 2026-05-30 evening merge/release session:** the addon-area deliverable
-was:
+**Prior context (durable) — recent addon-area changes:**
+
+- **Players-DB consistency guard (test-only, merged 2026-05-30)** — the TV-DB-v2 / players-DB
+  session ([PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106), merge `81c3eb5`) added `tests/test_players_db_consistency.py` (pins the new
+  configurator `players.json` to the live `hardware_profiles` / `HARDWARE_COMPAT` / capability
+  tuples / `settings.xml` enum order / aliases) and made the two `len(HARDWARE_COMPAT) == 18` count
+  guards derive from the DB. **No add-on runtime change** — the add-on doesn't load `players.json`
+  at runtime (same split as the TV DB). See [[oppo-hardware-model-taxonomy-map]] + §3b. Done, not in flight.
+
+**2026-05-30 evening merge/release session — the addon-area deliverable was:**
 
 - **Chinoppo `M9205 V1` split into a distinct hardware model** ([PR #91](https://github.com/skull-01/script.oppo203.iso.external/pull/91), merge `36f9cbd`): new `oppo_hardware_model` enum value `chinoppo_m9205_v1`, **appended** to `resources/settings.xml` (existing stored enum indices preserved) and mirrored through `settings_reader` / `hardware_profiles` / `hardware_capabilities` as an **exact `M9205` clone** (`#EJT` eject-to-wake, clone-safe, `http_api_436=False`); configurator `players.ts` re-pointed (plain `M9205` still → `chinoppo_m9205`); taxonomy count guards 17→18; new `tests/test_chinoppo_m9205_v1_split.py` (5 tests). Additive — **no behavior change to existing models.** PR-only (no tracked issue); Phase-A/C entry in the manual checklist. **Software-verified only** — the V1 mirror assumes identical protocol per the operator's confirmation; if real hardware shows it differs, its `HARDWARE_COMPAT` / profile entries need distinct values.
 
@@ -215,14 +223,21 @@ was:
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-30 (evening — configurator `v0.2.0` shipped + published as the repo's
-GitHub "Latest").** **Clean stopping point, no configurator work in flight, no open
-configurator PRs.** This session integrated an operator-uploaded design-revision changeset,
-merged it, and cut the **second** Windows release. **Software-verified only** — built +
-unit-tested (`tsc` + 64 vitest), **not** run in the live app, **no hardware validation**
-(Kodi box / OPPO / TV), **not** installed on a clean machine.
+**As of 2026-05-30 (later — configurator `v0.3.0` shipped + published as the repo's
+GitHub "Latest").** **Clean stopping point — no configurator work in flight, no open
+configurator PRs.** This session migrated the **TV database to schema v2** (the 8-row seed →
+**296 model families** 2018–2025 with region/platform/backend metadata, region-first Step 3
+filtering; [#103](https://github.com/skull-01/script.oppo203.iso.external/issues/103) / [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104)) and added a **canonical players DB**
+(`players.json` consolidating the OPPO/clone taxonomy + candidate regions, Step 2 wiring, and a
+Python consistency guard pinning the JSON to the add-on's live registries;
+[#105](https://github.com/skull-01/script.oppo203.iso.external/issues/105) / [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106)), then cut the **third** Windows release
+**`configurator-v0.3.0`** ([PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107)): MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256; evidence at
+`configurator/release-evidence/v0.3.0/BUILD_NOTES.md`. **Software-verified only** — `tsc` +
+**74 vitest** + `npm run build`, plus a browser-preview pass of Step 2 + Step 3; **not** installed
+on a clean machine, **no hardware validation** (Kodi box / OPPO / TV). All TV rows + player regions
+are `validated:false` candidate mappings.
 
-- **Configurator `v0.2.0` published** ([release `configurator-v0.2.0`](https://github.com/skull-01/script.oppo203.iso.external/releases/tag/configurator-v0.2.0),
+- **Prior — configurator `v0.2.0`** ([release `configurator-v0.2.0`](https://github.com/skull-01/script.oppo203.iso.external/releases/tag/configurator-v0.2.0),
   full release marked **Latest**, unsigned; SmartScreen "unknown publisher" expected): MSI
   (3,162,112 B, `202d79e7…dc0765`) + NSIS setup (2,059,233 B, `2c0bd3ab…68d0`) + SHA-256
   sidecars; tag `configurator-v0.2.0` at `1b31941`. Evidence:
@@ -250,13 +265,17 @@ unit-tested (`tsc` + 64 vitest), **not** run in the live app, **no hardware vali
      (operator directive) — do not paraphrase.** ← resume here.
   2. **Sony brand-badge cosmetic fix** (white-on-white, `styles.css:769`) — small
      `styles.css` / `BrandIcon.tsx` tweak; confirm the other real marks still read.
-  3. **Install + smoke-test the published `v0.2.0` binary** on a clean Windows machine
-     (MSI + NSIS) — confirm launch, icon, and the renamed wizard order (Player 2 → TV 3 →
-     HDMI Input 4) — operator action; build/unit-verified only.
+  3. **Install + smoke-test the published `v0.3.0` binary** on a clean Windows machine
+     (MSI + NSIS) — confirm launch + icon, the Step 3 **Region** filter (US↔Asia changes the
+     model list), and the Step 2 player facts line (markets / wake / class / NAS) — operator
+     action; build/unit + browser-preview verified only.
   4. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B SMB, Tier C
      copy) against a real Kodi box / OPPO / TV — operator action; software-verified only.
-  5. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (seed is small, all
-     `validated:false`; lineups carry the platform→backend mapping).
+  5. **(done this session) TV DB grown to schema v2 / 296 model families.** Optional
+     follow-ups: a players-DB "Update list" remote-refresh mirroring the TV DB's, or — if the
+     operator wants it — having the add-on Python registries *derive* from `players.json` at
+     import time (deferred this session for install-base safety; the consistency guard already
+     prevents drift).
 
 - **Open `area:configurator` issues: none.** #99 (design pass) and #100 (release prep) were
   PR-only themes (no tracked issue), consistent with the configurator's untracked-delivery
@@ -738,6 +757,22 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   on `main`, **not** merged) — awaiting the operator's Step-2 style sign-off before continuing to
   `oppo_control.py`. Flagged one latent bug found while reading (not fixed): `hold_playback`'s
   `verbose_push` fallback degrades to `fixed_timeout` instead of `tcp_qpl_poll`. `main` unchanged.
+- **2026-05-30 (later still — TV DB schema v2 + players DB; configurator `v0.3.0`)** — Configurator
+  session, two enhancements merged then released. **[#103](https://github.com/skull-01/script.oppo203.iso.external/issues/103) / [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104)** `5380425`: TV DB migrated to **schema
+  v2** — `tvdb.ts` tier `preferred|fallback|probe`, `primary_backend`/`fallback_backends`/`regions`/
+  `platform`/`mapping_confidence`, gate `schema_version === 2`, `modelsForRegion`; both
+  `tv-models.json` copies replaced with the **296-row 2018–2025** payload; Step 3 region-first
+  filtering + the new fields surfaced. **[#105](https://github.com/skull-01/script.oppo203.iso.external/issues/105) / [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106)** `81c3eb5`: canonical
+  `players.json` (configurator/src + docs, byte-identical) consolidating the 18-model OPPO/clone
+  taxonomy + candidate regions; `playersdb.ts` + `players.ts` derive `PLAYER_BRANDS` from it; Step 2
+  surfaces markets/wake/class/NAS; **add-on test-only** drift guard
+  (`tests/test_players_db_consistency.py`) + the two `==18` counts now derive from the DB. Then
+  **release [PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107)** `55bf6fa`: bump `0.2.0→0.3.0` + evidence; published **`configurator-v0.3.0`**
+  (MSI + NSIS attached, unsigned). Gates green: configurator `tsc` / **74 vitest** / build; add-on
+  pytest **950/3**, ruff, mypy `--gate` **52/0**, coverage **99%**, audit **580/580**; browser-preview
+  pass of Step 2 + Step 3. **Deliberately NOT done (install-base safety):** no `settings.xml` enum
+  regeneration, no `hardware_presets.py` change, no add-on release (no runtime change). All rows
+  `validated:false`.
 
 ---
 
@@ -765,7 +800,7 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-30 (evening EOD — added the #99/#100 configurator `v0.2.0` delivery row; issue backlog unchanged: only #44 open, 0 open PRs)**.
+Last refreshed: **2026-05-30 (later EOD — added #103/#104 TV-DB-v2, #105/#106 players-DB, and the #107 configurator `v0.3.0` release rows. Two ENH opened + delivered this session (#103, #105), SHAs commented, awaiting operator verify/close; #44 remains the only pre-existing open issue; 0 open PRs)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
@@ -784,6 +819,9 @@ Last refreshed: **2026-05-30 (evening EOD — added the #99/#100 configurator `v
 | 94–95 | (no issue) configurator first Windows binary v0.1.0 (build recipe + evidence) | configurator | _untracked theme (PR-only)_ | MERGED + PUBLISHED 2026-05-30 | [PR #94](https://github.com/skull-01/script.oppo203.iso.external/pull/94) `60f7897` (build recipe: `BUILD.md`, `dist` alias, version guard) + [PR #95](https://github.com/skull-01/script.oppo203.iso.external/pull/95) `4af93b5` (evidence + notes); release **`configurator-v0.1.0`** published as a public pre-release (MSI + NSIS, unsigned) | Phase C on-device (install on clean machine, confirm launch) queued |
 | 99–100 | (no issue) configurator `v0.2.0` — wizard rename + design pass + release | configurator | _untracked theme (PR-only)_ | MERGED + PUBLISHED 2026-05-30 | [PR #99](https://github.com/skull-01/script.oppo203.iso.external/pull/99) `32ae49c` (rename to displayed step numbers + design-review pass + `simple-icons` brand badges + AGENTS.md norm) + [PR #100](https://github.com/skull-01/script.oppo203.iso.external/pull/100) `6fa8c76` (bump 0.1.0→0.2.0 + build evidence); release **`configurator-v0.2.0`** published full/**Latest** (MSI + NSIS + SHA-256, unsigned) | Phase C on-device (install on clean machine, confirm launch + renamed wizard order Player 2 → TV 3 → HDMI 4) queued |
 | 92–93 | (no issue) canonical Plan-format norm + BUILD_PLAN.md refresh | meta | _untracked theme (PR-only, docs)_ | MERGED 2026-05-30 | [PR #92](https://github.com/skull-01/script.oppo203.iso.external/pull/92) `dce80cd` (Plan-format norm in AGENTS.md + §1/§4 triggers + CLAUDE.md pointer) + [PR #93](https://github.com/skull-01/script.oppo203.iso.external/pull/93) `6d657ea` (BUILD_PLAN.md refresh) | docs-only; no verification needed |
+| 103 | ENH: migrate configurator TV database to schema v2 (296 model families, region filtering) | configurator | `area:configurator` | OPEN (SHA commented) | [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104) `5380425` (impl `343041c` loader+data, `cde87c6` Step-3 UI). Shipped in `configurator-v0.3.0`. | awaiting operator verify/close (Phase C in checklist) |
+| 105 | ENH: create canonical players DB (players.json) and adopt it in the configurator | configurator | `area:configurator` | OPEN (SHA commented) | [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106) `81c3eb5` (impl `4b7f63e` DB, `9ab2f61` configurator, `18d423e` guard, `5675f70` count derive). Add-on side test-only. Shipped in `configurator-v0.3.0`. | awaiting operator verify/close (Phase C in checklist) |
+| 104·106·107 | (no issue) configurator `v0.3.0` — TV DB v2 + players DB + release | configurator | _release (PR-only)_ | MERGED + PUBLISHED 2026-05-30 | release [PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107) `55bf6fa`; tag `configurator-v0.3.0` (MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256 attached, marked **Latest**); evidence `configurator/release-evidence/v0.3.0/BUILD_NOTES.md` | Phase C on-device (install on clean machine; confirm Step 3 region filter + Step 2 player facts) queued |
 
 ---
 
@@ -1125,6 +1163,18 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   gained a Step-2 journey bullet; **§3b unchanged** (configurator untouched); **§17a unchanged** (no
   issue opened/closed/retitled — only #44 open). Doc pushed via a doc-only PR (direct-to-`main` push
   is harness-blocked). The untracked `.claude/launch.json` left unstaged. **No new feature work.**
+- **2026-05-30 (EOD — TV DB v2 + players DB; configurator `v0.3.0` shipped)** — Configurator
+  session (operator: "go on everything, complete fully automated … create a new release and push").
+  Delivered + merged two enhancements and cut a release. Doc refresh: **header** "Last sync" → `55bf6fa`
+  / configurator `v0.3.0` / tests `950/3` + mypy `52/0` + 74 vitest; **§3b** overwritten to the v0.3.0
+  clean state (TV DB schema v2 #103/#104, players DB #105/#106, release #107), the "Resume here next"
+  TV-DB-grow item marked done and the smoke-test item retargeted to v0.3.0; **§3a** gained a durable
+  bullet for the test-only players-DB consistency guard (the teaching-commentary WIP block left
+  **untouched** — still awaiting the operator's Step-2 sign-off); **§15** gained the
+  TV-DB-v2/players-DB journey bullet; **§17a** added the #103, #105, and #104·106·107 release rows
+  (refresh date bumped). New ENH #103/#105 opened + delivered this session, SHAs commented, awaiting
+  operator close; Phase C rows added to `docs/MANUAL_VERIFICATION_CHECKLIST.md`. The untracked
+  `.claude/launch.json` (preview-server config) left unstaged. **No new feature work.**
 
 ---
 
