@@ -31,6 +31,7 @@ import {
   Step3Fail,
 } from "./screens/step3";
 import { Step4Intro, Step4Ask, Step4Fallback, Step4Done } from "./screens/step4";
+import { Step5Ask, Step5Brand, Step5Model } from "./screens/step5";
 import { TestSetup, TestConfirm, TestSuccess } from "./screens/test";
 import type { ScreenProps } from "./screens/types";
 
@@ -59,6 +60,9 @@ const SCREEN_RENDERERS: Record<ScreenId, (props: ScreenProps) => JSX.Element> = 
   step4_ask: Step4Ask,
   step4_fallback: Step4Fallback,
   step4_done: Step4Done,
+  step5_ask: Step5Ask,
+  step5_brand: Step5Brand,
+  step5_model: Step5Model,
   test_setup: TestSetup,
   test_confirm: TestConfirm,
   test_success: TestSuccess,

@@ -392,8 +392,8 @@ export function Step4Done({ go, state }: ScreenProps) {
       <FooterNav
         go={go}
         back="step4_intro"
-        next="test_setup"
-        nextLabel="Run the full setup test"
+        next="step5_ask"
+        nextLabel="Next: AV receiver (optional)"
       />
     </div>
   );

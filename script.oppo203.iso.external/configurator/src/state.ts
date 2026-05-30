@@ -1,5 +1,6 @@
 import type { KodiPlatform } from "./generate";
 import type { TvRegion } from "./tvdb";
+import type { AvrRegion } from "./avrdb";
 
 export type Tier = "A" | "B" | "C";
 
@@ -10,6 +11,16 @@ export type TvBackend =
   | "smartthings"
   | "lg_command"
   | "samsung_command"
+  | "custom_command";
+
+// AVR control-path backends — the AVR DB's own vocabulary (mirrors the bundle's
+// backend_schema). Advisory only: the wizard surfaces a candidate backend, it does not
+// drive add-on settings. Maps loosely onto the add-on's avr_backend enum.
+export type AvrBackend =
+  | "denon_marantz"
+  | "yamaha_yxc"
+  | "onkyo_eiscp"
+  | "sony_audio"
   | "custom_command";
 
 export type PlayerBrand =
@@ -44,6 +55,12 @@ export type WizardState = {
   tvVerified: boolean;
   tvAdbWeak: boolean;
   tvManualSwitch: boolean;
+
+  avrBrand: string | null;
+  avrRegion: AvrRegion | null;
+  avrModel: string | null;
+  avrBackend: AvrBackend | null;
+  avrReceiverType: string | null;
 
   playerBrand: PlayerBrand | null;
   playerModel: string | null;
@@ -87,6 +104,11 @@ export const INITIAL_STATE: WizardState = {
   tvVerified: false,
   tvAdbWeak: false,
   tvManualSwitch: false,
+  avrBrand: null,
+  avrRegion: null,
+  avrModel: null,
+  avrBackend: null,
+  avrReceiverType: null,
   playerBrand: null,
   playerModel: null,
   playerIp: "10.0.1.77",
