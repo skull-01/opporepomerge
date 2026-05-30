@@ -10,11 +10,14 @@ import {
   fetchRemoteTvDb,
   isNewer,
   modelsForBrand,
+  modelsForRegion,
   resolveBackend,
   resolvePlatform,
   resolveTier,
+  TV_REGIONS,
   type TvDb,
   type TvDbModel,
+  type TvRegion,
 } from "../tvdb";
 import type { ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
@@ -68,21 +71,39 @@ export function Step3Brand({ go, state, set }: ScreenProps) {
 // ============================================================
 // STEP 3 — Model
 // ============================================================
+function tierChipKind(tier: string | null): string {
+  if (tier === "preferred") return "success";
+  if (tier === "probe") return "accent";
+  return "warn";
+}
+
+function tierChipLabel(tier: string | null): string {
+  if (tier === "preferred") return "preferred path";
+  if (tier === "probe") return "probe & confirm";
+  if (tier === "fallback") return "fallback path";
+  return "manual";
+}
+
 export function Step3Model({ go, state, set }: ScreenProps) {
   const [db, setDb] = useState<TvDb>(BUNDLED_TV_DB);
+  const [region, setRegion] = useState<TvRegion | null>(state.tvRegion ?? "US");
   const [year, setYear] = useState("2023");
-  const [size, setSize] = useState('65"');
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
   const brandName = TV_BRANDS.find((b) => b.id === state.tvBrand)?.name ?? "TV";
   const models = state.tvBrand ? modelsForBrand(db, state.tvBrand) : [];
-  const filtered = models.filter(
+  const filtered = modelsForRegion(models, region).filter(
     (m) =>
       (!year || String(m.year) === year) &&
-      (!size || m.size === size) &&
       m.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  const pickRegion = (r: TvRegion) => {
+    const next = region === r ? null : r;
+    setRegion(next);
+    set({ tvRegion: next });
+  };
 
   const refresh = async () => {
     setRefreshing(true);
@@ -104,7 +125,7 @@ export function Step3Model({ go, state, set }: ScreenProps) {
       <div className="screen-header">
         <h1 className="screen-title">Which {brandName} model?</h1>
         <p className="screen-subtitle">
-          Year and size are just to narrow the list — the control method comes from the
+          Region and year just narrow the list — the control method comes from the
           platform.
         </p>
       </div>
@@ -128,6 +149,20 @@ export function Step3Model({ go, state, set }: ScreenProps) {
           </button>
         </div>
         <div className="row" style={{ gap: 8, alignItems: "center" }}>
+          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Region</span>
+          <div className="filter-row">
+            {TV_REGIONS.map((r) => (
+              <button
+                key={r}
+                className={`filter-pill ${region === r ? "selected" : ""}`.trim()}
+                onClick={() => pickRegion(r)}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="row" style={{ gap: 8, alignItems: "center" }}>
           <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Year</span>
           <div className="filter-row">
             {["2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"].map((y) => (
@@ -137,20 +172,6 @@ export function Step3Model({ go, state, set }: ScreenProps) {
                 onClick={() => setYear(year === y ? "" : y)}
               >
                 {y}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="row" style={{ gap: 8, alignItems: "center" }}>
-          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Size</span>
-          <div className="filter-row">
-            {['43"', '50"', '55"', '65"', '75"', '85"'].map((s) => (
-              <button
-                key={s}
-                className={`filter-pill ${size === s ? "selected" : ""}`.trim()}
-                onClick={() => setSize(size === s ? "" : s)}
-              >
-                {s}
               </button>
             ))}
           </div>
@@ -168,21 +189,35 @@ export function Step3Model({ go, state, set }: ScreenProps) {
           {filtered.map((m) => {
             const backend = resolveBackend(db, m);
             const tier = resolveTier(db, m);
+            const fallbacks = m.fallback_backends ?? [];
             return (
               <div
                 key={m.id}
                 className={`model-row ${state.tvModel === m.id ? "selected" : ""}`.trim()}
                 onClick={() => select(m)}
+                title={m.region_notes ?? m.notes ?? ""}
               >
                 <div>
-                  <div>{m.name}</div>
+                  <div>
+                    {m.name}{" "}
+                    <span className="muted" style={{ fontSize: 11, fontWeight: 500 }}>{m.year}</span>
+                  </div>
                   <div className="model-row-meta">
                     {resolvePlatform(db, m) ?? "—"} · backend <code>{backend ?? "—"}</code>
+                    {fallbacks.length > 0 && (
+                      <>
+                        {" "}· fallback <code>{fallbacks.join(", ")}</code>
+                      </>
+                    )}
+                  </div>
+                  <div className="model-row-meta">
+                    {m.regions.join(" · ")}
+                    {m.mapping_confidence && <> · {m.mapping_confidence} confidence</>}
                   </div>
                 </div>
-                <span className={`chip ${tier === "probe" ? "success" : "warn"}`}>
+                <span className={`chip ${tierChipKind(tier)}`}>
                   <span className="chip-dot" />
-                  {tier === "probe" ? "probe & confirm" : "bring-your-own command"}
+                  {tierChipLabel(tier)}
                 </span>
               </div>
             );
