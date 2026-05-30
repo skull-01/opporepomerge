@@ -5,9 +5,11 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `6fc8615` (origin/main, 2026-05-30 — Merge #96) + an EOD save of the code-commentary plan (PAUSED theme, §3c; no code touched this session) · **PM-session 6-PR stack merged (#91–#96) + first configurator binary published** — `configurator-v0.1.0` is now a public GitHub **pre-release** (MSI + NSIS, unsigned, software-verified only); landed the Chinoppo `M9205 V1` split (#91), the build recipe (#94) + binary evidence (#95), the canonical Plan-format norm (#92), and the `BUILD_PLAN.md` refresh (#93) · **Backlog cleared** — the operator closed all 21 delivered issues (addon #38/#41/#42/#43/#57 + configurator #72–#87) ahead of hardware testing, plus **ENH-#51** (mypy `--strict`, gate **49/0**); only **#44** (hardware-validation call) stays open · **Tests on `main`:** 943 passed, 3 skipped (`pytest -n auto`; coverage 99%; mypy `--gate` 49/0; per-PR CI green pre-merge incl. 3.9/3.10/3.12 smokes; `main`@`6fc8615` CI green) · **Configurator:** 64 vitest + `tsc -b`/`vite build` green (cargo not re-run; the published v0.1.0 binary built clean in the PM session)
-**Latest release:** v2.9.13 · **Issue model:** **hybrid** — GitHub Issues for bug/enhancement
-tracking, PRs for delivery; every issue tagged `area:addon` or `area:configurator`.
+**Last sync:** commit `1b31941` (origin/main, 2026-05-30 — Merge #100) · **Configurator `v0.2.0` shipped + published as the repo's GitHub "Latest"** — integrated an operator-uploaded design-revision changeset: the wizard rename so files/ids/components/labels match the displayed steps (**Player = step 2, TV = step 3, HDMI Input = step 4**; `step35.tsx`→`step4.tsx`), the design-review pass (reordered stepper/chain, animated chain icons, Step 0 prep table, Tier A SSH note), real `simple-icons` brand badges (new `BrandIcon.tsx`), and the AGENTS.md "names match the UI" norm — via [PR #99](https://github.com/skull-01/script.oppo203.iso.external/pull/99) `32ae49c`; then bumped `0.1.0 → 0.2.0` + recorded build evidence via [PR #100](https://github.com/skull-01/script.oppo203.iso.external/pull/100) `6fa8c76`, and published release **`configurator-v0.2.0`** (MSI + NSIS + SHA-256, unsigned, software-verified only). The repo-wide "Latest" badge **moved** from add-on `v2.9.13` → `configurator-v0.2.0` (operator's done-for-the-day choice; reversible). · **Tests on `main`@`1b31941`:** addon **943 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 49/0); configurator **64 vitest + `tsc --noEmit` green** (cargo re-run — the v0.2.0 binary built clean this session)
+**Latest release:** add-on `v2.9.13`; configurator `configurator-v0.2.0` (now holds the
+repo-wide GitHub **"Latest"** badge) · **Issue model:** **hybrid** — GitHub Issues for
+bug/enhancement tracking, PRs for delivery; every issue tagged `area:addon` or
+`area:configurator`.
 
 **What this is:** A Python 3.9+ Kodi add-on (`script.oppo203.iso.external`) for OPPO 203/205
 and compatible-clone external-player handoff, plus a new Tauri 2 + React/TS Windows
@@ -199,30 +201,32 @@ deliverable was:
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-30 (evening — first configurator binary shipped + published).** **Clean
-stopping point, no configurator work in flight, no open configurator PRs.** This session
-merged the PM session's configurator stack and **published the first Windows binary** as a
-public GitHub **pre-release**. **Software-verified only** — built + unit-tested, **not** run
-in the live app, **no hardware validation** (Kodi box / OPPO / TV), **not** installed on a
-clean machine.
+**As of 2026-05-30 (evening — configurator `v0.2.0` shipped + published as the repo's
+GitHub "Latest").** **Clean stopping point, no configurator work in flight, no open
+configurator PRs.** This session integrated an operator-uploaded design-revision changeset,
+merged it, and cut the **second** Windows release. **Software-verified only** — built +
+unit-tested (`tsc` + 64 vitest), **not** run in the live app, **no hardware validation**
+(Kodi box / OPPO / TV), **not** installed on a clean machine.
 
-- **First Windows binary — `configurator-v0.1.0` published** (public **pre-release**,
-  unsigned; SmartScreen "unknown publisher" expected): MSI (3.15 MB) + NSIS setup (2.05 MB) +
-  SHA-256 sidecars; tag `configurator-v0.1.0` at `dce80cd`. The add-on's `v2.9.13` stays the
-  repo's "Latest"; this prerelease sits in the separate `configurator-v*` tag namespace.
-  Delivered by the merged PM-session stack:
-  - **Repeatable build recipe** ([PR #94](https://github.com/skull-01/script.oppo203.iso.external/pull/94), merge `60f7897`): `configurator/BUILD.md` (prereqs → `npm run dist` → outputs → versioning → signing), a `dist` npm alias, a `.gitattributes` pinning `Cargo.toml` to LF, and `src/version.test.ts` guarding that package.json / Cargo.toml / tauri.conf.json agree.
-  - **Binary evidence** ([PR #95](https://github.com/skull-01/script.oppo203.iso.external/pull/95), merge `4af93b5`): `configurator/release-evidence/v0.1.0/BUILD_NOTES.md` + the published release notes (unsigned/SmartScreen caveat + SHA-256 verification steps).
-- **Prior wizard-wiring (PR #68, `454e5ab`) unchanged** — the 7-slice wiring (mapping / TV-DB /
-  generate / settings-merge / probes / Tier-A SSH / apply; see
-  [`configurator/CONFIGURATOR_HANDOFF.md`](configurator/CONFIGURATOR_HANDOFF.md)), its 16
-  `/code-review` bugs (#72–#87) fixed across #68/#88, ENH-#41 Part C provenance marker, 64 vitest
-  tests. The 16 bugs were **closed by the operator 2026-05-30** (Phase C on-device still queued).
-- **Chinoppo `M9205 V1` now split** to its own `chinoppo_m9205_v1` model (PR #91 — see §3a);
-  the former "collapse to `chinoppo_m9205` pending confirmation" follow-up is **resolved**.
-- **Prior merged scaffold (unchanged):** PR #30 scaffold, #33 window-control IPC, #34
-  `%APPDATA%` state, #35 cargo-unblock + icon stub, #52 icon + first installers. Operator commit
-  `384d180` added `configurator/CONFIGURATOR_HANDOFF.md` + an installer zip direct to `main`.
+- **Configurator `v0.2.0` published** ([release `configurator-v0.2.0`](https://github.com/skull-01/script.oppo203.iso.external/releases/tag/configurator-v0.2.0),
+  full release marked **Latest**, unsigned; SmartScreen "unknown publisher" expected): MSI
+  (3,162,112 B, `202d79e7…dc0765`) + NSIS setup (2,059,233 B, `2c0bd3ab…68d0`) + SHA-256
+  sidecars; tag `configurator-v0.2.0` at `1b31941`. Evidence:
+  `configurator/release-evidence/v0.2.0/BUILD_NOTES.md`. **The repo-wide "Latest" badge moved
+  off the add-on `v2.9.13`** — left on the configurator per the operator's `done-for-the-day`
+  choice; flip back with `gh release edit v2.9.13 --latest` if the add-on should hold it.
+  Delivered by:
+  - **Design-revision pass** ([PR #99](https://github.com/skull-01/script.oppo203.iso.external/pull/99), merge `32ae49c`): the wizard rename so file names / `StepId`/`ScreenId` / components / labels all match the displayed step numbers — **Player = step 2** (`step2.tsx`/`Step2*`), **TV = step 3** (`step3.tsx`/`Step3*`), **HDMI Input = step 4** (`step4.tsx`, replacing `step35.tsx`); `steps.ts` is the source of truth. Plus the design-review pass: reordered/relabeled stepper + chain (ISO Playback → Kodi → Player → TV, gated node removed), centered + animated chain icons, the Step 0 "Ideal preparations" table, the Tier A "SSH can be disabled after setup" note, and **real brand badges** via a new `src/shell/BrandIcon.tsx` drawing CC0 marks from `simple-icons@^16.21.0` (OPPO/Sony/Samsung/LG/Roku/Panasonic render real marks; TCL/Hisense/Vizio aren't in the package → device-glyph fallback). UI/flow only — no Rust/settings/mapping/generate changes. Added the AGENTS.md norm **"Names must match what the user sees."**
+  - **Release prep** ([PR #100](https://github.com/skull-01/script.oppo203.iso.external/pull/100), merge `6fa8c76`): bumped `0.1.0 → 0.2.0` across the 3 guarded pins (`package.json` / `Cargo.toml` / `tauri.conf.json`) + lockfiles (`version.test.ts` guard green); `npm run dist` build evidence under `release-evidence/v0.2.0/`.
+- **Known cosmetic follow-up (not a blocker):** the Sony brand mark is white (`#FFFFFF`) on
+  the white `.brand-logo-mark` background → renders invisible (`styles.css:769`). Flagged in
+  PR #99 + the v0.2.0 build notes; left as-authored (scope discipline). A dark chip behind
+  white marks (or a Sony-specific color) fixes it.
+- **Prior config history (unchanged):** `configurator-v0.1.0` first binary (PRs #94/#95, the
+  build recipe + evidence; was a public pre-release), wizard wiring (PR #68 + the 16 review
+  bugs #72–#87, fixed/merged), the Chinoppo `M9205 V1` split (PR #91 — see §3a), and the
+  scaffold stack (#30/#33/#34/#35/#52). See §15 +
+  [`configurator/CONFIGURATOR_HANDOFF.md`](configurator/CONFIGURATOR_HANDOFF.md).
 
 - **Resume here next (configurator):**
   1. **Teaching-commentary pass (cross-area, PAUSED mid-flight)** — the configurator's ~17 TS
@@ -230,19 +234,20 @@ clean machine.
      mandate). Do the **add-on side first** — `external_player.py` is the style gate. **Full
      exact plan in §3c; when proposing this theme, reproduce §3c's verbatim briefing EXACTLY
      (operator directive) — do not paraphrase.** ← resume here.
-  2. **Install + smoke-test the published `v0.1.0` binary** on a clean Windows machine
-     (MSI + NSIS), confirm launch + icon — operator action; the binary is build/unit-verified
-     only (checklist entry already queued).
-  3. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B SMB, Tier C
+  2. **Sony brand-badge cosmetic fix** (white-on-white, `styles.css:769`) — small
+     `styles.css` / `BrandIcon.tsx` tweak; confirm the other real marks still read.
+  3. **Install + smoke-test the published `v0.2.0` binary** on a clean Windows machine
+     (MSI + NSIS) — confirm launch, icon, and the renamed wizard order (Player 2 → TV 3 →
+     HDMI Input 4) — operator action; build/unit-verified only.
+  4. **On-hardware verification** of the deploy paths (Tier A SSH+restart, Tier B SMB, Tier C
      copy) against a real Kodi box / OPPO / TV — operator action; software-verified only.
-  4. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (seed is small, all
+  5. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (seed is small, all
      `validated:false`; lineups carry the platform→backend mapping).
-  5. **Real test ISO** — swap the placeholder once the asset exists (decision E).
 
-- **Open `area:configurator` issues: none.** The 16 review bugs **#72–#87** were **closed by
-  the operator 2026-05-30** (fixed + merged via PR #68 + #88, ahead of on-device verification;
-  Phase C steps still queued in the checklist). The wizard wiring (#68), the build recipe +
-  binary (#94/#95), and the M9205 split (#91) were PR-only themes (no tracked issue).
+- **Open `area:configurator` issues: none.** #99 (design pass) and #100 (release prep) were
+  PR-only themes (no tracked issue), consistent with the configurator's untracked-delivery
+  pattern. The 16 review bugs **#72–#87** remain **closed by the operator 2026-05-30** (Phase
+  C on-device still queued in the checklist).
 
 ## §3c Active cross-area theme — teaching-commentary pass (PAUSED before Step 2)
 
@@ -680,6 +685,22 @@ _Append-only, newest-last. One bullet per material commit or session-shaping dec
   exact plan (mandate + 3-step process + flow map + batch plan + estimate + preliminary suspect
   list) is saved in **§3c** and now leads the §3a/§3b resume themes. `main` unchanged (943/3,
   coverage 99%, mypy 49/0).
+- **2026-05-30 (evening — configurator `v0.2.0` integration + release; `area:configurator`)** —
+  Integrated an operator-uploaded design-revision changeset (a zip laid out at real repo paths)
+  onto a branch, ran the configurator gate, and shipped it as the **second** Windows release.
+  **PR #99** (`32ae49c`): the wizard rename (files/ids/components/labels → displayed step
+  numbers — Player 2 / TV 3 / HDMI Input 4, `step35.tsx`→`step4.tsx`, `steps.ts` as source of
+  truth) + the design-review pass (reordered stepper/chain, animated chain icons, Step 0 prep
+  table, Tier A SSH note) + real `simple-icons` brand badges (new `BrandIcon.tsx`;
+  `simple-icons@^16.21.0` dep; `siTcl`/`siHisense`/`siVizio` dropped from the import since the
+  package no longer carries them → device-glyph fallback) + the AGENTS.md "names match the UI"
+  norm. **PR #100** (`6fa8c76`): version bump `0.1.0 → 0.2.0` (3 guarded pins + lockfiles) +
+  `release-evidence/v0.2.0/BUILD_NOTES.md`. Built MSI (3,162,112 B) + NSIS (2,059,233 B) via
+  `npm run dist`, tagged `configurator-v0.2.0` at `1b31941`, published as a full GitHub release
+  marked **Latest** (moving the repo-wide badge off add-on `v2.9.13`, per the operator's
+  choice). Software-verified only (cargo built clean; `tsc` + 64 vitest green); not run live /
+  no hardware validation. One cosmetic follow-up noted: Sony's white mark on the white badge
+  renders invisible (`styles.css:769`), left as-authored.
 
 ---
 
@@ -707,7 +728,7 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-30 (EOD — backlog cleared: operator closed the 21 delivered issues (#38/#41/#42/#43/#57 + #72–#87) + #51 ahead of hardware testing; only #44 stays open)**.
+Last refreshed: **2026-05-30 (evening EOD — added the #99/#100 configurator `v0.2.0` delivery row; issue backlog unchanged: only #44 open, 0 open PRs)**.
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
@@ -724,6 +745,7 @@ Last refreshed: **2026-05-30 (EOD — backlog cleared: operator closed the 21 de
 | 72–87 | configurator PR #68 review bugs (config-write safety, ssh/probe/deploy hardening, IP-control test, persisted state, + cleanups) | configurator | `type:bug`, `area:configurator` | CLOSED 2026-05-30 (16 issues) | Fixed across [PR #68](https://github.com/skull-01/script.oppo203.iso.external/pull/68) `454e5ab` (12 high/med — `6d68206`/`7120439`/`46d4ca8`) + [PR #88](https://github.com/skull-01/script.oppo203.iso.external/pull/88) `a4ad7ad` (5 cleanups + ENH-#41 Part C). SHA commented on each. | closed by operator 2026-05-30 (pre-hardware-test; Phase C on-device queued) |
 | 91 | (no issue) Chinoppo M9205 V1 split into a distinct hardware model | addon | _untracked theme (PR-only)_ | MERGED 2026-05-30 | [PR #91](https://github.com/skull-01/script.oppo203.iso.external/pull/91) at `36f9cbd` — new `chinoppo_m9205_v1` enum **appended** to settings.xml, mirrored through settings_reader/hardware_profiles/hardware_capabilities as an exact M9205 clone; configurator `players.ts` re-pointed; +5 tests, count guards 17→18 | software-verified; Phase A/C on-device queued |
 | 94–95 | (no issue) configurator first Windows binary v0.1.0 (build recipe + evidence) | configurator | _untracked theme (PR-only)_ | MERGED + PUBLISHED 2026-05-30 | [PR #94](https://github.com/skull-01/script.oppo203.iso.external/pull/94) `60f7897` (build recipe: `BUILD.md`, `dist` alias, version guard) + [PR #95](https://github.com/skull-01/script.oppo203.iso.external/pull/95) `4af93b5` (evidence + notes); release **`configurator-v0.1.0`** published as a public pre-release (MSI + NSIS, unsigned) | Phase C on-device (install on clean machine, confirm launch) queued |
+| 99–100 | (no issue) configurator `v0.2.0` — wizard rename + design pass + release | configurator | _untracked theme (PR-only)_ | MERGED + PUBLISHED 2026-05-30 | [PR #99](https://github.com/skull-01/script.oppo203.iso.external/pull/99) `32ae49c` (rename to displayed step numbers + design-review pass + `simple-icons` brand badges + AGENTS.md norm) + [PR #100](https://github.com/skull-01/script.oppo203.iso.external/pull/100) `6fa8c76` (bump 0.1.0→0.2.0 + build evidence); release **`configurator-v0.2.0`** published full/**Latest** (MSI + NSIS + SHA-256, unsigned) | Phase C on-device (install on clean machine, confirm launch + renamed wizard order Player 2 → TV 3 → HDMI 4) queued |
 | 92–93 | (no issue) canonical Plan-format norm + BUILD_PLAN.md refresh | meta | _untracked theme (PR-only, docs)_ | MERGED 2026-05-30 | [PR #92](https://github.com/skull-01/script.oppo203.iso.external/pull/92) `dce80cd` (Plan-format norm in AGENTS.md + §1/§4 triggers + CLAUDE.md pointer) + [PR #93](https://github.com/skull-01/script.oppo203.iso.external/pull/93) `6d657ea` (BUILD_PLAN.md refresh) | docs-only; no verification needed |
 
 ---
@@ -1037,6 +1059,22 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (`pytest -n auto`); `main` otherwise unchanged (coverage 99%, mypy 49/0; §17a backlog unchanged —
   only #44 open). Header "Last sync" trailing clause updated to this doc. **No new feature work;
   the theme stays PAUSED at Step 2 (`external_player.py`).**
+- **2026-05-30 (evening EOD — configurator `v0.2.0` shipped; `done for the day`)** —
+  Single-theme `area:configurator` session: integrated an operator-uploaded design-revision
+  changeset, merged it (**PR #99** `32ae49c`), bumped + cut the release (**PR #100** `6fa8c76`),
+  and published **`configurator-v0.2.0`** (MSI + NSIS + SHA-256, full release marked **Latest**).
+  All code was already merged to `main` server-side before this EOD, so nothing was uncommitted.
+  This refresh: **header** "Last sync" `6fc8615` → `1b31941` + a v0.2.0 clause and the moved
+  "Latest" badge; **header** "Latest release" now names both add-on `v2.9.13` and configurator
+  `configurator-v0.2.0` (repo "Latest"); **§3b** overwritten to the clean v0.2.0 stopping point
+  (+ the Sony white-on-white cosmetic follow-up); **§3a / §3c unchanged** (addon untouched;
+  teaching-commentary theme still PAUSED at Step 2); **§15** gained a v0.2.0 journey bullet;
+  **§17a** gained the #99/#100 delivery row (no issue state changed — only #44 open). Tests on
+  `main`@`1b31941`: addon **943 passed, 3 skipped** (pre-push hook; coverage 99%, mypy 49/0);
+  configurator **64 vitest + `tsc` green** (re-run this session). Pushed via a doc-only PR
+  (direct-to-`main` push is harness-blocked). **No new feature work.** Also noted the untracked
+  `.claude/launch.json` (a local dev-server launch config, pre-existing — not this session's
+  work) left unstaged.
 
 ---
 
