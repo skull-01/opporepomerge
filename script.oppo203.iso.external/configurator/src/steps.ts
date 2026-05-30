@@ -4,6 +4,7 @@ export type StepId =
   | "step2"
   | "step3"
   | "step4"
+  | "step5"
   | "test";
 
 export type ScreenId =
@@ -27,6 +28,9 @@ export type ScreenId =
   | "step4_ask"
   | "step4_fallback"
   | "step4_done"
+  | "step5_ask"
+  | "step5_brand"
+  | "step5_model"
   | "test_setup"
   | "test_confirm"
   | "test_success";
@@ -46,15 +50,18 @@ export type Step = {
 };
 
 // Step ids match the displayed order and number: 0 prereq, 1 Kodi, 2 Player, 3 TV,
-// 4 HDMI Input, then the final test. Player precedes TV so the HDMI-input step sits next
-// to the TV step. The `step2_*` screens are the Player screens, `step3_*` are TV, `step4_*`
-// are HDMI — file names, ids, and labels all line up so the code reads the way the UI does.
+// 4 HDMI Input, 5 AV receiver (optional), then the final test. Player precedes TV so the
+// HDMI-input step sits next to the TV step; the optional receiver step trails the core chain
+// just before the test. The `step2_*` screens are the Player screens, `step3_*` are TV,
+// `step4_*` are HDMI, `step5_*` are the AV receiver — file names, ids, and labels all line up
+// so the code reads the way the UI does.
 export const STEPS: readonly Step[] = [
   { id: "step0", label: "Playback chain setup", num: "0" },
   { id: "step1", label: "Kodi box", num: "1" },
   { id: "step2", label: "Player", num: "2" },
   { id: "step3", label: "TV", num: "3" },
   { id: "step4", label: "HDMI Input", num: "4" },
+  { id: "step5", label: "AV Receiver", num: "5" },
   { id: "test", label: "Playback Test", num: "✓" },
 ] as const;
 
@@ -79,6 +86,9 @@ export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
   step4_ask: "step4",
   step4_fallback: "step4",
   step4_done: "step4",
+  step5_ask: "step5",
+  step5_brand: "step5",
+  step5_model: "step5",
   test_setup: "test",
   test_confirm: "test",
   test_success: "test",
@@ -105,6 +115,9 @@ export const SCREEN_TO_CHAIN: Record<ScreenId, ChainTarget> = {
   step4_ask: "tv-player",
   step4_fallback: "tv-player",
   step4_done: "tv-player",
+  step5_ask: "tv-player",
+  step5_brand: "tv-player",
+  step5_model: "tv-player",
   test_setup: "all",
   test_confirm: "all",
   test_success: "all",
@@ -122,6 +135,8 @@ export function firstScreenOfStep(stepId: StepId): ScreenId {
       return "step3_brand";
     case "step4":
       return "step4_intro";
+    case "step5":
+      return "step5_ask";
     case "test":
       return "test_setup";
   }

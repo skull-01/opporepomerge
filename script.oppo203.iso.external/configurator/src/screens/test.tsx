@@ -258,7 +258,7 @@ export function TestSetup({ go, state, set }: ScreenProps) {
 
       <FooterNav
         go={go}
-        back="step4_done"
+        back="step5_ask"
         next={nextScreen}
         nextLabel={nextLabel}
       />
@@ -533,6 +533,12 @@ export function TestSuccess({ go, state }: ScreenProps) {
                 state.playerModel || "M9205 V1"
               } · ${state.playerIp || "10.0.1.77"}`}
             />
+            {state.avrBrand && (
+              <SummaryRow
+                label="Receiver"
+                value={`${state.avrBrand} · backend ${state.avrBackend ?? "—"}`}
+              />
+            )}
             <SummaryRow label="Switch to" value={`HDMI ${state.oppoInput ?? 3}`} />
             <SummaryRow label="Return to" value={`HDMI ${state.kodiInput ?? 1}`} />
           </div>
