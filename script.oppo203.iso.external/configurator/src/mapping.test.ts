@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { playerHardwareModel, wizardStateToAddonSettings } from "./mapping";
+import { avrAddonBackend, playerHardwareModel, wizardStateToAddonSettings } from "./mapping";
 import { INITIAL_STATE, type WizardState } from "./state";
 
 function makeState(patch: Partial<WizardState>): WizardState {
@@ -103,5 +103,96 @@ describe("wizardStateToAddonSettings", () => {
 
   it("omits oppo_hardware_model until a player model is chosen", () => {
     expect(wizardStateToAddonSettings(makeState({})).oppo_hardware_model).toBeUndefined();
+  });
+
+  it("writes a Denon receiver as denon_marantz and enables control with host + input", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        avrBrand: "denon",
+        avrBackend: "denon_marantz",
+        avrIp: "10.0.1.91",
+        avrPlayerInput: "BD",
+      }),
+    );
+    expect(out.avr_backend).toBe("denon_marantz");
+    expect(out.avr_host).toBe("10.0.1.91");
+    expect(out.avr_player_input).toBe("BD");
+    expect(out.avr_control_enabled).toBe("true");
+  });
+
+  it("splits Pioneer (DB onkyo_eiscp) back out to the add-on's pioneer_eiscp driver", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        avrBrand: "pioneer",
+        avrBackend: "onkyo_eiscp",
+        avrIp: "10.0.1.92",
+        avrPlayerInput: "BD/DVD",
+      }),
+    );
+    expect(out.avr_backend).toBe("pioneer_eiscp");
+    expect(out.avr_control_enabled).toBe("true");
+  });
+
+  it("keeps Onkyo/Integra on onkyo_eiscp", () => {
+    expect(
+      wizardStateToAddonSettings(
+        makeState({ avrBrand: "onkyo", avrBackend: "onkyo_eiscp", avrIp: "1.2.3.4", avrPlayerInput: "10" }),
+      ).avr_backend,
+    ).toBe("onkyo_eiscp");
+  });
+
+  it("configures Sony as sony_audio_api but leaves control disabled (needs ack + PSK)", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        avrBrand: "sony",
+        avrBackend: "sony_audio",
+        avrIp: "10.0.1.93",
+        avrPlayerInput: "BD",
+      }),
+    );
+    expect(out.avr_backend).toBe("sony_audio_api");
+    expect(out.avr_host).toBe("10.0.1.93");
+    expect(out.avr_control_enabled).toBe("false");
+  });
+
+  it("writes no avr_backend for custom_command brands (no native driver)", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ avrBrand: "anthem", avrBackend: "custom_command", avrIp: "1.2.3.4", avrPlayerInput: "x" }),
+    );
+    expect(out.avr_backend).toBeUndefined();
+    expect(out.avr_control_enabled).toBeUndefined();
+  });
+
+  it("emits nothing AVR-related when the optional step is skipped", () => {
+    const out = wizardStateToAddonSettings(makeState({}));
+    expect(out.avr_backend).toBeUndefined();
+    expect(out.avr_host).toBeUndefined();
+    expect(out.avr_control_enabled).toBeUndefined();
+  });
+
+  it("records the backend but does not enable when host or input is missing", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ avrBrand: "yamaha", avrBackend: "yamaha_yxc", avrIp: "", avrPlayerInput: "" }),
+    );
+    expect(out.avr_backend).toBe("yamaha_yxc");
+    expect(out.avr_control_enabled).toBe("false");
+    expect(out.avr_host).toBeUndefined();
+  });
+});
+
+describe("avrAddonBackend", () => {
+  it("maps the DB backend vocabulary onto the add-on avr_backend enum", () => {
+    expect(avrAddonBackend("denon_marantz", "denon")).toBe("denon_marantz");
+    expect(avrAddonBackend("denon_marantz", "marantz")).toBe("denon_marantz");
+    expect(avrAddonBackend("yamaha_yxc", "yamaha")).toBe("yamaha_yxc");
+    expect(avrAddonBackend("sony_audio", "sony")).toBe("sony_audio_api");
+    expect(avrAddonBackend("onkyo_eiscp", "onkyo")).toBe("onkyo_eiscp");
+    expect(avrAddonBackend("onkyo_eiscp", "integra")).toBe("onkyo_eiscp");
+    expect(avrAddonBackend("onkyo_eiscp", "pioneer")).toBe("pioneer_eiscp");
+  });
+
+  it("returns null for custom_command and unset backends", () => {
+    expect(avrAddonBackend("custom_command", "anthem")).toBeNull();
+    expect(avrAddonBackend(null, "denon")).toBeNull();
   });
 });

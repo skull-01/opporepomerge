@@ -61,6 +61,8 @@ export type WizardState = {
   avrModel: string | null;
   avrBackend: AvrBackend | null;
   avrReceiverType: string | null;
+  avrIp: string;
+  avrPlayerInput: string;
 
   playerBrand: PlayerBrand | null;
   playerModel: string | null;
@@ -109,6 +111,8 @@ export const INITIAL_STATE: WizardState = {
   avrModel: null,
   avrBackend: null,
   avrReceiverType: null,
+  avrIp: "10.0.1.90",
+  avrPlayerInput: "",
   playerBrand: null,
   playerModel: null,
   playerIp: "10.0.1.77",
