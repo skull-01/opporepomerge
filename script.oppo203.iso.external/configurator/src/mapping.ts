@@ -1,4 +1,4 @@
-import type { InputAddress, WizardState } from "./state";
+import type { AvrBackend, InputAddress, WizardState } from "./state";
 import { hwModelFor } from "./players";
 
 /**
@@ -48,6 +48,49 @@ function hdmiInputSettings(
 }
 
 /**
+ * Map the AVR DB's backend vocabulary (+ the selected brand) onto the add-on's `avr_backend`
+ * enum. Two deliberate fix-ups: the DB folds Pioneer into `onkyo_eiscp`, but the add-on ships a
+ * distinct (experimental) `pioneer_eiscp` driver, so Pioneer splits back out by brand; and the
+ * DB names the Sony backend `sony_audio` while the add-on calls it `sony_audio_api`. Returns
+ * null for `custom_command` (Anthem/Arcam/NAD) — the add-on has no native backend for those, so
+ * the configurator writes no `avr_backend` rather than an enum value its own validator rejects.
+ */
+export function avrAddonBackend(dbBackend: AvrBackend | null, brand: string | null): string | null {
+  switch (dbBackend) {
+    case "denon_marantz":
+      return "denon_marantz";
+    case "yamaha_yxc":
+      return "yamaha_yxc";
+    case "sony_audio":
+      return "sony_audio_api";
+    case "onkyo_eiscp":
+      return brand === "pioneer" ? "pioneer_eiscp" : "onkyo_eiscp";
+    default:
+      return null;
+  }
+}
+
+/**
+ * AVR control settings, emitted only when the user actively picked a receiver in Step 5 — so
+ * skipping the optional step never disturbs an existing add-on AVR config. `avr_control_enabled`
+ * is set true only for a native, non-acknowledgement-gated driver with both required fields
+ * (host + player input) present. Sony is configured but left disabled (it needs the add-on's
+ * experimental acknowledgement + PSK, which the wizard doesn't capture), and custom_command
+ * brands write nothing at all.
+ */
+function avrSettings(state: WizardState): AddonSettings {
+  const out: AddonSettings = {};
+  const backend = avrAddonBackend(state.avrBackend, state.avrBrand);
+  if (!backend) return out;
+  out.avr_backend = backend;
+  if (state.avrIp) out.avr_host = state.avrIp;
+  if (state.avrPlayerInput) out.avr_player_input = state.avrPlayerInput;
+  const enable = backend !== "sony_audio_api" && !!state.avrIp && !!state.avrPlayerInput;
+  out.avr_control_enabled = enable ? "true" : "false";
+  return out;
+}
+
+/**
  * Map the wizard state to the add-on setting IDs the configurator writes.
  *
  * Only deterministic, configurator-owned values currently held in the state are emitted.
@@ -78,6 +121,8 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     out.tv_backend = state.tvBackend;
     Object.assign(out, hdmiInputSettings(state.tvBackend, state.oppoInput, state.kodiInput));
   }
+
+  Object.assign(out, avrSettings(state));
 
   return out;
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
+import { avrAddonBackend } from "../mapping";
 import {
   AVR_REGIONS,
   BUNDLED_AVR_DB,
@@ -16,6 +17,21 @@ import {
   type AvrRegion,
 } from "../avrdb";
 import type { ScreenProps } from "./types";
+
+/** A representative "player input" name per add-on backend, shown as the field placeholder. */
+function inputPlaceholder(addonBackend: string | null): string {
+  switch (addonBackend) {
+    case "denon_marantz":
+      return "BD";
+    case "yamaha_yxc":
+      return "hdmi3";
+    case "onkyo_eiscp":
+    case "pioneer_eiscp":
+      return "BD/DVD";
+    default:
+      return "input";
+  }
+}
 
 // ============================================================
 // STEP 5 — AV receiver (optional). The AVR DB is the TV DB's twin: candidate control-path
@@ -279,6 +295,10 @@ export function Step5Model({ go, state, set }: ScreenProps) {
             );
           })}
         </div>
+
+        {state.avrModel && state.avrModel !== "custom" && (
+          <AvrControlCard state={state} set={set} />
+        )}
       </div>
       <FooterNav
         go={go}
@@ -286,6 +306,100 @@ export function Step5Model({ go, state, set }: ScreenProps) {
         next={state.avrModel ? "test_setup" : null}
         nextLabel="Continue to test"
       />
+    </div>
+  );
+}
+
+// ============================================================
+// STEP 5 — Control config (IP + player input). Shown once a real model is picked. This is what
+// flows into the add-on settings (avr_backend/avr_host/avr_player_input + avr_control_enabled);
+// the mapping in mapping.ts decides whether control is auto-enabled.
+// ============================================================
+function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
+  const addonBackend = avrAddonBackend(state.avrBackend, state.avrBrand);
+  const isSony = addonBackend === "sony_audio_api";
+  const isCustom = addonBackend === null; // custom_command brands (Anthem/Arcam/NAD)
+  const willEnable = !!addonBackend && !isSony && !!state.avrIp && !!state.avrPlayerInput;
+  const ph = inputPlaceholder(addonBackend);
+
+  return (
+    <div className="card">
+      <h2 className="section-title">Receiver control (optional)</h2>
+      {isCustom ? (
+        <div className="callout info">
+          <span className="callout-icon">
+            <Icon name="info" size={13} stroke={2.2} />
+          </span>
+          <div className="callout-body">
+            <strong>No native backend yet.</strong> Anthem/Arcam/NAD don't have a first-class
+            add-on driver — your selection is recorded, but you'll drive the receiver with the
+            add-on's custom command profile. We won't write AVR control settings for it.
+          </div>
+        </div>
+      ) : (
+        <>
+          <div className="grid-2" style={{ alignItems: "start" }}>
+            <div className="field">
+              <label className="field-label">Receiver IP</label>
+              <input
+                className="input"
+                value={state.avrIp}
+                onChange={(e) => set({ avrIp: e.target.value })}
+              />
+              <div className="field-hint">
+                On your LAN. Enable Network Standby / IP Control on the receiver.
+              </div>
+            </div>
+            <div className="field">
+              <label className="field-label">Player input on the receiver</label>
+              <input
+                className="input"
+                placeholder={ph}
+                value={state.avrPlayerInput}
+                onChange={(e) => set({ avrPlayerInput: e.target.value })}
+              />
+              <div className="field-hint">
+                The receiver input the OPPO is plugged into (e.g. <code>{ph}</code>).
+              </div>
+            </div>
+          </div>
+          {isSony ? (
+            <div className="callout warn">
+              <span className="callout-icon">
+                <Icon name="warn" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                <strong>Sony needs extra setup.</strong> The Sony Audio Control API path is
+                experimental and gated on an acknowledgement + PSK in the add-on. We'll save the
+                backend, IP and input as <code>sony_audio_api</code> but leave AVR control{" "}
+                <strong>off</strong> until you finish that in the add-on.
+              </div>
+            </div>
+          ) : willEnable ? (
+            <div className="callout success">
+              <span className="callout-icon">
+                <Icon name="check" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                We'll enable AVR control with the <code>{addonBackend}</code> backend: power on
+                and switch to <code>{state.avrPlayerInput}</code> on handoff. All candidate
+                mappings — confirm against your receiver.
+              </div>
+            </div>
+          ) : (
+            <div className="callout info">
+              <span className="callout-icon">
+                <Icon name="info" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                Add the receiver IP and player input to enable automatic control with the{" "}
+                <code>{addonBackend}</code> backend. Leave them blank to record the receiver
+                without enabling control.
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
