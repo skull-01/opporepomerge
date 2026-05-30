@@ -2874,9 +2874,17 @@ class TV2Build1(unittest.TestCase):
         self.assertEqual(command_map["page_down"], "#PDN")
 
     def test_hardware_compat_has_18_canonical_entries(self):
+        import json
+        from pathlib import Path
+
         from resources.lib.settings_reader import HARDWARE_COMPAT
 
-        self.assertEqual(len(HARDWARE_COMPAT), 18)
+        players_db = json.loads(
+            (Path(__file__).resolve().parents[1] / "docs/configurator/players-db/players.json")
+            .read_text(encoding="utf-8")
+        )
+        # Canonical count is the players DB; this stays in lockstep via the consistency guard.
+        self.assertEqual(len(HARDWARE_COMPAT), len(players_db["models"]))
         self.assertIn("M9702", HARDWARE_COMPAT)
         self.assertIn("M9200", HARDWARE_COMPAT)
         self.assertIn("M9205", HARDWARE_COMPAT)

@@ -1,0 +1,746 @@
+{
+  "schema_version": 1,
+  "db_version": "2026.05.31",
+  "scope": {
+    "purpose": "PlayBridge OPPO/clone player taxonomy for configurator Step 2 and add-on hardware-compatibility resolution.",
+    "granularity": "player_model_family",
+    "validation_status": "candidate_research_mapping_not_hardware_validated"
+  },
+  "region_schema": {
+    "field": "regions",
+    "type": "array<string>",
+    "allowed_values": [
+      "US",
+      "UK",
+      "EU",
+      "Asia"
+    ],
+    "meaning": "Candidate release markets for the player family. Family-level, not a per-SKU guarantee; confirm at setup."
+  },
+  "enum_order": [
+    "udp_203",
+    "udp_205",
+    "chinoppo_m9201",
+    "chinoppo_m9203",
+    "chinoppo_m9205c",
+    "chinoppo_m9702",
+    "ipuk_uhd8592",
+    "giec_bdp_g5300",
+    "magnetar_udp800",
+    "reavon_ubrx100",
+    "reavon_ubrx110",
+    "reavon_ubrx200",
+    "chinoppo_m9200",
+    "chinoppo_m9205",
+    "cineultra_v203",
+    "cineultra_v204",
+    "magnetar_udp900",
+    "chinoppo_m9205_v1"
+  ],
+  "families": [
+    {
+      "id": "oppo",
+      "name": "OPPO",
+      "ch": "O",
+      "color": "#046A38",
+      "posture": "stock"
+    },
+    {
+      "id": "chinoppo",
+      "name": "Chinoppo",
+      "ch": "C",
+      "color": "#0E7490",
+      "posture": "wake-rewrite"
+    },
+    {
+      "id": "magnetar",
+      "name": "Magnetar",
+      "ch": "M",
+      "color": "#5B21B6",
+      "posture": "warning"
+    },
+    {
+      "id": "reavon",
+      "name": "Reavon",
+      "ch": "R",
+      "color": "#B45309",
+      "posture": "warning"
+    },
+    {
+      "id": "cineultra",
+      "name": "CineUltra",
+      "ch": "CU",
+      "color": "#0F766E",
+      "posture": "wake-rewrite"
+    },
+    {
+      "id": "ipuk",
+      "name": "iPUK",
+      "ch": "iP",
+      "color": "#1428A0",
+      "posture": "wake-rewrite"
+    },
+    {
+      "id": "giec",
+      "name": "Giec",
+      "ch": "G",
+      "color": "#C2410C",
+      "posture": "wake-rewrite"
+    },
+    {
+      "id": "other",
+      "name": "Other / clone",
+      "ch": "?",
+      "color": "#6B7280",
+      "posture": "stock",
+      "ui_models": [
+        {
+          "label": "Conservative default",
+          "hw": "udp_203"
+        },
+        {
+          "label": "Chinoppo eject-to-wake",
+          "hw": "chinoppo_m9205"
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "key": "UDP-203",
+      "hw": "udp_203",
+      "ui_label": "UDP-203",
+      "label": "OPPO UDP-203",
+      "brand": "oppo",
+      "hardware_class": "stock_oppo",
+      "protocol_stance": "compatible",
+      "wake_behavior": "stock_oppo_power",
+      "wake_command": "#PON",
+      "protocol_compatible": true,
+      "is_clone": false,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": true,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": false,
+      "aliases": [
+        "udp-203",
+        "udp203",
+        "udp_203"
+      ],
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "UDP-205",
+      "hw": "udp_205",
+      "ui_label": "UDP-205",
+      "label": "OPPO UDP-205",
+      "brand": "oppo",
+      "hardware_class": "stock_oppo",
+      "protocol_stance": "compatible",
+      "wake_behavior": "stock_oppo_power",
+      "wake_command": "#PON",
+      "protocol_compatible": true,
+      "is_clone": false,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": true,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 3",
+        "#SRC 4",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "src_unsupported": [],
+      "nas_playback_candidate": false,
+      "aliases": [
+        "udp-205",
+        "udp205",
+        "udp_205"
+      ],
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9201",
+      "hw": "chinoppo_m9201",
+      "ui_label": "M9201",
+      "label": "Chinoppo M9201",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9201",
+        "m9201"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9203",
+      "hw": "chinoppo_m9203",
+      "ui_label": "M9203",
+      "label": "Chinoppo M9203",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9203",
+        "m9203"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9205C",
+      "hw": "chinoppo_m9205c",
+      "ui_label": "M9205C",
+      "label": "Chinoppo M9205C",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205c",
+        "m9205c"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9702",
+      "hw": "chinoppo_m9702",
+      "ui_label": "M9702",
+      "label": "Chinoppo M9702",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo",
+        "chinoppo_m9702",
+        "chinoppo_m9702_v1",
+        "chinoppo_m9702_v2",
+        "chinoppo_m9702_v3",
+        "m9702",
+        "m9702-v1",
+        "m9702-v2",
+        "m9702-v3",
+        "m9702_v1",
+        "m9702_v2",
+        "m9702_v3"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "IPUK-UHD8592",
+      "hw": "ipuk_uhd8592",
+      "ui_label": "UHD8592",
+      "label": "IPUK UHD8592 / similar",
+      "brand": "ipuk",
+      "hardware_class": "experimental_clone",
+      "protocol_stance": "experimental",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "ipuk-uhd8592",
+        "ipuk_uhd8592"
+      ],
+      "regions": [
+        "UK",
+        "EU"
+      ],
+      "validated": false
+    },
+    {
+      "key": "GIEC-BDP-G5300",
+      "hw": "giec_bdp_g5300",
+      "ui_label": "BDP-G5300",
+      "label": "GIEC BDP-G5300 / similar",
+      "brand": "giec",
+      "hardware_class": "experimental_clone",
+      "protocol_stance": "experimental",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 3",
+        "#SRC 4",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "giec-bdp-g5300",
+        "giec_bdp_g5300"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "Magnetar-UDP800",
+      "hw": "magnetar_udp800",
+      "ui_label": "UDP800",
+      "label": "Magnetar UDP800",
+      "brand": "magnetar",
+      "hardware_class": "oppo_like_successor",
+      "protocol_stance": "warning_only",
+      "wake_behavior": "warning_only_no_automatic_oppo_commands",
+      "wake_command": null,
+      "protocol_compatible": false,
+      "is_clone": false,
+      "is_reavon": false,
+      "is_successor": true,
+      "http_api_436": false,
+      "src_supported": [],
+      "src_unsupported": [],
+      "nas_playback_candidate": false,
+      "aliases": [
+        "magnetar-udp800",
+        "magnetar_udp800",
+        "udp800"
+      ],
+      "regions": [
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "Reavon-UBR-X100",
+      "hw": "reavon_ubrx100",
+      "ui_label": "UBR-X100",
+      "label": "Reavon UBR-X100",
+      "brand": "reavon",
+      "hardware_class": "oppo_like_successor",
+      "protocol_stance": "warning_only",
+      "wake_behavior": "warning_only_no_automatic_oppo_commands",
+      "wake_command": null,
+      "protocol_compatible": false,
+      "is_clone": false,
+      "is_reavon": true,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [],
+      "src_unsupported": [],
+      "nas_playback_candidate": false,
+      "aliases": [
+        "reavon-ubr-x100",
+        "reavon_ubrx100"
+      ],
+      "regions": [
+        "US",
+        "UK",
+        "EU"
+      ],
+      "validated": false
+    },
+    {
+      "key": "Reavon-UBR-X110",
+      "hw": "reavon_ubrx110",
+      "ui_label": "UBR-X110",
+      "label": "Reavon UBR-X110",
+      "brand": "reavon",
+      "hardware_class": "oppo_like_successor",
+      "protocol_stance": "warning_only",
+      "wake_behavior": "warning_only_no_automatic_oppo_commands",
+      "wake_command": null,
+      "protocol_compatible": false,
+      "is_clone": false,
+      "is_reavon": true,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [],
+      "src_unsupported": [],
+      "nas_playback_candidate": false,
+      "aliases": [
+        "reavon-ubr-x110",
+        "reavon_ubrx110"
+      ],
+      "regions": [
+        "US",
+        "UK",
+        "EU"
+      ],
+      "validated": false
+    },
+    {
+      "key": "Reavon-UBR-X200",
+      "hw": "reavon_ubrx200",
+      "ui_label": "UBR-X200",
+      "label": "Reavon UBR-X200",
+      "brand": "reavon",
+      "hardware_class": "oppo_like_successor",
+      "protocol_stance": "warning_only",
+      "wake_behavior": "warning_only_no_automatic_oppo_commands",
+      "wake_command": null,
+      "protocol_compatible": false,
+      "is_clone": false,
+      "is_reavon": true,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [],
+      "src_unsupported": [],
+      "nas_playback_candidate": false,
+      "aliases": [
+        "reavon-ubr-x200",
+        "reavon_ubrx200"
+      ],
+      "regions": [
+        "US",
+        "UK",
+        "EU"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9200",
+      "hw": "chinoppo_m9200",
+      "ui_label": "M9200",
+      "label": "Chinoppo M9200",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9200",
+        "m9200"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9205",
+      "hw": "chinoppo_m9205",
+      "ui_label": "M9205",
+      "label": "Chinoppo M9205",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205",
+        "m9205"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "CineUltra-V203",
+      "hw": "cineultra_v203",
+      "ui_label": "V203",
+      "label": "CineUltra V203",
+      "brand": "cineultra",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "cineultra-v203",
+        "cineultra_v203",
+        "v203"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "CineUltra-V204",
+      "hw": "cineultra_v204",
+      "ui_label": "V204",
+      "label": "CineUltra V204",
+      "brand": "cineultra",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "cineultra-v204",
+        "cineultra_v204",
+        "v204"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "Magnetar-UDP900",
+      "hw": "magnetar_udp900",
+      "ui_label": "UDP900",
+      "label": "Magnetar UDP900",
+      "brand": "magnetar",
+      "hardware_class": "oppo_like_successor",
+      "protocol_stance": "warning_only",
+      "wake_behavior": "warning_only_no_automatic_oppo_commands",
+      "wake_command": null,
+      "protocol_compatible": false,
+      "is_clone": false,
+      "is_reavon": false,
+      "is_successor": true,
+      "http_api_436": false,
+      "src_supported": [],
+      "src_unsupported": [],
+      "nas_playback_candidate": false,
+      "aliases": [
+        "magnetar-udp900",
+        "magnetar_udp900",
+        "udp900"
+      ],
+      "regions": [
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9205-V1",
+      "hw": "chinoppo_m9205_v1",
+      "ui_label": "M9205 V1",
+      "label": "Chinoppo M9205 V1",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205_v1",
+        "m9205-v1",
+        "m9205_v1"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    }
+  ]
+}

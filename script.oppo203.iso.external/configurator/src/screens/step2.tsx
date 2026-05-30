@@ -5,7 +5,8 @@ import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
 import { parseOppoPowerReply } from "../probes";
-import { PLAYER_BRANDS, isWakeRewriteBrand } from "../players";
+import { PLAYER_BRANDS, hwModelFor, isWakeRewriteBrand } from "../players";
+import { BUNDLED_PLAYERS_DB, playerModelByHw } from "../playersdb";
 import type { ScreenProps } from "./types";
 
 // ============================================================
@@ -13,6 +14,10 @@ import type { ScreenProps } from "./types";
 // ============================================================
 export function Step2Brand({ go, state, set }: ScreenProps) {
   const selected = PLAYER_BRANDS.find((b) => b.id === state.playerBrand);
+  const selectedModel =
+    state.playerBrand && state.playerModel
+      ? playerModelByHw(BUNDLED_PLAYERS_DB, hwModelFor(state.playerBrand, state.playerModel) ?? "")
+      : null;
   return (
     <div className="screen">
       <div className="screen-header">
@@ -59,6 +64,14 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
                 </button>
               ))}
             </div>
+            {selectedModel && (
+              <div className="model-row-meta" style={{ marginTop: 8 }}>
+                markets {selectedModel.regions.join(" · ")} · wake{" "}
+                <code>{selectedModel.wake_command}</code> ·{" "}
+                {selectedModel.hardware_class.replace(/_/g, " ")}
+                {selectedModel.nas_playback_candidate && <> · NAS-playback candidate</>}
+              </div>
+            )}
             <div className="divider" />
             <div className="field">
               <label className="field-label">Player IP</label>
