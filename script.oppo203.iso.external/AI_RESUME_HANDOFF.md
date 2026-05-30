@@ -1182,6 +1182,23 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   (refresh date bumped). New ENH #103/#105 opened + delivered this session, SHAs commented, awaiting
   operator close; Phase C rows added to `docs/MANUAL_VERIFICATION_CHECKLIST.md`. The untracked
   `.claude/launch.json` (preview-server config) left unstaged. **No new feature work.**
+- **2026-05-30 (AVR database — configurator `v0.4.0`)** — operator dropped a fact-checked AVR
+  model bundle and asked to "do the same for AVRs as the TV DB, then publish." Added
+  `configurator/src/avr-db/avr-models.json` (+ canonical docs copy) — **224 AV-receiver/processor
+  model families 2018–2025**, 10 brands, schema v2 (the TV-DB twin) — a typed `avrdb.ts` loader,
+  an optional **Step 5 (AV Receiver)** picker, and 18 vitest cases. [PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) (merge `6251cdf`),
+  tag/release `configurator-v0.4.0` (MSI 3,174,400 B / NSIS 2,069,995 B). Configurator-only — the
+  DB isn't loaded by the add-on at runtime, so no add-on release. Updated the §1 header pointer.
+- **2026-05-30 (AVR wiring — configurator `v0.5.0`)** — follow-up: on "continue" the operator
+  chose to give Step 5 true TV/Player parity by **wiring the receiver selection into the add-on
+  `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum — Pioneer→`pioneer_eiscp`,
+  Sony→`sony_audio_api` configured-but-disabled, custom_command no-op; conservative
+  `avr_control_enabled`; new Receiver-control card capturing IP + player input). [PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110)
+  (merge `bc3ad0e`), tag/release `configurator-v0.5.0` (MSI 3,174,400 B / NSIS 2,071,403 B), now
+  holds the repo "Latest". 101 vitest; Pioneer + Sony paths browser-verified; published assets
+  re-downloaded byte-identical. No add-on code change (the add-on already ships the AVR settings +
+  guarded drivers). Publishing was operator-gated (auto-mode flagged the follow-up release as a
+  Create-Public-Surface action) and approved before publish. Updated the §1 header pointer.
 
 ---
 
