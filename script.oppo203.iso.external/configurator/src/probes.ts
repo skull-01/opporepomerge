@@ -34,3 +34,29 @@ export function parseOppoPowerReply(raw: string): "on" | "off" | "unknown" {
   if (value === "OFF") return "off";
   return "unknown";
 }
+
+/**
+ * Parse an OPPO #QVM reply ("@QVM OK 2") into the current verbose mode "0".."3", or null when
+ * the reply is an error or unparseable. Used to restore the player's mode after an SVM3
+ * capability probe (so the probe leaves verbose mode exactly as it found it).
+ */
+export function parseOppoVerboseMode(raw: string): "0" | "1" | "2" | "3" | null {
+  const tokens = raw.trim().toUpperCase().split(/\s+/);
+  if (tokens.includes("ER")) return null;
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    const t = tokens[i];
+    if (t === "0" || t === "1" || t === "2" || t === "3") return t;
+  }
+  return null;
+}
+
+/**
+ * Whether an OPPO #SVM 3 reply indicates the command was accepted ("@SVM OK 3" / "OK 3"). An
+ * error ("@SVM ER") or empty/garbage reply is treated as not accepted, so the configurator
+ * never claims SVM3 support the player did not actually confirm.
+ */
+export function parseSvm3Accepted(raw: string): boolean {
+  const tokens = raw.trim().toUpperCase().split(/\s+/);
+  if (tokens.includes("ER")) return false;
+  return tokens.includes("OK");
+}

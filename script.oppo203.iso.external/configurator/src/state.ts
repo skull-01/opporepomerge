@@ -92,6 +92,9 @@ export type WizardState = {
   playerModel: string | null;
   playerIp: string;
   playerVerified: boolean;
+  // SVM3 (verbose mode 3) capability as probed in the Step 2 player test: true/false once
+  // probed, null before. Drives the recommended Playback-mode default (Step 3).
+  svm3Supported: boolean | null;
 
   playerInput: InputAddress;
   kodiInput: InputAddress;
@@ -147,6 +150,7 @@ export const INITIAL_STATE: WizardState = {
   playerModel: null,
   playerIp: "10.0.1.77",
   playerVerified: false,
+  svm3Supported: null,
   playerInput: null,
   kodiInput: null,
   testMode: null,

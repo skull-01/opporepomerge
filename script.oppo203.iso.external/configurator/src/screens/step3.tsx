@@ -40,6 +40,16 @@ export function Step3Mode({ go, state, set }: ScreenProps) {
               status and time-code updates, and only treats playback as confirmed when the
               player reports it. Best feedback; the player test checks your player accepts it.
             </div>
+            {state.svm3Supported === true && (
+              <div className="model-row-meta" style={{ marginTop: 6 }}>
+                ✓ accepted by your player in the control test
+              </div>
+            )}
+            {state.svm3Supported === false && (
+              <div className="model-row-meta" style={{ marginTop: 6 }}>
+                not detected on your player — Legacy recommended
+              </div>
+            )}
           </div>
           <Icon name="chevR" size={16} />
         </button>

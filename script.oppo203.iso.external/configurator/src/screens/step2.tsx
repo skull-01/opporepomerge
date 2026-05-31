@@ -4,7 +4,7 @@ import { invoke } from "../ipc";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
-import { parseOppoPowerReply } from "../probes";
+import { parseOppoPowerReply, parseOppoVerboseMode, parseSvm3Accepted } from "../probes";
 import { PLAYER_BRANDS, hwModelFor, isWakeRewriteBrand } from "../players";
 import { BUNDLED_PLAYERS_DB, playerModelByHw } from "../playersdb";
 import type { ScreenProps } from "./types";
@@ -134,16 +134,53 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
 // STEP 2 — Wake & confirm test
 // ============================================================
 type WakePhase = "ready" | "running" | "pass" | "fail";
+type Svm3Phase = "idle" | "running" | "supported" | "unsupported";
 
 export function Step2Test({ go, state, set }: ScreenProps) {
   const [phase, setPhase] = useState<WakePhase>("ready");
   const [reply, setReply] = useState("");
+  const [svm3Phase, setSvm3Phase] = useState<Svm3Phase>("idle");
   const isClone = isWakeRewriteBrand(state.playerBrand);
   const wakeCmd = isClone ? "#EJT" : "#PON";
+
+  // Capability probe for OPPO verbose mode 3, reusing the same oppo_query command as the power
+  // test (no new Rust command). It queries the current mode (#QVM), tries #SVM 3, then restores
+  // the previous mode so it leaves the player untouched. The result recommends the Playback-mode
+  // default at Step 3; it never fails the power test (legacy works regardless).
+  const probeSvm3 = async () => {
+    setSvm3Phase("running");
+    try {
+      const qvm = await invoke<string>("oppo_query", {
+        host: state.playerIp,
+        port: 23,
+        command: "#QVM",
+      });
+      const previousMode = parseOppoVerboseMode(qvm);
+      const svm = await invoke<string>("oppo_query", {
+        host: state.playerIp,
+        port: 23,
+        command: "#SVM 3",
+      });
+      const ok = parseSvm3Accepted(svm);
+      if (previousMode) {
+        await invoke("oppo_query", {
+          host: state.playerIp,
+          port: 23,
+          command: `#SVM ${previousMode}`,
+        });
+      }
+      set({ svm3Supported: ok, monitorMode: ok ? "svm3" : "legacy" });
+      setSvm3Phase(ok ? "supported" : "unsupported");
+    } catch {
+      set({ svm3Supported: false, monitorMode: "legacy" });
+      setSvm3Phase("unsupported");
+    }
+  };
 
   const wakeAndConfirm = async () => {
     setPhase("running");
     setReply("");
+    setSvm3Phase("idle");
     try {
       await invoke("oppo_query", { host: state.playerIp, port: 23, command: wakeCmd });
       const raw = await invoke<string>("oppo_query", {
@@ -154,7 +191,12 @@ export function Step2Test({ go, state, set }: ScreenProps) {
       setReply(raw);
       // Pass only when the player actually reports power ON. A non-empty reply that is OFF or
       // an "@QPW ER" error must NOT count as confirmed two-way control.
-      setPhase(parseOppoPowerReply(raw) === "on" ? "pass" : "fail");
+      if (parseOppoPowerReply(raw) === "on") {
+        setPhase("pass");
+        void probeSvm3();
+      } else {
+        setPhase("fail");
+      }
     } catch {
       setPhase("fail");
     }
@@ -254,6 +296,28 @@ export function Step2Test({ go, state, set }: ScreenProps) {
               Test didn't work
             </button>
           </div>
+          {svm3Phase !== "idle" && (
+            <div className={`callout ${svm3Phase === "supported" ? "info" : ""}`.trim()}>
+              <span className="callout-icon">
+                <Icon name={svm3Phase === "supported" ? "spark" : "info"} size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                {svm3Phase === "running" ? (
+                  <>Checking SVM3 (verbose mode 3) support…</>
+                ) : svm3Phase === "supported" ? (
+                  <>
+                    <strong>SVM3 supported.</strong> Your player accepts verbose mode 3 — we&apos;ll
+                    recommend the SVM3 monitor at the next step. You can still choose Legacy.
+                  </>
+                ) : (
+                  <>
+                    <strong>SVM3 not detected.</strong> Your player didn&apos;t accept verbose mode
+                    3, so the next step defaults to the Legacy monitor. Two-way control still works.
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
         <div className="stack">
           <div className="player-mockup">
