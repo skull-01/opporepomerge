@@ -4,7 +4,7 @@ use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[tauri::command]
 fn load_wizard_state(app: tauri::AppHandle) -> Result<Option<Value>, String> {
@@ -190,10 +190,52 @@ fn tv_port_probe(host: String, ports: Vec<u16>, timeout_ms: Option<u64>) -> Vec<
         .collect()
 }
 
+/// One raw frame on the OPPO IP-control wire, emitted to the developer debug panel as a
+/// `debug-wire` event. Only the OPPO control path emits these -- the bytes are protocol frames
+/// (#QVM / @UPL ...) with no secrets. Deploy/SSH payloads carry the generated settings.xml
+/// (Sony PSK / SmartThings token) and are deliberately never emitted: the panel's key-based
+/// redactor cannot sanitize a raw byte stream.
+#[derive(serde::Serialize, Clone)]
+struct WireEvent {
+    direction: &'static str,
+    label: &'static str,
+    host: String,
+    port: u16,
+    hex: String,
+    text: String,
+    len: usize,
+}
+
+/// Space-separated lowercase hex of each byte ("23 51 56 4d 0d" for the bytes of `#QVM\r`).
+fn to_hex(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Emit one wire frame to the debug panel. Best-effort -- a failed emit never breaks the command.
+fn emit_wire(app: &tauri::AppHandle, direction: &'static str, host: &str, port: u16, bytes: &[u8]) {
+    let _ = app.emit(
+        "debug-wire",
+        WireEvent {
+            direction,
+            label: "oppo_query",
+            host: host.to_string(),
+            port,
+            hex: to_hex(bytes),
+            text: String::from_utf8_lossy(bytes).into_owned(),
+            len: bytes.len(),
+        },
+    );
+}
+
 /// Send an OPPO IP-control query (default #QPW on port 23) and return the raw reply.
 /// Mirrors resources/lib/oppo/oppo_control.py (CR-terminated; reply form "@CODE OK VALUE").
 #[tauri::command]
 fn oppo_query(
+    app: tauri::AppHandle,
     host: String,
     port: Option<u16>,
     command: Option<String>,
@@ -209,6 +251,7 @@ fn oppo_query(
     if !cmd.ends_with('\r') {
         cmd.push('\r');
     }
+    emit_wire(&app, "sent", &host, port, cmd.as_bytes());
     stream.write_all(cmd.as_bytes()).map_err(|e| e.to_string())?;
     // OPPO replies are CR-terminated; a single read() can return a partial or echoed frame.
     // Accumulate until we see the CR terminator, the peer closes, or the read times out.
@@ -232,6 +275,7 @@ fn oppo_query(
             Err(e) => return Err(e.to_string()),
         }
     }
+    emit_wire(&app, "recv", &host, port, &data);
     Ok(String::from_utf8_lossy(&data).trim().to_string())
 }
 
@@ -382,4 +426,24 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::to_hex;
+
+    #[test]
+    fn to_hex_empty() {
+        assert_eq!(to_hex(&[]), "");
+    }
+
+    #[test]
+    fn to_hex_ascii_command_with_cr() {
+        assert_eq!(to_hex(b"#QVM\r"), "23 51 56 4d 0d");
+    }
+
+    #[test]
+    fn to_hex_non_utf8_bytes() {
+        assert_eq!(to_hex(&[0xff, 0x00, 0x1b]), "ff 00 1b");
+    }
 }

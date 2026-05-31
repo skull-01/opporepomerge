@@ -44,9 +44,9 @@ function useDevMode(): boolean {
 }
 
 function statusOf(entries: DebugEntry[]): { label: string; cls: string } {
-  const fails = entries.filter((e) => !e.ok).length;
+  const fails = entries.filter((e) => e.kind === "ipc" && !e.ok).length;
   if (fails > 0) return { label: `${fails} error${fails > 1 ? "s" : ""}`, cls: "fail" };
-  return { label: `${entries.length} call${entries.length === 1 ? "" : "s"}`, cls: "" };
+  return { label: `${entries.length} event${entries.length === 1 ? "" : "s"}`, cls: "" };
 }
 
 /**
@@ -102,26 +102,49 @@ export function DebugPanel({ currentStep }: { currentStep: StepId }) {
           {view.length === 0 && (
             <div className="debug-empty">No commands captured on this step yet.</div>
           )}
-          {view.map((e) => (
-            <div key={e.seq} className={`debug-row ${e.ok ? "" : "fail"}`.trim()}>
-              <button
-                className="debug-row-head"
-                onClick={() => setExpanded((cur) => (cur === e.seq ? null : e.seq))}
-              >
-                <span className={`debug-icon ${e.ok ? "pass" : "fail"}`}>{e.ok ? "✓" : "✕"}</span>
-                <span className="debug-cmd">{e.command}</span>
-                <span className="debug-ms">{Math.round(e.durationMs)} ms</span>
-              </button>
-              {expanded === e.seq && (
-                <div className="debug-detail">
-                  <div className="debug-detail-label">args</div>
-                  <pre>{JSON.stringify(e.args, null, 2)}</pre>
-                  <div className="debug-detail-label">{e.ok ? "result" : "error"}</div>
-                  <pre>{JSON.stringify(e.ok ? e.result : e.error, null, 2)}</pre>
-                </div>
-              )}
-            </div>
-          ))}
+          {view.map((e) =>
+            e.kind === "wire" ? (
+              <div key={e.seq} className="debug-row wire">
+                <button
+                  className="debug-row-head"
+                  onClick={() => setExpanded((cur) => (cur === e.seq ? null : e.seq))}
+                >
+                  <span className="debug-icon">{e.direction === "sent" ? "→" : "←"}</span>
+                  <span className="debug-cmd">
+                    {e.label} {e.direction}
+                  </span>
+                  <span className="debug-ms">{e.len} B</span>
+                </button>
+                {expanded === e.seq && (
+                  <div className="debug-detail">
+                    <div className="debug-detail-label">text</div>
+                    <pre>{e.text}</pre>
+                    <div className="debug-detail-label">hex</div>
+                    <pre>{e.hex}</pre>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div key={e.seq} className={`debug-row ${e.ok ? "" : "fail"}`.trim()}>
+                <button
+                  className="debug-row-head"
+                  onClick={() => setExpanded((cur) => (cur === e.seq ? null : e.seq))}
+                >
+                  <span className={`debug-icon ${e.ok ? "pass" : "fail"}`}>{e.ok ? "✓" : "✕"}</span>
+                  <span className="debug-cmd">{e.command}</span>
+                  <span className="debug-ms">{Math.round(e.durationMs)} ms</span>
+                </button>
+                {expanded === e.seq && (
+                  <div className="debug-detail">
+                    <div className="debug-detail-label">args</div>
+                    <pre>{JSON.stringify(e.args, null, 2)}</pre>
+                    <div className="debug-detail-label">{e.ok ? "result" : "error"}</div>
+                    <pre>{JSON.stringify(e.ok ? e.result : e.error, null, 2)}</pre>
+                  </div>
+                )}
+              </div>
+            )
+          )}
         </div>
       )}
     </div>

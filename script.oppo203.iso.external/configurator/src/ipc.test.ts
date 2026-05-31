@@ -30,7 +30,9 @@ describe("ipc invoke wrapper", () => {
     expect(invokeMock).toHaveBeenCalledWith("save_wizard_state", {
       state: { avrSonyPsk: "TOPSECRET" },
     });
-    const logged = getEntries()[0].args as { state: { avrSonyPsk: string } };
+    const entry = getEntries()[0];
+    if (entry.kind !== "ipc") throw new Error("expected an ipc entry");
+    const logged = entry.args as { state: { avrSonyPsk: string } };
     expect(logged.state.avrSonyPsk).toBe("[redacted]");
   });
 
