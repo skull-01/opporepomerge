@@ -88,7 +88,7 @@ export type WizardState = {
   testMode: "disc" | "own" | null;
 };
 
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./ipc";
 import { SCREEN_TO_STEP, type ScreenId } from "./steps";
 
 /**

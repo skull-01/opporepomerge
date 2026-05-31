@@ -3,7 +3,7 @@ import { Icon, type IconName } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../ipc";
 import { inferBackendFromPorts, probePortList, TV_PROBE_PORTS, type PortResult } from "../probes";
 import {
   BUNDLED_TV_DB,

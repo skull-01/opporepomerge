@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Icon } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../ipc";
 import { buildTransferFiles, kodiTargetForPlatform, type KodiPlatform } from "../generate";
 import { smbUserdataPath } from "../apply";
 import type { ScreenProps } from "./types";

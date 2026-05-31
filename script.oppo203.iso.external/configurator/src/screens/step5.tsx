@@ -3,7 +3,7 @@ import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
 import { avrAddonBackend } from "../mapping";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../ipc";
 import type { PortResult } from "../probes";
 import {
   AVR_REGIONS,
