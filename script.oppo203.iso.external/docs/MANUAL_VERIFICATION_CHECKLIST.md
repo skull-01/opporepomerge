@@ -52,6 +52,13 @@ implementing SHA(s) on the issue and append a row here.
 - **Operator verifies (Phase A):** read the `probeSvm3` flow + the 4 new probe-parser tests; confirm the probe restores the previous verbose mode, never gates the power-test pass, and that SVM3 stays labelled recommended-for-validation (not validated).
 - **Operator verifies (Phase C — on the box):** with a real OPPO, run the player test → `#QVM`/`#SVM 3` succeed → "SVM3 supported" and Step 3 pre-selects SVM3; with a clone that rejects `#SVM 3` → "not detected" and Step 3 defaults to Legacy. Confirm the player's verbose mode is unchanged after the probe. Not hardware-validated.
 
+### Configurator — final-test status readout (four-option + SVM3 honesty) (Session B / PR B4)
+
+- **Branch:** `claude/cfg-final-test-status-bc14ed07` (stacked on PR B3). PR-only theme.
+- **What changed (software-verified only):** the final **Playback Test** confirmation screen (`TestConfirm`) now reports the four-option pieces **separately** — a "What this test covers" readout of **Kodi route** (Playercorefactory / Service interception), **Playback confirmation** (SVM3 — the player reports playback / Legacy — timed-polled hold), and **TV / AVR** (backend or none), derived from wizard state. For SVM3 it adds an honest note: the add-on treats playback as confirmed only once the player reports it (writing `oppo203iso-status.json`), so a disc that plays but isn't reported confirmed means the player isn't sending status — not a playback failure. The three self-report questions + step-owner routing are unchanged (owners were corrected to the new numbering in B1). Presentational only — no settings/logic change. Gate: `tsc -b` + **155 vitest** + `vite build` green.
+- **Operator verifies (Phase A):** read the `TestConfirm` diff; confirm the readout reflects the chosen routing / monitor / TV-AVR and the SVM3 note is honest (no hardware-validated claim).
+- **Operator verifies (Phase C — built app):** run the wizard to the Playback Test under each monitor mode; confirm the readout matches what was configured and the SVM3 note appears only for SVM3.
+
 ### Configurator — dedicated Step-5 receiver restore-input field (AVR-chain restore, #138 follow-up)
 
 - **Branch:** `claude/avr-receiver-restore-input-a7f2c419`. PR-only theme (no tracked issue); follow-up to PR #138.
