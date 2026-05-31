@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — AVR-chain switcher settings in mapping (topology PR 3)
+
+- **Branch:** `claude/topology-avr-switcher-map-2c7f9b1e`. PR-only theme (no tracked issue).
+- **What changed (software-verified only):** for the AVR chain `mapping.ts` now also writes `avr_power_on_enabled=true` and `avr_restore_enabled`/`avr_restore_input` (reusing the Step-4 Kodi return target as the receiver restore input), and gates `tv_switching_enabled` off (the receiver is the switcher). All settings are ones the add-on already reads (`resources/lib/avr/avr_control.py`); the TV chain is unchanged (regression-pinned). `tsc -b` + `vite build` + `vitest` green.
+- **Operator verifies (Phase A):** read the `mapping.ts` diff + the new `mapping.test.ts` cases.
+- **Operator verifies (Phase C - on hardware):** run an AVR-chain setup end to end; confirm the receiver powers on and selects the player input on handoff and restores the Kodi input on exit, and that the TV is NOT driven. Candidate mappings - confirm against a real receiver.
+
 ### Configurator — topology-aware flow + chain viz (topology PR 2)
 
 - **Branch:** `claude/topology-flow-chainviz-4b1e7a3c`. PR-only theme (no tracked issue).

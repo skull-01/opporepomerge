@@ -224,6 +224,64 @@ describe("wizardStateToAddonSettings", () => {
   });
 });
 
+describe("topology-aware AVR switcher settings", () => {
+  const denonAvrChain: Partial<WizardState> = {
+    topology: "kodi_avr_tv_player",
+    avrBrand: "denon",
+    avrBackend: "denon_marantz",
+    avrIp: "10.0.1.91",
+    avrPlayerInput: "BD",
+    kodiInput: 1,
+  };
+
+  it("emits receiver power-on + restore-to-Kodi-input for the AVR chain", () => {
+    const out = wizardStateToAddonSettings(makeState(denonAvrChain));
+    expect(out.avr_control_enabled).toBe("true");
+    expect(out.avr_power_on_enabled).toBe("true");
+    expect(out.avr_restore_enabled).toBe("true");
+    expect(out.avr_restore_input).toBe("1");
+  });
+
+  it("turns TV switching off in the AVR chain even with a TV backend configured", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ ...denonAvrChain, tvBackend: "adb", tvManualSwitch: false }),
+    );
+    expect(out.tv_switching_enabled).toBe("false");
+    // the TV backend is still passed through for reference; only switching is gated off
+    expect(out.tv_backend).toBe("adb");
+  });
+
+  it("does NOT emit restore/power settings for the TV chain (regression pin)", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ ...denonAvrChain, topology: "kodi_tv_player" }),
+    );
+    expect(out.avr_power_on_enabled).toBeUndefined();
+    expect(out.avr_restore_enabled).toBeUndefined();
+    expect(out.avr_restore_input).toBeUndefined();
+    // and the existing AVR control settings are unchanged
+    expect(out.avr_backend).toBe("denon_marantz");
+    expect(out.avr_control_enabled).toBe("true");
+  });
+
+  it("omits the restore input when the Kodi input is non-numeric (CEC/cycle)", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ ...denonAvrChain, kodiInput: "cec" }),
+    );
+    expect(out.avr_power_on_enabled).toBe("true");
+    expect(out.avr_restore_enabled).toBeUndefined();
+    expect(out.avr_restore_input).toBeUndefined();
+  });
+
+  it("writes no switcher settings when AVR control is not enabled (missing input)", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ ...denonAvrChain, avrPlayerInput: "" }),
+    );
+    expect(out.avr_control_enabled).toBe("false");
+    expect(out.avr_power_on_enabled).toBeUndefined();
+    expect(out.avr_restore_enabled).toBeUndefined();
+  });
+});
+
 describe("avrAddonBackend", () => {
   it("maps the DB backend vocabulary onto the add-on avr_backend enum", () => {
     expect(avrAddonBackend("denon_marantz", "denon")).toBe("denon_marantz");
