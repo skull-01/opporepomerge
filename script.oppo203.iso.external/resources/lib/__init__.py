@@ -85,6 +85,7 @@ _BUCKET = {
     "arch_benchmark": "kodi",
     "preset_manager": "kodi",
     "external_player": "kodi",
+    "playback_session": "kodi",
     "version": "kodi",
 }
 
