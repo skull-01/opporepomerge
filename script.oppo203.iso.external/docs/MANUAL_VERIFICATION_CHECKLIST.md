@@ -54,6 +54,26 @@ implementing SHA(s) on the issue and append a row here.
   confirm the hold polls `#QPL` and releases near actual disc-end (not a 3-hour blind hold).
   `tcp_qpl_poll` needs `oppo_ip` / `oppo_port` reachable; confirm idle detection works on the real
   OPPO.
+### Add-on — diagnostics HTTP probe targets the OPPO HTTP port (#111)
+
+- **Implementing SHA:** `bb34919` on `claude/diag-http-port-d9e1c4b2` (draft PR — commented on
+  issue #111). Independent of the other robustness PRs (mergeable in any order).
+- **Scope:** the diagnostics-dashboard `_http` reachability probe connected to TCP port 80, but the
+  OPPO HTTP control API runs on `oppo_http_port` (default 436), so the HTTP capability line reported
+  reachability against a port the device never serves. Diagnostics-only — no playback/control path.
+- **What changed (software-verified only):** `default.py` `run_diagnostics_dashboard` gains an
+  `http_port: int = 436` parameter; the nested `_http` probe connects to it (and reports it) instead
+  of the hardcoded 80.
+  - `tests/test_diag_probe_port.py` (2): the probe targets 436 by default and an explicit override,
+    never 80 (socket faked, no real network call).
+- **CI / gates (software-verified only; hardware validation not claimed):** `pytest` **965 passed /
+  3 skipped**; serial coverage **99%**; `ruff check` + `ruff format --check` clean; mypy strict gate
+  **49 files, 0 errors**.
+- **Phase A review focus:** confirm 436 is the right default. `run_diagnostics_dashboard` has no
+  live menu caller today (it is a tested/symbol-level entry), so the default governs; a future caller
+  can thread the configured `oppo_http_port` through the new parameter.
+- **Phase C — on-device:** run the diagnostics dashboard against the real OPPO and confirm the HTTP
+  capability line reflects port-436 reachability (it always probed 80 before).
 ### Add-on — self-healing oppo203iso-active session sentinel (#117)
 
 - **Implementing SHA:** `293015e` on `claude/sentinel-selfheal-c3e8a1b7` (draft PR — commented on
