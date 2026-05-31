@@ -2,6 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
 import type { InputAddress } from "../state";
+import { isAvrChain, step4NextScreen } from "../steps";
 import type { ScreenProps } from "./types";
 
 // ============================================================
@@ -14,8 +15,10 @@ export function Step4Intro({ go, state }: ScreenProps) {
         <h1 className="screen-title">Now the HDMI inputs.</h1>
         <p className="screen-subtitle">
           We need two: <strong>where your player is</strong> (to switch to on handoff) and{" "}
-          <strong>where your Kodi box is</strong> (to switch back on exit). Your player and
-          TV are both set up now — good time to pin these down.
+          <strong>where your Kodi box is</strong> (to switch back on exit).{" "}
+          {isAvrChain(state.topology)
+            ? "In your chain these are inputs on the AV receiver, which does the switching."
+            : "Your player and TV are both set up now — good time to pin these down."}
         </p>
       </div>
       <div className="card">
@@ -52,8 +55,17 @@ export function Step4Intro({ go, state }: ScreenProps) {
           <Icon name="warn" size={13} stroke={2.2} />
         </span>
         <div className="callout-body">
-          <strong>Heads-up: we're about to change your TV input.</strong> We'll return to
-          your current input when this step ends.
+          {isAvrChain(state.topology) ? (
+            <>
+              <strong>Heads-up: we&apos;re about to change your receiver input.</strong> We&apos;ll
+              return to your current input when this step ends.
+            </>
+          ) : (
+            <>
+              <strong>Heads-up: we&apos;re about to change your TV input.</strong> We&apos;ll return
+              to your current input when this step ends.
+            </>
+          )}
         </div>
       </div>
       <FooterNav
@@ -94,7 +106,8 @@ export function Step4Ask({ go, state, set }: ScreenProps) {
     <div className="screen">
       <div className="screen-header">
         <h1 className="screen-title">
-          Which HDMI input is your {step === "oppo" ? "OPPO" : "Kodi box"} on?
+          Which {isAvrChain(state.topology) ? "receiver" : "HDMI"} input is your{" "}
+          {step === "oppo" ? "OPPO" : "Kodi box"} on?
         </h1>
         <p className="screen-subtitle">
           If you know, pick it and we'll switch to it and confirm. If you don't, we can
@@ -392,8 +405,12 @@ export function Step4Done({ go, state }: ScreenProps) {
       <FooterNav
         go={go}
         back="step4_intro"
-        next="step5_ask"
-        nextLabel="Next: AV receiver (optional)"
+        next={step4NextScreen(state.topology)}
+        nextLabel={
+          isAvrChain(state.topology)
+            ? "Next: AV receiver"
+            : "Next: AV receiver (optional)"
+        }
       />
     </div>
   );

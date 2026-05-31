@@ -121,7 +121,7 @@ export default function App() {
         {!useSidebar && PROGRESS_VARIANT === "minimal" && (
           <Progress variant="minimal" current={stepId} onJump={onJumpStep} />
         )}
-        <Chain active={chainActive} completed={completed} />
+        <Chain active={chainActive} completed={completed} topology={state.topology} />
       </div>
 
       {useSidebar ? (
