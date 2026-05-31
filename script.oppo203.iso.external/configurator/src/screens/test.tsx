@@ -323,8 +323,20 @@ function ChainCheckRow({ icon, label, detail }: { icon: IconName; label: string;
 type Answer = boolean | null;
 type Answers = { play: Answer; switch: Answer; menu: Answer };
 
-export function TestConfirm({ go }: ScreenProps) {
+export function TestConfirm({ go, state }: ScreenProps) {
   const [answers, setAnswers] = useState<Answers>({ play: null, switch: null, menu: null });
+  // Report the four-option pieces this test exercises, separately — the routing axis, how
+  // playback is confirmed (the Step 3 monitor choice), and the TV/AVR switcher.
+  const routingLabel =
+    state.playbackArchitecture === "service_interception"
+      ? "Service interception"
+      : "Playercorefactory";
+  const svm3 = state.monitorMode === "svm3";
+  const tvAvrLabel = isAvrChain(state.topology)
+    ? `AV receiver${state.avrBackend ? ` · ${state.avrBackend}` : ""}`
+    : state.tvBackend
+      ? `TV · ${state.tvBackend}`
+      : "none";
   const allAnswered =
     answers.play !== null && answers.switch !== null && answers.menu !== null;
   const allYes = answers.play === true && answers.switch === true && answers.menu === true;
@@ -356,6 +368,39 @@ export function TestConfirm({ go }: ScreenProps) {
           owns that piece — no detective work.
         </p>
       </div>
+
+      <div className="card" style={{ marginBottom: 14 }}>
+        <h3 className="sub-title">What this test covers</h3>
+        <div className="model-row-meta" style={{ marginTop: 4 }}>
+          Kodi route · <strong>{routingLabel}</strong>
+        </div>
+        <div className="model-row-meta" style={{ marginTop: 4 }}>
+          Playback confirmation ·{" "}
+          <strong>
+            {svm3
+              ? "SVM3 — the player reports playback (UPL/UTC)"
+              : "Legacy — timed / polled hold"}
+          </strong>
+        </div>
+        <div className="model-row-meta" style={{ marginTop: 4 }}>
+          TV / AVR · <strong>{tvAvrLabel}</strong>
+        </div>
+      </div>
+
+      {svm3 && (
+        <div className="callout info" style={{ marginBottom: 14 }}>
+          <span className="callout-icon">
+            <Icon name="info" size={13} stroke={2.2} />
+          </span>
+          <div className="callout-body">
+            With SVM3 the add-on treats playback as confirmed only once the player itself
+            reports it — it writes <code>oppo203iso-status.json</code> recording confirmed
+            playback and progress. A disc that plays but isn&apos;t reported as confirmed means
+            the player isn&apos;t sending status, not that playback failed.
+          </div>
+        </div>
+      )}
+
       <div className="stack">
         <Question
           n="1"
