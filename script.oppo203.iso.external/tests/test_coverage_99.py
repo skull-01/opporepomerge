@@ -45,8 +45,8 @@ class FakeSettings(dict):
 
 class TestFinal99CoveragePaths(unittest.TestCase):
     def test_adb_and_arch_default_paths(self):
-        import adb_control
         import arch_benchmark
+        import tv_adb_control
 
         calls = []
 
@@ -68,7 +68,7 @@ class TestFinal99CoveragePaths(unittest.TestCase):
             }
         )
         self.assertEqual(
-            adb_control.switch_input(settings, "input keyevent 3", runner=runner), "ok"
+            tv_adb_control.switch_input(settings, "input keyevent 3", runner=runner), "ok"
         )
         self.assertEqual(
             calls, [["adb", "-s", "192.0.2.10:5555", "shell", "input", "keyevent", "3"]]

@@ -32,16 +32,16 @@ except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     )
 
 try:
-    from .smartthings_control import TOKEN_REDACTION, redact_secret_in_text, redact_token
-    from .smartthings_control import validation_metadata as smartthings_validation_metadata
+    from .tv_smartthings_control import TOKEN_REDACTION, redact_secret_in_text, redact_token
+    from .tv_smartthings_control import validation_metadata as smartthings_validation_metadata
 except ImportError:  # pragma: no cover - top-level/audit/test compatibility
     try:
-        from smartthings_control import (  # type: ignore
+        from tv_smartthings_control import (  # type: ignore
             TOKEN_REDACTION,
             redact_secret_in_text,
             redact_token,
         )
-        from smartthings_control import (  # type: ignore[no-redef]
+        from tv_smartthings_control import (  # type: ignore[no-redef]
             validation_metadata as smartthings_validation_metadata,
         )
     except Exception:  # pragma: no cover - defensive fallback for unusual imports

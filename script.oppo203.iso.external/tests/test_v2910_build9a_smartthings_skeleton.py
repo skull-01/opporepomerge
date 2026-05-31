@@ -11,9 +11,9 @@ for path in (ROOT, LIB):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-import smartthings_control  # noqa: E402
 import tv_control  # noqa: E402
 import tv_presets  # noqa: E402
+import tv_smartthings_control  # noqa: E402
 from tv_backends import (  # noqa: E402
     TV_BACKEND_SMARTTHINGS,
     backend_target_setting,
@@ -86,13 +86,15 @@ def test_smartthings_settings_defaults_and_enum_placeholders_exist():
 
 def test_smartthings_token_redaction_and_validation_metadata_never_expose_token():
     token = "abcdef1234567890"
-    assert smartthings_control.redact_token(token) == "abcd...90"
-    assert smartthings_control.redact_token("short") == "<redacted>"
-    sanitized = smartthings_control.sanitized_settings({"smartthings_token": token, "other": "ok"})
+    assert tv_smartthings_control.redact_token(token) == "abcd...90"
+    assert tv_smartthings_control.redact_token("short") == "<redacted>"
+    sanitized = tv_smartthings_control.sanitized_settings(
+        {"smartthings_token": token, "other": "ok"}
+    )
     assert sanitized["smartthings_token"] == "abcd...90"
     assert token not in str(sanitized)
 
-    metadata = smartthings_control.validation_metadata(
+    metadata = tv_smartthings_control.validation_metadata(
         {
             "smartthings_experimental_acknowledged": "true",
             "smartthings_token": token,
@@ -107,7 +109,7 @@ def test_smartthings_token_redaction_and_validation_metadata_never_expose_token(
 
 
 def test_smartthings_validation_requires_ack_token_and_device_without_network_io():
-    metadata = smartthings_control.validation_metadata({})
+    metadata = tv_smartthings_control.validation_metadata({})
     assert metadata["experimental"] is True
     assert metadata["hardware_validation_claimed"] is False
     assert metadata["live_api_calls_enabled"] is True
