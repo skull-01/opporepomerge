@@ -3,6 +3,7 @@ import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
 import { avrAddonBackend } from "../mapping";
+import { isAvrChain } from "../steps";
 import { invoke } from "@tauri-apps/api/core";
 import type { PortResult } from "../probes";
 import {
@@ -411,6 +412,21 @@ function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
               </div>
             </div>
           </div>
+          {!isSony && isAvrChain(state.topology) && (
+            <div className="field" style={{ marginTop: 12 }}>
+              <label className="field-label">Kodi input on the receiver</label>
+              <input
+                className="input"
+                placeholder="e.g. CBL/SAT"
+                value={state.avrKodiInput}
+                onChange={(e) => set({ avrKodiInput: e.target.value })}
+              />
+              <div className="field-hint">
+                The receiver input your Kodi box is plugged into — the receiver switches back
+                here when playback ends. Leave blank to skip the restore step.
+              </div>
+            </div>
+          )}
           {probePort != null && (
             <div className="row" style={{ gap: 10, alignItems: "center", marginTop: 4 }}>
               <button
@@ -508,8 +524,11 @@ function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
               </span>
               <div className="callout-body">
                 We'll enable AVR control with the <code>{addonBackend}</code> backend: power on
-                and switch to <code>{state.avrPlayerInput}</code> on handoff. All candidate
-                mappings — confirm against your receiver.
+                and switch to <code>{state.avrPlayerInput}</code> on handoff.
+                {isAvrChain(state.topology) && state.avrKodiInput && (
+                  <> On exit it returns to <code>{state.avrKodiInput}</code>.</>
+                )}{" "}
+                All candidate mappings — confirm against your receiver.
               </div>
             </div>
           ) : (

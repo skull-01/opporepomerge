@@ -73,6 +73,7 @@ export type WizardState = {
   avrReceiverType: string | null;
   avrIp: string;
   avrPlayerInput: string;
+  avrKodiInput: string;
   avrSonyAcknowledged: boolean;
   avrSonyPsk: string;
   avrSonyPlayerInputUri: string;
@@ -127,6 +128,7 @@ export const INITIAL_STATE: WizardState = {
   avrReceiverType: null,
   avrIp: "10.0.1.90",
   avrPlayerInput: "",
+  avrKodiInput: "",
   avrSonyAcknowledged: false,
   avrSonyPsk: "",
   avrSonyPlayerInputUri: "",

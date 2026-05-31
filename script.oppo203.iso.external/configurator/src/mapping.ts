@@ -110,28 +110,19 @@ function avrSettings(state: WizardState): AddonSettings {
   // In the AVR chain the receiver is the input switcher: it powers on and selects the
   // player input on handoff, and restores the Kodi input on exit. The add-on reads these
   // (avr_control.py: avr_settings_summary / validate_avr_settings); we only emit them when
-  // control is actually enabled, and we reuse the Kodi return target captured in Step 4 as
-  // the receiver restore input. Only enabled for native (non-Sony) drivers here; Sony
-  // returned above.
+  // control is actually enabled. The restore target is the receiver input the Kodi box is
+  // plugged into, captured in Step 5 (avrKodiInput) - distinct from kodiInput, which is the
+  // TV's HDMI input used by the TV-chain switcher. A blank avrKodiInput emits no restore
+  // input, which the add-on treats as a non-fatal skip (avr_sequence.py). Native (non-Sony)
+  // drivers only; Sony returned above.
   if (enable && isAvrChain(state.topology)) {
     out.avr_power_on_enabled = "true";
-    const restore = describeReceiverInput(state.kodiInput);
-    if (restore) {
+    if (state.avrKodiInput) {
       out.avr_restore_enabled = "true";
-      out.avr_restore_input = restore;
+      out.avr_restore_input = state.avrKodiInput;
     }
   }
   return out;
-}
-
-/**
- * Render a captured HDMI InputAddress as the receiver input string the add-on stores. A bare
- * number becomes its string form; a non-numeric address (CEC / blind-cycle) has no meaning on
- * a receiver, so it yields null and no restore input is written.
- */
-function describeReceiverInput(value: InputAddress): string | null {
-  if (typeof value === "number") return String(value);
-  return null;
 }
 
 /**

@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — dedicated Step-5 receiver restore-input field (AVR-chain restore, #138 follow-up)
+
+- **Branch:** `claude/avr-receiver-restore-input-a7f2c419`. PR-only theme (no tracked issue); follow-up to PR #138.
+- **What changed (software-verified only):** Step 5 now captures a dedicated **"Kodi input on the receiver"** field (`state.avrKodiInput`), shown only in the AVR chain for native (non-Sony) backends. `mapping.ts` sources `avr_restore_input` from it instead of reusing the TV's `kodiInput` (the Step-4 TV HDMI port). A blank value writes no restore input — the add-on treats that as a non-fatal skip (`resources/lib/avr/avr_sequence.py`). `avr_restore_input` is `type="string"` read as a free-text receiver input, so there is **no add-on change**. The end-of-wizard test summary now shows receiver inputs (not "HDMI N") in the AVR chain. TV chain unchanged (regression-pinned). `tsc --noEmit` + `tsc -b` + `vite build` + **125 vitest** green.
+- **Operator verifies (Phase A):** read the `state.ts` / `mapping.ts` / `step5.tsx` / `test.tsx` diff + the updated `mapping.test.ts` cases (restore now sourced from `avrKodiInput`; the dedicated-field pin proves it is NOT `kodiInput`; blank ⇒ power-on but no restore).
+- **Operator verifies (Phase C — on hardware):** in an AVR-chain setup, enter a **distinct** receiver input for the Kodi box (e.g. `CBL/SAT`), different from the player input (e.g. `BD`); confirm that on playback exit the receiver returns to the **Kodi** input — not the player input, and not a TV HDMI number. Candidate mapping — confirm against a real receiver. **Migration note:** an existing AVR-chain config that relied on the old numeric reuse should re-open Step 5 and set this field, or restore is skipped (non-fatal).
+
 ### Configurator — AVR-chain switcher settings in mapping (topology PR 3)
 
 - **Branch:** `claude/topology-avr-switcher-map-2c7f9b1e`. PR-only theme (no tracked issue).

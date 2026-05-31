@@ -20,6 +20,10 @@ describe("INITIAL_STATE", () => {
     expect(INITIAL_STATE.tier).toBeNull();
     expect(INITIAL_STATE.kodiVerified).toBe(false);
   });
+
+  it("defaults the receiver Kodi (restore) input to empty", () => {
+    expect(INITIAL_STATE.avrKodiInput).toBe("");
+  });
 });
 
 describe("topology", () => {

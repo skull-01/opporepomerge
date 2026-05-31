@@ -4,7 +4,7 @@ import { Chain } from "../shell/Chain";
 import { DiagLog } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { applyToKodi, type ApplyResult } from "../apply";
-import type { ScreenId } from "../steps";
+import { isAvrChain, type ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
 // ============================================================
@@ -539,8 +539,22 @@ export function TestSuccess({ go, state }: ScreenProps) {
                 value={`${state.avrBrand} · backend ${state.avrBackend ?? "—"}`}
               />
             )}
-            <SummaryRow label="Switch to" value={`HDMI ${state.playerInput ?? 3}`} />
-            <SummaryRow label="Return to" value={`HDMI ${state.kodiInput ?? 1}`} />
+            <SummaryRow
+              label="Switch to"
+              value={
+                isAvrChain(state.topology)
+                  ? `Receiver ${state.avrPlayerInput || "input"}`
+                  : `HDMI ${state.playerInput ?? 3}`
+              }
+            />
+            <SummaryRow
+              label="Return to"
+              value={
+                isAvrChain(state.topology)
+                  ? `Receiver ${state.avrKodiInput || "input"}`
+                  : `HDMI ${state.kodiInput ?? 1}`
+              }
+            />
           </div>
         </div>
 
