@@ -1,5 +1,6 @@
 import type { AvrBackend, InputAddress, WizardState } from "./state";
 import { hwModelFor } from "./players";
+import { isAvrChain } from "./steps";
 
 /**
  * The add-on setting IDs the configurator is responsible for writing, derived from the
@@ -105,7 +106,32 @@ function avrSettings(state: WizardState): AddonSettings {
 
   const enable = !!state.avrIp && !!state.avrPlayerInput;
   out.avr_control_enabled = enable ? "true" : "false";
+
+  // In the AVR chain the receiver is the input switcher: it powers on and selects the
+  // player input on handoff, and restores the Kodi input on exit. The add-on reads these
+  // (avr_control.py: avr_settings_summary / validate_avr_settings); we only emit them when
+  // control is actually enabled, and we reuse the Kodi return target captured in Step 4 as
+  // the receiver restore input. Only enabled for native (non-Sony) drivers here; Sony
+  // returned above.
+  if (enable && isAvrChain(state.topology)) {
+    out.avr_power_on_enabled = "true";
+    const restore = describeReceiverInput(state.kodiInput);
+    if (restore) {
+      out.avr_restore_enabled = "true";
+      out.avr_restore_input = restore;
+    }
+  }
   return out;
+}
+
+/**
+ * Render a captured HDMI InputAddress as the receiver input string the add-on stores. A bare
+ * number becomes its string form; a non-numeric address (CEC / blind-cycle) has no meaning on
+ * a receiver, so it yields null and no restore input is written.
+ */
+function describeReceiverInput(value: InputAddress): string | null {
+  if (typeof value === "number") return String(value);
+  return null;
 }
 
 /**
@@ -128,7 +154,12 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     oppo_port: "23",
     // Enable TV switching only when a backend is configured and the user didn't drop to
     // manual; otherwise "false", so a no-TV setup doesn't switch against the default backend.
-    tv_switching_enabled: state.tvBackend && !state.tvManualSwitch ? "true" : "false",
+    // In the AVR chain the receiver does the switching and the TV is fixed, so TV switching
+    // stays off there even if a TV backend was configured for control.
+    tv_switching_enabled:
+      state.tvBackend && !state.tvManualSwitch && !isAvrChain(state.topology)
+        ? "true"
+        : "false",
   };
 
   const hardwareModel = playerHardwareModel(state);
