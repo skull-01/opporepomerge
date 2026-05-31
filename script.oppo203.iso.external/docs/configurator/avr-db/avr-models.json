@@ -1,11 +1,11 @@
 {
   "schema_version": 2,
-  "db_version": "2026.05.30-avr-2018-2025-region-schema",
+  "db_version": "2026.05.31-avr-2018-2026-region-schema",
   "database_kind": "playbridge_av_receiver_control_db",
   "scope": {
     "years": [
       2018,
-      2025
+      2026
     ],
     "level": "model_family",
     "regions": [
@@ -6744,6 +6744,425 @@
         "custom_command"
       ],
       "control_notes": "Candidate mapping only. Requires network standby/IP control enabled and real-device validation for PlayBridge.",
+      "validated": false
+    },
+    {
+      "id": "denon-avr-x2900h-2026",
+      "brand": "denon",
+      "name": "AVR-X2900H",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "denon-avr-ip",
+      "receiver_type": "AV receiver",
+      "channels": "7.2",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "2026 X-Series; US uses the AVR- prefix, parts of UK/EU/Asia use AVC- for some X-series models. Confirm regional SKU.",
+      "primary_backend": "denon_marantz",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "2026 Denon X-Series 7.2ch (successor to AVR-X2800H), 32-bit DAC and Dirac Live; HEOS / Denon-Marantz IP control. Candidate mapping from 2026 launch coverage; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "denon-avr-x3900h-2026",
+      "brand": "denon",
+      "name": "AVR-X3900H",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "denon-avr-ip",
+      "receiver_type": "AV receiver",
+      "channels": "9.4",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "2026 X-Series; sold as AVC-X3900H in parts of UK/EU/Asia. Confirm regional SKU.",
+      "primary_backend": "denon_marantz",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "2026 Denon X-Series up to 9.4ch with four subwoofer outputs (successor to AVR/AVC-X3800H), Dirac Live; HEOS / Denon-Marantz IP control. Candidate mapping from 2026 launch coverage; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "marantz-av-30-2026",
+      "brand": "marantz",
+      "name": "AV 30",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "marantz-avr-ip",
+      "receiver_type": "AV preamp/processor",
+      "channels": "11 (processor)",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "2026 Marantz separates pre/pro (paired with the AMP 30 power amp); availability via distributor.",
+      "primary_backend": "denon_marantz",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "2026 Marantz AV 30 11-channel preamp/processor (separate, not a receiver) sharing the Denon-Marantz HEOS/IP control path. Candidate mapping from 2026 launch coverage; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "yamaha-rx300a-2026",
+      "brand": "yamaha",
+      "name": "RX300A",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "yamaha-musiccast-yxc",
+      "receiver_type": "AV receiver",
+      "channels": "5.2",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "2026 entry AVR (successor to RX-V385); ~June 2026 availability.",
+      "primary_backend": "yamaha_yxc",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "2026 Yamaha entry 5.2ch AVR. CAVEAT: entry-tier Yamaha AVRs may lack MusicCast / YXC network control (the predecessor RX-V385 had none) - confirm IP control is present, otherwise this is custom_command or uncontrollable. Candidate mapping, validate on the real device.",
+      "validated": false
+    },
+    {
+      "id": "yamaha-rx500a-2026",
+      "brand": "yamaha",
+      "name": "RX500A",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "yamaha-musiccast-yxc",
+      "receiver_type": "AV receiver",
+      "channels": "7.2",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "2026 AVR introducing a new 7.2ch tier; ~September 2026 availability.",
+      "primary_backend": "yamaha_yxc",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "2026 Yamaha 7.2ch AVR (new tier). CAVEAT: confirm MusicCast / YXC network control is present on this entry-adjacent tier, otherwise this is custom_command. Candidate mapping, validate on the real device.",
+      "validated": false
+    },
+    {
+      "id": "onkyo-tx-rz31-2026",
+      "brand": "onkyo",
+      "name": "TX-RZ31",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "onkyo-eiscp",
+      "receiver_type": "AV receiver",
+      "channels": "9.2",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "CES 2026 RZ-series refresh; availability expected late 2026/early 2027.",
+      "primary_backend": "onkyo_eiscp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "CES 2026 Onkyo RZ-series, 9-channel ~100 WPC, THX Select 2, new large front display; Onkyo eISCP/ISCP control. Candidate mapping from 2026 launch coverage; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "onkyo-tx-rz51-2026",
+      "brand": "onkyo",
+      "name": "TX-RZ51",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "onkyo-eiscp",
+      "receiver_type": "AV receiver",
+      "channels": "9.2",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "CES 2026 RZ-series refresh; availability expected late 2026/early 2027.",
+      "primary_backend": "onkyo_eiscp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "CES 2026 Onkyo RZ-series, 9-channel ~120 WPC, THX Select 2, new large front display; Onkyo eISCP/ISCP control. Candidate mapping from 2026 launch coverage; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "onkyo-tx-rz61-2026",
+      "brand": "onkyo",
+      "name": "TX-RZ61",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "onkyo-eiscp",
+      "receiver_type": "AV receiver",
+      "channels": "11.2",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "CES 2026 RZ-series refresh; availability expected late 2026/early 2027.",
+      "primary_backend": "onkyo_eiscp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "CES 2026 Onkyo RZ-series, 11-channel ~135 WPC, THX Select 2, new large front display; Onkyo eISCP/ISCP control. Candidate mapping from 2026 launch coverage; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "onkyo-tx-rz71-2026",
+      "brand": "onkyo",
+      "name": "TX-RZ71",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "onkyo-eiscp",
+      "receiver_type": "AV receiver",
+      "channels": "11.2",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "CES 2026 RZ-series refresh (top of the new RZ line); availability expected late 2026/early 2027.",
+      "primary_backend": "onkyo_eiscp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "CES 2026 Onkyo RZ-series, 11-channel ~145 WPC, THX Select 2, new large front display; Onkyo eISCP/ISCP control. Candidate mapping from 2026 launch coverage; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "integra-drx-r1-2026",
+      "brand": "integra",
+      "name": "DRX-R1",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "integra-eiscp",
+      "receiver_type": "AV receiver",
+      "channels": "11.2",
+      "regions": [
+        "US",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "Asia"
+      ],
+      "region_notes": "Integra distributes mainly via US/Asia custom-install channels; EU/UK availability limited. Confirm region and model-year vs the 2024 DRX-5.4 generation.",
+      "primary_backend": "onkyo_eiscp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "2026 Integra Research Series flagship (DRX-R1), 11.2ch; Integra eISCP/ISCP control (shared with Onkyo). Model-year per 2026 lineup coverage - confirm. Candidate mapping; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "integra-drx-7-2026",
+      "brand": "integra",
+      "name": "DRX-7",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "integra-eiscp",
+      "receiver_type": "AV receiver",
+      "channels": "9.2",
+      "regions": [
+        "US",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "Asia"
+      ],
+      "region_notes": "Integra distributes mainly via US/Asia custom-install channels; EU/UK availability limited. Confirm region and model-year vs the 2024 DRX-5.4 generation.",
+      "primary_backend": "onkyo_eiscp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "control_notes": "2026 Integra DRX-7 9.2ch; Integra eISCP/ISCP control (shared with Onkyo). Model-year per 2026 lineup coverage - confirm. Candidate mapping; requires network standby/IP control and real-device validation.",
+      "validated": false
+    },
+    {
+      "id": "arcam-ava15-2026",
+      "brand": "arcam",
+      "name": "AVA15",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "arcam-ip-custom",
+      "receiver_type": "AV amplifier (no tuner)",
+      "channels": "various",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Arcam Radia AVA line, debuted ISE 2026; dealer availability from Q3 2026. ~USD 3000.",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "control_notes": "2026 Arcam Radia AVA15 (Audio/Video Amplifier - no AM/FM tuner), Dirac Live ART; Arcam IP / RS232-style control with no first-class add-on driver, so custom_command. Candidate mapping, validate on the real device.",
+      "validated": false
+    },
+    {
+      "id": "arcam-ava25-2026",
+      "brand": "arcam",
+      "name": "AVA25",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "arcam-ip-custom",
+      "receiver_type": "AV amplifier (no tuner)",
+      "channels": "various",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Arcam Radia AVA line, debuted ISE 2026; dealer availability from Q3 2026. ~USD 5000.",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "control_notes": "2026 Arcam Radia AVA25 (Audio/Video Amplifier - no AM/FM tuner), Dirac Live ART; Arcam IP / RS232-style control, custom_command. Candidate mapping, validate on the real device.",
+      "validated": false
+    },
+    {
+      "id": "arcam-ava35-2026",
+      "brand": "arcam",
+      "name": "AVA35",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "arcam-ip-custom",
+      "receiver_type": "AV amplifier (no tuner)",
+      "channels": "various",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Arcam Radia AVA line, debuted ISE 2026; dealer availability from Q3 2026. ~USD 7000.",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "control_notes": "2026 Arcam Radia AVA35 (Audio/Video Amplifier - no AM/FM tuner), Dirac Live ART; Arcam IP / RS232-style control, custom_command. Candidate mapping, validate on the real device.",
+      "validated": false
+    },
+    {
+      "id": "arcam-avp45-2026",
+      "brand": "arcam",
+      "name": "AVP45",
+      "year": 2026,
+      "release_year": 2026,
+      "lineup": "arcam-ip-custom",
+      "receiver_type": "AV processor",
+      "channels": "16 (processor)",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Arcam Radia AVP45 16-channel AV processor (separate), debuted ISE 2026; dealer availability from Q3 2026.",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "control_notes": "2026 Arcam Radia AVP45 16-channel AV processor (separate, not a receiver), Dirac Live ART; Arcam IP / RS232-style control, custom_command. Candidate mapping, validate on the real device.",
       "validated": false
     }
   ],
