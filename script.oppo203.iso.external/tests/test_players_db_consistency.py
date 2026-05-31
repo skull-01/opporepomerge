@@ -104,7 +104,9 @@ def test_db_captures_every_player_alias_both_ways():
     for amap in (sr._HARDWARE_ALIASES, hp.PROFILE_ALIASES):
         for alias, target in amap.items():
             if target in keys:
-                assert alias in by_key[target], f"{alias} -> {target} missing from players-models.json"
+                assert alias in by_key[target], (
+                    f"{alias} -> {target} missing from players-models.json"
+                )
 
 
 def test_families_cover_all_model_brands_and_other_aliases_resolve():
