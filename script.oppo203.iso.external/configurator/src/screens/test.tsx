@@ -219,7 +219,7 @@ export function TestSetup({ go, state, set }: ScreenProps) {
                 <ChainCheckRow
                   icon="tv"
                   label="TV switches input"
-                  detail={`HDMI ${state.oppoInput ?? 3}`}
+                  detail={`HDMI ${state.playerInput ?? 3}`}
                 />
                 <ChainCheckRow
                   icon="player"
@@ -539,7 +539,7 @@ export function TestSuccess({ go, state }: ScreenProps) {
                 value={`${state.avrBrand} · backend ${state.avrBackend ?? "—"}`}
               />
             )}
-            <SummaryRow label="Switch to" value={`HDMI ${state.oppoInput ?? 3}`} />
+            <SummaryRow label="Switch to" value={`HDMI ${state.playerInput ?? 3}`} />
             <SummaryRow label="Return to" value={`HDMI ${state.kodiInput ?? 1}`} />
           </div>
         </div>

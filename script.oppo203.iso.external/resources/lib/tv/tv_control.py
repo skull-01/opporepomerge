@@ -7,15 +7,15 @@ import urllib.error
 import urllib.request
 from typing import Any
 
-from .adb_control import switch_input as adb_switch_input
-from .roku_ecp_control import switch_input as roku_switch_input
+from .tv_adb_control import switch_input as adb_switch_input
+from .tv_roku_ecp_control import switch_input as roku_switch_input
 
 try:
-    from smartthings_control import switch_input as smartthings_switch_input
-    from smartthings_control import validation_metadata as smartthings_validation_metadata
+    from tv_smartthings_control import switch_input as smartthings_switch_input
+    from tv_smartthings_control import validation_metadata as smartthings_validation_metadata
 except ImportError:  # pragma: no cover - package-import fallback (only taken on-device)
-    from .smartthings_control import switch_input as smartthings_switch_input
-    from .smartthings_control import validation_metadata as smartthings_validation_metadata
+    from .tv_smartthings_control import switch_input as smartthings_switch_input
+    from .tv_smartthings_control import validation_metadata as smartthings_validation_metadata
 
 try:
     from .tv_backends import backend_target_setting, is_supported_backend, normalize_backend_id

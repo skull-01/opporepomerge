@@ -33,7 +33,7 @@ const EXPECTED_HW: ReadonlyArray<[PlayerBrand, string, string]> = [
   ["other", "Chinoppo eject-to-wake", "chinoppo_m9205"],
 ];
 
-describe("players catalog (derived from players.json)", () => {
+describe("players catalog (derived from players-models.json)", () => {
   it("maps every known brand + model label to its oppo_hardware_model enum value", () => {
     for (const [brand, label, hw] of EXPECTED_HW) {
       expect(hwModelFor(brand, label), `${brand}/${label}`).toBe(hw);

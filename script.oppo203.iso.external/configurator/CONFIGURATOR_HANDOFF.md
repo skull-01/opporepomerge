@@ -110,7 +110,7 @@ No settings. Conceptual gate (player must already reach media via SMB1/NFS/USB).
 | Sony PSK | `sony_psk` | sony_bravia; never logged. |
 | Roku ECP port | `roku_ecp_port` (8060) | roku_ecp. |
 | SmartThings | `smartthings_token`, `smartthings_device_id`, `smartthings_experimental_acknowledged` | smartthings; experimental gate. |
-| Control test (mute) | `tv.adb_control` / `tv.roku_ecp_control` / `tv.tv_control` | "input-finding deferred" = wizard's `tvAdbWeak` flag. |
+| Control test (mute) | `tv.tv_adb_control` / `tv.tv_roku_ecp_control` / `tv.tv_control` | "input-finding deferred" = wizard's `tvAdbWeak` flag. |
 
 ### Step 4 — HDMI Input capture (field depends on active `tv_backend`)
 | Backend | OPPO-input setting | Kodi-input setting |

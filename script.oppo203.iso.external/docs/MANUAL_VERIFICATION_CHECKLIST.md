@@ -73,6 +73,38 @@ implementing SHA(s) on the issue and append a row here.
      `#QFN`). Paste `addon_data/oppo-status-probe.txt` back so the #113 verify can use the real
      fields.
 
+### Configurator — AVR Step 5 Sony auto-enable (PSK + acknowledgement)
+
+- **Branch / SHA:** `claude/avr-sony-autoenable-5c9f2a3d` — **no tracked issue** (configurator
+  §3b item 6 AVR follow-up; PR-only). Follows the v0.5.0 Step-5 wiring.
+- **What changed (software-verified):** Step 5's Receiver-control card now captures the Sony
+  Audio Control API credentials so Sony can auto-enable like the other native backends (it was
+  configured-but-off before). New `WizardState` fields `avrSonyAcknowledged` / `avrSonyPsk` /
+  `avrSonyPlayerInputUri`; `mapping.avrSettings()` emits `sony_avr_experimental_acknowledged` /
+  `sony_avr_psk` / `sony_avr_player_input_uri` and sets `avr_control_enabled=true` for
+  `sony_audio_api` **only** when acknowledgement + PSK + input URI + host + player input are all
+  present — mirroring the add-on's own Sony gate (`resources/lib/avr/avr_presets.py`
+  `requires_experimental_acknowledgement` + sensitive fields; `avr_control.py` Sony validation).
+  PSK is a password-masked field. **No add-on change** — the `sony_avr_*` settings already exist
+  in `resources/settings.xml`.
+- **Software gates (this machine):** configurator `tsc -b` clean; `vitest` **103 passed**
+  (mapping 24, incl. Sony enable + partial-gate cases); `npm run build` exit 0. Browser-preview:
+  Step 5 → Sony → model → the URI + PSK (password) fields + acknowledgement toggle render; filling
+  all of them flips the callout to "We'll enable Sony control … switch to extInput:hdmi?port=2".
+- **Phase A review focus:** confirm requiring the URI-form input (in addition to the plain
+  `avr_player_input`) is the right gate, and that PSK-as-secret handling reads correctly.
+- **Phase C — operator end-to-end (real Sony receiver, NOT done by the agent):**
+  1. Step 5 → Sony → pick a model; fill Receiver IP, player input, **Sony API input URI**
+     (e.g. `extInput:hdmi?port=2`), **PSK**, and tick the experimental acknowledgement; confirm
+     the green "we'll enable" callout appears (and that leaving any one blank keeps it off).
+  2. Apply; confirm the deployed `settings.xml` carries `avr_backend=sony_audio_api`,
+     `avr_control_enabled=true`, `sony_avr_experimental_acknowledged=true`, `sony_avr_psk`,
+     `sony_avr_player_input_uri`.
+  3. Trigger a UHD-ISO handoff; confirm the add-on powers on the Sony receiver and switches it to
+     the configured input. **Experimental Sony driver + candidate mapping — confirm against real
+     hardware.**
+  - **Software-verified only; Sony Audio Control API path is experimental and not hardware-validated.**
+
 ### Configurator + add-on — Chinoppo M9205 V1 split into a distinct hardware model
 
 - **Branch / SHA:** `claude/chinoppo-m9205-v1-split-c7m2k9p4` — **no tracked issue**
@@ -395,6 +427,9 @@ implementing SHA(s) on the issue and append a row here.
     `tv/roku_ecp_control`, `oppo/reconnect_backoff`, `oppo/autoscript_helper`,
     `tv/adb_control`. Changes are signatures + removing stale `# type: ignore`
     comments + two locals pinned (`raw: float`, `body: str`) — **no logic changes.**
+    _(Naming note 2026-05-31: the three `tv/` backends here were later renamed
+    `tv/tv_smartthings_control`, `tv/tv_roku_ecp_control`, `tv/tv_adb_control`; this entry
+    records the closed PR as-shipped. See [`NAMING_CONVENTIONS.md`](NAMING_CONVENTIONS.md).)_
     `nas_playback_adapter` was deliberately deferred (it cascades into
     `settings_reader` / `oppo_control`).
   - Guard tests updated in lockstep: `test_v291_build13_type_hint_baseline.py`
@@ -724,6 +759,45 @@ _(none queued)_
   2. Confirm every existing player still resolves to the same `oppo_hardware_model` value
      (the picker labels are unchanged; only the per-brand order is enum-ordered now).
   3. Add-on: nothing to verify on hardware (test-only); confirm `main` add-on still builds.
+
+### Configurator v0.4.0 + v0.5.0 — AVR (AV Receiver) Step 5
+
+- **PRs / SHAs:** [PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109)
+  merge `6251cdf` (v0.4.0 — AVR database + advisory Step 5),
+  [PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`
+  (v0.5.0 — Step 5 wired into the add-on `settings.xml`). PR-only theme (no tracked issue), per
+  the configurator's untracked-delivery pattern. Shipped in configurator **v0.5.0** (repo "Latest").
+- **What changed (software-verified):** new `avr-db/avr-models.json` (224 AVR model families,
+  schema v2) + `avrdb.ts` loader; optional **Step 5 (AV Receiver)** picker (ask → brand →
+  region/year-filtered model list); a "Receiver control" card captures receiver IP + player input;
+  `mapping.avrAddonBackend()` maps DB backends onto the add-on enum (Pioneer→`pioneer_eiscp`,
+  Sony→`sony_audio_api`). Conservative enable: `avr_control_enabled` only for a native non-gated
+  driver with host + input present; Sony configured-but-off; Anthem/Arcam/NAD write no `avr_backend`.
+  Skipping Step 5 emits nothing AVR-related. **No add-on code change.**
+- **Published-artifact integrity (agent-verified 2026-05-31):** the `configurator-v0.5.0` release
+  MSI (3,174,400 B) and NSIS setup (2,071,403 B) were re-downloaded and their SHA-256 confirmed
+  **byte-identical** to both the `.sha256` sidecars and `release-evidence/v0.5.0/BUILD_NOTES.md`
+  (MSI `60283a0240afd0aa745a9fa5d853e125a6558572fcd269b911c90b3ab0792742`, NSIS
+  `8022844316ee8c25e0463f3334d9148376fd97fec9c9f7e60f46052d4dc4a709`). Unsigned — SmartScreen
+  "unknown publisher" expected.
+- **Software gates (release sessions):** `tsc -b` clean; **101 vitest** (22 mapping tests);
+  `npm run build` OK; Step 5 Pioneer/Sony paths exercised in a browser preview.
+- **Operator confirm (Phase C — clean Windows host, NOT done by the agent):**
+  1. Install from the `configurator-v0.5.0` release (NSIS `…_x64-setup.exe` or the MSI); confirm
+     `Get-FileHash <file> -Algorithm SHA256` matches the BUILD_NOTES table, and that it installs
+     without error past the unsigned-publisher SmartScreen prompt.
+  2. Confirm the Start-menu / desktop / taskbar + window icon shows the add-on artwork (not a
+     generic/blank icon), the custom title bar renders, and the wizard opens.
+  3. Step 5 → "Yes" → pick a brand + model; confirm the **Receiver control** card appears with
+     IP + player-input fields, and that filling both shows the green "we'll enable control" callout
+     (Sony instead shows "left off — needs ack + PSK"; Anthem/Arcam/NAD show "no native backend").
+  4. Regression: confirm the Step 3 Region filter and the Step 2 player facts line still behave.
+  5. Run the final Apply (Tier A/B/C) and confirm the generated `…/settings.xml` carries
+     `avr_backend` / `avr_host` / `avr_player_input` / `avr_control_enabled` as expected — and that
+     **skipping** Step 5 leaves any existing AVR settings untouched.
+  6. Uninstall via Apps & features (or the MSI) and confirm clean removal.
+  - **Software-verified + published-artifact-integrity-verified only; installed-app behaviour,
+    icon appearance, and Step-5 end-to-end not verified by the agent. No hardware validation.**
 
 ---
 

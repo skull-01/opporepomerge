@@ -11,9 +11,9 @@ for path in (ROOT, LIB):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-import smartthings_control  # noqa: E402
 import tv_control  # noqa: E402
 import tv_presets  # noqa: E402
+import tv_smartthings_control  # noqa: E402
 from tv_backends import (  # noqa: E402
     TV_BACKEND_SMARTTHINGS,
     backend_target_setting,
@@ -86,13 +86,15 @@ def test_smartthings_settings_defaults_and_enum_placeholders_exist():
 
 def test_smartthings_token_redaction_and_validation_metadata_never_expose_token():
     token = "abcdef1234567890"
-    assert smartthings_control.redact_token(token) == "abcd...90"
-    assert smartthings_control.redact_token("short") == "<redacted>"
-    sanitized = smartthings_control.sanitized_settings({"smartthings_token": token, "other": "ok"})
+    assert tv_smartthings_control.redact_token(token) == "abcd...90"
+    assert tv_smartthings_control.redact_token("short") == "<redacted>"
+    sanitized = tv_smartthings_control.sanitized_settings(
+        {"smartthings_token": token, "other": "ok"}
+    )
     assert sanitized["smartthings_token"] == "abcd...90"
     assert token not in str(sanitized)
 
-    metadata = smartthings_control.validation_metadata(
+    metadata = tv_smartthings_control.validation_metadata(
         {
             "smartthings_experimental_acknowledged": "true",
             "smartthings_token": token,
@@ -107,7 +109,7 @@ def test_smartthings_token_redaction_and_validation_metadata_never_expose_token(
 
 
 def test_smartthings_validation_requires_ack_token_and_device_without_network_io():
-    metadata = smartthings_control.validation_metadata({})
+    metadata = tv_smartthings_control.validation_metadata({})
     assert metadata["experimental"] is True
     assert metadata["hardware_validation_claimed"] is False
     assert metadata["live_api_calls_enabled"] is True
@@ -156,7 +158,7 @@ def test_smartthings_request_helper_requires_ack_before_network_call():
         calls.append(args)
         return FakeResponse()
 
-    result = smartthings_control.switch_input(
+    result = tv_smartthings_control.switch_input(
         {"smartthings_token": "abcdef1234567890", "smartthings_device_id": "device-1"},
         "HDMI1",
         opener=opener,
@@ -181,7 +183,7 @@ def test_smartthings_request_helper_posts_sanitized_fake_api_request():
         return FakeResponse(200, '{"status":"ACCEPTED"}')
 
     settings = _ack_settings()
-    result = smartthings_control.switch_input(settings, "HDMI1", opener=opener, timeout=3)
+    result = tv_smartthings_control.switch_input(settings, "HDMI1", opener=opener, timeout=3)
     assert result["ok"] is True
     assert result["nonfatal"] is True
     assert result["network_called"] is True
@@ -205,7 +207,7 @@ def test_smartthings_request_helper_handles_401_403_without_leaking_token():
         )
 
     settings = _ack_settings()
-    result = smartthings_control.switch_input(settings, "HDMI1", opener=opener)
+    result = tv_smartthings_control.switch_input(settings, "HDMI1", opener=opener)
     assert result["ok"] is False
     assert result["nonfatal"] is True
     assert result["network_called"] is True
@@ -238,24 +240,24 @@ def test_build10_metadata_and_documentation_identity():
 
 def test_smartthings_helper_validation_failure_paths_are_nonfatal_and_sanitized():
     acknowledged = {"smartthings_experimental_acknowledged": "true"}
-    assert smartthings_control.is_acknowledged(object()) is False
-    assert smartthings_control.redact_token(None) == ""
-    assert smartthings_control.redact_secret_in_text(None, None) == ""
-    assert smartthings_control.sanitized_settings({"other": "ok"}) == {"other": "ok"}
+    assert tv_smartthings_control.is_acknowledged(object()) is False
+    assert tv_smartthings_control.redact_token(None) == ""
+    assert tv_smartthings_control.redact_secret_in_text(None, None) == ""
+    assert tv_smartthings_control.sanitized_settings({"other": "ok"}) == {"other": "ok"}
 
-    missing_token = smartthings_control.switch_input(
+    missing_token = tv_smartthings_control.switch_input(
         {**acknowledged, "smartthings_device_id": "device-1"}, "HDMI1"
     )
     assert missing_token["error_code"] == "smartthings_token_missing"
     assert missing_token["network_called"] is False
 
-    missing_device = smartthings_control.switch_input(
+    missing_device = tv_smartthings_control.switch_input(
         {**acknowledged, "smartthings_token": "abcdef1234567890"}, "HDMI1"
     )
     assert missing_device["error_code"] == "smartthings_device_id_missing"
     assert "abcdef1234567890" not in str(missing_device)
 
-    missing_input = smartthings_control.switch_input(
+    missing_input = tv_smartthings_control.switch_input(
         {
             **acknowledged,
             "smartthings_token": "abcdef1234567890",
@@ -272,13 +274,13 @@ def test_smartthings_request_helper_handles_non_auth_http_network_and_target_pat
 
     settings = _ack_settings()
 
-    result_202 = smartthings_control.switch_target(
+    result_202 = tv_smartthings_control.switch_target(
         settings, "kodi", opener=lambda request, timeout=0: FakeResponse(202, '{"status":"queued"}')
     )
     assert result_202["ok"] is True
     assert result_202["status_code"] == 202
 
-    result_500 = smartthings_control.switch_input(
+    result_500 = tv_smartthings_control.switch_input(
         settings,
         "HDMI1",
         opener=lambda request, timeout=0: FakeResponse(500, "server error abcdef1234567890"),
@@ -292,7 +294,7 @@ def test_smartthings_request_helper_handles_non_auth_http_network_and_target_pat
             request.full_url, 500, "Server abcdef1234567890", hdrs=None, fp=None
         )
 
-    result_http_error = smartthings_control.switch_input(settings, "HDMI1", opener=http_500)
+    result_http_error = tv_smartthings_control.switch_input(settings, "HDMI1", opener=http_500)
     assert result_http_error["error_code"] == "smartthings_http_error"
     assert result_http_error["status_code"] == 500
     assert "abcdef1234567890" not in str(result_http_error)
@@ -300,7 +302,7 @@ def test_smartthings_request_helper_handles_non_auth_http_network_and_target_pat
     def url_error(request, timeout=0):
         raise urllib.error.URLError("network abcdef1234567890")
 
-    result_url_error = smartthings_control.switch_input(settings, "HDMI1", opener=url_error)
+    result_url_error = tv_smartthings_control.switch_input(settings, "HDMI1", opener=url_error)
     assert result_url_error["error_code"] == "smartthings_network_error"
     assert "abcdef1234567890" not in str(result_url_error)
 

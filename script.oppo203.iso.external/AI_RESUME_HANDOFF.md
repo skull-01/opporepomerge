@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `d8ce705` (origin/main, 2026-05-30 — docs after Merge #110) · **Configurator `v0.5.0` shipped + published as the repo's GitHub "Latest"** — an **AVR (AV receiver) feature in two releases**: `v0.4.0` added an **AVR control database** (224 AV-receiver/processor **model families** 2018–2025 across 10 brands — Denon/Marantz/Yamaha/Onkyo/Pioneer/Integra/Sony/Anthem/Arcam/NAD — schema v2, the TV-DB twin) + a typed `avrdb.ts` loader + an **optional Step 5 (AV Receiver)** picker + 18 vitest ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`); then `v0.5.0` **wired Step 5 into the add-on `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum: Pioneer→`pioneer_eiscp`, Sony→`sony_audio_api` configured-but-off, custom_command no-op; conservative `avr_control_enabled`; Receiver-control card captures IP + player input) for true TV/Player parity ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`). Published **`configurator-v0.5.0`** (MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256, unsigned, software-verified only; published assets re-downloaded byte-identical). **No add-on code change** — like the TV DB, the AVR DB isn't loaded by the add-on at runtime, and the add-on already shipped the AVR settings + guarded drivers → no add-on release. Repo-wide "Latest" sits on `configurator-v0.5.0` (flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`d8ce705`:** addon **950 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 52/0); configurator **101 vitest + `tsc -b` green + `npm run build` OK** · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
+**Last sync:** commit `900834b` (origin/main) + this 2026-05-31 EOD handoff · **2026-05-31 — addon functional-flow review session:** read the whole add-on playback flow first-hand from `resources/lib`, filed **7 robustness issues** (#111–#117), and shipped a **read-only OPPO status probe** ([PR #118](https://github.com/skull-01/script.oppo203.iso.external/pull/118) draft) + an **addon functional-flow diagrams** doc ([PR #119](https://github.com/skull-01/script.oppo203.iso.external/pull/119) draft); **nothing merged to `main`** (configurator state below unchanged). · **Configurator `v0.5.0` shipped + published as the repo's GitHub "Latest"** — an **AVR (AV receiver) feature in two releases**: `v0.4.0` added an **AVR control database** (224 AV-receiver/processor **model families** 2018–2025 across 10 brands — Denon/Marantz/Yamaha/Onkyo/Pioneer/Integra/Sony/Anthem/Arcam/NAD — schema v2, the TV-DB twin) + a typed `avrdb.ts` loader + an **optional Step 5 (AV Receiver)** picker + 18 vitest ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`); then `v0.5.0` **wired Step 5 into the add-on `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum: Pioneer→`pioneer_eiscp`, Sony→`sony_audio_api` configured-but-off, custom_command no-op; conservative `avr_control_enabled`; Receiver-control card captures IP + player input) for true TV/Player parity ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`). Published **`configurator-v0.5.0`** (MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256, unsigned, software-verified only; published assets re-downloaded byte-identical). **No add-on code change** — like the TV DB, the AVR DB isn't loaded by the add-on at runtime, and the add-on already shipped the AVR settings + guarded drivers → no add-on release. Repo-wide "Latest" sits on `configurator-v0.5.0` (flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`d8ce705`:** addon **950 passed, 3 skipped** (pre-push hook; coverage 99%; mypy `--gate` 52/0); configurator **101 vitest + `tsc -b` green + `npm run build` OK** · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
 **Latest release:** add-on `v2.9.13`; configurator **`configurator-v0.5.0`** (now holds the
 repo-wide GitHub **"Latest"** badge) — **wires the AVR Step 5 selection into the add-on's
 `settings.xml`** (`avr_backend`/`avr_host`/`avr_player_input` + conservative `avr_control_enabled`;
@@ -177,20 +177,36 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-30 (later — teaching-commentary session; addon area).** **Work in flight: the
-cross-area teaching-commentary theme (§3c), Step 2.** `resources/lib/kodi/external_player.py` is
-now commented to the teaching bar — module docstring + numbered end-to-end playback-flow overview,
-import-shim explanation, beginner-facing docstrings on every previously-undocumented function, and
-one trick-play gloss — **comments/docstrings only, zero logic change** (+171 lines, 1 file).
-Checkpointed as a `wip:` commit `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9`
-(pushed; **not** on `main`, **not** merged). Backstop green: `ruff check` + `ruff format --check`
-clean, full suite **943 passed / 3 skipped**. **What's left:** the operator's Step-2 *style
-sign-off* (the gate before any further files); then continue in small reviewable batches starting
-with `oppo_control.py`. **Found while reading (not fixed):** `hold_playback`'s `verbose_push`
-fallback sets `mode='tcp_qpl_poll'` but that branch sits physically above it, so a failed
-verbose-push hold silently degrades to `fixed_timeout` (default 180 min) instead of QPL-polling —
-see §3c's resume note. Do **not** push/merge the wip branch unprompted; the operator reviews and
-pushes commentary.
+**As of 2026-05-31 (addon functional-flow review session).** **Clean stopping point — no
+uncommitted addon work; two draft PRs open, nothing merged to `main`.** This session read the whole
+add-on playback flow **first-hand from `resources/lib`** (entry points, both architectures, the
+5-mode hold, OPPO/TV/AVR/remote subsystems) and produced:
+
+- **Read-only OPPO status probe — [PR #118](https://github.com/skull-01/script.oppo203.iso.external/pull/118) (draft), branch `claude/oppo-status-probe-8x3k9m2p` @ `c9f7579`.**
+  `oppo_control.probe_player_status()` fires the documented OPPO `#Q..` query battery
+  (`QPL/QFN/QFT/QTK/QTE/QDT/…`) over TCP:23 + a "Probe OPPO player status (diagnostic)" installer
+  menu action; `docs/OPPO_PROTOCOL_REFERENCE.md` transcribes the protocol; `tests/test_oppo_status_probe.py`
+  (13 tests). **Gates green:** pytest **963/3**, coverage **99%**, ruff + mypy strict clean. **No
+  change to routing / payloads / hold modes.** *What's left:* operator **Phase-C run on real
+  hardware** (does a NAS-ISO handoff report the ISO name via **`#QFN`**, or mount as a disc →
+  `#QDT`?), then the **#113** `verify_playback_started()` follow-up wired into `fast_start`.
+- **Addon functional-flow diagrams — [PR #119](https://github.com/skull-01/script.oppo203.iso.external/pull/119) (draft), branch `claude/addon-flow-doc-k3m9x2p7` @ `c6309c0`.**
+  `docs/ADDON_FUNCTIONAL_FLOW.md` — Mermaid diagrams of the add-on flow + a findings appendix.
+  **Awaiting the operator's style/coverage sign-off**; not yet linked from this handoff.
+- **7 issues filed (robustness review of both architectures):** **#111** (diag HTTP probe checks
+  port 80, not 436), **#112** (verbose_push hold silently degrades to fixed_timeout 180 min),
+  **#113** (*ENH* — verify the OPPO actually played the requested file; **`#QFN`** is the documented
+  basis, commented on the issue), **#114** (default `hold_mode=fixed_timeout` = blind 180-min hold),
+  **#115** (`manual_file` hold has no timeout — infinite), **#116** (polling holds run to the
+  240-min timeout on OPPO loss), **#117** (stale `oppo203iso-active` sentinel after a crash disables
+  interception / sticks the remote bridge). #111/#112 from earlier in the session; #113–#117 on
+  "file them".
+
+**Teaching-commentary theme (§3c) is still PAUSED, untouched this session** — `external_player.py`
+commented, `wip:` `62b22eb` on `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on
+`main`), still awaiting the operator's Step-2 *style sign-off*. The verbose_push degrade it noted is
+now filed as **#112** (+ the blind-default-hold issue **#114**). Do **not** push/merge that wip
+branch unprompted.
 
 **Prior context (durable) — recent addon-area changes:**
 
@@ -216,17 +232,22 @@ pushes commentary.
   community call for tester reports / lending / donations).
 
 - **Candidate themes for next addon session** (pick one, per §4):
-  1. **Teaching-commentary pass (cross-area, IN FLIGHT — awaiting Step-2 style sign-off)** —
-     Step 1 (repo + flow map) done; **Step 2 done**: `external_player.py` commented (`wip:`
-     `62b22eb` on `claude/teaching-comments-extplayer-r3k8m2x9`, pushed, not on `main`). **Next:
-     the operator signs off on the Step-2 style, then continue to `oppo_control.py` in small
-     batches (commit `docs: …`, do NOT push).** Full exact plan + flow map + batch breakdown +
-     suspect list in §3c; when proposing this theme, reproduce §3c's verbatim briefing EXACTLY
-     (operator directive) — do not paraphrase. ← resume here.
-  2. **Phase A/C on-device verification** of the merged work (incl. the M9205 V1 split) —
-     operator action on real hardware, no agent code.
-  3. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is
-     complete and the configurator now owns config, so the addon is at a clean baseline.
+  1. **OPPO status-probe follow-through (natural next step)** — operator runs PR #118's "Probe
+     OPPO player status" on the real Kodi box + OPPO (Phase C in the checklist), pastes
+     `oppo-status-probe.txt`, then the agent wires **#113** `verify_playback_started()` into
+     `fast_start` using the real fields (`#QPL` + `#QTE` + `#QFN`). ← resume here.
+  2. **Robustness bug-fixes** — **#114** (sane default hold instead of blind 180-min), **#115**
+     (`manual_file` timeout), **#116** (polling-hold abort on OPPO loss), **#117** (self-healing
+     sentinel), **#111**/**#112** (port-436 diag probe / verbose_push fall-through). Each is small +
+     test-backed.
+  3. **Addon functional-flow doc ([PR #119](https://github.com/skull-01/script.oppo203.iso.external/pull/119)) style sign-off** — review the diagrams' style/coverage; on
+     approval, merge + link from the stubbed §5 / §9 / §11 / §12.
+  4. **Teaching-commentary pass (cross-area, PAUSED — awaiting Step-2 style sign-off)** — Step 2
+     (`external_player.py`) written as `wip:` `62b22eb`; on approval, retitle to `docs: …` and
+     continue to `oppo_control.py`. Full plan + verbatim briefing in §3c (reproduce it EXACTLY when
+     proposing — operator directive).
+  5. **Phase A/C on-device verification** of merged work (incl. the M9205 V1 split) — operator
+     action on real hardware, no agent code.
 
 ## §3b Configurator work — in progress
 
@@ -833,7 +854,14 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-30 (later still — AVR configurator session, `v0.4.0` + `v0.5.0`. No issues opened/closed/retitled: #109 (AVR DB + Step 5) and #110 (Step 5 wired into the add-on `settings.xml`) were PR-only delivery, the configurator's established untracked-delivery pattern. #44 remains the only open issue; 0 open PRs)**.
+Last refreshed: **2026-05-31 (addon functional-flow review session).** 7 issues **opened**:
+**#111**/**#112** (addon bugs — port-80 diag probe, verbose_push→fixed_timeout degrade), **#113**
+(addon ENH — verify the OPPO played the requested file; `#QFN` documented basis, SHA-commented),
+**#114–#117** (addon robustness bugs — blind-default hold, manual_file infinite, polling 4 h on
+loss, stale sentinel). 2 **draft PRs** opened: **#118** (status probe, `c9f7579`) and **#119**
+(functional-flow doc, `c6309c0`). No issues closed/retitled. **Open issues now:** #44 (addon
+solicitation), #103/#105 (configurator — delivered-but-open, Phase C), #111–#117 (addon, not yet
+implemented). **Open PRs:** #118, #119 (both draft).
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
@@ -855,6 +883,15 @@ Last refreshed: **2026-05-30 (later still — AVR configurator session, `v0.4.0`
 | 103 | ENH: migrate configurator TV database to schema v2 (296 model families, region filtering) | configurator | `area:configurator` | OPEN (SHA commented) | [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104) `5380425` (impl `343041c` loader+data, `cde87c6` Step-3 UI). Shipped in `configurator-v0.3.0`. | awaiting operator verify/close (Phase C in checklist) |
 | 105 | ENH: create canonical players DB (players.json) and adopt it in the configurator | configurator | `area:configurator` | OPEN (SHA commented) | [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106) `81c3eb5` (impl `4b7f63e` DB, `9ab2f61` configurator, `18d423e` guard, `5675f70` count derive). Add-on side test-only. Shipped in `configurator-v0.3.0`. | awaiting operator verify/close (Phase C in checklist) |
 | 104·106·107 | (no issue) configurator `v0.3.0` — TV DB v2 + players DB + release | configurator | _release (PR-only)_ | MERGED + PUBLISHED 2026-05-30 | release [PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107) `55bf6fa`; tag `configurator-v0.3.0` (MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256 attached, marked **Latest**); evidence `configurator/release-evidence/v0.3.0/BUILD_NOTES.md` | Phase C on-device (install on clean machine; confirm Step 3 region filter + Step 2 player facts) queued |
+| 111 | [Bug] addon: diagnostics HTTP probe checks port 80 but the OPPO HTTP API is port 436 | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 (functional-flow review) | awaiting operator |
+| 112 | [Bug] addon: verbose_push hold silently degrades to fixed_timeout (180 min) instead of tcp_qpl_poll | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 (was the §3c "found while reading" note) | awaiting operator |
+| 113 | ENH-: verify the OPPO actually started playing the requested file (both architectures) | addon | `area:addon` | OPEN (SHA-commented) | precursor probe shipped — [PR #118](https://github.com/skull-01/script.oppo203.iso.external/pull/118) `c9f7579`; **`#QFN`** is the documented basis (protocol finding commented). `verify_playback_started()` is the follow-up. | awaiting operator (run probe Phase C, then build verify) |
+| 114 | [Bug] addon: default hold_mode=fixed_timeout holds Kodi for 180 min with no stop detection | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
+| 115 | [Bug] addon: manual_file hold mode has no timeout (infinite hang) | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
+| 116 | [Bug] addon: http_poll/tcp_qpl_poll hold to the 240-min timeout when the OPPO drops off mid-playback | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
+| 117 | [Bug] addon: stale oppo203iso-active sentinel after a crash disables interception / sticks the remote bridge | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
+| 118 | (no issue) read-only OPPO player-status probe (#Q.. query battery + protocol reference) | addon | _PR-only (draft)_ | OPEN (draft PR) | [PR #118](https://github.com/skull-01/script.oppo203.iso.external/pull/118) `c9f7579`, branch `claude/oppo-status-probe-8x3k9m2p`; precursor for #113. Gates: pytest 963/3, cov 99%, ruff+mypy clean | Phase A/C queued (run probe on real hardware) |
+| 119 | (no issue) addon functional-flow diagrams doc (Mermaid) | addon | _PR-only (draft, docs)_ | OPEN (draft PR) | [PR #119](https://github.com/skull-01/script.oppo203.iso.external/pull/119) `c6309c0`, branch `claude/addon-flow-doc-k3m9x2p7` | awaiting operator style sign-off |
 
 ---
 
@@ -1226,6 +1263,20 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   guarded drivers). Publishing was operator-gated (auto-mode flagged the follow-up release as a
   Create-Public-Surface action) and approved before publish. Updated the §1 header pointer.
 
+- **2026-05-31 (addon functional-flow review + OPPO status probe — EOD)** — operator picked the
+  addon area / "Review Addon Functionality" theme, then refined it to a code-verified flow map with
+  diagrams. Read the whole add-on flow **first-hand from `resources/lib`** (after an initial pass
+  leaned on sub-agents, which the operator flagged as "off"). Outputs: (a) `docs/ADDON_FUNCTIONAL_FLOW.md`
+  Mermaid diagrams ([PR #119](https://github.com/skull-01/script.oppo203.iso.external/pull/119) draft, `c6309c0`); (b) a robustness assessment of both architectures that filed
+  **7 issues** (#111–#117); (c) on the operator's "I need a function that the OPPO actually played
+  the requested file", checked OPPO's RS-232 & IP Control Protocol PDFs and found **`#QFN` (Query
+  media file name)** as the documented basis — then built a **read-only status probe**
+  (`probe_player_status` + installer menu action + `docs/OPPO_PROTOCOL_REFERENCE.md` + 13 tests;
+  [PR #118](https://github.com/skull-01/script.oppo203.iso.external/pull/118) draft, `c9f7579`; pytest 963/3, cov 99%, ruff + mypy clean) and commented the finding on #113.
+  Refreshed §3a + §17a; updated the §1 header. Nothing merged to `main`; both PRs are draft pending
+  operator review + a Phase-C probe run on real hardware. (Untracked at the repo root and **left
+  alone**, not agent-created: `ADDON_RESOURCES_RECONSTRUCTION.md`, `CONFIGURATOR_SRC_RECONSTRUCTION.md`.)
+
 ---
 
 # §20 Dev notes (operator's verbatim instructions)
@@ -1233,7 +1284,9 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
 _Append-only. Each entry: `### YYYY-MM-DD HH:MM — dev note` followed by the operator's
 text VERBATIM. No summarizing, no editing. Added via the `dev note:` trigger._
 
-(none yet)
+### 2026-05-31 13:05 — dev note
+
+main's CI is red on ruff format --check — but it's pre-existing and unrelated to these PRs. Three add-on test files (tests/test_all.py, test_players_db_consistency.py, test_v2910_build2_player_taxonomy.py) have formatting drift; ruff check itself passes. None of the merged PRs touch Python, so they neither caused nor worsened it. I've queued a task chip to fix it (one ruff format run + full-suite re-verify, as a draft area:addon PR) — click to spin it off, or dismiss.
 
 ---
 

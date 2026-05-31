@@ -1323,19 +1323,19 @@ class TCoverageGateSecondPass(unittest.TestCase):
             self.assertIn("played", calls)
 
     def test_small_module_edges(self):
-        import adb_control
         import i18n
         import reconnect_backoff
+        import tv_adb_control
 
         class Proc:
             returncode = 0
             stdout = "ok\n"
             stderr = ""
 
-        with mock.patch.object(adb_control.subprocess, "run", return_value=Proc()):
-            self.assertEqual(adb_control.adb_connect("adb", "1.2.3.4", 5555), "ok")
+        with mock.patch.object(tv_adb_control.subprocess, "run", return_value=Proc()):
+            self.assertEqual(tv_adb_control.adb_connect("adb", "1.2.3.4", 5555), "ok")
             self.assertEqual(
-                adb_control.adb_shell("adb", "1.2.3.4", 5555, "input keyevent 3"), "ok"
+                tv_adb_control.adb_shell("adb", "1.2.3.4", 5555, "input keyevent 3"), "ok"
             )
 
         class Bad:
@@ -1343,11 +1343,11 @@ class TCoverageGateSecondPass(unittest.TestCase):
             stdout = ""
             stderr = "bad"
 
-        with mock.patch.object(adb_control.subprocess, "run", return_value=Bad()):
-            with self.assertRaises(adb_control.ADBError):
-                adb_control._run(["adb"], timeout=1)
+        with mock.patch.object(tv_adb_control.subprocess, "run", return_value=Bad()):
+            with self.assertRaises(tv_adb_control.ADBError):
+                tv_adb_control._run(["adb"], timeout=1)
         self.assertEqual(
-            adb_control.switch_input(
+            tv_adb_control.switch_input(
                 FakeSettings(
                     {
                         "adb_path": "adb",

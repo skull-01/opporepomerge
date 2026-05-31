@@ -36,9 +36,9 @@ _PKG = __name__  # "resources.lib"
 # Legacy flat module name -> owning sub-package. Keep in sync with the tree.
 _BUCKET = {
     # tv/
-    "adb_control": "tv",
-    "roku_ecp_control": "tv",
-    "smartthings_control": "tv",
+    "tv_adb_control": "tv",
+    "tv_roku_ecp_control": "tv",
+    "tv_smartthings_control": "tv",
     "tv_backends": "tv",
     "tv_control": "tv",
     "tv_diagnostics": "tv",

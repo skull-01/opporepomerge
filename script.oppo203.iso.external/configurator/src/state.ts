@@ -63,13 +63,16 @@ export type WizardState = {
   avrReceiverType: string | null;
   avrIp: string;
   avrPlayerInput: string;
+  avrSonyAcknowledged: boolean;
+  avrSonyPsk: string;
+  avrSonyPlayerInputUri: string;
 
   playerBrand: PlayerBrand | null;
   playerModel: string | null;
   playerIp: string;
   playerVerified: boolean;
 
-  oppoInput: InputAddress;
+  playerInput: InputAddress;
   kodiInput: InputAddress;
 
   testMode: "disc" | "own" | null;
@@ -113,11 +116,14 @@ export const INITIAL_STATE: WizardState = {
   avrReceiverType: null,
   avrIp: "10.0.1.90",
   avrPlayerInput: "",
+  avrSonyAcknowledged: false,
+  avrSonyPsk: "",
+  avrSonyPlayerInputUri: "",
   playerBrand: null,
   playerModel: null,
   playerIp: "10.0.1.77",
   playerVerified: false,
-  oppoInput: null,
+  playerInput: null,
   kodiInput: null,
   testMode: null,
 };
