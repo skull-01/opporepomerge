@@ -57,6 +57,7 @@ _BUCKET = {
     "oppo_control": "oppo",
     "oppo_remote": "oppo",
     "oppo_tcp_client": "oppo",
+    "playback_monitor_svm3": "oppo",
     "command_map": "oppo",
     "constants": "oppo",
     "discovery": "oppo",
