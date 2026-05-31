@@ -333,8 +333,10 @@ DB rows `validated:false` (**operator fact-check**); new behaviors are Phase-A/C
 2. **Fact-check + Phase-C the merged 2026 DB rows** — verify the AVR (#140) + TV (#141)
    `validated:false` rows against real product data + hardware; especially Hisense platform-by-region,
    Integra model-year, and the Yamaha entry-tier network-control caveat.
-3. **Small cleanups** — `tv_port_probe` → `tcp_port_probe` rename (flagged #135); thread
-   `state.topology` into `shell/AppHeader.tsx` (flagged #138).
+3. **Thread `state.topology` into `shell/AppHeader.tsx`** (flagged #138) — small cleanup so the
+   unused alternate header reflects the AVR chain. _(The `tv_port_probe` → `tcp_port_probe` rename
+   flagged in #135 was reviewed 2026-05-31 and **declined** — kept as-is: it's a generic TCP probe
+   but the operator opted not to churn the name. Don't re-raise.)_
 4. **Install + smoke-test the published `v0.5.0` binary** on a clean Windows machine (operator action).
 
 **Prior — 2026-05-31 (EOD) — AVR follow-ups + two-playback-chains session (5 configurator PRs, all merged).** Two themes shipped, all merged:
