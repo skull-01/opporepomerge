@@ -138,6 +138,7 @@ DEFAULTS = {
     "oppo_http_media_type": "1",
     "playback_architecture": "external_player",
     "architecture_choice_made": "false",
+    "playback_monitor_mode": "legacy",
     "tv_adb_preset": "",
     "qpl_poll_interval": "3",
     "qpl_poll_timeout_minutes": "240",
@@ -178,6 +179,7 @@ ENUM_VALUES = {
     "oppo_verbose_mode": ["0", "2", "3"],
     "oppo_http_payload_mode": ["raw_path", "json_payload"],
     "playback_architecture": ["external_player", "service_interception"],
+    "playback_monitor_mode": ["legacy", "svm3"],
     "oppo_hardware_model": [
         "udp_203",
         "udp_205",
@@ -199,6 +201,80 @@ ENUM_VALUES = {
         "chinoppo_m9205_v1",
     ],
 }
+
+
+# Four-option playback architecture (PR A1). Two independent axes -- routing (how
+# Kodi hands a disc to the controller: playercorefactory vs service interception)
+# and monitor (how playback is confirmed: legacy vs svm3) -- are also exposed as
+# one combined playback_architecture_preset that the configurator writes.
+# normalize_architecture() treats an explicit, valid preset as the source of
+# truth; when it is absent it derives the preset from the legacy
+# playback_architecture + playback_monitor_mode. The preset has no DEFAULTS entry
+# on purpose: a default would mask a pre-existing service_interception install, so
+# "absent" must mean "derive from the legacy fields" and existing users keep their
+# current behavior.
+PLAYBACK_ROUTING_MODES = ("playercorefactory", "service_interception")
+PLAYBACK_MONITOR_MODES = ("legacy", "svm3")
+PLAYBACK_ARCHITECTURE_PRESETS = (
+    "playercorefactory_legacy",
+    "service_interception_legacy",
+    "playercorefactory_svm3",
+    "service_interception_svm3",
+)
+
+# The stored playback_architecture enum predates the four-option model and names
+# the playercorefactory routing "external_player"; map both spellings onto it.
+_ROUTING_ALIASES = {
+    "external_player": "playercorefactory",
+    "playercorefactory": "playercorefactory",
+    "service_interception": "service_interception",
+}
+
+_PRESET_BY_AXES = {
+    ("playercorefactory", "legacy"): "playercorefactory_legacy",
+    ("service_interception", "legacy"): "service_interception_legacy",
+    ("playercorefactory", "svm3"): "playercorefactory_svm3",
+    ("service_interception", "svm3"): "service_interception_svm3",
+}
+_AXES_BY_PRESET = {preset: axes for axes, preset in _PRESET_BY_AXES.items()}
+
+
+def architecture_preset(architecture: str, monitor_mode: str) -> str:
+    """Map a routing axis + monitor axis onto the combined preset id.
+
+    ``architecture`` accepts either the stored playback_architecture vocabulary
+    ("external_player"/"service_interception") or the preset vocabulary
+    ("playercorefactory"/...). Unknown values fall back to the legacy default so
+    an unconfigured or corrupt install still resolves to a valid preset.
+    """
+    routing = _ROUTING_ALIASES.get(str(architecture).strip().lower(), "playercorefactory")
+    monitor = str(monitor_mode).strip().lower()
+    if monitor not in PLAYBACK_MONITOR_MODES:
+        monitor = "legacy"
+    return _PRESET_BY_AXES[(routing, monitor)]
+
+
+def normalize_architecture(settings: Settings) -> dict[str, str]:
+    """Resolve the four-option playback architecture for a Settings object.
+
+    The combined ``playback_architecture_preset`` is the source of truth: when it
+    is present and valid the normalized routing/monitor fields are derived from it
+    so a stale ``playback_architecture`` / ``playback_monitor_mode`` cannot win.
+    When the preset is absent -- an install created before it existed -- it is
+    back-filled from the legacy ``playback_architecture`` plus
+    ``playback_monitor_mode`` so existing users keep their current behavior.
+    """
+    preset = str(settings.get("playback_architecture_preset", "") or "").strip()
+    if preset in _AXES_BY_PRESET:
+        routing, monitor = _AXES_BY_PRESET[preset]
+    else:
+        monitor = str(settings.get("playback_monitor_mode", "legacy") or "legacy").strip().lower()
+        if monitor not in PLAYBACK_MONITOR_MODES:
+            monitor = "legacy"
+        architecture = settings.get("playback_architecture", "external_player")
+        preset = architecture_preset(architecture, monitor)
+        routing = _AXES_BY_PRESET[preset][0]
+    return {"preset": preset, "routing": routing, "monitor_mode": monitor}
 
 
 # v2.9.1 Build 9: lightweight typed settings schema.
