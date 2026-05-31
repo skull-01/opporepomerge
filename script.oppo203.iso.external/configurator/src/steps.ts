@@ -41,6 +41,7 @@ export type ChainTarget =
   | "kodi"
   | "tv"
   | "player"
+  | "avr"
   | "tv-player"
   | "all";
 
@@ -143,4 +144,36 @@ export function firstScreenOfStep(stepId: StepId): ScreenId {
     case "test":
       return "test_setup";
   }
+}
+
+import type { Topology } from "./state";
+
+/**
+ * Topology-aware flow helpers. Kept as pure functions (no React) so the wizard's
+ * branch decisions are unit-testable without rendering. A null topology (legacy/unset)
+ * behaves as the TV chain everywhere - the soft default.
+ */
+export function isAvrChain(topology: Topology | null): boolean {
+  return topology === "kodi_avr_tv_player";
+}
+
+/**
+ * The chain nodes shown in the header visualization, in order. The AVR chain inserts an
+ * "avr" node between Kodi and the player (player -> AVR -> TV); the TV chain omits it.
+ */
+export function chainNodeIds(topology: Topology | null): readonly ChainNodeId[] {
+  return isAvrChain(topology)
+    ? ["media", "kodi", "avr", "player", "tv"]
+    : ["media", "kodi", "player", "tv"];
+}
+
+export type ChainNodeId = "media" | "kodi" | "avr" | "player" | "tv";
+
+/**
+ * Where Step 4 (HDMI input capture) hands off next. In the AVR chain the receiver does the
+ * switching, so the receiver step is the natural next stop; in the TV chain it stays the
+ * optional-receiver ask. Both ultimately reach step5_ask, but the AVR chain leads with it.
+ */
+export function step4NextScreen(_topology: Topology | null): ScreenId {
+  return "step5_ask";
 }

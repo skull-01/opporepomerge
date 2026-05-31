@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — topology-aware flow + chain viz (topology PR 2)
+
+- **Branch:** `claude/topology-flow-chainviz-4b1e7a3c`. PR-only theme (no tracked issue).
+- **What changed (software-verified only):** the header chain shows a Receiver node for the AVR chain (ISO -> Kodi -> Receiver -> Player -> TV); Step 4 copy frames inputs as receiver inputs in the AVR chain. Pure helpers `isAvrChain` / `chainNodeIds` / `step4NextScreen` added and unit-tested. `tsc -b` + `vite build` + `vitest` green.
+- **Operator verifies (Phase A):** read the diff; CI green.
+- **Operator verifies (Phase C - on the built app):** pick the AVR chain at Step 0; confirm the header chain shows the Receiver node and Step 4 says "receiver input". Pick the TV chain; confirm the original 4-node chain and TV wording.
+
 ### Configurator — Step 0 playback-chain picker (PR #134-series topology, PR 1)
 
 - **Branch:** `claude/topology-chain-picker-9f2a1c7d`. PR-only theme (no tracked issue).

@@ -1,33 +1,44 @@
 import { Fragment } from "react";
 import { Icon, type IconName } from "../icons";
 import type { ChainCompletion } from "../state";
-import type { ChainTarget } from "../steps";
+import { chainNodeIds, type ChainNodeId, type ChainTarget } from "../steps";
+import type { Topology } from "../state";
 
 type Node = {
-  id: keyof ChainCompletion;
+  id: ChainNodeId;
   icon: IconName;
   label: string;
 };
 
-const NODES: readonly Node[] = [
-  { id: "media", icon: "media", label: "ISO Playback" },
-  { id: "kodi", icon: "kodi", label: "Kodi box" },
-  { id: "player", icon: "player", label: "Player" },
-  { id: "tv", icon: "tv", label: "TV" },
-];
+const NODE_DEFS: Record<ChainNodeId, Node> = {
+  media: { id: "media", icon: "media", label: "ISO Playback" },
+  kodi: { id: "kodi", icon: "kodi", label: "Kodi box" },
+  avr: { id: "avr", icon: "avr", label: "Receiver" },
+  player: { id: "player", icon: "player", label: "Player" },
+  tv: { id: "tv", icon: "tv", label: "TV" },
+};
 
 type Props = {
   active: ChainTarget;
   completed: ChainCompletion;
+  // Optional so the static summary/header call sites keep working; null = TV chain.
+  topology?: Topology | null;
 };
 
-export function Chain({ active, completed }: Props) {
+export function Chain({ active, completed, topology = null }: Props) {
+  const NODES: readonly Node[] = chainNodeIds(topology).map((id) => NODE_DEFS[id]);
+  // The "avr" node has no completion flag of its own; treat receiver-step screens as its
+  // active state and never mark it done (it is advisory, not a verified gate).
+  const completedFor = (id: Node["id"]): boolean =>
+    id === "avr" ? false : completed[id];
+
   const isActive = (id: Node["id"]) =>
     active === id ||
     (active === "all" && id !== "media") ||
-    (active === "tv-player" && (id === "tv" || id === "player"));
+    (active === "tv-player" && (id === "tv" || id === "player" || id === "avr"));
 
   const isDone = (id: Node["id"]) => {
+    if (id === "avr") return false;
     if (active === "all") return completed[id];
     if (id === "media" && completed.media) return true;
     if (isActive(id)) return false;
@@ -36,9 +47,9 @@ export function Chain({ active, completed }: Props) {
 
   const edgeState = (a: Node["id"], b: Node["id"]) => {
     if (active === "tv-player" && a === "player" && b === "tv") return "bidir";
-    if (isActive(a) && completed[b]) return "active";
-    if (isActive(b) && completed[a]) return "active";
-    if (completed[a] && completed[b]) return "done";
+    if (isActive(a) && completedFor(b)) return "active";
+    if (isActive(b) && completedFor(a)) return "active";
+    if (completedFor(a) && completedFor(b)) return "done";
     return "";
   };
 
