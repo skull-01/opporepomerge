@@ -231,7 +231,7 @@ describe("topology-aware AVR switcher settings", () => {
     avrBackend: "denon_marantz",
     avrIp: "10.0.1.91",
     avrPlayerInput: "BD",
-    kodiInput: 1,
+    avrKodiInput: "CBL/SAT",
   };
 
   it("emits receiver power-on + restore-to-Kodi-input for the AVR chain", () => {
@@ -239,7 +239,14 @@ describe("topology-aware AVR switcher settings", () => {
     expect(out.avr_control_enabled).toBe("true");
     expect(out.avr_power_on_enabled).toBe("true");
     expect(out.avr_restore_enabled).toBe("true");
-    expect(out.avr_restore_input).toBe("1");
+    expect(out.avr_restore_input).toBe("CBL/SAT");
+  });
+
+  it("sources the restore input from the dedicated receiver field, not the TV's kodiInput", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ ...denonAvrChain, kodiInput: 5, avrKodiInput: "8K" }),
+    );
+    expect(out.avr_restore_input).toBe("8K");
   });
 
   it("turns TV switching off in the AVR chain even with a TV backend configured", () => {
@@ -263,9 +270,9 @@ describe("topology-aware AVR switcher settings", () => {
     expect(out.avr_control_enabled).toBe("true");
   });
 
-  it("omits the restore input when the Kodi input is non-numeric (CEC/cycle)", () => {
+  it("omits the restore input (but still powers on) when no receiver Kodi input is given", () => {
     const out = wizardStateToAddonSettings(
-      makeState({ ...denonAvrChain, kodiInput: "cec" }),
+      makeState({ ...denonAvrChain, avrKodiInput: "" }),
     );
     expect(out.avr_power_on_enabled).toBe("true");
     expect(out.avr_restore_enabled).toBeUndefined();
