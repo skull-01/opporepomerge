@@ -387,22 +387,17 @@ def main() -> int:
             log(f"Preflight failed (non-fatal): {exc}")
 
     try:
-        mark_session_active(settings)
-        fast_start(settings, args.file, preflight_result=preflight_result)
-        hold_playback(settings)
+        from .playback_session import run_playback_session
+    except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+        from playback_session import run_playback_session  # type: ignore[no-redef]
 
-    except Exception:
-        traceback.print_exc()
-        return 1
-
-    finally:
-        try:
-            fast_return(settings)
-        except Exception:
-            traceback.print_exc()
-        clear_session_active(settings)
-
-    return 0
+    return run_playback_session(
+        settings,
+        args.file,
+        launch_source="playercorefactory",
+        preflight_result=preflight_result,
+        player=sys.modules[__name__],
+    )
 
 
 if __name__ == "__main__":

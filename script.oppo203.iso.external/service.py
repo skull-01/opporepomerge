@@ -212,24 +212,9 @@ def _run_interception(path: str, settings: Any) -> None:
         if lib_path and lib_path not in sys.path:
             sys.path.insert(0, lib_path)
 
-        from external_player import (
-            clear_session_active,
-            fast_return,
-            fast_start,
-            hold_playback,
-            mark_session_active,
-        )
+        from playback_session import run_playback_session
 
-        mark_session_active(settings)
-        try:
-            fast_start(settings, path)
-            hold_playback(settings)
-        finally:
-            try:
-                fast_return(settings)
-            except Exception:
-                pass
-            clear_session_active(settings)
+        run_playback_session(settings, path, launch_source="service_interception")
 
     except Exception as exc:
         log(f"Service interception error: {exc}")
