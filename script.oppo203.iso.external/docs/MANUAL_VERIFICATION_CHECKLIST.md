@@ -31,6 +31,29 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Add-on — default hold_mode now detects stop (tcp_qpl_poll) (#114)
+
+- **Implementing SHA:** `5954556` on `claude/default-hold-tcp-qpl-b4d2f6a1` (draft PR — commented
+  on issue #114). **Merge after the #112/#115/#116 hold-robustness PR (#129)** so the new default
+  inherits the unreachable-OPPO abort.
+- **Scope:** the shipped default `hold_mode` was `fixed_timeout` — a blind 180-minute sleep with no
+  stop detection. Since the configurator does not write `hold_mode`, that default governed every
+  unconfigured install. Changed it to `tcp_qpl_poll` (polls `#QPL`, ends on idle).
+- **What changed (software-verified only):**
+  - `resources/lib/kodi/settings_reader.py`: `DEFAULTS["hold_mode"]` `fixed_timeout` → `tcp_qpl_poll`.
+  - `resources/settings.xml`: `hold_mode` enum `default="0"` → `default="3"` (index of `tcp_qpl_poll`).
+  - `tests/test_hold_default.py` (2 tests): pins the reader default and its consistency with the
+    settings.xml enum default index + `ENUM_VALUES`, so the two cannot drift.
+- **CI / gates (software-verified only; hardware validation not claimed):** `pytest` **965 passed /
+  3 skipped**; serial coverage **99%**; `ruff check` + `ruff format --check` clean; mypy strict gate
+  **49 files, 0 errors**; `render_docs` / `test_layout` / `i18n_extract` / `sync_version` `--check`
+  all OK (the settings.xml change is in sync).
+- **Phase A review focus:** confirm `tcp_qpl_poll` is the right default (vs the lighter option of
+  keeping `fixed_timeout` with a shorter minutes default), and that index 3 maps to `tcp_qpl_poll`.
+- **Phase C — on-device:** on a fresh install (no configurator run), start a UHD-ISO handoff and
+  confirm the hold polls `#QPL` and releases near actual disc-end (not a 3-hour blind hold).
+  `tcp_qpl_poll` needs `oppo_ip` / `oppo_port` reachable; confirm idle detection works on the real
+  OPPO.
 ### Add-on — self-healing oppo203iso-active session sentinel (#117)
 
 - **Implementing SHA:** `293015e` on `claude/sentinel-selfheal-c3e8a1b7` (draft PR — commented on

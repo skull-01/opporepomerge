@@ -161,7 +161,7 @@
         <setting id="include_disc_folder_rules" type="bool" label="30312" default="true" help="30313"/>
         <setting id="fast_changeover" type="bool" label="30307" default="true" help="30308"/>
         <setting id="startup_delay" type="integer" label="30301" default="0"/>
-        <setting id="hold_mode" type="enum" label="30302" values="fixed_timeout|manual_file|http_poll|tcp_qpl_poll|verbose_push" default="0" help="30303"/>
+        <setting id="hold_mode" type="enum" label="30302" values="fixed_timeout|manual_file|http_poll|tcp_qpl_poll|verbose_push" default="3" help="30303"/>
         <setting id="fixed_timeout_minutes" type="integer" label="30304" default="180"/>
         <setting id="manual_stop_file" type="string" label="30305" default="/tmp/oppo203_iso_stop"/>
         <setting id="http_poll_interval" type="integer" label="30309" default="5"/>

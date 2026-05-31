@@ -123,7 +123,7 @@ DEFAULTS = {
     "fast_changeover": "true",
     "include_disc_folder_rules": "true",
     "startup_delay": "0",
-    "hold_mode": "fixed_timeout",
+    "hold_mode": "tcp_qpl_poll",
     "fixed_timeout_minutes": "180",
     "manual_stop_file": "/tmp/oppo203_iso_stop",
     "http_poll_interval": "5",
