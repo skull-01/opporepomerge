@@ -31,11 +31,11 @@ function hdmiNumber(value: InputAddress): number | null {
  */
 function hdmiInputSettings(
   backend: string,
-  oppoInput: InputAddress,
+  playerInput: InputAddress,
   kodiInput: InputAddress,
 ): AddonSettings {
   const out: AddonSettings = {};
-  const oppo = hdmiNumber(oppoInput);
+  const oppo = hdmiNumber(playerInput);
   const kodi = hdmiNumber(kodiInput);
   if (backend === "roku_ecp") {
     if (oppo != null) out.roku_oppo_key = `InputHDMI${oppo}`;
@@ -137,7 +137,7 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
 
   if (state.tvBackend) {
     out.tv_backend = state.tvBackend;
-    Object.assign(out, hdmiInputSettings(state.tvBackend, state.oppoInput, state.kodiInput));
+    Object.assign(out, hdmiInputSettings(state.tvBackend, state.playerInput, state.kodiInput));
   }
 
   Object.assign(out, avrSettings(state));

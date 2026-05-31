@@ -63,7 +63,7 @@ describe("wizardStateToAddonSettings", () => {
 
   it("passes tv_backend through and maps Roku HDMI inputs to InputHDMIn", () => {
     const out = wizardStateToAddonSettings(
-      makeState({ tvBackend: "roku_ecp", oppoInput: 1, kodiInput: 2 }),
+      makeState({ tvBackend: "roku_ecp", playerInput: 1, kodiInput: 2 }),
     );
     expect(out.tv_backend).toBe("roku_ecp");
     expect(out.roku_oppo_key).toBe("InputHDMI1");
@@ -72,7 +72,7 @@ describe("wizardStateToAddonSettings", () => {
 
   it("maps Sony HDMI inputs to integer port strings", () => {
     const out = wizardStateToAddonSettings(
-      makeState({ tvBackend: "sony_bravia", oppoInput: 3, kodiInput: 1 }),
+      makeState({ tvBackend: "sony_bravia", playerInput: 3, kodiInput: 1 }),
     );
     expect(out.sony_oppo_hdmi_port).toBe("3");
     expect(out.sony_kodi_hdmi_port).toBe("1");

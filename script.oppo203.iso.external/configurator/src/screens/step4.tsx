@@ -80,7 +80,7 @@ export function Step4Ask({ go, state, set }: ScreenProps) {
   };
   const next = () => {
     if (step === "oppo") {
-      set({ oppoInput: picked });
+      set({ playerInput: picked });
       setStep("kodi");
       setPicked(null);
       setConfirmed(false);
@@ -205,7 +205,7 @@ export function Step4Fallback({ go, set }: ScreenProps) {
                   key={n}
                   className="filter-pill"
                   onClick={() => {
-                    set({ oppoInput: n, kodiInput: n === 1 ? 2 : 1 });
+                    set({ playerInput: n, kodiInput: n === 1 ? 2 : 1 });
                     go("step4_done");
                   }}
                 >
@@ -224,7 +224,7 @@ export function Step4Fallback({ go, set }: ScreenProps) {
             <button
               className="btn outline sm"
               onClick={() => {
-                set({ oppoInput: "cec", kodiInput: 1 });
+                set({ playerInput: "cec", kodiInput: 1 });
                 go("step4_done");
               }}
             >
@@ -241,7 +241,7 @@ export function Step4Fallback({ go, set }: ScreenProps) {
             <button
               className="btn outline sm"
               onClick={() => {
-                set({ oppoInput: "cycle:2", kodiInput: "cycle:1" });
+                set({ playerInput: "cycle:2", kodiInput: "cycle:1" });
                 go("step4_done");
               }}
             >
@@ -325,9 +325,9 @@ function describeInput(input: InputAddress, fallback: string) {
 }
 
 export function Step4Done({ go, state }: ScreenProps) {
-  const oppoLabel = describeInput(state.oppoInput, "3");
+  const oppoLabel = describeInput(state.playerInput, "3");
   const kodiLabel = describeInput(state.kodiInput, "1");
-  const isCycle = typeof state.oppoInput === "string" && state.oppoInput.startsWith("cycle");
+  const isCycle = typeof state.playerInput === "string" && state.playerInput.startsWith("cycle");
   return (
     <div className="screen">
       <div className="screen-header">
@@ -353,7 +353,7 @@ export function Step4Done({ go, state }: ScreenProps) {
                 style={{ fontSize: 12, fontFamily: "var(--font-mono)", marginTop: 2 }}
               >
                 HDMI {oppoLabel}
-                {state.oppoInput === "cec" && <> (CEC-asserted)</>}
+                {state.playerInput === "cec" && <> (CEC-asserted)</>}
                 {isCycle && <> (blind-cycle · brittle)</>}
               </div>
             </div>

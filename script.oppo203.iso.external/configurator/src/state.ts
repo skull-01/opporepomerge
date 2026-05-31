@@ -72,7 +72,7 @@ export type WizardState = {
   playerIp: string;
   playerVerified: boolean;
 
-  oppoInput: InputAddress;
+  playerInput: InputAddress;
   kodiInput: InputAddress;
 
   testMode: "disc" | "own" | null;
@@ -123,7 +123,7 @@ export const INITIAL_STATE: WizardState = {
   playerModel: null,
   playerIp: "10.0.1.77",
   playerVerified: false,
-  oppoInput: null,
+  playerInput: null,
   kodiInput: null,
   testMode: null,
 };
