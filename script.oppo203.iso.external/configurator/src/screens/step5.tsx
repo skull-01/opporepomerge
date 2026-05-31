@@ -4,7 +4,7 @@ import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
 import { avrAddonBackend } from "../mapping";
 import { isAvrChain } from "../steps";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "../ipc";
 import type { PortResult } from "../probes";
 import {
   AVR_REGIONS,

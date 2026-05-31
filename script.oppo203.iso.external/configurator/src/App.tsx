@@ -3,6 +3,7 @@ import { WinShell } from "./shell/WinShell";
 import { Chain } from "./shell/Chain";
 import { Progress } from "./shell/Progress";
 import { Sidebar } from "./shell/Sidebar";
+import { DebugPanel } from "./shell/DebugPanel";
 import {
   INITIAL_STATE,
   computeCompleted,
@@ -17,6 +18,7 @@ import {
   type ScreenId,
   type StepId,
 } from "./steps";
+import { setCurrentStep } from "./debug/log";
 import { Step0Gate } from "./screens/Step0Gate";
 import { Step0Chain } from "./screens/Step0Chain";
 import { Step0Exit } from "./screens/Step0Exit";
@@ -104,6 +106,9 @@ export default function App() {
   }, []);
 
   const stepId: StepId = SCREEN_TO_STEP[screen];
+  useEffect(() => {
+    setCurrentStep(stepId);
+  }, [stepId]);
   const completed = computeCompleted(state, screen);
   const chainActive = SCREEN_TO_CHAIN[screen];
   const useSidebar = PROGRESS_VARIANT === "sidebar";
@@ -136,6 +141,7 @@ export default function App() {
           <Screen go={go} state={state} set={set} />
         </div>
       )}
+      <DebugPanel currentStep={stepId} />
     </WinShell>
   );
 }
