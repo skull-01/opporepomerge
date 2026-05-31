@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Add-on — playback_monitor_mode + four-option preset mapping (Session A / PR A1)
+
+- **Branch:** `claude/svm3-arch-presets-cf88ab83`. ENH (to be filed by operator: "playback_monitor_mode + four-option preset mapping", `area:addon`); operator authorized the new reader key in-session (the SVM3 four-option build plan).
+- **What changed (software-verified only):** adds the monitor axis `playback_monitor_mode` (`legacy`|`svm3`, default `legacy`) to `settings_reader.DEFAULTS`/`ENUM_VALUES` alongside the existing `playback_architecture` routing axis, plus pure helpers `architecture_preset(routing, monitor)` and `normalize_architecture(settings)` that resolve the four combined presets (`playercorefactory_legacy` / `service_interception_legacy` / `playercorefactory_svm3` / `service_interception_svm3`). The combined `playback_architecture_preset` is configurator-written and is the source of truth **when present**; when absent it is derived from the legacy fields — it has **no** `DEFAULTS` entry on purpose, so it cannot mask a pre-existing `service_interception` install. Mirrors the reader-only `playback_architecture` pattern: **no `settings.xml` UI entry, no `strings.po` change, no runtime playback change** (the value is only read in this PR). New `tests/test_architecture_presets.py` (18 tests) pins the mapping, migration back-fill, drift resolution (preset wins), and the preset↔normalized round-trip guard. Gate green: pytest **994 passed / 3 skipped**, coverage **99%**, ruff check + format clean, mypy `--strict` **49/0**.
+- **Operator verifies (Phase A):** read the `resources/lib/kodi/settings_reader.py` diff + the 18 new tests; confirm existing installs map to a `*_legacy` preset (external_player → playercorefactory_legacy, service_interception → service_interception_legacy) and that nothing acts on the value at runtime yet.
+- **Operator verifies (Phase C — on the box):** none for this PR — no runtime behavior changes. The monitor branch is wired in PR A3 and SVM3 is exercised end-to-end there.
+
 ### Configurator — dedicated Step-5 receiver restore-input field (AVR-chain restore, #138 follow-up)
 
 - **Branch:** `claude/avr-receiver-restore-input-a7f2c419`. PR-only theme (no tracked issue); follow-up to PR #138.
