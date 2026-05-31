@@ -676,6 +676,38 @@ implementing SHA(s) on the issue and append a row here.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
   or hardware behavior change.
 
+### Add-on — hold_playback robustness: bound holds + fix verbose_push fallback (#112 / #115 / #116)
+
+- **Implementing SHA:** `a16a4f4` on `claude/hold-robustness-a7f3c1e9` (draft PR — commented on
+  issues #112, #115, #116). First of the robustness-bug session's PRs.
+- **Scope:** stop `hold_playback` from pinning Kodi's playback slot (and the `oppo203iso-active`
+  session sentinel) long past the end of playback. No change to playback routing, OPPO payloads,
+  TV/AVR sequencing, or the idle-confirmation / definitive-stop / trick-play-suppress logic.
+- **What changed (software-verified only):** `resources/lib/kodi/external_player.py`:
+  - **#112** — extracted the `tcp_qpl_poll` loop into `_hold_tcp_qpl_poll(settings)` and call it
+    from the `verbose_push` connect-failure path (which previously set `mode='tcp_qpl_poll'` and
+    fell through *past* the QPL handler into the blind `fixed_timeout` sleep).
+  - **#115** — `manual_file` is now bounded by the `fixed_timeout_minutes` ceiling (default 180)
+    instead of waiting forever for a stop file that never appears.
+  - **#116** — `http_poll` and `tcp_qpl_poll` end the hold after `MAX_CONSECUTIVE_POLL_FAILURES`
+    (5) connection/unreachable failures instead of polling to the 240-minute timeout. A graceful
+    no-response (recv timeout) still does **not** count as a failure.
+  - `tests/test_hold_robustness.py` (4 tests): verbose_push fallback polls #QPL (not the fixed
+    sleep); manual_file returns at the ceiling; http_poll + tcp_qpl_poll abort after 5 failures.
+- **CI / gates (software-verified only; hardware validation not claimed):** `pytest` **967 passed
+  / 3 skipped**; serial coverage **99%** (≥ 99% floor; new branches covered, the `external_player.py`
+  misses are pre-existing); `ruff check` + `ruff format --check` (changed files) clean; mypy strict
+  gate **49 files, 0 errors**.
+- **Phase A review focus:** confirm `_hold_tcp_qpl_poll` is a pure extraction (idle logic
+  identical); confirm the manual_file ceiling and the 5-failure abort threshold read sensibly;
+  confirm no behavior change to the http_poll definitive-stop / trick-play-suppress paths.
+- **Phase C — on-device:** on the real Kodi box + OPPO, exercise each hold mode and confirm the
+  slot/sentinel releases near actual disc-end: (a) `verbose_push` with the OPPO refusing the push
+  port → falls back to QPL polling and ends on stop; (b) `manual_file` with no stop file → ends at
+  the ceiling; (c) `http_poll` / `tcp_qpl_poll` with the OPPO powered off mid-playback → ends
+  within ~5 polls, not 4 hours. The abort threshold (5) and the ceiling may need tuning against
+  real timing.
+
 ## Phase B — post-merge sanity
 
 _(none queued)_
