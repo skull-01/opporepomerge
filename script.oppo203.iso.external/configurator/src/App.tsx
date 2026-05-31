@@ -3,6 +3,7 @@ import { WinShell } from "./shell/WinShell";
 import { Chain } from "./shell/Chain";
 import { Progress } from "./shell/Progress";
 import { Sidebar } from "./shell/Sidebar";
+import { DebugPanel } from "./shell/DebugPanel";
 import {
   INITIAL_STATE,
   computeCompleted,
@@ -140,6 +141,7 @@ export default function App() {
           <Screen go={go} state={state} set={set} />
         </div>
       )}
+      <DebugPanel currentStep={stepId} />
     </WinShell>
   );
 }

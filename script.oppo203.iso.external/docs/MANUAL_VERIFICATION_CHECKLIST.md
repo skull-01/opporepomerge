@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — developer debug view (per-step IPC command log)
+
+- **Branch:** `claude/configurator-debug-view-5a2e8c10`. PR-only theme (no tracked issue).
+- **What changed (software-verified only):** a developer-only debug panel. New `src/debug/log.ts` (a redacting 500-entry ring buffer + current-step tag), new `src/ipc.ts` (an `invoke` wrapper recording every call as a pure pass-through), all wizard `invoke` sites migrated to it, and a global docked `src/shell/DebugPanel.tsx` mounted once in `App.tsx` that shows the captured commands (sent args, result/error, timing) filtered to the current step. **Gated behind dev mode — off by default, toggled with Ctrl+Shift+D** (persisted in localStorage), so ordinary users never see it. Secrets are redacted (psk/token/password/secret/credential keys blanked; long blobs truncated). `tsc --noEmit` + `vitest` (136) + `vite build` green. No add-on change.
+- **Operator verifies (Phase A):** read the diff — confirm `redact()` covers the secret keys you care about (esp. `sony_avr_psk`/`avrSonyPsk` and the deploy file blobs), the wrapper is a pure pass-through (same args/result/error), and that **only `ipc.ts`** imports `invoke` from `@tauri-apps/api/core`.
+- **Operator verifies (Phase C — built app):** launch the configurator, press **Ctrl+Shift+D**, then walk a hardware-touching step (Step 2 OPPO query, Step 3 TV probe, Step 5 receiver probe, Step 1 SSH/SMB) and confirm the dock shows each command with sent args + raw reply/error + timing, filters to the current step (toggle to all), and that **no PSK/token is visible**. Confirm the panel is absent until the hotkey is pressed. (Wire-level raw-byte transcripts from Rust were scoped as an optional later PR and are not in this change.)
+
 ### Configurator — AVR-chain switcher settings in mapping (topology PR 3)
 
 - **Branch:** `claude/topology-avr-switcher-map-2c7f9b1e`. PR-only theme (no tracked issue).

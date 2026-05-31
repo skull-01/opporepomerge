@@ -1240,6 +1240,61 @@ input:focus, .input:focus {
 
 .footer-nav { margin-top: auto; padding-top: 24px; }
 
+/* Developer debug view (Ctrl+Shift+D) — global docked panel, dev-mode only. */
+.debug-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  background: var(--surface-sunken);
+  border-top: 1px solid var(--border);
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  color: var(--text);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+}
+.debug-bar { display: flex; align-items: center; gap: 8px; padding: 6px 10px; }
+.debug-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.debug-dot.fail { background: #ef4444; }
+.debug-title { background: none; border: none; color: var(--text); font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
+.debug-count { color: var(--muted); }
+.debug-toggle,
+.debug-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  font: inherit;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.debug-toggle.on { color: var(--text); border-color: var(--accent); }
+.debug-list { max-height: 38vh; overflow-y: auto; border-top: 1px solid var(--border); }
+.debug-empty { padding: 10px; color: var(--muted); }
+.debug-row { border-bottom: 1px solid var(--border); }
+.debug-row.fail { background: rgba(239, 68, 68, 0.06); }
+.debug-row-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.debug-icon.pass { color: #4ade80; }
+.debug-icon.fail { color: #ef4444; }
+.debug-cmd { flex: 1; }
+.debug-ms { color: var(--muted); }
+.debug-detail { padding: 4px 10px 10px 30px; }
+.debug-detail-label { color: var(--muted); margin-top: 6px; }
+.debug-detail pre { margin: 2px 0; white-space: pre-wrap; word-break: break-word; color: var(--text-soft, var(--text)); }
+
 /* TODO stub style — make placeholder screens visually obvious during dev */
 .stub-marker {
   border: 1px dashed var(--border-strong);
