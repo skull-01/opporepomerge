@@ -683,6 +683,45 @@ _(none queued)_
      (the picker labels are unchanged; only the per-brand order is enum-ordered now).
   3. Add-on: nothing to verify on hardware (test-only); confirm `main` add-on still builds.
 
+### Configurator v0.4.0 + v0.5.0 — AVR (AV Receiver) Step 5
+
+- **PRs / SHAs:** [PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109)
+  merge `6251cdf` (v0.4.0 — AVR database + advisory Step 5),
+  [PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`
+  (v0.5.0 — Step 5 wired into the add-on `settings.xml`). PR-only theme (no tracked issue), per
+  the configurator's untracked-delivery pattern. Shipped in configurator **v0.5.0** (repo "Latest").
+- **What changed (software-verified):** new `avr-db/avr-models.json` (224 AVR model families,
+  schema v2) + `avrdb.ts` loader; optional **Step 5 (AV Receiver)** picker (ask → brand →
+  region/year-filtered model list); a "Receiver control" card captures receiver IP + player input;
+  `mapping.avrAddonBackend()` maps DB backends onto the add-on enum (Pioneer→`pioneer_eiscp`,
+  Sony→`sony_audio_api`). Conservative enable: `avr_control_enabled` only for a native non-gated
+  driver with host + input present; Sony configured-but-off; Anthem/Arcam/NAD write no `avr_backend`.
+  Skipping Step 5 emits nothing AVR-related. **No add-on code change.**
+- **Published-artifact integrity (agent-verified 2026-05-31):** the `configurator-v0.5.0` release
+  MSI (3,174,400 B) and NSIS setup (2,071,403 B) were re-downloaded and their SHA-256 confirmed
+  **byte-identical** to both the `.sha256` sidecars and `release-evidence/v0.5.0/BUILD_NOTES.md`
+  (MSI `60283a0240afd0aa745a9fa5d853e125a6558572fcd269b911c90b3ab0792742`, NSIS
+  `8022844316ee8c25e0463f3334d9148376fd97fec9c9f7e60f46052d4dc4a709`). Unsigned — SmartScreen
+  "unknown publisher" expected.
+- **Software gates (release sessions):** `tsc -b` clean; **101 vitest** (22 mapping tests);
+  `npm run build` OK; Step 5 Pioneer/Sony paths exercised in a browser preview.
+- **Operator confirm (Phase C — clean Windows host, NOT done by the agent):**
+  1. Install from the `configurator-v0.5.0` release (NSIS `…_x64-setup.exe` or the MSI); confirm
+     `Get-FileHash <file> -Algorithm SHA256` matches the BUILD_NOTES table, and that it installs
+     without error past the unsigned-publisher SmartScreen prompt.
+  2. Confirm the Start-menu / desktop / taskbar + window icon shows the add-on artwork (not a
+     generic/blank icon), the custom title bar renders, and the wizard opens.
+  3. Step 5 → "Yes" → pick a brand + model; confirm the **Receiver control** card appears with
+     IP + player-input fields, and that filling both shows the green "we'll enable control" callout
+     (Sony instead shows "left off — needs ack + PSK"; Anthem/Arcam/NAD show "no native backend").
+  4. Regression: confirm the Step 3 Region filter and the Step 2 player facts line still behave.
+  5. Run the final Apply (Tier A/B/C) and confirm the generated `…/settings.xml` carries
+     `avr_backend` / `avr_host` / `avr_player_input` / `avr_control_enabled` as expected — and that
+     **skipping** Step 5 leaves any existing AVR settings untouched.
+  6. Uninstall via Apps & features (or the MSI) and confirm clean removal.
+  - **Software-verified + published-artifact-integrity-verified only; installed-app behaviour,
+    icon appearance, and Step-5 end-to-end not verified by the agent. No hardware validation.**
+
 ---
 
 ## Verified (archive)
