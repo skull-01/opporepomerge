@@ -10,7 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _players_db_model_count():
-    db = json.loads((ROOT / "docs/configurator/players-db/players.json").read_text(encoding="utf-8"))
+    db = json.loads(
+        (ROOT / "docs/configurator/players-db/players-models.json").read_text(encoding="utf-8")
+    )
     return len(db["models"])
 
 
@@ -67,7 +69,7 @@ def test_build2_settings_dropdown_and_compatibility_matrix_match():
     )
     normalized = {settings_reader.normalize_hardware_model(value) for value in values}
     assert normalized == set(settings_reader.HARDWARE_COMPAT)
-    # Canonical count lives in players.json; the consistency guard keeps the two in lockstep.
+    # Canonical count lives in players-models.json; the consistency guard keeps the two in lockstep.
     assert len(settings_reader.HARDWARE_COMPAT) == _players_db_model_count()
 
 

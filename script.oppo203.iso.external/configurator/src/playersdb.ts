@@ -1,7 +1,7 @@
-import bundled from "./players-db/players.json";
+import bundled from "./players-db/players-models.json";
 
 // The bundled copy is the offline source; the canonical, refreshable copy lives at
-// docs/configurator/players-db/players.json. Keep the two in sync when editing, and keep
+// docs/configurator/players-db/players-models.json. Keep the two in sync when editing, and keep
 // the model order in lockstep with the resources/settings.xml oppo_hardware_model enum
 // (enum_order) -- that order is install-base-critical (stored positionally).
 
@@ -54,7 +54,7 @@ export type PlayersDb = {
 export const BUNDLED_PLAYERS_DB = bundled as unknown as PlayersDb;
 
 export const PLAYERS_DB_RAW_URL =
-  "https://raw.githubusercontent.com/skull-01/script.oppo203.iso.external/main/docs/configurator/players-db/players.json";
+  "https://raw.githubusercontent.com/skull-01/script.oppo203.iso.external/main/docs/configurator/players-db/players-models.json";
 
 /** The player model families belonging to a configurator brand, in database (enum) order. */
 export function modelsForFamily(db: PlayersDb, brandId: string): PlayersDbModel[] {

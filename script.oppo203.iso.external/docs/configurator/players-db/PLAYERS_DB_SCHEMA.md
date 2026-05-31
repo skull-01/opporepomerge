@@ -1,9 +1,9 @@
 # Players DB schema — OPPO / clone player taxonomy
 
-`players.json` is the configurator's canonical player-model database, adopted in the same
+`players-models.json` is the configurator's canonical player-model database, adopted in the same
 pattern as the TV database (`docs/configurator/tv-db/tv-models.json`): a `schema_version`ed
 JSON consumed by the configurator, with a bundled copy at
-`configurator/src/players-db/players.json` and this canonical copy kept **byte-identical**.
+`configurator/src/players-db/players-models.json` and this canonical copy kept **byte-identical**.
 
 ## Top-level
 
