@@ -31,6 +31,35 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Add-on — self-healing oppo203iso-active session sentinel (#117)
+
+- **Implementing SHA:** `293015e` on `claude/sentinel-selfheal-c3e8a1b7` (draft PR — commented on
+  issue #117). Independent of the other robustness PRs (mergeable in any order).
+- **Scope:** a crash, power loss, or Kodi killing the external player skips the `finally` that
+  removes the `oppo203iso-active` sentinel, leaving it on disk. A stale sentinel then disabled all
+  service interception (`service.py`) and made the remote bridge forward keys with no active
+  session (`oppo_remote.py`).
+- **What changed (software-verified only):**
+  - `resources/lib/kodi/settings_reader.py`: new dependency-free `session_is_active(addon_data_dir)`
+    + `SESSION_MAX_AGE_SECONDS` (21600 = 6h, well beyond the longest legitimate hold). A sentinel
+    whose file mtime is older than that is treated as inactive (self-healing). mtime is the
+    session-start clock (the sentinel is written once), so the check is robust to unreadable
+    contents.
+  - `service.py` + `resources/lib/oppo/oppo_remote.py`: the two duplicated `_session_is_active`
+    readers now delegate to the shared helper (resolving the duplication smell #117 noted).
+  - `tests/test_session_sentinel_staleness.py` (5): missing / fresh / stale via the helper, plus
+    the service and remote readers honoring staleness.
+- **CI / gates (software-verified only; hardware validation not claimed):** `pytest` **970 passed /
+  3 skipped**; serial coverage **99%** (`oppo_remote.py` 100%, the helper fully covered); `ruff
+  check` + `ruff format --check` clean; mypy strict gate **49 files, 0 errors**.
+- **Phase A review focus:** confirm 6h is a safe staleness window (longer than any real hold, short
+  enough to self-heal next session); confirm using the file mtime (vs the stored timestamp) is
+  acceptable as the session clock.
+- **Phase C — on-device:** start a handoff, then kill Kodi mid-hold (or pull power) so the sentinel
+  is left behind. Confirm: (a) on next start, a tagged 4K disc is intercepted again (not skipped);
+  (b) the remote bridge does not forward keys when no session is active. A fresh sentinel (< 6h)
+  must still gate correctly during a real session.
+
 ### Add-on — read-only OPPO player-status probe (documented #Q.. query battery)
 
 - **Branch / SHA:** `claude/oppo-status-probe-8x3k9m2p` — relates to
