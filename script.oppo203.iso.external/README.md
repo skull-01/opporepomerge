@@ -705,6 +705,11 @@ Build 2 focuses on the v2 MVP acceptance path instead of adding broad platform f
 
 ### MVP compliance changes in this build
 
+> **Naming note (2026-05-31):** module paths in this historical build section predate the
+> `tv/`/`oppo/`/`avr/` sub-package split and the later `tv_`-prefix rename — e.g.
+> `resources/lib/adb_control.py` is now `resources/lib/tv/tv_adb_control.py`. Kept as the
+> original build record; current names are in [`docs/NAMING_CONVENTIONS.md`](docs/NAMING_CONVENTIONS.md).
+
 - **Stock OPPO power behavior fixed:** UDP-203/UDP-205 now preserve both `#PON` and `#POW` exactly. Only Chinoppo-style clone profiles rewrite `#PON` / `#POW` to `#EJT`.
 - **M9702 / Chinoppo wake behavior retained:** M9201, M9203, M9205C, M9702, IPUK-UHD8592, GIEC-BDP-G5300, and Magnetar-UDP800 retain send-time wake rewrite to `#EJT`.
 - **External Player + TV switching hardened:** `external_player.fast_start()` now attempts TV switching before OPPO startup in a deterministic TV-first MVP order.

@@ -385,6 +385,9 @@ implementing SHA(s) on the issue and append a row here.
     `tv/roku_ecp_control`, `oppo/reconnect_backoff`, `oppo/autoscript_helper`,
     `tv/adb_control`. Changes are signatures + removing stale `# type: ignore`
     comments + two locals pinned (`raw: float`, `body: str`) — **no logic changes.**
+    _(Naming note 2026-05-31: the three `tv/` backends here were later renamed
+    `tv/tv_smartthings_control`, `tv/tv_roku_ecp_control`, `tv/tv_adb_control`; this entry
+    records the closed PR as-shipped. See [`NAMING_CONVENTIONS.md`](NAMING_CONVENTIONS.md).)_
     `nas_playback_adapter` was deliberately deferred (it cascades into
     `settings_reader` / `oppo_control`).
   - Guard tests updated in lockstep: `test_v291_build13_type_hint_baseline.py`
