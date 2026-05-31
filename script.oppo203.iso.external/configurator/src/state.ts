@@ -37,10 +37,20 @@ export type InputAddress = number | "cec" | string | null;
 
 export type PlaybackArchitecture = "external_player" | "service_interception";
 
+/**
+ * The physical playback chain being configured, chosen up front (Step 0) so the rest of
+ * the wizard can adapt its copy and the settings it writes:
+ *   kodi_tv_player      - player -> TV; the TV switches HDMI inputs on handoff.
+ *   kodi_avr_tv_player  - player -> AV receiver -> TV; the receiver switches inputs, TV fixed.
+ * A soft default - a null (legacy/unset) value just behaves like the TV chain everywhere.
+ */
+export type Topology = "kodi_tv_player" | "kodi_avr_tv_player";
+
 export type WizardState = {
   kodiIp: string;
   tier: Tier | null;
   kodiVerified: boolean;
+  topology: Topology | null;
   playbackArchitecture: PlaybackArchitecture;
   kodiPlatform: KodiPlatform | null;
   pythonPath: string;
@@ -96,6 +106,7 @@ export const INITIAL_STATE: WizardState = {
   kodiIp: "10.0.1.42",
   tier: null,
   kodiVerified: false,
+  topology: null,
   playbackArchitecture: "external_player",
   kodiPlatform: null,
   pythonPath: "/usr/bin/python3",

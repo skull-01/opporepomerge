@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — Step 0 playback-chain picker (PR #134-series topology, PR 1)
+
+- **Branch:** `claude/topology-chain-picker-9f2a1c7d`. PR-only theme (no tracked issue).
+- **What changed (software-verified only):** new Step 0 screen "How is your home theater wired?" sets `state.topology` (`kodi_tv_player` | `kodi_avr_tv_player`); the gate routes into it; a null/legacy value behaves as the TV chain everywhere. `tsc -b` + `vite build` + `vitest` green.
+- **Operator verifies (Phase A):** read the diff; CI green.
+- **Operator verifies (Phase C - on the built app):** launch the configurator; after the "I can already play ISOs" gate, confirm the chain picker appears and each tile advances to step 1 with the choice remembered.
+
 ### Add-on — default hold_mode now detects stop (tcp_qpl_poll) (#114)
 
 - **Implementing SHA:** `5954556` on `claude/default-hold-tcp-qpl-b4d2f6a1` (draft PR — commented

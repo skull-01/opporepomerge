@@ -21,3 +21,12 @@ describe("INITIAL_STATE", () => {
     expect(INITIAL_STATE.kodiVerified).toBe(false);
   });
 });
+
+describe("topology", () => {
+  it("starts unset (null) so legacy sessions fall back to the TV chain", () => {
+    expect(INITIAL_STATE.topology).toBeNull();
+  });
+  it("round-trips the step0_chain picker screen id", () => {
+    expect(coerceScreenId("step0_chain")).toBe("step0_chain");
+  });
+});

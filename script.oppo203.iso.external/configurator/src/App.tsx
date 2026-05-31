@@ -18,6 +18,7 @@ import {
   type StepId,
 } from "./steps";
 import { Step0Gate } from "./screens/Step0Gate";
+import { Step0Chain } from "./screens/Step0Chain";
 import { Step0Exit } from "./screens/Step0Exit";
 import { Step1Intro, Step1TierA, Step1TierB, Step1TierC } from "./screens/step1";
 import { Step2Brand, Step2Test, Step2Fail } from "./screens/step2";
@@ -41,6 +42,7 @@ const PROGRESS_VARIANT: "stepper" | "sidebar" | "minimal" = "stepper";
 
 const SCREEN_RENDERERS: Record<ScreenId, (props: ScreenProps) => JSX.Element> = {
   step0_gate: Step0Gate,
+  step0_chain: Step0Chain,
   step0_exit: Step0Exit,
   step1_intro: Step1Intro,
   step1_tierA: Step1TierA,

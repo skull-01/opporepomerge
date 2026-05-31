@@ -9,6 +9,7 @@ export type StepId =
 
 export type ScreenId =
   | "step0_gate"
+  | "step0_chain"
   | "step0_exit"
   | "step1_intro"
   | "step1_tierA"
@@ -67,6 +68,7 @@ export const STEPS: readonly Step[] = [
 
 export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
   step0_gate: "step0",
+  step0_chain: "step0",
   step0_exit: "step0",
   step1_intro: "step1",
   step1_tierA: "step1",
@@ -96,6 +98,7 @@ export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
 
 export const SCREEN_TO_CHAIN: Record<ScreenId, ChainTarget> = {
   step0_gate: "media",
+  step0_chain: "media",
   step0_exit: "media",
   step1_intro: "kodi",
   step1_tierA: "kodi",
