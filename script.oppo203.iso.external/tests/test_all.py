@@ -2880,7 +2880,7 @@ class TV2Build1(unittest.TestCase):
         from resources.lib.settings_reader import HARDWARE_COMPAT
 
         players_db = json.loads(
-            (Path(__file__).resolve().parents[1] / "docs/configurator/players-db/players.json")
+            (Path(__file__).resolve().parents[1] / "docs/configurator/players-db/players-models.json")
             .read_text(encoding="utf-8")
         )
         # Canonical count is the players DB; this stays in lockstep via the consistency guard.

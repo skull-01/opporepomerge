@@ -1,7 +1,7 @@
-"""Drift guard: the canonical players DB (configurator players.json) must faithfully
+"""Drift guard: the canonical players DB (configurator players-models.json) must faithfully
 reproduce the add-on's live player taxonomy.
 
-players.json is the single source of truth for the OPPO/clone player catalog. The add-on
+players-models.json is the single source of truth for the OPPO/clone player catalog. The add-on
 keeps running from its own registries (the TV DB follows the same split), so this guard is
 what stops the JSON and the registries from diverging: adding or changing a model means the
 JSON and the Python registries must agree, or these tests fail and name the mismatch.
@@ -19,9 +19,11 @@ from resources.lib.kodi import settings_reader as sr
 from resources.lib.oppo import hardware_capabilities as caps
 from resources.lib.oppo import hardware_profiles as hp
 
-_DOCS = json.loads((ROOT / "docs/configurator/players-db/players.json").read_text(encoding="utf-8"))
+_DOCS = json.loads(
+    (ROOT / "docs/configurator/players-db/players-models.json").read_text(encoding="utf-8")
+)
 _SRC = json.loads(
-    (ROOT / "configurator/src/players-db/players.json").read_text(encoding="utf-8")
+    (ROOT / "configurator/src/players-db/players-models.json").read_text(encoding="utf-8")
 )
 DB = _DOCS
 MODELS = DB["models"]
@@ -102,7 +104,7 @@ def test_db_captures_every_player_alias_both_ways():
     for amap in (sr._HARDWARE_ALIASES, hp.PROFILE_ALIASES):
         for alias, target in amap.items():
             if target in keys:
-                assert alias in by_key[target], f"{alias} -> {target} missing from players.json"
+                assert alias in by_key[target], f"{alias} -> {target} missing from players-models.json"
 
 
 def test_families_cover_all_model_brands_and_other_aliases_resolve():

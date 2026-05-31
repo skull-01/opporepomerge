@@ -14,7 +14,7 @@ export type PlayerBrandDef = {
 
 /**
  * Single source of truth for player brands: derived from the canonical players database
- * (configurator/src/players-db/players.json). Display metadata (name, logo char, posture)
+ * (configurator/src/players-db/players-models.json). Display metadata (name, logo char, posture)
  * and the model picker labels + their `oppo_hardware_model` enum value all come from the DB,
  * so the Step 2 picker and mapping.ts can't drift from the add-on's hardware taxonomy. The
  * `other` family carries explicit ui_models (UX aliases onto an existing hw value).
