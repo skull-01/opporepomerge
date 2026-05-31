@@ -73,10 +73,13 @@ export function avrAddonBackend(dbBackend: AvrBackend | null, brand: string | nu
 /**
  * AVR control settings, emitted only when the user actively picked a receiver in Step 5 — so
  * skipping the optional step never disturbs an existing add-on AVR config. `avr_control_enabled`
- * is set true only for a native, non-acknowledgement-gated driver with both required fields
- * (host + player input) present. Sony is configured but left disabled (it needs the add-on's
- * experimental acknowledgement + PSK, which the wizard doesn't capture), and custom_command
- * brands write nothing at all.
+ * is set true only when the chosen driver has every field it needs to actually run:
+ *   - native non-Sony drivers (Denon/Marantz, Yamaha, Onkyo/Integra, Pioneer): host + player input;
+ *   - Sony Audio Control API: additionally the experimental acknowledgement, the PSK, and the
+ *     URI-form player input the API addresses — mirroring the add-on's own Sony gate
+ *     (resources/lib/avr/avr_presets.py: requires_experimental_acknowledgement + the sensitive
+ *     sony_avr_psk / sony_avr_player_input_uri fields).
+ * custom_command brands (Anthem/Arcam/NAD) have no native driver, so nothing AVR-related is written.
  */
 function avrSettings(state: WizardState): AddonSettings {
   const out: AddonSettings = {};
@@ -85,7 +88,22 @@ function avrSettings(state: WizardState): AddonSettings {
   out.avr_backend = backend;
   if (state.avrIp) out.avr_host = state.avrIp;
   if (state.avrPlayerInput) out.avr_player_input = state.avrPlayerInput;
-  const enable = backend !== "sony_audio_api" && !!state.avrIp && !!state.avrPlayerInput;
+
+  if (backend === "sony_audio_api") {
+    if (state.avrSonyAcknowledged) out.sony_avr_experimental_acknowledged = "true";
+    if (state.avrSonyPsk) out.sony_avr_psk = state.avrSonyPsk;
+    if (state.avrSonyPlayerInputUri) out.sony_avr_player_input_uri = state.avrSonyPlayerInputUri;
+    const sonyReady =
+      state.avrSonyAcknowledged &&
+      !!state.avrSonyPsk &&
+      !!state.avrSonyPlayerInputUri &&
+      !!state.avrIp &&
+      !!state.avrPlayerInput;
+    out.avr_control_enabled = sonyReady ? "true" : "false";
+    return out;
+  }
+
+  const enable = !!state.avrIp && !!state.avrPlayerInput;
   out.avr_control_enabled = enable ? "true" : "false";
   return out;
 }

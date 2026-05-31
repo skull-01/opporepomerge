@@ -31,6 +31,38 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — AVR Step 5 Sony auto-enable (PSK + acknowledgement)
+
+- **Branch / SHA:** `claude/avr-sony-autoenable-5c9f2a3d` — **no tracked issue** (configurator
+  §3b item 6 AVR follow-up; PR-only). Follows the v0.5.0 Step-5 wiring.
+- **What changed (software-verified):** Step 5's Receiver-control card now captures the Sony
+  Audio Control API credentials so Sony can auto-enable like the other native backends (it was
+  configured-but-off before). New `WizardState` fields `avrSonyAcknowledged` / `avrSonyPsk` /
+  `avrSonyPlayerInputUri`; `mapping.avrSettings()` emits `sony_avr_experimental_acknowledged` /
+  `sony_avr_psk` / `sony_avr_player_input_uri` and sets `avr_control_enabled=true` for
+  `sony_audio_api` **only** when acknowledgement + PSK + input URI + host + player input are all
+  present — mirroring the add-on's own Sony gate (`resources/lib/avr/avr_presets.py`
+  `requires_experimental_acknowledgement` + sensitive fields; `avr_control.py` Sony validation).
+  PSK is a password-masked field. **No add-on change** — the `sony_avr_*` settings already exist
+  in `resources/settings.xml`.
+- **Software gates (this machine):** configurator `tsc -b` clean; `vitest` **103 passed**
+  (mapping 24, incl. Sony enable + partial-gate cases); `npm run build` exit 0. Browser-preview:
+  Step 5 → Sony → model → the URI + PSK (password) fields + acknowledgement toggle render; filling
+  all of them flips the callout to "We'll enable Sony control … switch to extInput:hdmi?port=2".
+- **Phase A review focus:** confirm requiring the URI-form input (in addition to the plain
+  `avr_player_input`) is the right gate, and that PSK-as-secret handling reads correctly.
+- **Phase C — operator end-to-end (real Sony receiver, NOT done by the agent):**
+  1. Step 5 → Sony → pick a model; fill Receiver IP, player input, **Sony API input URI**
+     (e.g. `extInput:hdmi?port=2`), **PSK**, and tick the experimental acknowledgement; confirm
+     the green "we'll enable" callout appears (and that leaving any one blank keeps it off).
+  2. Apply; confirm the deployed `settings.xml` carries `avr_backend=sony_audio_api`,
+     `avr_control_enabled=true`, `sony_avr_experimental_acknowledged=true`, `sony_avr_psk`,
+     `sony_avr_player_input_uri`.
+  3. Trigger a UHD-ISO handoff; confirm the add-on powers on the Sony receiver and switches it to
+     the configured input. **Experimental Sony driver + candidate mapping — confirm against real
+     hardware.**
+  - **Software-verified only; Sony Audio Control API path is experimental and not hardware-validated.**
+
 ### Configurator + add-on — Chinoppo M9205 V1 split into a distinct hardware model
 
 - **Branch / SHA:** `claude/chinoppo-m9205-v1-split-c7m2k9p4` — **no tracked issue**
