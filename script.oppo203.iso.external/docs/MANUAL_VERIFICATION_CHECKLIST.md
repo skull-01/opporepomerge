@@ -74,6 +74,22 @@ implementing SHA(s) on the issue and append a row here.
   can thread the configured `oppo_http_port` through the new parameter.
 - **Phase C — on-device:** run the diagnostics dashboard against the real OPPO and confirm the HTTP
   capability line reflects port-436 reachability (it always probed 80 before).
+### Add-on — clear the ruff format CI red (#123)
+
+- **Implementing SHA:** `6b920fd` on `claude/ruff-format-123-f1a8d3c6` (draft PR — commented on
+  issue #123).
+- **Scope:** the CI "Lint and format" job was red because `ruff format --check` flagged drifted test
+  files (lines past 100 chars after last session's `players-models.json` rename). On current `main`
+  only **two** files actually drift — `tests/test_all.py` and `tests/test_players_db_consistency.py`;
+  the third the issue named (`test_v2914_build2_player_taxonomy.py`) is already formatted.
+- **What changed:** `ruff format` on those two files — whitespace/layout only (a long path
+  expression and a long assert message wrapped to ruff's canonical multi-line form). No test
+  behavior change.
+- **CI / gates (software-verified only):** `ruff format --check .` now clean (146 files); `ruff
+  check` clean; `pytest` **963 passed / 3 skipped**; serial coverage **99%**; mypy strict gate
+  **49 files, 0 errors**.
+- **Phase A review focus:** confirm the diff is purely formatting. **No Phase C / on-device step** —
+  test-file formatting only, no runtime code path.
 ### Add-on — self-healing oppo203iso-active session sentinel (#117)
 
 - **Implementing SHA:** `293015e` on `claude/sentinel-selfheal-c3e8a1b7` (draft PR — commented on
