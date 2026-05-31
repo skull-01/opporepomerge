@@ -320,6 +320,13 @@ function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
   const isSony = addonBackend === "sony_audio_api";
   const isCustom = addonBackend === null; // custom_command brands (Anthem/Arcam/NAD)
   const willEnable = !!addonBackend && !isSony && !!state.avrIp && !!state.avrPlayerInput;
+  const sonyReady =
+    isSony &&
+    state.avrSonyAcknowledged &&
+    !!state.avrSonyPsk &&
+    !!state.avrSonyPlayerInputUri &&
+    !!state.avrIp &&
+    !!state.avrPlayerInput;
   const ph = inputPlaceholder(addonBackend);
 
   return (
@@ -364,17 +371,74 @@ function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
             </div>
           </div>
           {isSony ? (
-            <div className="callout warn">
-              <span className="callout-icon">
-                <Icon name="warn" size={13} stroke={2.2} />
-              </span>
-              <div className="callout-body">
-                <strong>Sony needs extra setup.</strong> The Sony Audio Control API path is
-                experimental and gated on an acknowledgement + PSK in the add-on. We'll save the
-                backend, IP and input as <code>sony_audio_api</code> but leave AVR control{" "}
-                <strong>off</strong> until you finish that in the add-on.
+            <>
+              <div className="grid-2" style={{ alignItems: "start" }}>
+                <div className="field">
+                  <label className="field-label">Sony API input URI</label>
+                  <input
+                    className="input"
+                    placeholder="extInput:hdmi?port=2"
+                    value={state.avrSonyPlayerInputUri}
+                    onChange={(e) => set({ avrSonyPlayerInputUri: e.target.value })}
+                  />
+                  <div className="field-hint">
+                    The Audio Control API addresses inputs by URI (e.g.{" "}
+                    <code>extInput:hdmi?port=2</code>), not the plain name above.
+                  </div>
+                </div>
+                <div className="field">
+                  <label className="field-label">Pre-Shared Key (PSK)</label>
+                  <input
+                    className="input"
+                    type="password"
+                    value={state.avrSonyPsk}
+                    onChange={(e) => set({ avrSonyPsk: e.target.value })}
+                  />
+                  <div className="field-hint">
+                    Set on the receiver under IP Control / Authentication. Saved to the add-on
+                    settings and handled as a secret.
+                  </div>
+                </div>
               </div>
-            </div>
+              <div className="row" style={{ gap: 10, alignItems: "flex-start", marginTop: 4 }}>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={state.avrSonyAcknowledged}
+                  className={`toggle ${state.avrSonyAcknowledged ? "on" : ""}`.trim()}
+                  style={{ flexShrink: 0, marginTop: 2 }}
+                  onClick={() => set({ avrSonyAcknowledged: !state.avrSonyAcknowledged })}
+                />
+                <span style={{ fontSize: 12.5, color: "var(--text-soft)" }}>
+                  I understand the Sony Audio Control API path is <strong>experimental</strong> and
+                  unvalidated — enable control on my receiver anyway.
+                </span>
+              </div>
+              {sonyReady ? (
+                <div className="callout success">
+                  <span className="callout-icon">
+                    <Icon name="check" size={13} stroke={2.2} />
+                  </span>
+                  <div className="callout-body">
+                    We'll enable Sony control with <code>sony_audio_api</code>: power on and switch
+                    to <code>{state.avrSonyPlayerInputUri}</code> on handoff. Experimental candidate
+                    mapping — confirm against your receiver.
+                  </div>
+                </div>
+              ) : (
+                <div className="callout warn">
+                  <span className="callout-icon">
+                    <Icon name="warn" size={13} stroke={2.2} />
+                  </span>
+                  <div className="callout-body">
+                    <strong>Sony stays off until it's complete.</strong> We'll save the backend, IP
+                    and input as <code>sony_audio_api</code>, but control needs the IP, player
+                    input, the API input URI, the PSK, and the acknowledgement above before we
+                    enable it.
+                  </div>
+                </div>
+              )}
+            </>
           ) : willEnable ? (
             <div className="callout success">
               <span className="callout-icon">

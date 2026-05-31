@@ -141,7 +141,7 @@ describe("wizardStateToAddonSettings", () => {
     ).toBe("onkyo_eiscp");
   });
 
-  it("configures Sony as sony_audio_api but leaves control disabled (needs ack + PSK)", () => {
+  it("configures Sony as sony_audio_api but leaves control disabled without ack + PSK + URI", () => {
     const out = wizardStateToAddonSettings(
       makeState({
         avrBrand: "sony",
@@ -153,6 +153,50 @@ describe("wizardStateToAddonSettings", () => {
     expect(out.avr_backend).toBe("sony_audio_api");
     expect(out.avr_host).toBe("10.0.1.93");
     expect(out.avr_control_enabled).toBe("false");
+    expect(out.sony_avr_experimental_acknowledged).toBeUndefined();
+    expect(out.sony_avr_psk).toBeUndefined();
+  });
+
+  it("enables Sony control once ack + PSK + input URI are supplied", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        avrBrand: "sony",
+        avrBackend: "sony_audio",
+        avrIp: "10.0.1.93",
+        avrPlayerInput: "BD",
+        avrSonyAcknowledged: true,
+        avrSonyPsk: "1234",
+        avrSonyPlayerInputUri: "extInput:hdmi?port=2",
+      }),
+    );
+    expect(out.avr_backend).toBe("sony_audio_api");
+    expect(out.avr_control_enabled).toBe("true");
+    expect(out.sony_avr_experimental_acknowledged).toBe("true");
+    expect(out.sony_avr_psk).toBe("1234");
+    expect(out.sony_avr_player_input_uri).toBe("extInput:hdmi?port=2");
+  });
+
+  it("keeps Sony disabled when the acknowledgement, PSK, or URI is missing", () => {
+    const base: Partial<WizardState> = {
+      avrBrand: "sony",
+      avrBackend: "sony_audio",
+      avrIp: "10.0.1.93",
+      avrPlayerInput: "BD",
+      avrSonyAcknowledged: true,
+      avrSonyPsk: "1234",
+      avrSonyPlayerInputUri: "extInput:hdmi?port=2",
+    };
+    expect(
+      wizardStateToAddonSettings(makeState({ ...base, avrSonyAcknowledged: false }))
+        .avr_control_enabled,
+    ).toBe("false");
+    expect(
+      wizardStateToAddonSettings(makeState({ ...base, avrSonyPsk: "" })).avr_control_enabled,
+    ).toBe("false");
+    expect(
+      wizardStateToAddonSettings(makeState({ ...base, avrSonyPlayerInputUri: "" }))
+        .avr_control_enabled,
+    ).toBe("false");
   });
 
   it("writes no avr_backend for custom_command brands (no native driver)", () => {
