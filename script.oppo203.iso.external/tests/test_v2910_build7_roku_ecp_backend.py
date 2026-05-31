@@ -57,7 +57,7 @@ def test_build7_adds_roku_ecp_backend_with_strict_metadata():
 
 
 def test_build7_roku_ecp_helper_posts_only_allowlisted_keypress_paths():
-    roku = _load("roku_ecp_control_build7", "resources/lib/tv/roku_ecp_control.py")
+    roku = _load("tv_roku_ecp_control_build7", "resources/lib/tv/tv_roku_ecp_control.py")
     settings = {"tv_ip": "192.0.2.60", "roku_ecp_port": "8060"}
     seen = []
 
@@ -179,7 +179,7 @@ def test_build7_runtime_zip_includes_roku_helper_but_excludes_evidence(tmp_path)
     package_tool = _load("package_installable_zip_build7", "tools/package_installable_zip.py")
     output = tmp_path / "runtime.zip"
     names = package_tool.create_installable_zip(ROOT, output)
-    assert "script.oppo203.iso.external/resources/lib/tv/roku_ecp_control.py" in names
+    assert "script.oppo203.iso.external/resources/lib/tv/tv_roku_ecp_control.py" in names
     assert "script.oppo203.iso.external/resources/lib/tv/tv_backends.py" in names
     with zipfile.ZipFile(output) as zf:
         assert zf.testzip() is None
@@ -221,7 +221,7 @@ def test_build7_roku_preset_edge_paths_for_coverage(monkeypatch):
 def test_build7_roku_helper_error_paths_and_injected_urlopen(monkeypatch):
     import urllib.error
 
-    roku = _load("roku_ecp_control_build7_errors", "resources/lib/tv/roku_ecp_control.py")
+    roku = _load("tv_roku_ecp_control_build7_errors", "resources/lib/tv/tv_roku_ecp_control.py")
     for bad_key in (None,):
         try:
             roku.normalize_roku_key(bad_key)

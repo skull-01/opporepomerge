@@ -3066,7 +3066,7 @@ class TV2Build2MVPCompliance(unittest.TestCase):
     def test_adb_command_construction_uses_injected_runner(self):
         import types
 
-        import adb_control
+        import tv_adb_control
         from settings_reader import Settings
 
         calls = []
@@ -3084,7 +3084,7 @@ class TV2Build2MVPCompliance(unittest.TestCase):
                 "_adb_runner": runner,
             }
         )
-        out = adb_control.switch_input(settings, "am start -d content://input/HW15")
+        out = tv_adb_control.switch_input(settings, "am start -d content://input/HW15")
         self.assertEqual(out, "ok")
         self.assertEqual(calls[0], ["adb-test", "connect", "192.0.2.10:5556"])
         self.assertEqual(calls[1][:4], ["adb-test", "-s", "192.0.2.10:5556", "shell"])
