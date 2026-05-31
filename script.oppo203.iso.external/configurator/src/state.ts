@@ -38,6 +38,15 @@ export type InputAddress = number | "cec" | string | null;
 export type PlaybackArchitecture = "external_player" | "service_interception";
 
 /**
+ * How the add-on confirms OPPO playback (Step 3 "Playback mode"):
+ *   legacy - the existing hold_mode dispatcher (fixed timeout / file / QPL poll / verbose push).
+ *   svm3   - OPPO verbose mode 3: the add-on listens for UPL/UTC status + time-code updates and
+ *            treats playback as confirmed only when the OPPO itself reports it.
+ * Orthogonal to playbackArchitecture (the routing axis); together they form the four-option preset.
+ */
+export type MonitorMode = "legacy" | "svm3";
+
+/**
  * The physical playback chain being configured, chosen up front (Step 0) so the rest of
  * the wizard can adapt its copy and the settings it writes:
  *   kodi_tv_player      - player -> TV; the TV switches HDMI inputs on handoff.
@@ -52,6 +61,7 @@ export type WizardState = {
   kodiVerified: boolean;
   topology: Topology | null;
   playbackArchitecture: PlaybackArchitecture;
+  monitorMode: MonitorMode;
   kodiPlatform: KodiPlatform | null;
   pythonPath: string;
   smbSharePath: string;
@@ -109,6 +119,7 @@ export const INITIAL_STATE: WizardState = {
   kodiVerified: false,
   topology: null,
   playbackArchitecture: "external_player",
+  monitorMode: "legacy",
   kodiPlatform: null,
   pythonPath: "/usr/bin/python3",
   smbSharePath: "\\\\10.0.1.42\\Kodi",

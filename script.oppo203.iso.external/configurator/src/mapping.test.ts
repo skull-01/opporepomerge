@@ -305,3 +305,51 @@ describe("avrAddonBackend", () => {
     expect(avrAddonBackend(null, "denon")).toBeNull();
   });
 });
+
+describe("wizardStateToAddonSettings — four-option playback preset", () => {
+  it("defaults to the legacy playercorefactory preset", () => {
+    const out = wizardStateToAddonSettings(INITIAL_STATE);
+    expect(out.playback_monitor_mode).toBe("legacy");
+    expect(out.playback_architecture).toBe("external_player");
+    expect(out.playback_architecture_preset).toBe("playercorefactory_legacy");
+  });
+
+  it("emits playercorefactory_svm3 for external_player + svm3", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "external_player", monitorMode: "svm3" }),
+    );
+    expect(out.playback_monitor_mode).toBe("svm3");
+    expect(out.playback_architecture_preset).toBe("playercorefactory_svm3");
+  });
+
+  it("emits service_interception_svm3 for service_interception + svm3", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "service_interception", monitorMode: "svm3" }),
+    );
+    expect(out.playback_architecture_preset).toBe("service_interception_svm3");
+  });
+
+  it("emits service_interception_legacy for service_interception + legacy", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "service_interception", monitorMode: "legacy" }),
+    );
+    expect(out.playback_architecture_preset).toBe("service_interception_legacy");
+  });
+
+  it("keeps the emitted triple internally consistent across all four combos", () => {
+    const archByRouting = {
+      playercorefactory: "external_player",
+      service_interception: "service_interception",
+    } as const;
+    for (const routing of ["playercorefactory", "service_interception"] as const) {
+      for (const monitor of ["legacy", "svm3"] as const) {
+        const out = wizardStateToAddonSettings(
+          makeState({ playbackArchitecture: archByRouting[routing], monitorMode: monitor }),
+        );
+        expect(out.playback_architecture_preset).toBe(`${routing}_${monitor}`);
+        expect(out.playback_monitor_mode).toBe(monitor);
+        expect(out.playback_architecture).toBe(archByRouting[routing]);
+      }
+    }
+  });
+});
