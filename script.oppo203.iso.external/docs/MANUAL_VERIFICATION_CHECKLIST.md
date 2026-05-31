@@ -31,6 +31,19 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — AVR DB two-copy consistency guard (PR #134)
+
+- **Branch / PR:** `claude/avr-db-consistency-a7d1f4e2` — [#134](https://github.com/skull-01/script.oppo203.iso.external/pull/134). PR-only theme (no tracked issue).
+- **What changed (software-verified only):** new `configurator/src/avr_db_consistency.test.ts` pins the bundled `configurator/src/avr-db/avr-models.json` and the canonical `docs/configurator/avr-db/avr-models.json` byte-identical, plus schema invariants (schema_version 2, non-empty db_version/lineups/models, unique lineup + model ids, every model resolves to a real lineup). Test-only — no runtime/behavior change, no add-on change. `npm run build` + `vitest` (111 tests) green.
+- **Operator verifies (Phase A):** read the diff; confirm the configurator CI job is green; merge when satisfied. No Phase C (test-only).
+
+### Configurator — Step 5 receiver reachability probe (PR #135)
+
+- **Branch / PR:** `claude/avr-step5-probe-b3c9e0d6` — [#135](https://github.com/skull-01/script.oppo203.iso.external/pull/135). PR-only theme (no tracked issue).
+- **What changed (software-verified only):** Step 5's AVR control card gains a **Test reachability** button that TCP-probes the receiver's control port (Denon/Marantz 23, Yamaha 80, Onkyo/Pioneer 60128) via the existing generic `tv_port_probe` Tauri command — frontend only, no Rust change, no state-changing commands sent. Sony (authenticated HTTP/PSK API) and custom_command brands show no button. `npm run build` + `vitest` (103 tests) green; in-browser behaviour not exercised in-session.
+- **Operator verifies (Phase A):** read the `step5.tsx` diff; confirm CI green.
+- **Operator verifies (Phase C — on hardware):** in the built configurator, pick a real receiver, enter its IP, click **Test reachability**; confirm a reachable receiver reports the port answered and an unreachable/wrong IP reports failure cleanly (the probe sends no state-changing commands).
+
 ### Add-on — read-only OPPO player-status probe (documented #Q.. query battery)
 
 - **Branch / SHA:** `claude/oppo-status-probe-8x3k9m2p` — relates to
