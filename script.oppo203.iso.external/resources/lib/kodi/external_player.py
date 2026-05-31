@@ -47,6 +47,12 @@ except ImportError:  # pragma: no cover - run as __main__ via runpy / bare-name 
     from tv_control import switch_to_kodi, switch_to_oppo  # type: ignore[no-redef]
 
 
+# Consecutive OPPO poll failures (connection refused / unreachable) that end a
+# hold instead of running to the full timeout when the player drops off the
+# network mid-playback. A graceful no-response (recv timeout) does not count.
+MAX_CONSECUTIVE_POLL_FAILURES = 5
+
+
 def log(message: str) -> None:
     log_to_xbmc(None, "player", message)
 
@@ -164,6 +170,46 @@ def fast_return(settings: Settings) -> None:
         _safe_tv_switch(settings, "kodi")
 
 
+def _hold_tcp_qpl_poll(settings: Settings) -> None:
+    # Poll #QPL over TCP and end the hold when the player reports idle/stopped.
+    host = settings["oppo_ip"]
+    port = int(settings.get("oppo_port", "23"))
+    timeout_secs = float(settings.get("oppo_socket_timeout", "3.0"))
+    interval = max(1, int(settings.get("qpl_poll_interval", "3")))
+    max_seconds = max(1, int(settings.get("qpl_poll_timeout_minutes", "240"))) * 60
+    confirmations_needed = max(1, int(settings.get("qpl_poll_idle_confirmations", "2")))
+    started_at = time.time()
+    idle_confirmations = 0
+    consecutive_failures = 0
+    log(
+        f"TCP QPL polling hold active: interval={interval}s, timeout={max_seconds}s, idle confirmations={confirmations_needed}."
+    )
+    while time.time() - started_at < max_seconds:
+        try:
+            status = query_playback_status(host, port, timeout=timeout_secs)
+            consecutive_failures = 0
+            log(f"Oppo QPL status: {status or 'timeout/no-response'}")
+            if tcp_qpl_is_idle(status):
+                idle_confirmations += 1
+                if idle_confirmations >= confirmations_needed:
+                    log("Oppo QPL status indicates idle/stopped. Ending hold.")
+                    return
+            else:
+                idle_confirmations = 0
+        except Exception as exc:
+            consecutive_failures += 1
+            log(
+                f"Oppo TCP QPL poll failed "
+                f"({consecutive_failures}/{MAX_CONSECUTIVE_POLL_FAILURES}): {exc}"
+            )
+            idle_confirmations = 0
+            if consecutive_failures >= MAX_CONSECUTIVE_POLL_FAILURES:
+                log("Oppo unreachable for too many consecutive QPL polls. Ending hold.")
+                return
+        time.sleep(interval)
+    log("TCP QPL polling hold timed out. Ending hold.")
+
+
 def hold_playback(settings: Settings) -> None:
     mode = settings.get("hold_mode", "fixed_timeout")
 
@@ -175,6 +221,7 @@ def hold_playback(settings: Settings) -> None:
         trickplay_suppress = max(0, int(settings.get("trickplay_suppress_seconds", "45")))
         started_at = time.time()
         idle_confirmations = 0
+        consecutive_failures = 0
         ignore_until = 0.0  # v0.9.0: ignore idle readings until this time
         log(
             f"HTTP polling hold active: interval={interval}s, timeout={timeout}s, idle confirmations={confirmations_needed}, "
@@ -183,6 +230,7 @@ def hold_playback(settings: Settings) -> None:
         while time.time() - started_at < timeout:
             try:
                 info = get_playback_info(settings)
+                consecutive_failures = 0
                 status = ""
                 if isinstance(info, dict):
                     from oppo_control import _info_containers
@@ -229,41 +277,21 @@ def hold_playback(settings: Settings) -> None:
                     # Unknown/ambiguous status -- treat conservatively as non-idle.
                     idle_confirmations = 0
             except Exception as exc:
-                log(f"Oppo HTTP status poll failed: {exc}")
+                consecutive_failures += 1
+                log(
+                    f"Oppo HTTP status poll failed "
+                    f"({consecutive_failures}/{MAX_CONSECUTIVE_POLL_FAILURES}): {exc}"
+                )
                 idle_confirmations = 0
+                if consecutive_failures >= MAX_CONSECUTIVE_POLL_FAILURES:
+                    log("Oppo unreachable for too many consecutive HTTP polls. Ending hold.")
+                    return
             time.sleep(interval)
         log("HTTP polling hold timed out. Ending hold.")
         return
 
     if mode == "tcp_qpl_poll":
-        # v0.8.0: Poll #QPL over TCP and stop when status is idle/stopped
-        host = settings["oppo_ip"]
-        port = int(settings.get("oppo_port", "23"))
-        timeout_secs = float(settings.get("oppo_socket_timeout", "3.0"))
-        interval = max(1, int(settings.get("qpl_poll_interval", "3")))
-        max_seconds = max(1, int(settings.get("qpl_poll_timeout_minutes", "240"))) * 60
-        confirmations_needed = max(1, int(settings.get("qpl_poll_idle_confirmations", "2")))
-        started_at = time.time()
-        idle_confirmations = 0
-        log(
-            f"TCP QPL polling hold active: interval={interval}s, timeout={max_seconds}s, idle confirmations={confirmations_needed}."
-        )
-        while time.time() - started_at < max_seconds:
-            try:
-                status = query_playback_status(host, port, timeout=timeout_secs)
-                log(f"Oppo QPL status: {status or 'timeout/no-response'}")
-                if tcp_qpl_is_idle(status):
-                    idle_confirmations += 1
-                    if idle_confirmations >= confirmations_needed:
-                        log("Oppo QPL status indicates idle/stopped. Ending hold.")
-                        return
-                else:
-                    idle_confirmations = 0
-            except Exception as exc:
-                log(f"Oppo TCP QPL poll failed: {exc}")
-                idle_confirmations = 0
-            time.sleep(interval)
-        log("TCP QPL polling hold timed out. Ending hold.")
+        _hold_tcp_qpl_poll(settings)
         return
 
     if mode == "verbose_push":
@@ -298,13 +326,23 @@ def hold_playback(settings: Settings) -> None:
             return
         except Exception as exc:
             log(f"Verbose push TCP client failed ({exc}); falling back to tcp_qpl_poll.")
-            # Fall through to tcp_qpl_poll logic below by modifying mode
-            mode = "tcp_qpl_poll"
+            _hold_tcp_qpl_poll(settings)
+            return
 
     if mode == "manual_file":
         stop_file = settings.get("manual_stop_file", "/tmp/oppo203_iso_stop")
+        # Bound the otherwise-unbounded wait with the fixed-timeout ceiling so a
+        # stop file that never appears cannot pin Kodi indefinitely.
+        ceiling_minutes = int(settings.get("fixed_timeout_minutes", "180"))
+        deadline = time.time() + max(1, ceiling_minutes * 60)
         log(f"Manual-file hold active. Create this file to stop: {stop_file}")
         while not os.path.exists(stop_file):
+            if time.time() >= deadline:
+                log(
+                    f"Manual-file hold reached the {ceiling_minutes}-minute ceiling "
+                    f"without a stop file. Ending hold."
+                )
+                return
             time.sleep(2)
         try:
             os.remove(stop_file)

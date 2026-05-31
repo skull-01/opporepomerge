@@ -47,6 +47,34 @@ implementing SHA(s) on the issue and append a row here.
   **49 files, 0 errors**.
 - **Phase A review focus:** confirm the diff is purely formatting. **No Phase C / on-device step** —
   test-file formatting only, no runtime code path.
+### Add-on — self-healing oppo203iso-active session sentinel (#117)
+
+- **Implementing SHA:** `293015e` on `claude/sentinel-selfheal-c3e8a1b7` (draft PR — commented on
+  issue #117). Independent of the other robustness PRs (mergeable in any order).
+- **Scope:** a crash, power loss, or Kodi killing the external player skips the `finally` that
+  removes the `oppo203iso-active` sentinel, leaving it on disk. A stale sentinel then disabled all
+  service interception (`service.py`) and made the remote bridge forward keys with no active
+  session (`oppo_remote.py`).
+- **What changed (software-verified only):**
+  - `resources/lib/kodi/settings_reader.py`: new dependency-free `session_is_active(addon_data_dir)`
+    + `SESSION_MAX_AGE_SECONDS` (21600 = 6h, well beyond the longest legitimate hold). A sentinel
+    whose file mtime is older than that is treated as inactive (self-healing). mtime is the
+    session-start clock (the sentinel is written once), so the check is robust to unreadable
+    contents.
+  - `service.py` + `resources/lib/oppo/oppo_remote.py`: the two duplicated `_session_is_active`
+    readers now delegate to the shared helper (resolving the duplication smell #117 noted).
+  - `tests/test_session_sentinel_staleness.py` (5): missing / fresh / stale via the helper, plus
+    the service and remote readers honoring staleness.
+- **CI / gates (software-verified only; hardware validation not claimed):** `pytest` **970 passed /
+  3 skipped**; serial coverage **99%** (`oppo_remote.py` 100%, the helper fully covered); `ruff
+  check` + `ruff format --check` clean; mypy strict gate **49 files, 0 errors**.
+- **Phase A review focus:** confirm 6h is a safe staleness window (longer than any real hold, short
+  enough to self-heal next session); confirm using the file mtime (vs the stored timestamp) is
+  acceptable as the session clock.
+- **Phase C — on-device:** start a handoff, then kill Kodi mid-hold (or pull power) so the sentinel
+  is left behind. Confirm: (a) on next start, a tagged 4K disc is intercepted again (not skipped);
+  (b) the remote bridge does not forward keys when no session is active. A fresh sentinel (< 6h)
+  must still gate correctly during a real session.
 
 ### Add-on — read-only OPPO player-status probe (documented #Q.. query battery)
 
@@ -692,6 +720,38 @@ implementing SHA(s) on the issue and append a row here.
     `default.py` `cast(str, diag.save_report(...))` are behaviour-neutral pass-throughs.
 - **No Phase C / on-device step:** typing/allowlist only — no runtime code paths, settings,
   or hardware behavior change.
+
+### Add-on — hold_playback robustness: bound holds + fix verbose_push fallback (#112 / #115 / #116)
+
+- **Implementing SHA:** `a16a4f4` on `claude/hold-robustness-a7f3c1e9` (draft PR — commented on
+  issues #112, #115, #116). First of the robustness-bug session's PRs.
+- **Scope:** stop `hold_playback` from pinning Kodi's playback slot (and the `oppo203iso-active`
+  session sentinel) long past the end of playback. No change to playback routing, OPPO payloads,
+  TV/AVR sequencing, or the idle-confirmation / definitive-stop / trick-play-suppress logic.
+- **What changed (software-verified only):** `resources/lib/kodi/external_player.py`:
+  - **#112** — extracted the `tcp_qpl_poll` loop into `_hold_tcp_qpl_poll(settings)` and call it
+    from the `verbose_push` connect-failure path (which previously set `mode='tcp_qpl_poll'` and
+    fell through *past* the QPL handler into the blind `fixed_timeout` sleep).
+  - **#115** — `manual_file` is now bounded by the `fixed_timeout_minutes` ceiling (default 180)
+    instead of waiting forever for a stop file that never appears.
+  - **#116** — `http_poll` and `tcp_qpl_poll` end the hold after `MAX_CONSECUTIVE_POLL_FAILURES`
+    (5) connection/unreachable failures instead of polling to the 240-minute timeout. A graceful
+    no-response (recv timeout) still does **not** count as a failure.
+  - `tests/test_hold_robustness.py` (4 tests): verbose_push fallback polls #QPL (not the fixed
+    sleep); manual_file returns at the ceiling; http_poll + tcp_qpl_poll abort after 5 failures.
+- **CI / gates (software-verified only; hardware validation not claimed):** `pytest` **967 passed
+  / 3 skipped**; serial coverage **99%** (≥ 99% floor; new branches covered, the `external_player.py`
+  misses are pre-existing); `ruff check` + `ruff format --check` (changed files) clean; mypy strict
+  gate **49 files, 0 errors**.
+- **Phase A review focus:** confirm `_hold_tcp_qpl_poll` is a pure extraction (idle logic
+  identical); confirm the manual_file ceiling and the 5-failure abort threshold read sensibly;
+  confirm no behavior change to the http_poll definitive-stop / trick-play-suppress paths.
+- **Phase C — on-device:** on the real Kodi box + OPPO, exercise each hold mode and confirm the
+  slot/sentinel releases near actual disc-end: (a) `verbose_push` with the OPPO refusing the push
+  port → falls back to QPL polling and ends on stop; (b) `manual_file` with no stop file → ends at
+  the ceiling; (c) `http_poll` / `tcp_qpl_poll` with the OPPO powered off mid-playback → ends
+  within ~5 polls, not 4 hours. The abort threshold (5) and the ceiling may need tuning against
+  real timing.
 
 ## Phase B — post-merge sanity
 
