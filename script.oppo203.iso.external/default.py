@@ -18,6 +18,7 @@ def run_diagnostics_dashboard(
     host: str | None = None,
     port: int = 23,
     mac: str | None = None,
+    http_port: int = 436,
 ) -> str | None:
     """Installer menu entry point for the v1.0.9 diagnostics dashboard.
 
@@ -51,14 +52,16 @@ def run_diagnostics_dashboard(
             return {"ok": False, "error": str(exc)}
 
     def _http(h: str) -> dict[str, Any]:
+        # The OPPO HTTP control API listens on oppo_http_port (default 436),
+        # not 80; probing 80 reported reachability against a port it never serves.
         import socket
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(2.0)
         try:
-            s.connect((h, 80))
+            s.connect((h, http_port))
             s.close()
-            return {"ok": True, "port": 80}
+            return {"ok": True, "port": http_port}
         except Exception as exc:
             return {"ok": False, "error": str(exc)}
 
