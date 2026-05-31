@@ -22,6 +22,15 @@ const BRAND_ICONS: Record<string, SimpleIcon> = {
   oppo: siOppo,
 };
 
+// Some brand marks are near-white (Sony's is #FFFFFF) and vanish on the white chip the
+// colored marks need. Detect a light mark by perceived luminance so it gets a dark chip.
+function markIsLight(hex: string): boolean {
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 200;
+}
+
 type Props = {
   /** Brand id; when it matches a Simple Icons slug the real logo is shown. */
   slug: string;
@@ -56,7 +65,7 @@ export function BrandIcon({ slug, ch, color, fallbackIcon }: Props) {
   }
 
   return (
-    <div className="brand-logo brand-logo-mark">
+    <div className={`brand-logo brand-logo-mark${markIsLight(icon.hex) ? " brand-logo-mark-dark" : ""}`}>
       <svg
         role="img"
         aria-label={icon.title}

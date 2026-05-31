@@ -769,6 +769,8 @@ input:focus, .input:focus {
 .brand-logo-mark { background: #fff; }
 .brand-logo-mark svg { display: block; }
 .brand-pill.selected .brand-logo-mark { background: #fff; }
+.brand-logo-mark-dark,
+.brand-pill.selected .brand-logo-mark-dark { background: #1A1612; }
 
 .hdmi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 .hdmi-tile {
