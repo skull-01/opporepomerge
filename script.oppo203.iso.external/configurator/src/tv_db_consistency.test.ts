@@ -1,0 +1,72 @@
+// @vitest-environment node
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+// The TV DB ships in two copies: the bundled offline fallback that tvdb.ts imports
+// (configurator/src/tv-db/tv-models.json) and the canonical, remotely-refreshable copy
+// (docs/configurator/tv-db/tv-models.json). Nothing enforced that they stay in step -- and
+// since the loader only ever imports the bundled copy, a hand-edit to one could ship
+// undetected drift. This guard pins them identical and pins the structural invariants that
+// tvdb.ts and Step 3 rely on. (Mirrors avr_db_consistency.test.ts, added in PR #134.)
+
+function read(rel: string): string {
+  return readFileSync(new URL(rel, import.meta.url), "utf8");
+}
+
+const SRC_REL = "./tv-db/tv-models.json";
+const DOCS_REL = "../../docs/configurator/tv-db/tv-models.json";
+
+describe("tv-models.json: bundled and docs copies stay in lockstep", () => {
+  const srcRaw = read(SRC_REL);
+  const docsRaw = read(DOCS_REL);
+
+  it("are byte-for-byte identical", () => {
+    expect(docsRaw).toBe(srcRaw);
+  });
+
+  it("parse to deep-equal objects", () => {
+    expect(JSON.parse(docsRaw)).toEqual(JSON.parse(srcRaw));
+  });
+});
+
+type TvLineup = { id: string };
+type TvModel = { id: string; lineup: string };
+
+describe("tv-models.json: schema invariants", () => {
+  const db = JSON.parse(read(SRC_REL)) as {
+    schema_version: number;
+    db_version: string;
+    lineups: TvLineup[];
+    models: TvModel[];
+  };
+
+  it("declares schema_version 2", () => {
+    expect(db.schema_version).toBe(2);
+  });
+
+  it("carries a non-empty db_version string", () => {
+    expect(typeof db.db_version).toBe("string");
+    expect(db.db_version.length).toBeGreaterThan(0);
+  });
+
+  it("has non-empty lineups and models", () => {
+    expect(db.lineups.length).toBeGreaterThan(0);
+    expect(db.models.length).toBeGreaterThan(0);
+  });
+
+  it("has unique lineup ids", () => {
+    const ids = db.lineups.map((l) => l.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("has unique model ids", () => {
+    const ids = db.models.map((m) => m.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("every model references an existing lineup", () => {
+    const lineupIds = new Set(db.lineups.map((l) => l.id));
+    const orphans = db.models.filter((m) => !lineupIds.has(m.lineup)).map((m) => m.id);
+    expect(orphans).toEqual([]);
+  });
+});

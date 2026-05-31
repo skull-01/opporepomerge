@@ -4,7 +4,7 @@
   "scope": {
     "years": [
       2018,
-      2025
+      2026
     ],
     "brands": [
       "samsung",
@@ -8600,6 +8600,819 @@
         "Asia"
       ],
       "region_notes": "UK/EU/Asia-oriented family mapping; US variants may use a different OS or model code."
+    },
+    {
+      "id": "samsung-s95h-oled-qd-oled-2026",
+      "brand": "samsung",
+      "name": "S95H OLED / QD-OLED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "samsung-command",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Tizen / One UI Tizen",
+      "primary_backend": "samsung_command",
+      "fallback_backends": [
+        "smartthings",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Samsung flagship QD-OLED (CES 2026), FloatLayer design, ~3000 nits. Tizen control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Samsung Tizen mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "samsung-s90h-oled-2026",
+      "brand": "samsung",
+      "name": "S90H OLED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "samsung-command",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Tizen / One UI Tizen",
+      "primary_backend": "samsung_command",
+      "fallback_backends": [
+        "smartthings",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Samsung OLED step-down (CES 2026), Glare Free across sizes. Tizen control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Samsung Tizen mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "samsung-s85h-oled-2026",
+      "brand": "samsung",
+      "name": "S85H OLED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "samsung-command",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Tizen / One UI Tizen",
+      "primary_backend": "samsung_command",
+      "fallback_backends": [
+        "smartthings",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Samsung entry OLED (CES 2026). Tizen control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Samsung Tizen mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "samsung-qn80h-neo-qled-4k-2026",
+      "brand": "samsung",
+      "name": "QN80H Neo QLED 4K",
+      "year": 2026,
+      "size": "various",
+      "lineup": "samsung-command",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Tizen / One UI Tizen",
+      "primary_backend": "samsung_command",
+      "fallback_backends": [
+        "smartthings",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Samsung mid-range Neo QLED LCD (CES 2026). Note: the QN90 4K line has no direct 2026 successor. Tizen control. Candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Samsung Tizen mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "samsung-qn70h-qled-4k-2026",
+      "brand": "samsung",
+      "name": "QN70H QLED 4K",
+      "year": 2026,
+      "size": "various",
+      "lineup": "samsung-command",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Tizen / One UI Tizen",
+      "primary_backend": "samsung_command",
+      "fallback_backends": [
+        "smartthings",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Samsung mid-range QLED LCD (CES 2026). Tizen control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Samsung Tizen mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "samsung-micro-rgb-lcd-2026",
+      "brand": "samsung",
+      "name": "Micro RGB LCD",
+      "year": 2026,
+      "size": "various",
+      "lineup": "samsung-command",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Tizen / One UI Tizen",
+      "primary_backend": "samsung_command",
+      "fallback_backends": [
+        "smartthings",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Samsung Micro RGB LCD (RGB LED backlight) up to 130 inches, below OLED (CES 2026). Tizen control. Candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Samsung Tizen mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "samsung-the-frame-2026",
+      "brand": "samsung",
+      "name": "The Frame (2026)",
+      "year": 2026,
+      "size": "various",
+      "lineup": "samsung-command",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Tizen / One UI Tizen",
+      "primary_backend": "samsung_command",
+      "fallback_backends": [
+        "smartthings",
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "2026 Samsung The Frame lifestyle refresh (CES 2026). Confirm exact model code (LS03-series successor). Tizen control. Candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Samsung Tizen mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "lg-g6-oled-evo-2026",
+      "brand": "lg",
+      "name": "G6 OLED evo",
+      "year": 2026,
+      "size": "various",
+      "lineup": "lg-webos",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "webOS",
+      "primary_backend": "lg_command",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 LG flagship OLED evo (CES 2026), 4-layer Primary RGB Tandem panel, Alpha 11 Gen 3. webOS control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level LG webOS mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "lg-c6-oled-evo-2026",
+      "brand": "lg",
+      "name": "C6 OLED evo",
+      "year": 2026,
+      "size": "various",
+      "lineup": "lg-webos",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "webOS",
+      "primary_backend": "lg_command",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 LG mid-range OLED evo (CES 2026); C6H 77/83 gets the 4-layer Tandem panel. webOS control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level LG webOS mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "lg-b6-oled-2026",
+      "brand": "lg",
+      "name": "B6 OLED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "lg-webos",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "webOS",
+      "primary_backend": "lg_command",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 LG entry OLED (CES 2026); B6E range also launches. webOS control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level LG webOS mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "lg-w6-oled-wallpaper-2026",
+      "brand": "lg",
+      "name": "W6 OLED (Wallpaper)",
+      "year": 2026,
+      "size": "various",
+      "lineup": "lg-webos",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "webOS",
+      "primary_backend": "lg_command",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 LG W6 revived wallpaper OLED (CES 2026). webOS control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level LG webOS mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "lg-qned-evo-2026",
+      "brand": "lg",
+      "name": "QNED evo / QNED 2026",
+      "year": 2026,
+      "size": "various",
+      "lineup": "lg-webos",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "webOS",
+      "primary_backend": "lg_command",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 LG QNED Mini-LED / LCD family (CES 2026). webOS control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level LG webOS mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "lg-micro-rgb-evo-2026",
+      "brand": "lg",
+      "name": "Micro RGB evo",
+      "year": 2026,
+      "size": "various",
+      "lineup": "lg-webos",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "webOS",
+      "primary_backend": "lg_command",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "2026 LG Micro RGB evo LCD series (CES 2026). webOS control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level LG webOS mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "sony-bravia-9-ii-rgb-mini-led-2026",
+      "brand": "sony",
+      "name": "BRAVIA 9 II RGB Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "sony-bravia-ip",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV + BRAVIA IP",
+      "primary_backend": "sony_bravia",
+      "fallback_backends": [
+        "adb",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Sony flagship True RGB Mini-LED (65/75/85/115 in). Google TV; BRAVIA IP / REST or IRCC control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Sony BRAVIA mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "sony-bravia-7-ii-rgb-mini-led-2026",
+      "brand": "sony",
+      "name": "BRAVIA 7 II RGB Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "sony-bravia-ip",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV + BRAVIA IP",
+      "primary_backend": "sony_bravia",
+      "fallback_backends": [
+        "adb",
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 Sony True RGB Mini-LED step-down (50-98 in). Google TV; BRAVIA IP / REST or IRCC control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level Sony BRAVIA mapping; carried-over 2025 BRAVIA 2 II/3 II/5/8 II remain under their 2025 rows."
+    },
+    {
+      "id": "tcl-x11l-sqd-mini-led-2026",
+      "brand": "tcl",
+      "name": "X11L SQD Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 TCL flagship SQD Mini-LED (CES 2026), up to 20000 zones / ~10000 nits, Pentonic 800. Google TV / ADB control. Candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level TCL Google TV mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "tcl-qm8l-sqd-mini-led-2026",
+      "brand": "tcl",
+      "name": "QM8L SQD Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 TCL QM8L SQD Mini-LED, up to 4000 zones / ~6000 nits. Google TV / ADB control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level TCL Google TV mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "tcl-qm7l-sqd-mini-led-2026",
+      "brand": "tcl",
+      "name": "QM7L SQD Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 TCL QM7L SQD Mini-LED, up to 2100 zones / ~3000 nits, Dolby Vision IQ. Google TV / ADB control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level TCL Google TV mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "tcl-qm6l-mini-led-2026",
+      "brand": "tcl",
+      "name": "QM6L Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 TCL QM6L budget Mini-LED (successor to QM6K). Google TV / ADB control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level TCL Google TV mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "tcl-rm9l-rgb-mini-led-2026",
+      "brand": "tcl",
+      "name": "RM9L RGB Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 TCL RM9L, the brand's first RGB Mini-LED (CES 2026). Google TV / ADB control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level TCL Google TV mapping; exact regional suffixes vary."
+    },
+    {
+      "id": "tcl-c8l-sqd-mini-led-2026",
+      "brand": "tcl",
+      "name": "C8L SQD Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 TCL C8L SQD Mini-LED (international C-series). Google TV / ADB control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level TCL Google TV mapping; C-series naming is mostly international."
+    },
+    {
+      "id": "tcl-c7l-sqd-mini-led-2026",
+      "brand": "tcl",
+      "name": "C7L SQD Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "high",
+      "validated": false,
+      "notes": "2026 TCL C7L SQD Mini-LED (international C-series). Google TV / ADB control. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Family-level TCL Google TV mapping; C-series naming is mostly international."
+    },
+    {
+      "id": "hisense-u6sf-firetv-2026",
+      "brand": "hisense",
+      "name": "U6SF Fire TV",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-firetv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Fire TV",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "2026 Hisense U6SF Mini-LED on Amazon Fire TV (CES 2026). No native add-on backend - custom_command. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Fire TV variant is US-led; other regions may ship VIDAA or Google TV - confirm."
+    },
+    {
+      "id": "hisense-u6sf-pro-firetv-2026",
+      "brand": "hisense",
+      "name": "U6SF Pro Fire TV",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-firetv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Fire TV",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "2026 Hisense U6SF Pro Mini-LED on Amazon Fire TV (CES 2026). No native add-on backend - custom_command. Candidate mapping, not device-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Fire TV variant is US-led; other regions may ship VIDAA or Google TV - confirm."
+    },
+    {
+      "id": "hisense-u7sg-mini-led-2026",
+      "brand": "hisense",
+      "name": "U7SG Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "2026 Hisense U7SG Mini-LED, 165Hz, ATSC 3.0 (CES 2026). Platform assumed Google TV (US); confirm vs VIDAA elsewhere. Low-confidence candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Hisense U7 platform varies by region (US Google TV vs VIDAA elsewhere) - confirm before relying on the backend."
+    },
+    {
+      "id": "hisense-u7sf-mini-led-2026",
+      "brand": "hisense",
+      "name": "U7SF Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "2026 Hisense U7SF Mini-LED (CES 2026). Platform assumed Google TV (US); confirm vs VIDAA elsewhere. Low-confidence candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Hisense U7 platform varies by region (US Google TV vs VIDAA elsewhere) - confirm before relying on the backend."
+    },
+    {
+      "id": "hisense-ur9-rgb-mini-led-2026",
+      "brand": "hisense",
+      "name": "UR9 RGB Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "2026 Hisense UR9 flagship RGB Mini-LED (CES 2026). Platform assumed VIDAA; US variant may be Google TV - confirm. Low-confidence candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Hisense flagship OS varies by region; confirm VIDAA vs Google TV before relying on the backend."
+    },
+    {
+      "id": "hisense-ur8-rgb-mini-led-2026",
+      "brand": "hisense",
+      "name": "UR8 RGB Mini-LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "2026 Hisense UR8 RGB Mini-LED (CES 2026), 55-100 in. Platform assumed VIDAA; US variant may be Google TV - confirm. Low-confidence candidate mapping.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Hisense flagship OS varies by region; confirm VIDAA vs Google TV before relying on the backend."
     }
   ],
   "fact_check_notes": [
