@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — AVR DB grown with 2026 model-year candidates (15 rows, validated:false)
+
+- **Branch:** `claude/avr-db-2026-models-3e8b9d04`. PR-only theme (no tracked issue); Configurator theme 3 from the resume backlog. Researched candidates for operator fact-check.
+- **What changed (software-verified only):** added 15 `validated:false` 2026 model-family rows to **both** copies of `avr-models.json` (kept byte-identical, guarded by #134): Denon AVR-X2900H/X3900H, Marantz AV 30 (pre/pro), Yamaha RX300A/RX500A, Onkyo TX-RZ31/51/61/71, Integra DRX-R1/DRX-7, Arcam AVA15/AVA25/AVA35 + AVP45. Bumped `db_version` → `2026.05.31-avr-2018-2026-region-schema` and `scope.years` → [2018, 2026]; added `2026` to the Step-5 `AVR_YEARS` filter. No new lineups (all rows attach to existing protocol families, so backends resolve unchanged). `tsc --noEmit` + `vitest` (123) + `vite build` green. Sourced from 2026 launch coverage (CES 2026 / ISE 2026 / spring announcements) — citations in the PR body.
+- **Operator verifies (Phase A):** fact-check the 15 rows against real product data — model names, model-year (especially Integra DRX vs the 2024 generation), channel counts, regions, and the control backend per model. Two caveats are baked into the rows' `control_notes`: (a) Yamaha RX300A/RX500A are entry tier and may lack MusicCast/YXC network control (predecessor RX-V385 had none) — confirm or downgrade to `custom_command`; (b) Integra year/availability needs confirmation. **No 2026 rows** were added for Pioneer (CES 2026 was in-vehicle), Sony (only "early looks" + soundbars), Anthem, or NAD — no verifiable new AVR found.
+- **Operator verifies (Phase C — on the built app / hardware):** in Step 5 pick a 2026 brand, confirm the new `2026` year filter surfaces the rows and the candidate backend + reachability probe behave; validate control against a real 2026 unit where available. All rows are candidate mappings — not hardware-validated.
+
 ### Configurator — AVR-chain switcher settings in mapping (topology PR 3)
 
 - **Branch:** `claude/topology-avr-switcher-map-2c7f9b1e`. PR-only theme (no tracked issue).
