@@ -3,6 +3,8 @@ import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
 import { avrAddonBackend } from "../mapping";
+import { invoke } from "@tauri-apps/api/core";
+import type { PortResult } from "../probes";
 import {
   AVR_REGIONS,
   BUNDLED_AVR_DB,
@@ -30,6 +32,27 @@ function inputPlaceholder(addonBackend: string | null): string {
       return "BD/DVD";
     default:
       return "input";
+  }
+}
+
+/**
+ * The TCP control port to knock on for a Step-5 reachability probe, per resolved add-on
+ * backend. null means there is no simple TCP check: Sony's Audio Control API is an
+ * authenticated HTTP service (PSK) and custom_command brands have no native driver. Ports
+ * mirror resources/lib/avr/avr_presets.py (Denon/Marantz telnet 23, Yamaha YXC HTTP 80,
+ * Onkyo/Pioneer eISCP 60128).
+ */
+function controlProbePort(addonBackend: string | null): number | null {
+  switch (addonBackend) {
+    case "denon_marantz":
+      return 23;
+    case "yamaha_yxc":
+      return 80;
+    case "onkyo_eiscp":
+    case "pioneer_eiscp":
+      return 60128;
+    default:
+      return null;
   }
 }
 
@@ -328,6 +351,24 @@ function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
     !!state.avrIp &&
     !!state.avrPlayerInput;
   const ph = inputPlaceholder(addonBackend);
+  const probePort = controlProbePort(addonBackend);
+  const [probing, setProbing] = useState(false);
+  const [reach, setReach] = useState<PortResult | null>(null);
+  const runProbe = async () => {
+    if (probePort == null || !state.avrIp) return;
+    setProbing(true);
+    try {
+      const r = await invoke<PortResult[]>("tv_port_probe", {
+        host: state.avrIp,
+        ports: [probePort],
+      });
+      setReach(r[0] ?? { port: probePort, open: false });
+    } catch {
+      setReach({ port: probePort, open: false });
+    } finally {
+      setProbing(false);
+    }
+  };
 
   return (
     <div className="card">
@@ -370,6 +411,27 @@ function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
               </div>
             </div>
           </div>
+          {probePort != null && (
+            <div className="row" style={{ gap: 10, alignItems: "center", marginTop: 4 }}>
+              <button
+                className="btn ghost sm"
+                onClick={runProbe}
+                disabled={probing || !state.avrIp}
+              >
+                <Icon name="search" size={13} /> {probing ? "Probing…" : "Test reachability"}
+              </button>
+              {reach && (
+                <span
+                  className={reach.open ? "success-text" : "muted"}
+                  style={{ fontSize: 12.5 }}
+                >
+                  {reach.open
+                    ? `Port ${probePort} answered — the receiver looks reachable.`
+                    : `Port ${probePort} didn't answer — check the IP, that the receiver is powered on, and that Network Standby / IP Control is on.`}
+                </span>
+              )}
+            </div>
+          )}
           {isSony ? (
             <>
               <div className="grid-2" style={{ alignItems: "start" }}>
