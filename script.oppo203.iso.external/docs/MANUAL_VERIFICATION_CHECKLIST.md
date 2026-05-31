@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — TV DB grown with 2026 lineups + a two-copy consistency guard (28 rows, validated:false)
+
+- **Branch:** `claude/tv-db-2026-models-7b1f4a92`. PR-only theme (no tracked issue). Researched candidates for operator fact-check.
+- **What changed (software-verified only):** the TV DB already covered 2025 (44 rows); this adds **28 `validated:false` 2026 model-family rows** to **both** copies of `tv-models.json` — now kept byte-identical by a NEW `configurator/src/tv_db_consistency.test.ts` (mirrors the AVR `#134` guard the TV DB never had). Rows: Samsung 7 (S95H/S90H/S85H, QN80H/QN70H, Micro RGB, The Frame), LG 6 (G6/C6/B6/W6, QNED evo, Micro RGB evo), Sony 2 (BRAVIA 9 II / 7 II True RGB Mini-LED), TCL 7 (X11L/QM8L/QM7L/QM6L/RM9L/C8L/C7L), Hisense 6 (U6SF/U6SF Pro/U7SG/U7SF/UR9/UR8). All attach to existing lineups (no new lineups). `scope.years` → [2018, 2026]; `2026` added to the Step-3 year filter. `tsc --noEmit` + `vitest` (131) + `vite build` green. Sourced from CES 2026 / spring-2026 coverage — citations in the PR body.
+- **Operator verifies (Phase A):** fact-check the 28 rows against real product data — names, model-year, platform → control backend, regions. Caveats are recorded in each row's `notes`/`mapping_confidence`: **Hisense** platform varies by region (U7SG/U7SF assumed Google TV → `adb`, UR9/UR8 assumed VIDAA → `custom_command`, U6SF/Pro Fire TV → `custom_command`) at `low`/`medium` confidence — confirm before relying on the backend; **Samsung QN90** 4K has no 2026 successor (so no QN90H); **Sony** carried-over 2025 sets (BRAVIA 2 II/3 II/5/8 II) stay under their existing 2025 rows. `db_version` stays `2026.05.31` (today; the strict `YYYY.MM.DD` format has no sub-day field to bump).
+- **Operator verifies (Phase C — built app / hardware):** in Step 3 pick a 2026 brand, confirm the new `2026` year filter surfaces the rows and the resolved platform/backend is right; validate control against a real 2026 set where available. All rows are candidate mappings — not hardware-validated.
+
 ### Configurator — AVR-chain switcher settings in mapping (topology PR 3)
 
 - **Branch:** `claude/topology-avr-switcher-map-2c7f9b1e`. PR-only theme (no tracked issue).

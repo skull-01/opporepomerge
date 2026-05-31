@@ -165,7 +165,7 @@ export function Step3Model({ go, state, set }: ScreenProps) {
         <div className="row" style={{ gap: 8, alignItems: "center" }}>
           <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Year</span>
           <div className="filter-row">
-            {["2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"].map((y) => (
+            {["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"].map((y) => (
               <button
                 key={y}
                 className={`filter-pill ${year === y ? "selected" : ""}`.trim()}
