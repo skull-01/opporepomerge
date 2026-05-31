@@ -38,6 +38,13 @@ implementing SHA(s) on the issue and append a row here.
 - **Operator verifies (Phase A):** read the rename diff — confirm it is purely id/number/component/file renames + the Player→`step3_mode` redirect + the placeholder, with no behavior change to the existing steps; the stepper + per-screen numbers read 0 · Player(2) · Playback mode(3) · TV(4) · HDMI(5) · AVR(6) · ✓.
 - **Operator verifies (Phase C — built app):** launch the configurator and walk Player → **Playback mode** (placeholder) → TV → HDMI → AVR → Test; confirm the numbering is consistent everywhere and resume/persistence still lands on valid screens.
 
+### Configurator — Playback-mode choice + emit four-option settings triple (Session B / PR B2)
+
+- **Branch:** `claude/cfg-playback-mode-content-ca2a6550` (stacked on PR B1). PR-only theme; pairs with addon PR #143 (which reads these keys).
+- **What changed (software-verified only):** the new Step 3 "Playback mode" screen now offers **SVM3** (recommended for new installs) vs **Legacy** (compatibility), writing `state.monitorMode` (new `MonitorMode` type; default `legacy`). `mapping.ts` emits the consistent **triple** — `playback_architecture` + `playback_monitor_mode` + the derived `playback_architecture_preset` (e.g. `playercorefactory_svm3`) — which the add-on (PR #143) reads, treating the preset as source of truth. SVM3 is labelled "recommended for validation / new installs," **not** hardware-validated. `mapping.test.ts` adds 5 tests pinning the triple consistent across all four combos. Gate: `tsc -b` + **151 vitest** + `vite build` green.
+- **Operator verifies (Phase A):** read the Step 3 copy + the `mapping.ts` emit + the 5 new mapping tests; confirm the triple is internally consistent for all four combos and the default is `legacy` / `playercorefactory_legacy`.
+- **Operator verifies (Phase C — built app + box):** in the wizard pick SVM3 vs Legacy at Step 3, finish + deploy, and confirm the add-on `settings.xml` carries a consistent `playback_architecture_preset` + `playback_monitor_mode` and the add-on resolves the matching monitor. (SVM3 capability is probed in PR B3.) Not hardware-validated.
+
 ### Configurator — dedicated Step-5 receiver restore-input field (AVR-chain restore, #138 follow-up)
 
 - **Branch:** `claude/avr-receiver-restore-input-a7f2c419`. PR-only theme (no tracked issue); follow-up to PR #138.
