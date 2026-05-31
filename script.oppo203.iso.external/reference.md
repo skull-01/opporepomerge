@@ -715,6 +715,8 @@ TV switching is controlled by `tv_switching_enabled`. When disabled, the switch 
 
 `adb_control.switch_input()` now accepts an injected subprocess-compatible runner through the `_adb_runner` setting. Tests use that seam to verify command construction without requiring a real TV or ADB binary.
 
+> **Naming note (2026-05-31):** `adb_control` was later moved to `resources/lib/tv/` and renamed `tv_adb_control` (parity with the `avr_` drivers). This build note keeps the original name; see [`docs/NAMING_CONVENTIONS.md`](docs/NAMING_CONVENTIONS.md).
+
 ## Verbose-push disconnect invariant
 
 `oppo_tcp_client.OppoTcpClient` now separates explicit stop events from transport closure. `wait_for_stop()` returns `True` only after a real stop-like `@UPL` / `@UPW` line. Clean socket disconnect returns `False`, allowing the persistent reconnect loop to retry rather than misreporting playback as stopped.
@@ -1167,6 +1169,8 @@ The Build 9B SmartThings slice registers the `smartthings` backend as experiment
 Version 2.9.10 Build 8: Roku TV ECP backend.
 
 Build 7 adds `resources/lib/roku_ecp_control.py` and the `roku_ecp` TV backend. The backend sends local HTTP POST requests to `/keypress/<key>` using default port `8060`. Roku keys are allowlisted before URL construction to prevent path or query injection. Supported software-preset key examples include `InputHDMI1` and `InputHDMI2`; unsupported or unsafe values fail before any network call.
+
+> **Naming note (2026-05-31):** `roku_ecp_control` was later moved to `resources/lib/tv/` and renamed `tv_roku_ecp_control`. This build note keeps the original name; see [`docs/NAMING_CONVENTIONS.md`](docs/NAMING_CONVENTIONS.md).
 
 Build 7 also extends `resources/lib/tv_presets.py` with software-only Roku TV presets: `roku_tv`, `tcl_roku_tv`, `hisense_roku_tv`, and `generic_roku_tv`. Hardware validation is not claimed.
 
