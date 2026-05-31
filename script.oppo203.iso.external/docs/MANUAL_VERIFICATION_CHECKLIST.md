@@ -31,6 +31,48 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Add-on — read-only OPPO player-status probe (documented #Q.. query battery)
+
+- **Branch / SHA:** `claude/oppo-status-probe-8x3k9m2p` — relates to
+  [#113](https://github.com/skull-01/script.oppo203.iso.external/issues/113) (verify the OPPO
+  actually played the requested file). This PR delivers the **read-only diagnostic** that
+  empirically confirms what the player reports; the #113 verify wiring is a follow-up built on
+  its findings.
+- **What changed (software-verified only):**
+  - `oppo_control.py`: new `probe_player_status(settings, *, send=None, http=None)` — sends the
+    documented `#Q..` query battery (`PROBE_QUERY_COMMANDS`:
+    QPW/QPL/QFN/QFT/QTK/QCH/QTE/QTR/QEL/QRE/QDT/QAT/QST/QIS/QHD/QVR) over one TCP:23
+    connection, classifies each reply (OK/ER/no-response, **preserving #QFN file-name case**),
+    and best-effort attaches the raw HTTP `/getmovieplayinfo` payload. Plus
+    `format_player_status_probe()` and a non-raising `_classify_probe_response()`. **No change
+    to playback routing, OPPO payloads, or the hold modes.**
+  - `installer.py`: new menu action **"Probe OPPO player status (diagnostic)"** (index 13,
+    appended before Cancel so existing menu indices are unchanged) → `run_player_status_probe()`
+    shows the parsed replies in a textviewer and saves a copy to
+    `addon_data/oppo-status-probe.txt`.
+  - Docs: `docs/OPPO_PROTOCOL_REFERENCE.md` transcribes the query/verbose tables from OPPO's
+    RS-232 & IP Control Protocol (Dec 2017).
+  - Tests: new `tests/test_oppo_status_probe.py` (13 tests — reply classification incl. the
+    #QFN case + ER/empty/legacy/unknown forms, missing-host + unreachable handling, the HTTP
+    field, a loopback `FakeOppoServer` default-send pass, the report formatter, and menu
+    dispatch).
+- **Software gates (this machine):** `pytest` **963 passed / 3 skipped**; coverage **99%**
+  (≥99 gate, exit 0); `ruff check` + `ruff format` clean; `mypy` strict **clean** on the two
+  gated files. Probe code fully covered.
+- **Phase C — operator end-to-end verify (on the real Kodi box + OPPO):**
+  1. Open the add-on → **"Probe OPPO player status (diagnostic)"**. With the player idle,
+     confirm a report appears and `power` / `playback_status` / `firmware_version` populate.
+  2. **Start a NAS-ISO handoff** (http / json_payload mode), then run the probe **during
+     playback**. Record what `media_file_name` (`#QFN`) and `media_file_format` (`#QFT`)
+     return — **does the ISO file name appear, or `ER INVALID`?** (This answers the open
+     question for #113 exact-file verification.) Confirm `playback_status` = `PLAY` and
+     `total_elapsed` advances on a second run.
+  3. **Play a physical disc** (tcp_commands mode), run the probe, and record `#QDT` (disc
+     type), `#QTK` / `#QCH`, and whether `#QFN` is `ER INVALID` for disc playback.
+  4. Note any `#Q..` commands your firmware answers `ER` / no-response (older firmware lacks
+     `#QFN`). Paste `addon_data/oppo-status-probe.txt` back so the #113 verify can use the real
+     fields.
+
 ### Configurator — AVR Step 5 Sony auto-enable (PSK + acknowledgement)
 
 - **Branch / SHA:** `claude/avr-sony-autoenable-5c9f2a3d` — **no tracked issue** (configurator

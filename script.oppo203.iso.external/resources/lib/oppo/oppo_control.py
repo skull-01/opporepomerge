@@ -633,6 +633,138 @@ def run_start(
 
 
 # ---------------------------------------------------------------------------
+# Read-only player-status probe (documented #Q.. query battery + HTTP playinfo)
+# ---------------------------------------------------------------------------
+
+# Ordered (label, command) pairs from the OPPO UDP-20X RS-232 & IP Control
+# Protocol "Query Commands" section. #QFN (media file name) and #QFT (media file
+# format) are the documented "what is playing" identity queries; the rest report
+# play state, position, and disc/audio/subtitle context. Each reply is
+# "@CODE OK <value>" (verbose), "OK <value>" (legacy), or "ER <reason>".
+PROBE_QUERY_COMMANDS: tuple[tuple[str, str], ...] = (
+    ("power", "#QPW"),
+    ("playback_status", "#QPL"),
+    ("media_file_name", "#QFN"),
+    ("media_file_format", "#QFT"),
+    ("track_title", "#QTK"),
+    ("chapter", "#QCH"),
+    ("track_elapsed", "#QTE"),
+    ("track_remaining", "#QTR"),
+    ("total_elapsed", "#QEL"),
+    ("total_remaining", "#QRE"),
+    ("disc_type", "#QDT"),
+    ("audio_type", "#QAT"),
+    ("subtitle_type", "#QST"),
+    ("input_source", "#QIS"),
+    ("hdmi_resolution", "#QHD"),
+    ("firmware_version", "#QVR"),
+)
+
+
+def _classify_probe_response(command: str, raw: str) -> dict[str, object]:
+    """Classify one query reply without raising on ER.
+
+    Preserves the original case of the value, which matters for #QFN media file
+    names (query_command/_parse_response would uppercase them). Handles both the
+    verbose "@QFN OK <value>" form and the legacy "OK <value>" form.
+    """
+    text = (raw or "").strip()
+    entry: dict[str, object] = {"command": command, "raw": text, "ok": False, "value": ""}
+    if not text:
+        entry["status"] = "no_response"
+        return entry
+    body = text
+    if body.startswith("@"):
+        parts = body.split(None, 1)
+        body = parts[1].strip() if len(parts) > 1 else ""
+    upper = body.upper()
+    if upper.startswith("OK"):
+        entry["ok"] = True
+        entry["status"] = "ok"
+        entry["value"] = body[2:].strip()
+    elif upper.startswith("ER"):
+        entry["status"] = "error"
+        entry["value"] = body[2:].strip()
+    else:
+        entry["status"] = "unknown"
+        entry["value"] = body
+    return entry
+
+
+def _default_http_probe(settings: Settings) -> str:
+    """Best-effort raw /getmovieplayinfo body (undocumented HTTP app API)."""
+    return _http_get(settings, "/getmovieplayinfo")
+
+
+def probe_player_status(
+    settings: Settings, *, send: Any = None, http: Any = None
+) -> dict[str, object]:
+    """Read-only diagnostic: query the documented OPPO status commands.
+
+    Sends the PROBE_QUERY_COMMANDS battery over one TCP:23 connection and, on a
+    best-effort basis, fetches the raw HTTP /getmovieplayinfo payload. Returns a
+    structured, non-throwing result. `send` and `http` are injectable for tests.
+    """
+    send_fn = send or send_commands
+    http_fn = http or _default_http_probe
+    host = str(settings.get("oppo_ip", "")).strip()
+    port = int(settings.get("oppo_port", "23") or "23")
+    timeout = float(settings.get("oppo_socket_timeout", "3.0") or "3.0")
+    result: dict[str, object] = {
+        "host": host,
+        "port": port,
+        "ok": False,
+        "error": None,
+        "fields": {},
+    }
+    if not host:
+        result["error"] = "oppo_ip is not set"
+        return result
+    commands = [command for _label, command in PROBE_QUERY_COMMANDS]
+    try:
+        raw_responses = send_fn(host, port, commands, timeout=timeout, delay=0)
+    except OSError as exc:
+        result["error"] = f"player unreachable over TCP: {exc}"
+        return result
+    fields: dict[str, object] = {}
+    for index, (label, command) in enumerate(PROBE_QUERY_COMMANDS):
+        raw = raw_responses[index] if index < len(raw_responses) else ""
+        fields[label] = _classify_probe_response(command, raw)
+    result["fields"] = fields
+    result["ok"] = True
+    try:
+        result["http_getmovieplayinfo_raw"] = http_fn(settings)
+    except Exception as exc:
+        result["http_getmovieplayinfo_raw"] = f"<error: {exc}>"
+    return result
+
+
+def format_player_status_probe(result: Mapping[str, object]) -> str:
+    """Render a probe result (from probe_player_status) as a readable report."""
+    lines = [
+        "OPPO player status probe",
+        f"host: {result.get('host', '')}:{result.get('port', '')}",
+    ]
+    error = result.get("error")
+    if error:
+        lines.append(f"error: {error}")
+        return "\n".join(lines) + "\n"
+    fields = cast("Mapping[str, Mapping[str, object]]", result.get("fields") or {})
+    width = max((len(label) for label in fields), default=0)
+    for label, entry in fields.items():
+        command = str(entry.get("command", ""))
+        status = str(entry.get("status", ""))
+        value = str(entry.get("value", ""))
+        lines.append(f"  {label.ljust(width)}  {command:<5} {status:<11} {value}")
+    http_raw = result.get("http_getmovieplayinfo_raw")
+    if http_raw is not None:
+        lines.append("")
+        lines.append("HTTP /getmovieplayinfo (raw, undocumented app API):")
+        lines.append(str(http_raw))
+    return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
 # v0.9.0: Audio/subtitle track HTTP helpers
 # ---------------------------------------------------------------------------
 
