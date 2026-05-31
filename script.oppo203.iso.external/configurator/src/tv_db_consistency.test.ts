@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 // (docs/configurator/tv-db/tv-models.json). Nothing enforced that they stay in step -- and
 // since the loader only ever imports the bundled copy, a hand-edit to one could ship
 // undetected drift. This guard pins them identical and pins the structural invariants that
-// tvdb.ts and Step 3 rely on. (Mirrors avr_db_consistency.test.ts, added in PR #134.)
+// tvdb.ts and Step 4 rely on. (Mirrors avr_db_consistency.test.ts, added in PR #134.)
 
 function read(rel: string): string {
   return readFileSync(new URL(rel, import.meta.url), "utf8");

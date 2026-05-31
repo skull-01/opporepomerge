@@ -244,7 +244,7 @@ export function Step2Test({ go, state, set }: ScreenProps) {
                 className="btn primary lg"
                 onClick={() => {
                   set({ playerVerified: true });
-                  go("step3_brand");
+                  go("step3_mode");
                 }}
               >
                 Continue — set up your TV <Icon name="chevR" size={14} />

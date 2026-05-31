@@ -1,550 +1,417 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
-import { BrandIcon } from "../shell/BrandIcon";
-import { avrAddonBackend } from "../mapping";
-import { isAvrChain } from "../steps";
-import { invoke } from "../ipc";
-import type { PortResult } from "../probes";
-import {
-  AVR_REGIONS,
-  BUNDLED_AVR_DB,
-  fetchRemoteAvrDb,
-  isNewer,
-  modelsForBrand,
-  modelsForRegion,
-  resolveBackend,
-  resolvePlatform,
-  type AvrDb,
-  type AvrDbModel,
-  type AvrRegion,
-} from "../avrdb";
+import type { InputAddress } from "../state";
+import { isAvrChain, step5NextScreen } from "../steps";
 import type { ScreenProps } from "./types";
 
-/** A representative "player input" name per add-on backend, shown as the field placeholder. */
-function inputPlaceholder(addonBackend: string | null): string {
-  switch (addonBackend) {
-    case "denon_marantz":
-      return "BD";
-    case "yamaha_yxc":
-      return "hdmi3";
-    case "onkyo_eiscp":
-    case "pioneer_eiscp":
-      return "BD/DVD";
-    default:
-      return "input";
-  }
-}
-
-/**
- * The TCP control port to knock on for a Step-5 reachability probe, per resolved add-on
- * backend. null means there is no simple TCP check: Sony's Audio Control API is an
- * authenticated HTTP service (PSK) and custom_command brands have no native driver. Ports
- * mirror resources/lib/avr/avr_presets.py (Denon/Marantz telnet 23, Yamaha YXC HTTP 80,
- * Onkyo/Pioneer eISCP 60128).
- */
-function controlProbePort(addonBackend: string | null): number | null {
-  switch (addonBackend) {
-    case "denon_marantz":
-      return 23;
-    case "yamaha_yxc":
-      return 80;
-    case "onkyo_eiscp":
-    case "pioneer_eiscp":
-      return 60128;
-    default:
-      return null;
-  }
-}
-
 // ============================================================
-// STEP 5 — AV receiver (optional). The AVR DB is the TV DB's twin: candidate control-path
-// mappings (validated:false) surfaced advisorily. The whole step is skippable — AV-receiver
-// automation is off by default in the add-on, so the chain works without one.
+// STEP 4 — Input capture intro
 // ============================================================
-const AVR_BRANDS = [
-  { id: "denon",   name: "Denon",   ch: "D",    color: "#0B0B0C", hint: "AVR-X · HEOS" },
-  { id: "marantz", name: "Marantz", ch: "M",    color: "#16110B", hint: "Cinema · HEOS" },
-  { id: "yamaha",  name: "Yamaha",  ch: "Y",    color: "#5B1A8B", hint: "MusicCast · YXC" },
-  { id: "onkyo",   name: "Onkyo",   ch: "O",    color: "#7A2230", hint: "eISCP" },
-  { id: "pioneer", name: "Pioneer", ch: "P",    color: "#C8102E", hint: "Elite · eISCP" },
-  { id: "integra", name: "Integra", ch: "INT",  color: "#1F2937", hint: "eISCP" },
-  { id: "sony",    name: "Sony",    ch: "SONY", color: "#0B0B0C", hint: "ES · Audio API" },
-  { id: "anthem",  name: "Anthem",  ch: "A",    color: "#B0883B", hint: "MRX · custom" },
-  { id: "arcam",   name: "Arcam",   ch: "AR",   color: "#1F3A5F", hint: "custom IP" },
-  { id: "nad",     name: "NAD",     ch: "NAD",  color: "#374151", hint: "BluOS · custom" },
-] as const;
-
-const AVR_YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"];
-
-// ============================================================
-// STEP 5 — Ask: do you have a receiver at all?
-// ============================================================
-export function Step5Ask({ go, set }: ScreenProps) {
+export function Step5Intro({ go, state }: ScreenProps) {
   return (
     <div className="screen">
       <div className="screen-header">
-        <div className="screen-num">5</div>
-        <h1 className="screen-title">Do you use an AV receiver?</h1>
+        <h1 className="screen-title">Now the HDMI inputs.</h1>
         <p className="screen-subtitle">
-          If your sound runs through an AV receiver or processor (player → receiver → TV), pick
-          it here so we can note the right control path. No receiver? Skip — the chain works
-          without one, and receiver automation is off by default.
+          We need two: <strong>where your player is</strong> (to switch to on handoff) and{" "}
+          <strong>where your Kodi box is</strong> (to switch back on exit).{" "}
+          {isAvrChain(state.topology)
+            ? "In your chain these are inputs on the AV receiver, which does the switching."
+            : "Your player and TV are both set up now — good time to pin these down."}
         </p>
       </div>
-      <div className="grid-2">
-        <button className="tile" onClick={() => go("step5_brand")}>
-          <div className="tile-icon">
-            <Icon name="avr" size={20} />
+      <div className="card">
+        <h3 className="sub-title">Plan</h3>
+        <div className="stack-sm">
+          <div className="row" style={{ gap: 10 }}>
+            <span className="kbd" style={{ minWidth: 24, textAlign: "center" }}>1</span>
+            <span>
+              Capture the <strong>OPPO's HDMI input</strong> — the one we switch to.
+            </span>
           </div>
-          <div className="tile-body">
-            <div className="tile-title">Yes — pick my receiver</div>
-            <div className="tile-desc">
-              Choose your brand and model. We'll show the candidate control backend for it
-              (Denon/Marantz IP, Yamaha YXC, Onkyo/Pioneer/Integra eISCP, Sony Audio API).
-            </div>
+          <div className="row" style={{ gap: 10 }}>
+            <span className="kbd" style={{ minWidth: 24, textAlign: "center" }}>2</span>
+            <span>
+              Capture the <strong>Kodi box's HDMI input</strong> — the return target.
+            </span>
           </div>
-          <Icon name="chevR" size={16} />
-        </button>
-        <button
-          className="tile"
-          onClick={() => {
-            set({ avrBrand: null, avrModel: null, avrBackend: null, avrReceiverType: null });
-            go("test_setup");
-          }}
-        >
-          <div className="tile-icon">
-            <Icon name="cross" size={20} />
-          </div>
-          <div className="tile-body">
-            <div className="tile-title">No receiver — skip this step</div>
-            <div className="tile-desc">
-              Audio goes straight from the player to the TV (or the player handles it). Nothing
-              to configure here.
-            </div>
-          </div>
-          <Icon name="chevR" size={16} />
-        </button>
+        </div>
+        <div className="divider" />
+        <div className="row" style={{ gap: 8 }}>
+          <span className="chip success">
+            <Icon name="check" size={11} /> Backend: <code>{state.tvBackend || "roku_ecp"}</code>
+          </span>
+          {state.tvAdbWeak && (
+            <span className="chip warn">
+              <Icon name="warn" size={11} /> ADB-weak — fallback path
+            </span>
+          )}
+          {state.tvManualSwitch && <span className="chip warn">Manual switching</span>}
+        </div>
       </div>
-      <div className="callout info" style={{ marginTop: 18 }}>
+      <div className="callout warn" style={{ marginTop: 14 }}>
         <span className="callout-icon">
-          <Icon name="info" size={13} stroke={2.2} />
+          <Icon name="warn" size={13} stroke={2.2} />
         </span>
         <div className="callout-body">
-          These are <strong>candidate mappings</strong>, not hardware-validated. Most receivers
-          need Network Standby / IP Control enabled for reliable control after standby.
-        </div>
-      </div>
-      <FooterNav go={go} back="step4_done" />
-    </div>
-  );
-}
-
-// ============================================================
-// STEP 5 — Brand
-// ============================================================
-export function Step5Brand({ go, state, set }: ScreenProps) {
-  return (
-    <div className="screen">
-      <div className="screen-header">
-        <h1 className="screen-title">Your AV receiver</h1>
-        <p className="screen-subtitle">
-          Pick the brand. The control path comes from the brand's protocol family — your exact
-          model just narrows the list and confirms the candidate backend.
-        </p>
-      </div>
-      <div className="brand-grid">
-        {AVR_BRANDS.map((b) => (
-          <button
-            key={b.id}
-            className={`brand-pill ${state.avrBrand === b.id ? "selected" : ""}`.trim()}
-            onClick={() => {
-              set({ avrBrand: b.id });
-              go("step5_model");
-            }}
-          >
-            <BrandIcon slug={b.id} ch={b.ch} color={b.color} fallbackIcon="avr" />
-            <div>{b.name}</div>
-            <div className="muted" style={{ fontSize: 10.5, fontWeight: 500 }}>{b.hint}</div>
-          </button>
-        ))}
-      </div>
-      <FooterNav go={go} back="step5_ask" />
-    </div>
-  );
-}
-
-// ============================================================
-// STEP 5 — Model
-// ============================================================
-export function Step5Model({ go, state, set }: ScreenProps) {
-  const [db, setDb] = useState<AvrDb>(BUNDLED_AVR_DB);
-  const [region, setRegion] = useState<AvrRegion | null>(state.avrRegion ?? "US");
-  const [year, setYear] = useState("");
-  const [search, setSearch] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
-
-  const brandName = AVR_BRANDS.find((b) => b.id === state.avrBrand)?.name ?? "receiver";
-  const models = state.avrBrand ? modelsForBrand(db, state.avrBrand) : [];
-  const filtered = modelsForRegion(models, region).filter(
-    (m) =>
-      (!year || String(m.year) === year) &&
-      m.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const pickRegion = (r: AvrRegion) => {
-    const next = region === r ? null : r;
-    setRegion(next);
-    set({ avrRegion: next });
-  };
-
-  const refresh = async () => {
-    setRefreshing(true);
-    const remote = await fetchRemoteAvrDb();
-    if (remote && isNewer(db, remote)) setDb(remote);
-    setRefreshing(false);
-  };
-
-  const select = (m: AvrDbModel) => {
-    set({
-      avrModel: m.id,
-      avrBackend: resolveBackend(db, m),
-      avrReceiverType: m.receiver_type,
-    });
-  };
-
-  const useCustom = () => {
-    set({ avrModel: "custom", avrBackend: "custom_command", avrReceiverType: null });
-    go("test_setup");
-  };
-
-  return (
-    <div className="screen">
-      <div className="screen-header">
-        <h1 className="screen-title">Which {brandName} receiver?</h1>
-        <p className="screen-subtitle">
-          Region and year just narrow the list — the control method comes from the protocol
-          family. All rows are candidate mappings, not hardware-validated.
-        </p>
-      </div>
-
-      <div className="stack" style={{ gap: 14 }}>
-        <div className="row" style={{ gap: 10 }}>
-          <div className="field" style={{ flex: 1, maxWidth: 360 }}>
-            <input
-              className="input text"
-              placeholder="Search models…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <span className="spacer" />
-          <button className="btn ghost sm" onClick={refresh} disabled={refreshing}>
-            <Icon name="download" size={13} /> {refreshing ? "Updating…" : "Update list"}
-          </button>
-          <button className="btn ghost sm" onClick={useCustom}>
-            <Icon name="terminal" size={13} /> Not listed → custom
-          </button>
-        </div>
-        <div className="row" style={{ gap: 8, alignItems: "center" }}>
-          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Region</span>
-          <div className="filter-row">
-            {AVR_REGIONS.map((r) => (
-              <button
-                key={r}
-                className={`filter-pill ${region === r ? "selected" : ""}`.trim()}
-                onClick={() => pickRegion(r)}
-              >
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="row" style={{ gap: 8, alignItems: "center" }}>
-          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Year</span>
-          <div className="filter-row">
-            {AVR_YEARS.map((y) => (
-              <button
-                key={y}
-                className={`filter-pill ${year === y ? "selected" : ""}`.trim()}
-                onClick={() => setYear(year === y ? "" : y)}
-              >
-                {y}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="model-list">
-          {filtered.length === 0 && (
-            <div className="model-row" style={{ justifyContent: "center", color: "var(--muted)" }}>
-              No matches — adjust the filters or{" "}
-              <button className="btn ghost sm" onClick={useCustom}>
-                use a custom command
-              </button>
-            </div>
+          {isAvrChain(state.topology) ? (
+            <>
+              <strong>Heads-up: we&apos;re about to change your receiver input.</strong> We&apos;ll
+              return to your current input when this step ends.
+            </>
+          ) : (
+            <>
+              <strong>Heads-up: we&apos;re about to change your TV input.</strong> We&apos;ll return
+              to your current input when this step ends.
+            </>
           )}
-          {filtered.map((m) => {
-            const backend = resolveBackend(db, m);
-            const fallbacks = m.fallback_backends ?? [];
-            return (
-              <div
-                key={m.id}
-                className={`model-row ${state.avrModel === m.id ? "selected" : ""}`.trim()}
-                onClick={() => select(m)}
-                title={m.control_notes ?? m.region_notes ?? ""}
-              >
-                <div>
-                  <div>
-                    {m.name}{" "}
-                    <span className="muted" style={{ fontSize: 11, fontWeight: 500 }}>{m.year}</span>
-                  </div>
-                  <div className="model-row-meta">
-                    {resolvePlatform(db, m) ?? "—"} · backend <code>{backend ?? "—"}</code>
-                    {fallbacks.length > 0 && (
-                      <>
-                        {" "}· fallback <code>{fallbacks.join(", ")}</code>
-                      </>
-                    )}
-                  </div>
-                  <div className="model-row-meta">
-                    {m.regions.join(" · ")} · {m.receiver_type}
-                  </div>
-                </div>
-                <span className="chip accent">
-                  <span className="chip-dot" />
-                  candidate
-                </span>
-              </div>
-            );
-          })}
         </div>
-
-        {state.avrModel && state.avrModel !== "custom" && (
-          <AvrControlCard state={state} set={set} />
-        )}
       </div>
       <FooterNav
         go={go}
-        back="step5_brand"
-        next={state.avrModel ? "test_setup" : null}
-        nextLabel="Continue to test"
+        back="step4_test"
+        next={state.tvAdbWeak ? "step5_fallback" : "step5_ask"}
+        nextLabel="Capture inputs"
       />
     </div>
   );
 }
 
 // ============================================================
-// STEP 5 — Control config (IP + player input). Shown once a real model is picked. This is what
-// flows into the add-on settings (avr_backend/avr_host/avr_player_input + avr_control_enabled);
-// the mapping in mapping.ts decides whether control is auto-enabled.
+// STEP 4 — Ask-first
 // ============================================================
-function AvrControlCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
-  const addonBackend = avrAddonBackend(state.avrBackend, state.avrBrand);
-  const isSony = addonBackend === "sony_audio_api";
-  const isCustom = addonBackend === null; // custom_command brands (Anthem/Arcam/NAD)
-  const willEnable = !!addonBackend && !isSony && !!state.avrIp && !!state.avrPlayerInput;
-  const sonyReady =
-    isSony &&
-    state.avrSonyAcknowledged &&
-    !!state.avrSonyPsk &&
-    !!state.avrSonyPlayerInputUri &&
-    !!state.avrIp &&
-    !!state.avrPlayerInput;
-  const ph = inputPlaceholder(addonBackend);
-  const probePort = controlProbePort(addonBackend);
-  const [probing, setProbing] = useState(false);
-  const [reach, setReach] = useState<PortResult | null>(null);
-  const runProbe = async () => {
-    if (probePort == null || !state.avrIp) return;
-    setProbing(true);
-    try {
-      const r = await invoke<PortResult[]>("tv_port_probe", {
-        host: state.avrIp,
-        ports: [probePort],
-      });
-      setReach(r[0] ?? { port: probePort, open: false });
-    } catch {
-      setReach({ port: probePort, open: false });
-    } finally {
-      setProbing(false);
+export function Step5Ask({ go, state, set }: ScreenProps) {
+  const [step, setStep] = useState<"oppo" | "kodi">("oppo");
+  const [picked, setPicked] = useState<number | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
+
+  const pick = (n: number) => {
+    setPicked(n);
+    setConfirmed(false);
+  };
+  const next = () => {
+    if (step === "oppo") {
+      set({ playerInput: picked });
+      setStep("kodi");
+      setPicked(null);
+      setConfirmed(false);
+    } else {
+      set({ kodiInput: picked });
+      go("step5_done");
     }
   };
 
   return (
-    <div className="card">
-      <h2 className="section-title">Receiver control (optional)</h2>
-      {isCustom ? (
-        <div className="callout info">
-          <span className="callout-icon">
-            <Icon name="info" size={13} stroke={2.2} />
-          </span>
-          <div className="callout-body">
-            <strong>No native backend yet.</strong> Anthem/Arcam/NAD don't have a first-class
-            add-on driver — your selection is recorded, but you'll drive the receiver with the
-            add-on's custom command profile. We won't write AVR control settings for it.
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className="grid-2" style={{ alignItems: "start" }}>
-            <div className="field">
-              <label className="field-label">Receiver IP</label>
-              <input
-                className="input"
-                value={state.avrIp}
-                onChange={(e) => set({ avrIp: e.target.value })}
-              />
-              <div className="field-hint">
-                On your LAN. Enable Network Standby / IP Control on the receiver.
-              </div>
-            </div>
-            <div className="field">
-              <label className="field-label">Player input on the receiver</label>
-              <input
-                className="input"
-                placeholder={ph}
-                value={state.avrPlayerInput}
-                onChange={(e) => set({ avrPlayerInput: e.target.value })}
-              />
-              <div className="field-hint">
-                The receiver input the OPPO is plugged into (e.g. <code>{ph}</code>).
-              </div>
-            </div>
-          </div>
-          {!isSony && isAvrChain(state.topology) && (
-            <div className="field" style={{ marginTop: 12 }}>
-              <label className="field-label">Kodi input on the receiver</label>
-              <input
-                className="input"
-                placeholder="e.g. CBL/SAT"
-                value={state.avrKodiInput}
-                onChange={(e) => set({ avrKodiInput: e.target.value })}
-              />
-              <div className="field-hint">
-                The receiver input your Kodi box is plugged into — the receiver switches back
-                here when playback ends. Leave blank to skip the restore step.
-              </div>
-            </div>
-          )}
-          {probePort != null && (
-            <div className="row" style={{ gap: 10, alignItems: "center", marginTop: 4 }}>
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">
+          Which {isAvrChain(state.topology) ? "receiver" : "HDMI"} input is your{" "}
+          {step === "oppo" ? "OPPO" : "Kodi box"} on?
+        </h1>
+        <p className="screen-subtitle">
+          If you know, pick it and we'll switch to it and confirm. If you don't, we can
+          find it for you instead.
+        </p>
+      </div>
+
+      <div className="grid-2" style={{ alignItems: "start" }}>
+        <div className="stack">
+          <div className="hdmi-grid">
+            {[1, 2, 3, 4].map((n) => (
               <button
-                className="btn ghost sm"
-                onClick={runProbe}
-                disabled={probing || !state.avrIp}
+                key={n}
+                className={`hdmi-tile ${picked === n ? "selected" : ""}`.trim()}
+                onClick={() => pick(n)}
               >
-                <Icon name="search" size={13} /> {probing ? "Probing…" : "Test reachability"}
+                <div className="hdmi-tile-num">{n}</div>
+                <div className="hdmi-tile-label">HDMI {n}</div>
               </button>
-              {reach && (
-                <span
-                  className={reach.open ? "success-text" : "muted"}
-                  style={{ fontSize: 12.5 }}
-                >
-                  {reach.open
-                    ? `Port ${probePort} answered — the receiver looks reachable.`
-                    : `Port ${probePort} didn't answer — check the IP, that the receiver is powered on, and that Network Standby / IP Control is on.`}
-                </span>
+            ))}
+          </div>
+          <button className="btn outline" onClick={() => go("step5_fallback")}>
+            <Icon name="search" size={14} /> Not sure — find it for me
+          </button>
+        </div>
+
+        <div className="stack">
+          <div className="tv-mockup">
+            <div className="tv-mockup-screen">
+              {picked && confirmed ? (
+                <>
+                  <div className="tv-mockup-text bright">
+                    {step === "oppo" ? "OPPO M9205 V1" : "Kodi · CoreELEC"}
+                  </div>
+                  <div className="tv-mockup-text">on HDMI {picked}</div>
+                </>
+              ) : picked ? (
+                <>
+                  <div className="tv-mockup-text">switched to HDMI {picked}</div>
+                  <div className="tv-mockup-text" style={{ fontSize: 10 }}>
+                    do you see {step === "oppo" ? "your player" : "Kodi"}?
+                  </div>
+                </>
+              ) : (
+                <div className="tv-mockup-text">— pick an input —</div>
               )}
             </div>
-          )}
-          {isSony ? (
+            <div className="stand" />
+          </div>
+          {picked && (
             <>
-              <div className="grid-2" style={{ alignItems: "start" }}>
-                <div className="field">
-                  <label className="field-label">Sony API input URI</label>
-                  <input
-                    className="input"
-                    placeholder="extInput:hdmi?port=2"
-                    value={state.avrSonyPlayerInputUri}
-                    onChange={(e) => set({ avrSonyPlayerInputUri: e.target.value })}
-                  />
-                  <div className="field-hint">
-                    The Audio Control API addresses inputs by URI (e.g.{" "}
-                    <code>extInput:hdmi?port=2</code>), not the plain name above.
-                  </div>
-                </div>
-                <div className="field">
-                  <label className="field-label">Pre-Shared Key (PSK)</label>
-                  <input
-                    className="input"
-                    type="password"
-                    value={state.avrSonyPsk}
-                    onChange={(e) => set({ avrSonyPsk: e.target.value })}
-                  />
-                  <div className="field-hint">
-                    Set on the receiver under IP Control / Authentication. Saved to the add-on
-                    settings and handled as a secret.
-                  </div>
-                </div>
-              </div>
-              <div className="row" style={{ gap: 10, alignItems: "flex-start", marginTop: 4 }}>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={state.avrSonyAcknowledged}
-                  className={`toggle ${state.avrSonyAcknowledged ? "on" : ""}`.trim()}
-                  style={{ flexShrink: 0, marginTop: 2 }}
-                  onClick={() => set({ avrSonyAcknowledged: !state.avrSonyAcknowledged })}
-                />
-                <span style={{ fontSize: 12.5, color: "var(--text-soft)" }}>
-                  I understand the Sony Audio Control API path is <strong>experimental</strong> and
-                  unvalidated — enable control on my receiver anyway.
+              <div className="callout info">
+                <span className="callout-icon">
+                  <Icon name="info" size={13} stroke={2.2} />
                 </span>
+                <div className="callout-body">
+                  Sent <code>switch-to HDMI{picked}</code> via{" "}
+                  <code>{state.tvBackend || "roku_ecp"}</code>. Do you see{" "}
+                  {step === "oppo" ? "the OPPO" : "Kodi"} on screen?
+                </div>
               </div>
-              {sonyReady ? (
-                <div className="callout success">
-                  <span className="callout-icon">
-                    <Icon name="check" size={13} stroke={2.2} />
-                  </span>
-                  <div className="callout-body">
-                    We'll enable Sony control with <code>sony_audio_api</code>: power on and switch
-                    to <code>{state.avrSonyPlayerInputUri}</code> on handoff. Experimental candidate
-                    mapping — confirm against your receiver.
-                  </div>
-                </div>
-              ) : (
-                <div className="callout warn">
-                  <span className="callout-icon">
-                    <Icon name="warn" size={13} stroke={2.2} />
-                  </span>
-                  <div className="callout-body">
-                    <strong>Sony stays off until it's complete.</strong> We'll save the backend, IP
-                    and input as <code>sony_audio_api</code>, but control needs the IP, player
-                    input, the API input URI, the PSK, and the acknowledgement above before we
-                    enable it.
-                  </div>
-                </div>
+              <div className="row" style={{ gap: 10 }}>
+                <button className="btn primary" onClick={() => setConfirmed(true)}>
+                  <Icon name="check" size={14} /> Yes, that's it
+                </button>
+                <button className="btn outline" onClick={() => setPicked(null)}>
+                  No — pick a different one
+                </button>
+              </div>
+              {confirmed && (
+                <button className="btn primary lg" onClick={next}>
+                  {step === "oppo" ? "Next: Kodi box input" : "All inputs captured"}
+                  <Icon name="chevR" size={14} />
+                </button>
               )}
             </>
-          ) : willEnable ? (
-            <div className="callout success">
-              <span className="callout-icon">
-                <Icon name="check" size={13} stroke={2.2} />
-              </span>
-              <div className="callout-body">
-                We'll enable AVR control with the <code>{addonBackend}</code> backend: power on
-                and switch to <code>{state.avrPlayerInput}</code> on handoff.
-                {isAvrChain(state.topology) && state.avrKodiInput && (
-                  <> On exit it returns to <code>{state.avrKodiInput}</code>.</>
-                )}{" "}
-                All candidate mappings — confirm against your receiver.
-              </div>
-            </div>
-          ) : (
-            <div className="callout info">
-              <span className="callout-icon">
-                <Icon name="info" size={13} stroke={2.2} />
-              </span>
-              <div className="callout-body">
-                Add the receiver IP and player input to enable automatic control with the{" "}
-                <code>{addonBackend}</code> backend. Leave them blank to record the receiver
-                without enabling control.
-              </div>
-            </div>
           )}
-        </>
+        </div>
+      </div>
+      <FooterNav go={go} back="step5_intro" />
+    </div>
+  );
+}
+
+// ============================================================
+// STEP 4 — ADB-weak fallback funnel
+// ============================================================
+export function Step5Fallback({ go, set }: ScreenProps) {
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">Let's find it together.</h1>
+        <p className="screen-subtitle">
+          Your TV connected but ignores discrete HDMI keys. We'll walk three fallbacks,
+          most-reliable first. Each rung confirms before we move on.
+        </p>
+      </div>
+      <div className="stack">
+        <FallbackRung
+          num="1"
+          status="active"
+          title="Ask the number"
+          desc="Tell us the HDMI number and we'll fire KEYCODE_TV_INPUT_HDMI_N. Stores a real HDMI number."
+          action={
+            <div className="row" style={{ gap: 6 }}>
+              {[1, 2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  className="filter-pill"
+                  onClick={() => {
+                    set({ playerInput: n, kodiInput: n === 1 ? 2 : 1 });
+                    go("step5_done");
+                  }}
+                >
+                  HDMI {n}
+                </button>
+              ))}
+            </div>
+          }
+        />
+        <FallbackRung
+          num="2"
+          status="next"
+          title="CEC One-Touch-Play"
+          desc="Wake the OPPO so it asserts active source over CEC; the TV follows. Stores 'OPPO = CEC-asserted input' — no number needed."
+          action={
+            <button
+              className="btn outline sm"
+              onClick={() => {
+                set({ playerInput: "cec", kodiInput: 1 });
+                go("step5_done");
+              }}
+            >
+              Use CEC fallback
+            </button>
+          }
+        />
+        <FallbackRung
+          num="3"
+          status="next"
+          title="Blind-cycle (last resort)"
+          desc="Send the input-advance key; you tell us when the OPPO appears. Stores the lossy record — 'input after N advances' — flagged as brittle internally."
+          action={
+            <button
+              className="btn outline sm"
+              onClick={() => {
+                set({ playerInput: "cycle:2", kodiInput: "cycle:1" });
+                go("step5_done");
+              }}
+            >
+              Cycle now
+            </button>
+          }
+        />
+        <FallbackRung
+          num="4"
+          status="exit"
+          title="None of the above worked"
+          desc="Switch inputs with your TV remote yourself. The add-on simply won't try to drive the TV."
+          action={
+            <button
+              className="btn ghost sm"
+              onClick={() => {
+                set({ tvManualSwitch: true });
+                go("step5_done");
+              }}
+            >
+              Manual switching
+            </button>
+          }
+        />
+      </div>
+      <FooterNav go={go} back="step5_intro" />
+    </div>
+  );
+}
+
+type RungStatus = "active" | "next" | "exit";
+
+function FallbackRung({
+  num,
+  status,
+  title,
+  desc,
+  action,
+}: {
+  num: string;
+  status: RungStatus;
+  title: string;
+  desc: string;
+  action: ReactNode;
+}) {
+  return (
+    <div className="tile" style={{ cursor: "default", alignItems: "center" }}>
+      <div
+        className="tile-icon"
+        style={{
+          background: status === "active" ? "var(--accent-soft)" : "var(--surface-2)",
+          color: status === "active" ? "var(--accent)" : "var(--muted)",
+          fontWeight: 700,
+          fontFamily: "var(--font-display)",
+        }}
+      >
+        {num}
+      </div>
+      <div className="tile-body">
+        <div className="tile-title">
+          {title}{" "}
+          {status === "active" && (
+            <span className="chip accent" style={{ marginLeft: 6 }}>
+              Try this first
+            </span>
+          )}
+        </div>
+        <div className="tile-desc">{desc}</div>
+      </div>
+      <div>{action}</div>
+    </div>
+  );
+}
+
+// ============================================================
+// STEP 4 — Done
+// ============================================================
+function describeInput(input: InputAddress, fallback: string) {
+  if (input == null) return fallback;
+  return typeof input === "number" ? String(input) : input;
+}
+
+export function Step5Done({ go, state }: ScreenProps) {
+  const oppoLabel = describeInput(state.playerInput, "3");
+  const kodiLabel = describeInput(state.kodiInput, "1");
+  const isCycle = typeof state.playerInput === "string" && state.playerInput.startsWith("cycle");
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">Inputs captured.</h1>
+        <p className="screen-subtitle">
+          We'll use these for handoff and return-on-exit. You can edit them later in the
+          add-on settings.
+        </p>
+      </div>
+      <div className="grid-2">
+        <div className="card">
+          <h3 className="sub-title">Switch to</h3>
+          <div className="row" style={{ gap: 14, marginTop: 8 }}>
+            <div className="tile-icon">
+              <Icon name="player" size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>
+                OPPO {state.playerModel || "M9205 V1"}
+              </div>
+              <div
+                className="muted"
+                style={{ fontSize: 12, fontFamily: "var(--font-mono)", marginTop: 2 }}
+              >
+                HDMI {oppoLabel}
+                {state.playerInput === "cec" && <> (CEC-asserted)</>}
+                {isCycle && <> (blind-cycle · brittle)</>}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="card">
+          <h3 className="sub-title">Return to</h3>
+          <div className="row" style={{ gap: 14, marginTop: 8 }}>
+            <div className="tile-icon">
+              <Icon name="kodi" size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600 }}>Kodi box</div>
+              <div
+                className="muted"
+                style={{ fontSize: 12, fontFamily: "var(--font-mono)", marginTop: 2 }}
+              >
+                HDMI {kodiLabel}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {isCycle && (
+        <div className="callout warn" style={{ marginTop: 14 }}>
+          <span className="callout-icon">
+            <Icon name="warn" size={13} stroke={2.2} />
+          </span>
+          <div className="callout-body">
+            <strong>Blind-cycle is brittle.</strong> If your TV's input order ever shifts
+            (added device, reordered ports), the return-target may land somewhere
+            unexpected. Edit it manually in the add-on if that happens.
+          </div>
+        </div>
       )}
+      <FooterNav
+        go={go}
+        back="step5_intro"
+        next={step5NextScreen(state.topology)}
+        nextLabel={
+          isAvrChain(state.topology)
+            ? "Next: AV receiver"
+            : "Next: AV receiver (optional)"
+        }
+      />
     </div>
   );
 }

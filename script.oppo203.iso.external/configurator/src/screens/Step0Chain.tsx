@@ -52,7 +52,7 @@ export function Step0Chain({ go, state, set }: ScreenProps) {
             <div className="tile-desc">
               Your player plugs into an AV receiver. The receiver switches its input between
               the player and Kodi on handoff; the TV stays on one fixed input. We&apos;ll set
-              up the receiver in step 5.
+              up the receiver in step 6.
             </div>
           </div>
           <Icon name="chevR" size={16} />

@@ -59,11 +59,11 @@ describe("record + getEntries", () => {
   it("assigns increasing seq and stamps the current step", () => {
     setCurrentStep("step2");
     record({ ts: 1, command: "oppo_query", args: {}, durationMs: 5, ok: true, result: "@QPW OK ON" });
-    setCurrentStep("step3");
+    setCurrentStep("step4");
     record({ ts: 2, command: "tv_port_probe", args: {}, durationMs: 9, ok: true, result: [] });
     const e = getEntries();
     expect(e.map((x) => x.seq)).toEqual([0, 1]);
-    expect(e.map((x) => x.step)).toEqual(["step2", "step3"]);
+    expect(e.map((x) => x.step)).toEqual(["step2", "step4"]);
     expect(e[0].command).toBe("oppo_query");
   });
 
@@ -109,7 +109,7 @@ describe("entriesForView", () => {
     durationMs: 0,
     ok: true,
   });
-  const all = [mk(0, "step2"), mk(1, "step3"), mk(2, "step2")];
+  const all = [mk(0, "step2"), mk(1, "step4"), mk(2, "step2")];
 
   it("filters to the active step", () => {
     expect(entriesForView(all, "step2", false).map((e) => e.seq)).toEqual([0, 2]);
