@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable, Mapping
 from typing import Any, cast
@@ -16,6 +17,33 @@ except ImportError:  # top-level/audit import compatibility
 # v2.5.0 Build 2: conservative stability/validation helpers.
 # These helpers are intentionally dependency-free so they can be used by
 # service, external-player, wizard, and tests without importing Kodi modules.
+
+
+# A playback session sentinel (oppo203iso-active) whose file is older than this
+# is treated as stale: an interrupted run (crash, power loss, Kodi killing the
+# external player) leaves it behind, which would otherwise disable interception
+# and stick the remote bridge. 6h is well beyond the longest legitimate hold.
+SESSION_MAX_AGE_SECONDS = 21600
+
+
+def session_is_active(addon_data_dir: str) -> bool:
+    """Return True when a live, non-stale playback session sentinel exists.
+
+    The sentinel is written at playback start (``mark_session_active``) and
+    removed in a ``finally``; an interrupted run can leave it behind. A leftover
+    file older than ``SESSION_MAX_AGE_SECONDS`` is treated as inactive so the
+    next session self-heals. The file's modification time is the session-start
+    clock (the sentinel is written once) and is used directly, so the check is
+    robust to unreadable file contents.
+    """
+    path = os.path.join(addon_data_dir or "", "oppo203iso-active")
+    if not os.path.exists(path):
+        return False
+    try:
+        age = time.time() - os.path.getmtime(path)
+    except OSError:  # pragma: no cover - exists() raced with removal
+        return False
+    return age < SESSION_MAX_AGE_SECONDS
 
 
 DEFAULTS = {

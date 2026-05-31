@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 from typing import cast
 
 try:
@@ -25,9 +24,14 @@ from .oppo_control import (
 )
 
 try:
-    from ..kodi.settings_reader import DEFAULTS, Settings, read_settings
+    from ..kodi.settings_reader import DEFAULTS, Settings, read_settings, session_is_active
 except ImportError:  # pragma: no cover - top-level test/import compatibility
-    from settings_reader import DEFAULTS, Settings, read_settings  # type: ignore[no-redef]
+    from settings_reader import (  # type: ignore[no-redef]
+        DEFAULTS,
+        Settings,
+        read_settings,
+        session_is_active,
+    )
 
 try:
     from .command_map import load_default_command_map
@@ -76,8 +80,7 @@ def _load_settings() -> Settings:
 
 
 def _session_is_active(settings: Settings) -> bool:
-    path = os.path.join(settings.get("addon_data_dir", ""), "oppo203iso-active")
-    return bool(path and os.path.exists(path))
+    return session_is_active(settings.get("addon_data_dir", ""))
 
 
 def _command_map(settings: Settings) -> dict[str, str]:
