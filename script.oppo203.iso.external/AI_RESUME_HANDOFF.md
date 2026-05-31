@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** commit `8c35f28` (origin/main) + this 2026-05-31 EOD handoff · **2026-05-31 (EOD) — naming-consistency + draft-merge session:** merged **9 PRs** to `main` — configurator: Sony brand-badge fix ([#120](https://github.com/skull-01/script.oppo203.iso.external/pull/120)), v0.5.0 Step-5 verification checklist entry ([#121](https://github.com/skull-01/script.oppo203.iso.external/pull/121)), **Sony AVR auto-enable** ([#122](https://github.com/skull-01/script.oppo203.iso.external/pull/122) — captures PSK+ack+input-URI so Sony enables like the other backends), and a **naming-consistency sweep** (`oppoInput`→`playerInput` [#124](https://github.com/skull-01/script.oppo203.iso.external/pull/124); `players.json`→`players-models.json` [#125](https://github.com/skull-01/script.oppo203.iso.external/pull/125); `CONFIGURATOR_HANDOFF` map [#127](https://github.com/skull-01/script.oppo203.iso.external/pull/127); new `docs/NAMING_CONVENTIONS.md` + historical flags [#128](https://github.com/skull-01/script.oppo203.iso.external/pull/128)); addon: **TV backend modules renamed `tv_*`** for parity with `avr_` ([#126](https://github.com/skull-01/script.oppo203.iso.external/pull/126)), and the two prior-session drafts landed — **read-only OPPO status probe** ([#118](https://github.com/skull-01/script.oppo203.iso.external/pull/118)) + **functional-flow diagrams** ([#119](https://github.com/skull-01/script.oppo203.iso.external/pull/119)). Filed `type:bug` **[#123](https://github.com/skull-01/script.oppo203.iso.external/issues/123)** (pre-existing `ruff format` drift on 3 test files — the only CI "Lint and format" red). **0 open PRs.** · **Configurator `v0.5.0` shipped + published as the repo's GitHub "Latest"** — an **AVR (AV receiver) feature in two releases**: `v0.4.0` added an **AVR control database** (224 AV-receiver/processor **model families** 2018–2025 across 10 brands — Denon/Marantz/Yamaha/Onkyo/Pioneer/Integra/Sony/Anthem/Arcam/NAD — schema v2, the TV-DB twin) + a typed `avrdb.ts` loader + an **optional Step 5 (AV Receiver)** picker + 18 vitest ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`); then `v0.5.0` **wired Step 5 into the add-on `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum: Pioneer→`pioneer_eiscp`, Sony→`sony_audio_api` configured-but-off, custom_command no-op; conservative `avr_control_enabled`; Receiver-control card captures IP + player input) for true TV/Player parity ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`). Published **`configurator-v0.5.0`** (MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256, unsigned, software-verified only; published assets re-downloaded byte-identical). **No add-on code change** — like the TV DB, the AVR DB isn't loaded by the add-on at runtime, and the add-on already shipped the AVR settings + guarded drivers → no add-on release. Repo-wide "Latest" sits on `configurator-v0.5.0` (flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`8c35f28`:** addon **963 passed, 3 skipped** (coverage 99%; mypy `--gate` 49/0; ruff check clean); configurator **103 vitest + `tsc -b` + `npm run build` OK** (one known CI red: pre-existing `ruff format` drift on 3 test files, tracked by #123) · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
+**Last sync:** `main`@`0c168f8` + this 2026-05-31 robustness-EOD handoff · **2026-05-31 (EOD, later) — robustness bug-fix session:** picked the **Robustness bug-fixes** theme on `resume` and opened **5 pushed draft PRs** covering **all 7 open `type:bug` issues** — [#129](https://github.com/skull-01/script.oppo203.iso.external/pull/129) `hold_playback` bounded holds + verbose_push QPL fallback (#112/#115/#116), [#130](https://github.com/skull-01/script.oppo203.iso.external/pull/130) default `hold_mode`→`tcp_qpl_poll` (#114, **merge after #129**), [#131](https://github.com/skull-01/script.oppo203.iso.external/pull/131) self-healing sentinel (#117), [#132](https://github.com/skull-01/script.oppo203.iso.external/pull/132) diag probe port 80→436 (#111), [#133](https://github.com/skull-01/script.oppo203.iso.external/pull/133) ruff-format the 2 drifted test files (#123). Each **software-verified only** (pytest green, serial coverage 99%, `ruff check`+`ruff format --check` clean, mypy `--gate` 49/0); SHA-commented + checklist rows; **operator merges + closes**; `main` untouched. See §3a. · **Prior — 2026-05-31 (EOD) — naming-consistency + draft-merge session:** merged **9 PRs** to `main` — configurator: Sony brand-badge fix ([#120](https://github.com/skull-01/script.oppo203.iso.external/pull/120)), v0.5.0 Step-5 verification checklist entry ([#121](https://github.com/skull-01/script.oppo203.iso.external/pull/121)), **Sony AVR auto-enable** ([#122](https://github.com/skull-01/script.oppo203.iso.external/pull/122) — captures PSK+ack+input-URI so Sony enables like the other backends), and a **naming-consistency sweep** (`oppoInput`→`playerInput` [#124](https://github.com/skull-01/script.oppo203.iso.external/pull/124); `players.json`→`players-models.json` [#125](https://github.com/skull-01/script.oppo203.iso.external/pull/125); `CONFIGURATOR_HANDOFF` map [#127](https://github.com/skull-01/script.oppo203.iso.external/pull/127); new `docs/NAMING_CONVENTIONS.md` + historical flags [#128](https://github.com/skull-01/script.oppo203.iso.external/pull/128)); addon: **TV backend modules renamed `tv_*`** for parity with `avr_` ([#126](https://github.com/skull-01/script.oppo203.iso.external/pull/126)), and the two prior-session drafts landed — **read-only OPPO status probe** ([#118](https://github.com/skull-01/script.oppo203.iso.external/pull/118)) + **functional-flow diagrams** ([#119](https://github.com/skull-01/script.oppo203.iso.external/pull/119)). Filed `type:bug` **[#123](https://github.com/skull-01/script.oppo203.iso.external/issues/123)** (pre-existing `ruff format` drift on 3 test files — the only CI "Lint and format" red). **0 open PRs.** · **Configurator `v0.5.0` shipped + published as the repo's GitHub "Latest"** — an **AVR (AV receiver) feature in two releases**: `v0.4.0` added an **AVR control database** (224 AV-receiver/processor **model families** 2018–2025 across 10 brands — Denon/Marantz/Yamaha/Onkyo/Pioneer/Integra/Sony/Anthem/Arcam/NAD — schema v2, the TV-DB twin) + a typed `avrdb.ts` loader + an **optional Step 5 (AV Receiver)** picker + 18 vitest ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`); then `v0.5.0` **wired Step 5 into the add-on `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum: Pioneer→`pioneer_eiscp`, Sony→`sony_audio_api` configured-but-off, custom_command no-op; conservative `avr_control_enabled`; Receiver-control card captures IP + player input) for true TV/Player parity ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`). Published **`configurator-v0.5.0`** (MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256, unsigned, software-verified only; published assets re-downloaded byte-identical). **No add-on code change** — like the TV DB, the AVR DB isn't loaded by the add-on at runtime, and the add-on already shipped the AVR settings + guarded drivers → no add-on release. Repo-wide "Latest" sits on `configurator-v0.5.0` (flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`8c35f28`:** addon **963 passed, 3 skipped** (coverage 99%; mypy `--gate` 49/0; ruff check clean); configurator **103 vitest + `tsc -b` + `npm run build` OK** (one known CI red: pre-existing `ruff format` drift on 3 test files, tracked by #123) · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
 **Latest release:** add-on `v2.9.13`; configurator **`configurator-v0.5.0`** (now holds the
 repo-wide GitHub **"Latest"** badge) — **wires the AVR Step 5 selection into the add-on's
 `settings.xml`** (`avr_backend`/`avr_host`/`avr_player_input` + conservative `avr_control_enabled`;
@@ -177,7 +177,65 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-31 (EOD — naming-consistency + draft-merge session).** **Clean stopping point —
+**As of 2026-05-31 (EOD, later — robustness bug-fix session).** **Clean stopping point — no
+uncommitted work; `main` untouched (HEAD `0c168f8` + this handoff commit); every change is in a
+pushed draft PR.** Picked the **Robustness bug-fixes** theme on `resume` and opened a draft PR for
+**all 7 open `type:bug` issues** (each gated, **software-verified only** — pytest green, serial
+coverage 99%, `ruff check` + `ruff format --check` clean, mypy `--gate` 49/0; **no hardware**):
+
+- **[#129](https://github.com/skull-01/script.oppo203.iso.external/pull/129) — `hold_playback`
+  bounded holds + verbose_push fallback** (#112/#115/#116) · branch `claude/hold-robustness-a7f3c1e9`
+  (`a16a4f4`). Extracted `_hold_tcp_qpl_poll` and call it from the verbose_push `except` (was falling
+  through to the blind `fixed_timeout` sleep — #112); bounded `manual_file` with the `fixed_timeout`
+  ceiling (#115); `MAX_CONSECUTIVE_POLL_FAILURES=5` abort on `http_poll`/`tcp_qpl_poll` (#116).
+  `tests/test_hold_robustness.py` (4). Idle-confirmation / definitive-stop / trick-play logic unchanged.
+- **[#130](https://github.com/skull-01/script.oppo203.iso.external/pull/130) — default `hold_mode`
+  → `tcp_qpl_poll`** (#114) · branch `claude/default-hold-tcp-qpl-b4d2f6a1` (`5954556`).
+  `settings_reader.DEFAULTS` + `settings.xml` enum default (0→3), pinned consistent by
+  `tests/test_hold_default.py`. The configurator doesn't write `hold_mode`, so this governs
+  unconfigured installs. **Merge AFTER #129** so the new default inherits the #116 unreachable-abort.
+- **[#131](https://github.com/skull-01/script.oppo203.iso.external/pull/131) — self-healing
+  sentinel** (#117) · branch `claude/sentinel-selfheal-c3e8a1b7` (`293015e`). New dependency-free
+  `settings_reader.session_is_active()` + `SESSION_MAX_AGE_SECONDS=21600` (6h, by file mtime); the
+  two duplicated `_session_is_active` readers (`service.py`, `oppo_remote.py`) now delegate to it.
+  `tests/test_session_sentinel_staleness.py` (5).
+- **[#132](https://github.com/skull-01/script.oppo203.iso.external/pull/132) — diag HTTP probe port**
+  (#111) · branch `claude/diag-http-port-d9e1c4b2` (`bb34919`). `run_diagnostics_dashboard` gains
+  `http_port: int = 436`; `_http` probes it, not the hardcoded 80. `tests/test_diag_probe_port.py`
+  (2). No live menu caller today → the 436 default governs.
+- **[#133](https://github.com/skull-01/script.oppo203.iso.external/pull/133) — clear the ruff-format
+  CI red** (#123) · branch `claude/ruff-format-123-f1a8d3c6` (`6b920fd`). **Honest finding:** only
+  **2** files actually drift on current `main` (`test_all.py`, `test_players_db_consistency.py`) —
+  the third the issue named (`test_v2914_build2_player_taxonomy.py`) is already formatted.
+  `ruff format --check .` now clean.
+
+**All 7 bugs stay OPEN** — SHA-commented + Phase A (and Phase C where runtime-affecting) rows in
+`docs/MANUAL_VERIFICATION_CHECKLIST.md`; **operator reviews, merges, and closes.** **Merge order:**
+#130 after #129; #131/#132/#133 independent. Checklist rows were **prepended** (not appended) so the
+5 PRs don't collide in the checklist. **Judgment constants to confirm on hardware** (all named module
+constants for easy retuning): the 5-consecutive-failure abort (#116), the `tcp_qpl_poll` default
+(#114), the 6h staleness window (#117), the 436 probe default (#111).
+
+**Teaching-commentary theme (§3c) still PAUSED, untouched this session** — `wip:` `62b22eb` on
+`claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting Step-2 style
+sign-off. **Heads-up:** #129 changes `external_player.py` *logic*; that wip branch (comments-only)
+will need a rebase after #129 merges (low conflict — comments vs logic). Do **not** push/merge it
+unprompted.
+
+**Candidate themes for next addon session** (pick one, per §4):
+1. **Review + merge + Phase-C this session's 5 draft PRs** (#129–#133) — merge in order (#130 after
+   #129), run the on-device steps, close the 7 bugs. Fastest path to a clean backlog. ← resume here.
+2. **#113 verify-played follow-through** — operator runs the merged status probe on real hardware
+   (Phase C), pastes `oppo-status-probe.txt`, then wire #113 `verify_playback_started()` into
+   `fast_start` from the real `#QPL`/`#QTE`/`#QFN` fields.
+3. **Teaching-commentary pass (cross-area, PAUSED — awaiting Step-2 sign-off)** — reproduce §3c's
+   verbatim briefing EXACTLY when proposing (operator directive); rebase the wip branch after #129.
+4. **Phase A/C on-device verification** of earlier merged work (status probe, M9205 V1 split) —
+   operator action, no agent code.
+
+---
+
+**Prior session — 2026-05-31 (EOD — naming-consistency + draft-merge).** **Clean stopping point —
 no uncommitted addon work; all addon PRs merged to `main` (HEAD `8c35f28`); 0 open PRs.** This
 session **merged the two prior-session addon drafts and renamed the TV backend modules:**
 
@@ -239,23 +297,9 @@ branch unprompted.
   The only addon issue left open is **#44** (hardware-validation solicitation — a standing
   community call for tester reports / lending / donations).
 
-- **Candidate themes for next addon session** (pick one, per §4):
-  1. **#113 verify-played follow-through (natural next step)** — operator runs the **now-merged**
-     "Probe OPPO player status" on the real Kodi box + OPPO (Phase C in the checklist), pastes
-     `oppo-status-probe.txt`, then the agent wires **#113** `verify_playback_started()` into
-     `fast_start` using the real fields (`#QPL` + `#QTE` + `#QFN`). ← resume here.
-  2. **Robustness bug-fixes** — **#114** (sane default hold instead of blind 180-min), **#115**
-     (`manual_file` timeout), **#116** (polling-hold abort on OPPO loss), **#117** (self-healing
-     sentinel), **#111**/**#112** (port-436 diag probe / verbose_push fall-through). Each is small +
-     test-backed.
-  3. **Teaching-commentary pass (cross-area, PAUSED — awaiting Step-2 style sign-off)** — Step 2
-     (`external_player.py`) written as `wip:` `62b22eb`; on approval, retitle to `docs: …` and
-     continue to `oppo_control.py`. Full plan + verbatim briefing in §3c (reproduce it EXACTLY when
-     proposing — operator directive).
-  4. **#123 ruff-format fix** — `ruff format` the 3 drifted test files + full-suite re-verify (a
-     spawn-task chip is already queued). Small; clears the only CI "Lint and format" red.
-  5. **Phase A/C on-device verification** of merged work (the status probe, the M9205 V1 split) —
-     operator action on real hardware, no agent code.
+- **Candidate themes (this prior session's list)** — **superseded.** This session's robustness
+  bug-fixes (#114/#115/#116/#117/#111/#112) and the #123 ruff-format fix were all delivered as draft
+  PRs #129–#133; see the **current** candidate themes at the top of §3a.
 
 ## §3b Configurator work — in progress
 
@@ -880,16 +924,15 @@ _Refreshable snapshot queried by the `backlog audit` trigger. Agents read from h
 before re-scanning live GitHub state (operator norm #10). The `Area` column is the
 `area:addon` / `area:configurator` label that drives the per-area split in §1._
 
-Last refreshed: **2026-05-31 (EOD — naming-consistency + draft-merge session).** **9 PRs merged**
-to `main`: the two prior-session drafts landed (**#118** status probe `8c35f28`, **#119**
-functional-flow doc `1a22c06`); **#126** TV backends renamed `tv_*`; configurator **#120** Sony
-badge, **#121** v0.5.0 checklist entry, **#122** Sony AVR auto-enable, **#124** `playerInput`,
-**#125** `players-models.json`, **#127** handoff map, **#128** `NAMING_CONVENTIONS.md` + flags. One
-issue **opened**: `type:bug` **#123** (pre-existing `ruff format` drift on 3 test files — the only
-CI "Lint and format" red; `ruff check` passes). No issues closed. **Open issues now:** #44 (addon
-solicitation), #103/#105 (configurator — delivered-but-open, Phase C), #111–#117 + #123 (addon, not
-yet implemented). **Open PRs: none.** _(Prior, 2026-05-31 functional-flow review: opened #111–#117,
-drafted #118/#119.)_
+Last refreshed: **2026-05-31 (EOD, later — robustness bug-fix session).** No issues opened, closed,
+or retitled. Opened **5 draft PRs** addressing every open addon `type:bug`: **#129** (#112/#115/#116),
+**#130** (#114), **#131** (#117), **#132** (#111), **#133** (#123) — all software-verified, gated
+(pytest green, coverage 99%, ruff+mypy clean), SHA-commented; **operator merges + closes** (merge
+**#130 after #129**). **Open issues now:** #44 (addon solicitation), #103/#105 (configurator —
+delivered-but-open, Phase C), and #111/#112/#114/#115/#116/#117/#123 (addon — **each now has a draft
+fix in #129–#133**, awaiting operator merge/Phase-C/close). **Open PRs: 5 draft** (#129–#133). _(Prior,
+2026-05-31 EOD naming-consistency: merged 9 PRs, opened #123. Prior, functional-flow review: opened
+#111–#117, drafted #118/#119.)_
 
 | # | Title | Area | Labels | State | Implementing SHA(s) | Operator-verified? |
 |---|---|---|---|---|---|---|
@@ -911,17 +954,17 @@ drafted #118/#119.)_
 | 103 | ENH: migrate configurator TV database to schema v2 (296 model families, region filtering) | configurator | `area:configurator` | OPEN (SHA commented) | [PR #104](https://github.com/skull-01/script.oppo203.iso.external/pull/104) `5380425` (impl `343041c` loader+data, `cde87c6` Step-3 UI). Shipped in `configurator-v0.3.0`. | awaiting operator verify/close (Phase C in checklist) |
 | 105 | ENH: create canonical players DB (players.json) and adopt it in the configurator | configurator | `area:configurator` | OPEN (SHA commented) | [PR #106](https://github.com/skull-01/script.oppo203.iso.external/pull/106) `81c3eb5` (impl `4b7f63e` DB, `9ab2f61` configurator, `18d423e` guard, `5675f70` count derive). Add-on side test-only. Shipped in `configurator-v0.3.0`. | awaiting operator verify/close (Phase C in checklist) |
 | 104·106·107 | (no issue) configurator `v0.3.0` — TV DB v2 + players DB + release | configurator | _release (PR-only)_ | MERGED + PUBLISHED 2026-05-30 | release [PR #107](https://github.com/skull-01/script.oppo203.iso.external/pull/107) `55bf6fa`; tag `configurator-v0.3.0` (MSI 3,166,208 B + NSIS 2,065,049 B + SHA-256 attached, marked **Latest**); evidence `configurator/release-evidence/v0.3.0/BUILD_NOTES.md` | Phase C on-device (install on clean machine; confirm Step 3 region filter + Step 2 player facts) queued |
-| 111 | [Bug] addon: diagnostics HTTP probe checks port 80 but the OPPO HTTP API is port 436 | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 (functional-flow review) | awaiting operator |
-| 112 | [Bug] addon: verbose_push hold silently degrades to fixed_timeout (180 min) instead of tcp_qpl_poll | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 (was the §3c "found while reading" note) | awaiting operator |
+| 111 | [Bug] addon: diagnostics HTTP probe checks port 80 but the OPPO HTTP API is port 436 | addon | `type:bug`, `area:addon` | OPEN (draft PR) | [PR #132](https://github.com/skull-01/script.oppo203.iso.external/pull/132) `bb34919` — `run_diagnostics_dashboard` gains `http_port=436`; `_http` probes it, not 80 | awaiting operator (review/merge/Phase C/close) |
+| 112 | [Bug] addon: verbose_push hold silently degrades to fixed_timeout (180 min) instead of tcp_qpl_poll | addon | `type:bug`, `area:addon` | OPEN (draft PR) | [PR #129](https://github.com/skull-01/script.oppo203.iso.external/pull/129) `a16a4f4` — verbose_push `except` now calls `_hold_tcp_qpl_poll` (no fall-through to the blind sleep) | awaiting operator (review/merge/Phase C/close) |
 | 113 | ENH-: verify the OPPO actually started playing the requested file (both architectures) | addon | `area:addon` | OPEN (SHA-commented) | precursor probe shipped — [PR #118](https://github.com/skull-01/script.oppo203.iso.external/pull/118) `c9f7579`; **`#QFN`** is the documented basis (protocol finding commented). `verify_playback_started()` is the follow-up. | awaiting operator (run probe Phase C, then build verify) |
-| 114 | [Bug] addon: default hold_mode=fixed_timeout holds Kodi for 180 min with no stop detection | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
-| 115 | [Bug] addon: manual_file hold mode has no timeout (infinite hang) | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
-| 116 | [Bug] addon: http_poll/tcp_qpl_poll hold to the 240-min timeout when the OPPO drops off mid-playback | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
-| 117 | [Bug] addon: stale oppo203iso-active sentinel after a crash disables interception / sticks the remote bridge | addon | `type:bug`, `area:addon` | OPEN | not yet implemented — filed 2026-05-31 | awaiting operator |
+| 114 | [Bug] addon: default hold_mode=fixed_timeout holds Kodi for 180 min with no stop detection | addon | `type:bug`, `area:addon` | OPEN (draft PR) | [PR #130](https://github.com/skull-01/script.oppo203.iso.external/pull/130) `5954556` — default → `tcp_qpl_poll` (reader + settings.xml index); **merge after #129** | awaiting operator (review/merge/Phase C/close) |
+| 115 | [Bug] addon: manual_file hold mode has no timeout (infinite hang) | addon | `type:bug`, `area:addon` | OPEN (draft PR) | [PR #129](https://github.com/skull-01/script.oppo203.iso.external/pull/129) `a16a4f4` — `manual_file` bounded by the `fixed_timeout` ceiling | awaiting operator (review/merge/Phase C/close) |
+| 116 | [Bug] addon: http_poll/tcp_qpl_poll hold to the 240-min timeout when the OPPO drops off mid-playback | addon | `type:bug`, `area:addon` | OPEN (draft PR) | [PR #129](https://github.com/skull-01/script.oppo203.iso.external/pull/129) `a16a4f4` — end the hold after `MAX_CONSECUTIVE_POLL_FAILURES`=5 unreachable polls | awaiting operator (review/merge/Phase C/close) |
+| 117 | [Bug] addon: stale oppo203iso-active sentinel after a crash disables interception / sticks the remote bridge | addon | `type:bug`, `area:addon` | OPEN (draft PR) | [PR #131](https://github.com/skull-01/script.oppo203.iso.external/pull/131) `293015e` — shared `session_is_active()` staleness (6h mtime); both readers delegate | awaiting operator (review/merge/Phase C/close) |
 | 118 | (no issue) read-only OPPO player-status probe (#Q.. query battery + protocol reference) | addon | _PR-only_ | **MERGED 2026-05-31** | [PR #118](https://github.com/skull-01/script.oppo203.iso.external/pull/118) merge `8c35f28` (docs-only checklist conflict resolved on merge); precursor for #113. Gates: pytest 963/3, cov 99%, ruff+mypy clean | Phase C queued (run probe on real hardware → unblocks #113) |
 | 119 | (no issue) addon functional-flow diagrams doc (Mermaid) | addon | _PR-only (docs)_ | **MERGED 2026-05-31** | [PR #119](https://github.com/skull-01/script.oppo203.iso.external/pull/119) merge `1a22c06` | docs-only; no verification needed |
 | 120·122·124·125·127·128 | (no issue) configurator: Sony badge, Sony AVR auto-enable, naming-consistency sweep | configurator | _PR-only_ | **MERGED 2026-05-31** | #120 Sony badge dark-chip; #122 Sony AVR auto-enable (PSK+ack+URI); #124 `oppoInput`→`playerInput`; #125 `players.json`→`players-models.json`; #127 handoff map; #128 `docs/NAMING_CONVENTIONS.md` + historical flags. 103 vitest + build green. (#121 v0.5.0 checklist entry + artifact SHA verify merged too.) | Phase C (clean-machine install + Sony hardware) queued |
-| 123 | [Bug] addon: ruff format --check is red on main (3 unformatted test files) | addon | `type:bug`, `area:addon` | OPEN | filed 2026-05-31; pre-existing drift in `test_all.py` / `test_players_db_consistency.py` / `test_v2910_build2_player_taxonomy.py`; `ruff check` itself passes. Spawn-task chip queued to fix (`ruff format` + full-suite re-verify). | awaiting operator |
+| 123 | [Bug] addon: ruff format --check is red on main (3 unformatted test files) | addon | `type:bug`, `area:addon` | OPEN (draft PR) | [PR #133](https://github.com/skull-01/script.oppo203.iso.external/pull/133) `6b920fd` — `ruff format` the **2** actually-drifted files (`test_all.py`, `test_players_db_consistency.py`); the named 3rd (`test_v2914_build2_player_taxonomy.py`) was already clean. `ruff format --check .` now green | awaiting operator (review/merge/close) |
 | 126 | (no issue) rename TV backend modules to `tv_` prefix (parity with `avr_`) | addon | _PR-only_ | **MERGED 2026-05-31** | [PR #126](https://github.com/skull-01/script.oppo203.iso.external/pull/126) — `adb_control`/`roku_ecp_control`/`smartthings_control` → `tv_*`; alias-finder/`mypy.ini`/`pyproject.toml`/`lib_buckets.py`/imports/6 tests updated; module bodies unchanged. Gate green (963/99%). | software-only; no hardware impact |
 
 ---
@@ -1324,6 +1367,22 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   Refreshed §1 header, §3a, §3b, §17a; saved memories `diagram-output-preference`,
   `configurator-control-tests-are-mocked`, `configurator-avr-db-no-consistency-guard`. (Untracked +
   left alone: `.claude/launch.json` [local preview dev-config], the two `*_RECONSTRUCTION.md`.)
+
+- **2026-05-31 (EOD, later) — robustness bug-fix session + `done for the day`.** `resume` → env
+  preflight all green (row 11 MSVC is a vswhere-confirmed false negative — saved to memory) →
+  operator picked **Addon: robustness bugs**. Grounded the 6 robustness issues, produced a canonical
+  plan (Go granted), and shipped **5 pushed draft PRs** covering **all 7 open addon `type:bug`**:
+  **#129** `hold_playback` bounded holds + verbose_push QPL fallback (#112/#115/#116, `a16a4f4`),
+  **#130** default `hold_mode`→`tcp_qpl_poll` (#114, `5954556`, merge after #129), **#131**
+  self-healing sentinel (#117, `293015e`), **#132** diag probe 80→436 (#111, `bb34919`), then on a
+  follow-up ask **#133** ruff-format the drifted test files (#123, `6b920fd`). Each gated (pytest
+  green, serial cov 99%, ruff + `ruff format --check` clean, mypy 49/0); SHA-commented + Phase A/C
+  checklist rows (prepended to avoid 5-PR collisions); **software-verified only, no hardware.** One
+  slip caught: PR C's first commit landed on PR B's branch → cherry-picked it to its own branch +
+  reset PR B's local branch to origin (so `#130` on origin stayed clean). Honest finding on #123:
+  only 2 of the 3 named files actually drifted. Refreshed §1 header, §3a, §17a, §19; saved memories
+  `gh-powershell-json-gotchas`, `env-msvc-row11-false-negative`. `main` untouched; **operator merges
+  (#130 after #129) + Phase-C + closes**. §3b (configurator) and §3c (teaching-commentary) untouched.
 
 ---
 

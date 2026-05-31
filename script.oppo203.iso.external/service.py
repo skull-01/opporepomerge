@@ -189,8 +189,11 @@ def _should_intercept_4k_disc_source(path: str) -> bool:
 
 
 def _session_is_active(settings: Any) -> bool:
-    path = os.path.join(settings.get("addon_data_dir", ""), "oppo203iso-active")
-    return bool(path and os.path.exists(path))
+    try:
+        from resources.lib.kodi.settings_reader import session_is_active
+    except ImportError:  # pragma: no cover - bare-name fallback for sys.path importers
+        from settings_reader import session_is_active  # type: ignore[no-redef]
+    return session_is_active(settings.get("addon_data_dir", ""))
 
 
 def _run_interception(path: str, settings: Any) -> None:
