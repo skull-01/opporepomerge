@@ -65,6 +65,13 @@ implementing SHA(s) on the issue and append a row here.
 - **Operator verifies (Phase A):** read the Step 3 copy + the `mapping.ts` emit + the 5 new mapping tests; confirm the triple is internally consistent for all four combos and the default is `legacy` / `playercorefactory_legacy`.
 - **Operator verifies (Phase C — built app + box):** in the wizard pick SVM3 vs Legacy at Step 3, finish + deploy, and confirm the add-on `settings.xml` carries a consistent `playback_architecture_preset` + `playback_monitor_mode` and the add-on resolves the matching monitor. (SVM3 capability is probed in PR B3.) Not hardware-validated.
 
+### Configurator — SVM3 capability probe in the player test (Session B / PR B3)
+
+- **Branch:** `claude/cfg-svm3-probe-7bf49fc9` (stacked on PR B2). PR-only theme; pairs with addon PRs #144/#145.
+- **What changed (software-verified only):** the Step 2 player test now runs an **SVM3 capability probe** after two-way control confirms — reusing the existing `oppo_query` Tauri command (**no Rust change**): `#QVM` (read current verbose mode) → `#SVM 3` (accepted?) → `#SVM <prev>` (restore, leaving the player's mode untouched). New pure parsers `parseOppoVerboseMode` / `parseSvm3Accepted` (`probes.ts`, +4 vitest). The result is stored as `state.svm3Supported` and **recommends the matching Playback-mode default** (svm3 on success, legacy otherwise); the user can still override at Step 3. A callout reports supported / not-detected, and SVM3 absence **never fails** the power test (legacy works regardless). The Step 3 SVM3 tile shows the per-player result. Gate: `tsc -b` + **155 vitest** + `vite build` green.
+- **Operator verifies (Phase A):** read the `probeSvm3` flow + the 4 new probe-parser tests; confirm the probe restores the previous verbose mode, never gates the power-test pass, and that SVM3 stays labelled recommended-for-validation (not validated).
+- **Operator verifies (Phase C — on the box):** with a real OPPO, run the player test → `#QVM`/`#SVM 3` succeed → "SVM3 supported" and Step 3 pre-selects SVM3; with a clone that rejects `#SVM 3` → "not detected" and Step 3 defaults to Legacy. Confirm the player's verbose mode is unchanged after the probe. Not hardware-validated.
+
 ### Configurator — dedicated Step-5 receiver restore-input field (AVR-chain restore, #138 follow-up)
 
 - **Branch:** `claude/avr-receiver-restore-input-a7f2c419`. PR-only theme (no tracked issue); follow-up to PR #138.
