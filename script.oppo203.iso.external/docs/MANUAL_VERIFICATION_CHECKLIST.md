@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — wizard renumber + new Step 3 "Playback mode" scaffold (Session B / PR B1)
+
+- **Branch:** `claude/cfg-playback-mode-step-92ba717e` (base `main`; pairs with the addon Session A SVM3 PRs #143–#145). PR-only theme (no tracked issue).
+- **What changed (software-verified only):** inserts a new **Step 3 "Playback mode"** right after Player and renumbers the rest — **TV 3→4, HDMI Input 4→5, AV Receiver 5→6**. Mechanical rename only: `screens/step3|4|5.tsx`→`step4|5|6.tsx`, `Step3|4|5*` components→`Step4|5|6*`, `step3_*|step4_*|step5_*` ScreenIds→`step4_*|step5_*|step6_*`, `step4NextScreen`→`step5NextScreen`, plus `steps.ts` (`StepId`/`ScreenId`/`STEPS`/`SCREEN_TO_STEP`/`SCREEN_TO_CHAIN`/`firstScreenOfStep`) and the `App.tsx` renderer map. Player now routes to the new `step3_mode` (→ TV `step4_brand`); the new screen is a **minimal placeholder** (the legacy-vs-SVM3 choice lands in PR B2). All step-number display copy + comments updated to the new numbering (`"Fix TV → Step 4"`, `owner="Step 4 · TV / Step 5 input capture"`, the AVR `screen-num` badge `6`, "set up the receiver in step 6", and the `mapping.ts`/`steps.ts`/db-guard comments) per AGENTS.md "names match what the user sees." **No TV/HDMI/AVR/Player logic changed.** Gate: `tsc -b` + **146 vitest** + `vite build` green.
+- **Operator verifies (Phase A):** read the rename diff — confirm it is purely id/number/component/file renames + the Player→`step3_mode` redirect + the placeholder, with no behavior change to the existing steps; the stepper + per-screen numbers read 0 · Player(2) · Playback mode(3) · TV(4) · HDMI(5) · AVR(6) · ✓.
+- **Operator verifies (Phase C — built app):** launch the configurator and walk Player → **Playback mode** (placeholder) → TV → HDMI → AVR → Test; confirm the numbering is consistent everywhere and resume/persistence still lands on valid screens.
+
 ### Configurator — dedicated Step-5 receiver restore-input field (AVR-chain restore, #138 follow-up)
 
 - **Branch:** `claude/avr-receiver-restore-input-a7f2c419`. PR-only theme (no tracked issue); follow-up to PR #138.

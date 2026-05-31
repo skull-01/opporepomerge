@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 // (docs/configurator/avr-db/avr-models.json). build/gen_avr_db.py writes both, but nothing
 // enforced that they stay in step -- and since the loader only ever imports the bundled copy,
 // a hand-edit to one could ship undetected drift. This guard pins them identical and pins the
-// structural invariants avrdb.ts and Step 5 rely on.
+// structural invariants avrdb.ts and Step 6 rely on.
 
 function read(rel: string): string {
   return readFileSync(new URL(rel, import.meta.url), "utf8");

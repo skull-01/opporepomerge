@@ -1,417 +1,640 @@
-import { useState, type ReactNode } from "react";
-import { Icon } from "../icons";
+import { useState, useEffect } from "react";
+import { Icon, type IconName } from "../icons";
+import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
-import type { InputAddress } from "../state";
-import { isAvrChain, step4NextScreen } from "../steps";
+import { BrandIcon } from "../shell/BrandIcon";
+import { invoke } from "../ipc";
+import { inferBackendFromPorts, probePortList, TV_PROBE_PORTS, type PortResult } from "../probes";
+import {
+  BUNDLED_TV_DB,
+  fetchRemoteTvDb,
+  isNewer,
+  modelsForBrand,
+  modelsForRegion,
+  resolveBackend,
+  resolvePlatform,
+  resolveTier,
+  TV_REGIONS,
+  type TvDb,
+  type TvDbModel,
+  type TvRegion,
+} from "../tvdb";
+import type { ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
 // ============================================================
-// STEP 4 — Input capture intro
+// STEP 3 — TV brand
 // ============================================================
-export function Step4Intro({ go, state }: ScreenProps) {
+const TV_BRANDS = [
+  { id: "sony",      name: "Sony",      ch: "SONY", color: "#0B0B0C", hint: "Bravia · Google TV" },
+  { id: "samsung",   name: "Samsung",   ch: "SI",   color: "#1428A0", hint: "Tizen" },
+  { id: "lg",        name: "LG",        ch: "LG",   color: "#A50034", hint: "webOS" },
+  { id: "tcl",       name: "TCL",       ch: "TCL",  color: "#C8102E", hint: "Google / Roku" },
+  { id: "hisense",   name: "Hisense",   ch: "H",    color: "#00843D", hint: "VIDAA / Google / Roku" },
+  { id: "roku",      name: "Roku TV",   ch: "R",    color: "#6F1AB1", hint: "ECP" },
+  { id: "vizio",     name: "Vizio",     ch: "V",    color: "#111114", hint: "SmartCast" },
+  { id: "panasonic", name: "Panasonic", ch: "P",    color: "#0050A0", hint: "MyHome / FireTV" },
+  { id: "other",     name: "Other",     ch: "?",    color: "#6B7280", hint: "or not listed" },
+] as const;
+
+export function Step4Brand({ go, state, set }: ScreenProps) {
   return (
     <div className="screen">
       <div className="screen-header">
-        <h1 className="screen-title">Now the HDMI inputs.</h1>
+        <h1 className="screen-title">Your TV</h1>
         <p className="screen-subtitle">
-          We need two: <strong>where your player is</strong> (to switch to on handoff) and{" "}
-          <strong>where your Kodi box is</strong> (to switch back on exit).{" "}
-          {isAvrChain(state.topology)
-            ? "In your chain these are inputs on the AV receiver, which does the switching."
-            : "Your player and TV are both set up now — good time to pin these down."}
+          Pick your TV's brand. The control method comes from the platform (Google TV →
+          ADB, Roku → ECP, webOS → LG, …) — your exact model just helps us confirm.
         </p>
       </div>
-      <div className="card">
-        <h3 className="sub-title">Plan</h3>
-        <div className="stack-sm">
-          <div className="row" style={{ gap: 10 }}>
-            <span className="kbd" style={{ minWidth: 24, textAlign: "center" }}>1</span>
-            <span>
-              Capture the <strong>OPPO's HDMI input</strong> — the one we switch to.
-            </span>
-          </div>
-          <div className="row" style={{ gap: 10 }}>
-            <span className="kbd" style={{ minWidth: 24, textAlign: "center" }}>2</span>
-            <span>
-              Capture the <strong>Kodi box's HDMI input</strong> — the return target.
-            </span>
-          </div>
-        </div>
-        <div className="divider" />
-        <div className="row" style={{ gap: 8 }}>
-          <span className="chip success">
-            <Icon name="check" size={11} /> Backend: <code>{state.tvBackend || "roku_ecp"}</code>
-          </span>
-          {state.tvAdbWeak && (
-            <span className="chip warn">
-              <Icon name="warn" size={11} /> ADB-weak — fallback path
-            </span>
-          )}
-          {state.tvManualSwitch && <span className="chip warn">Manual switching</span>}
-        </div>
+      <div className="brand-grid">
+        {TV_BRANDS.map((b) => (
+          <button
+            key={b.id}
+            className={`brand-pill ${state.tvBrand === b.id ? "selected" : ""}`.trim()}
+            onClick={() => {
+              set({ tvBrand: b.id });
+              go("step4_model");
+            }}
+          >
+            <BrandIcon slug={b.id} ch={b.ch} color={b.color} fallbackIcon="tv" />
+            <div>{b.name}</div>
+            <div className="muted" style={{ fontSize: 10.5, fontWeight: 500 }}>{b.hint}</div>
+          </button>
+        ))}
       </div>
-      <div className="callout warn" style={{ marginTop: 14 }}>
-        <span className="callout-icon">
-          <Icon name="warn" size={13} stroke={2.2} />
-        </span>
-        <div className="callout-body">
-          {isAvrChain(state.topology) ? (
-            <>
-              <strong>Heads-up: we&apos;re about to change your receiver input.</strong> We&apos;ll
-              return to your current input when this step ends.
-            </>
-          ) : (
-            <>
-              <strong>Heads-up: we&apos;re about to change your TV input.</strong> We&apos;ll return
-              to your current input when this step ends.
-            </>
-          )}
-        </div>
-      </div>
-      <FooterNav
-        go={go}
-        back="step3_test"
-        next={state.tvAdbWeak ? "step4_fallback" : "step4_ask"}
-        nextLabel="Capture inputs"
-      />
+      <FooterNav go={go} back="step2_test" />
     </div>
   );
 }
 
 // ============================================================
-// STEP 4 — Ask-first
+// STEP 3 — Model
 // ============================================================
-export function Step4Ask({ go, state, set }: ScreenProps) {
-  const [step, setStep] = useState<"oppo" | "kodi">("oppo");
-  const [picked, setPicked] = useState<number | null>(null);
-  const [confirmed, setConfirmed] = useState(false);
+function tierChipKind(tier: string | null): string {
+  if (tier === "preferred") return "success";
+  if (tier === "probe") return "accent";
+  return "warn";
+}
 
-  const pick = (n: number) => {
-    setPicked(n);
-    setConfirmed(false);
+function tierChipLabel(tier: string | null): string {
+  if (tier === "preferred") return "preferred path";
+  if (tier === "probe") return "probe & confirm";
+  if (tier === "fallback") return "fallback path";
+  return "manual";
+}
+
+export function Step4Model({ go, state, set }: ScreenProps) {
+  const [db, setDb] = useState<TvDb>(BUNDLED_TV_DB);
+  const [region, setRegion] = useState<TvRegion | null>(state.tvRegion ?? "US");
+  const [year, setYear] = useState("2023");
+  const [search, setSearch] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const brandName = TV_BRANDS.find((b) => b.id === state.tvBrand)?.name ?? "TV";
+  const models = state.tvBrand ? modelsForBrand(db, state.tvBrand) : [];
+  const filtered = modelsForRegion(models, region).filter(
+    (m) =>
+      (!year || String(m.year) === year) &&
+      m.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const pickRegion = (r: TvRegion) => {
+    const next = region === r ? null : r;
+    setRegion(next);
+    set({ tvRegion: next });
   };
-  const next = () => {
-    if (step === "oppo") {
-      set({ playerInput: picked });
-      setStep("kodi");
-      setPicked(null);
-      setConfirmed(false);
-    } else {
-      set({ kodiInput: picked });
-      go("step4_done");
-    }
+
+  const refresh = async () => {
+    setRefreshing(true);
+    const remote = await fetchRemoteTvDb();
+    if (remote && isNewer(db, remote)) setDb(remote);
+    setRefreshing(false);
+  };
+
+  const select = (m: TvDbModel) => {
+    set({
+      tvModel: m.id,
+      tvPlatform: resolvePlatform(db, m),
+      tvBackend: resolveBackend(db, m),
+    });
   };
 
   return (
     <div className="screen">
       <div className="screen-header">
-        <h1 className="screen-title">
-          Which {isAvrChain(state.topology) ? "receiver" : "HDMI"} input is your{" "}
-          {step === "oppo" ? "OPPO" : "Kodi box"} on?
-        </h1>
+        <h1 className="screen-title">Which {brandName} model?</h1>
         <p className="screen-subtitle">
-          If you know, pick it and we'll switch to it and confirm. If you don't, we can
-          find it for you instead.
+          Region and year just narrow the list — the control method comes from the
+          platform.
         </p>
       </div>
 
-      <div className="grid-2" style={{ alignItems: "start" }}>
-        <div className="stack">
-          <div className="hdmi-grid">
-            {[1, 2, 3, 4].map((n) => (
+      <div className="stack" style={{ gap: 14 }}>
+        <div className="row" style={{ gap: 10 }}>
+          <div className="field" style={{ flex: 1, maxWidth: 360 }}>
+            <input
+              className="input text"
+              placeholder="Search models…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <span className="spacer" />
+          <button className="btn ghost sm" onClick={refresh} disabled={refreshing}>
+            <Icon name="download" size={13} /> {refreshing ? "Updating…" : "Update list"}
+          </button>
+          <button className="btn ghost sm" onClick={() => go("step4_notfound")}>
+            <Icon name="search" size={13} /> Can't find my model
+          </button>
+        </div>
+        <div className="row" style={{ gap: 8, alignItems: "center" }}>
+          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Region</span>
+          <div className="filter-row">
+            {TV_REGIONS.map((r) => (
               <button
-                key={n}
-                className={`hdmi-tile ${picked === n ? "selected" : ""}`.trim()}
-                onClick={() => pick(n)}
+                key={r}
+                className={`filter-pill ${region === r ? "selected" : ""}`.trim()}
+                onClick={() => pickRegion(r)}
               >
-                <div className="hdmi-tile-num">{n}</div>
-                <div className="hdmi-tile-label">HDMI {n}</div>
+                {r}
               </button>
             ))}
           </div>
-          <button className="btn outline" onClick={() => go("step4_fallback")}>
-            <Icon name="search" size={14} /> Not sure — find it for me
-          </button>
+        </div>
+        <div className="row" style={{ gap: 8, alignItems: "center" }}>
+          <span className="muted" style={{ fontSize: 12, fontWeight: 500 }}>Year</span>
+          <div className="filter-row">
+            {["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"].map((y) => (
+              <button
+                key={y}
+                className={`filter-pill ${year === y ? "selected" : ""}`.trim()}
+                onClick={() => setYear(year === y ? "" : y)}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="stack">
-          <div className="tv-mockup">
-            <div className="tv-mockup-screen">
-              {picked && confirmed ? (
-                <>
-                  <div className="tv-mockup-text bright">
-                    {step === "oppo" ? "OPPO M9205 V1" : "Kodi · CoreELEC"}
-                  </div>
-                  <div className="tv-mockup-text">on HDMI {picked}</div>
-                </>
-              ) : picked ? (
-                <>
-                  <div className="tv-mockup-text">switched to HDMI {picked}</div>
-                  <div className="tv-mockup-text" style={{ fontSize: 10 }}>
-                    do you see {step === "oppo" ? "your player" : "Kodi"}?
-                  </div>
-                </>
-              ) : (
-                <div className="tv-mockup-text">— pick an input —</div>
-              )}
+        <div className="model-list">
+          {filtered.length === 0 && (
+            <div className="model-row" style={{ justifyContent: "center", color: "var(--muted)" }}>
+              No matches — try adjusting filters or{" "}
+              <button className="btn ghost sm" onClick={() => go("step4_notfound")}>
+                tell us it's not here
+              </button>
             </div>
-            <div className="stand" />
-          </div>
-          {picked && (
-            <>
-              <div className="callout info">
-                <span className="callout-icon">
-                  <Icon name="info" size={13} stroke={2.2} />
-                </span>
-                <div className="callout-body">
-                  Sent <code>switch-to HDMI{picked}</code> via{" "}
-                  <code>{state.tvBackend || "roku_ecp"}</code>. Do you see{" "}
-                  {step === "oppo" ? "the OPPO" : "Kodi"} on screen?
+          )}
+          {filtered.map((m) => {
+            const backend = resolveBackend(db, m);
+            const tier = resolveTier(db, m);
+            const fallbacks = m.fallback_backends ?? [];
+            return (
+              <div
+                key={m.id}
+                className={`model-row ${state.tvModel === m.id ? "selected" : ""}`.trim()}
+                onClick={() => select(m)}
+                title={m.region_notes ?? m.notes ?? ""}
+              >
+                <div>
+                  <div>
+                    {m.name}{" "}
+                    <span className="muted" style={{ fontSize: 11, fontWeight: 500 }}>{m.year}</span>
+                  </div>
+                  <div className="model-row-meta">
+                    {resolvePlatform(db, m) ?? "—"} · backend <code>{backend ?? "—"}</code>
+                    {fallbacks.length > 0 && (
+                      <>
+                        {" "}· fallback <code>{fallbacks.join(", ")}</code>
+                      </>
+                    )}
+                  </div>
+                  <div className="model-row-meta">
+                    {m.regions.join(" · ")}
+                    {m.mapping_confidence && <> · {m.mapping_confidence} confidence</>}
+                  </div>
                 </div>
+                <span className={`chip ${tierChipKind(tier)}`}>
+                  <span className="chip-dot" />
+                  {tierChipLabel(tier)}
+                </span>
               </div>
-              <div className="row" style={{ gap: 10 }}>
-                <button className="btn primary" onClick={() => setConfirmed(true)}>
-                  <Icon name="check" size={14} /> Yes, that's it
-                </button>
-                <button className="btn outline" onClick={() => setPicked(null)}>
-                  No — pick a different one
-                </button>
-              </div>
-              {confirmed && (
-                <button className="btn primary lg" onClick={next}>
-                  {step === "oppo" ? "Next: Kodi box input" : "All inputs captured"}
-                  <Icon name="chevR" size={14} />
-                </button>
-              )}
-            </>
-          )}
+            );
+          })}
         </div>
       </div>
-      <FooterNav go={go} back="step4_intro" />
-    </div>
-  );
-}
-
-// ============================================================
-// STEP 4 — ADB-weak fallback funnel
-// ============================================================
-export function Step4Fallback({ go, set }: ScreenProps) {
-  return (
-    <div className="screen">
-      <div className="screen-header">
-        <h1 className="screen-title">Let's find it together.</h1>
-        <p className="screen-subtitle">
-          Your TV connected but ignores discrete HDMI keys. We'll walk three fallbacks,
-          most-reliable first. Each rung confirms before we move on.
-        </p>
-      </div>
-      <div className="stack">
-        <FallbackRung
-          num="1"
-          status="active"
-          title="Ask the number"
-          desc="Tell us the HDMI number and we'll fire KEYCODE_TV_INPUT_HDMI_N. Stores a real HDMI number."
-          action={
-            <div className="row" style={{ gap: 6 }}>
-              {[1, 2, 3, 4].map((n) => (
-                <button
-                  key={n}
-                  className="filter-pill"
-                  onClick={() => {
-                    set({ playerInput: n, kodiInput: n === 1 ? 2 : 1 });
-                    go("step4_done");
-                  }}
-                >
-                  HDMI {n}
-                </button>
-              ))}
-            </div>
-          }
-        />
-        <FallbackRung
-          num="2"
-          status="next"
-          title="CEC One-Touch-Play"
-          desc="Wake the OPPO so it asserts active source over CEC; the TV follows. Stores 'OPPO = CEC-asserted input' — no number needed."
-          action={
-            <button
-              className="btn outline sm"
-              onClick={() => {
-                set({ playerInput: "cec", kodiInput: 1 });
-                go("step4_done");
-              }}
-            >
-              Use CEC fallback
-            </button>
-          }
-        />
-        <FallbackRung
-          num="3"
-          status="next"
-          title="Blind-cycle (last resort)"
-          desc="Send the input-advance key; you tell us when the OPPO appears. Stores the lossy record — 'input after N advances' — flagged as brittle internally."
-          action={
-            <button
-              className="btn outline sm"
-              onClick={() => {
-                set({ playerInput: "cycle:2", kodiInput: "cycle:1" });
-                go("step4_done");
-              }}
-            >
-              Cycle now
-            </button>
-          }
-        />
-        <FallbackRung
-          num="4"
-          status="exit"
-          title="None of the above worked"
-          desc="Switch inputs with your TV remote yourself. The add-on simply won't try to drive the TV."
-          action={
-            <button
-              className="btn ghost sm"
-              onClick={() => {
-                set({ tvManualSwitch: true });
-                go("step4_done");
-              }}
-            >
-              Manual switching
-            </button>
-          }
-        />
-      </div>
-      <FooterNav go={go} back="step4_intro" />
-    </div>
-  );
-}
-
-type RungStatus = "active" | "next" | "exit";
-
-function FallbackRung({
-  num,
-  status,
-  title,
-  desc,
-  action,
-}: {
-  num: string;
-  status: RungStatus;
-  title: string;
-  desc: string;
-  action: ReactNode;
-}) {
-  return (
-    <div className="tile" style={{ cursor: "default", alignItems: "center" }}>
-      <div
-        className="tile-icon"
-        style={{
-          background: status === "active" ? "var(--accent-soft)" : "var(--surface-2)",
-          color: status === "active" ? "var(--accent)" : "var(--muted)",
-          fontWeight: 700,
-          fontFamily: "var(--font-display)",
-        }}
-      >
-        {num}
-      </div>
-      <div className="tile-body">
-        <div className="tile-title">
-          {title}{" "}
-          {status === "active" && (
-            <span className="chip accent" style={{ marginLeft: 6 }}>
-              Try this first
-            </span>
-          )}
-        </div>
-        <div className="tile-desc">{desc}</div>
-      </div>
-      <div>{action}</div>
-    </div>
-  );
-}
-
-// ============================================================
-// STEP 4 — Done
-// ============================================================
-function describeInput(input: InputAddress, fallback: string) {
-  if (input == null) return fallback;
-  return typeof input === "number" ? String(input) : input;
-}
-
-export function Step4Done({ go, state }: ScreenProps) {
-  const oppoLabel = describeInput(state.playerInput, "3");
-  const kodiLabel = describeInput(state.kodiInput, "1");
-  const isCycle = typeof state.playerInput === "string" && state.playerInput.startsWith("cycle");
-  return (
-    <div className="screen">
-      <div className="screen-header">
-        <h1 className="screen-title">Inputs captured.</h1>
-        <p className="screen-subtitle">
-          We'll use these for handoff and return-on-exit. You can edit them later in the
-          add-on settings.
-        </p>
-      </div>
-      <div className="grid-2">
-        <div className="card">
-          <h3 className="sub-title">Switch to</h3>
-          <div className="row" style={{ gap: 14, marginTop: 8 }}>
-            <div className="tile-icon">
-              <Icon name="player" size={20} />
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>
-                OPPO {state.playerModel || "M9205 V1"}
-              </div>
-              <div
-                className="muted"
-                style={{ fontSize: 12, fontFamily: "var(--font-mono)", marginTop: 2 }}
-              >
-                HDMI {oppoLabel}
-                {state.playerInput === "cec" && <> (CEC-asserted)</>}
-                {isCycle && <> (blind-cycle · brittle)</>}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="card">
-          <h3 className="sub-title">Return to</h3>
-          <div className="row" style={{ gap: 14, marginTop: 8 }}>
-            <div className="tile-icon">
-              <Icon name="kodi" size={20} />
-            </div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600 }}>Kodi box</div>
-              <div
-                className="muted"
-                style={{ fontSize: 12, fontFamily: "var(--font-mono)", marginTop: 2 }}
-              >
-                HDMI {kodiLabel}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      {isCycle && (
-        <div className="callout warn" style={{ marginTop: 14 }}>
-          <span className="callout-icon">
-            <Icon name="warn" size={13} stroke={2.2} />
-          </span>
-          <div className="callout-body">
-            <strong>Blind-cycle is brittle.</strong> If your TV's input order ever shifts
-            (added device, reordered ports), the return-target may land somewhere
-            unexpected. Edit it manually in the add-on if that happens.
-          </div>
-        </div>
-      )}
       <FooterNav
         go={go}
-        back="step4_intro"
-        next={step4NextScreen(state.topology)}
-        nextLabel={
-          isAvrChain(state.topology)
-            ? "Next: AV receiver"
-            : "Next: AV receiver (optional)"
-        }
+        back="step4_brand"
+        next={state.tvModel ? "step4_adb_warn" : null}
+        nextLabel="Continue"
       />
     </div>
   );
 }
+
+// ============================================================
+// STEP 3 — Model not found
+// ============================================================
+export function Step4NotFound({ go, set }: ScreenProps) {
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">We couldn't find your model.</h1>
+        <p className="screen-subtitle">
+          That's fine — TVs from 2026+ are deliberately outside our database, and older
+          models drift out of it too. You've got two honest paths from here.
+        </p>
+      </div>
+      <div className="grid-2">
+        <button className="tile" onClick={() => go("step4_probe")}>
+          <div className="tile-icon">
+            <Icon name="search" size={20} />
+          </div>
+          <div className="tile-body">
+            <div className="tile-title">
+              Probe the TV <span className="tile-badge recommended">Recommended</span>
+            </div>
+            <div className="tile-desc">
+              We test the ports each backend uses (ADB :5555, Roku :8060, Sony IP, …)
+              against your real TV and report what answers.
+            </div>
+          </div>
+          <Icon name="chevR" size={16} />
+        </button>
+        <button
+          className="tile"
+          onClick={() => {
+            set({ tvBackend: "custom_command" });
+            go("step4_adb_warn");
+          }}
+        >
+          <div className="tile-icon">
+            <Icon name="terminal" size={20} />
+          </div>
+          <div className="tile-body">
+            <div className="tile-title">Choose the method manually</div>
+            <div className="tile-desc">
+              Pick a backend yourself — including the <code>custom_command</code> escape
+              hatch for anything else (Panasonic, Vizio, projectors, CEC scripts).
+            </div>
+          </div>
+          <Icon name="chevR" size={16} />
+        </button>
+      </div>
+      <div className="callout info" style={{ marginTop: 18 }}>
+        <span className="callout-icon">
+          <Icon name="info" size={13} stroke={2.2} />
+        </span>
+        <div className="callout-body">
+          A failed probe doesn't mean "unsupported" — usually it just means debugging is
+          off or the IP is wrong. Either way, we won't dead-end you.
+        </div>
+      </div>
+      <FooterNav go={go} back="step4_model" />
+    </div>
+  );
+}
+
+// ============================================================
+// STEP 3 — Probe
+// ============================================================
+export function Step4Probe({ go, set }: ScreenProps) {
+  const [ip, setIp] = useState("10.0.1.51");
+  const [probing, setProbing] = useState(false);
+  const [results, setResults] = useState<PortResult[] | null>(null);
+
+  const backend = results ? inferBackendFromPorts(results) : null;
+
+  const probe = async () => {
+    setProbing(true);
+    try {
+      const r = await invoke<PortResult[]>("tv_port_probe", { host: ip, ports: probePortList() });
+      setResults(r);
+    } catch {
+      setResults([]);
+    } finally {
+      setProbing(false);
+    }
+  };
+
+  const checks: DiagCheck[] = TV_PROBE_PORTS.map((entry) => {
+    const r = results?.find((x) => x.port === entry.port);
+    return {
+      status: results === null ? "pending" : r?.open ? "pass" : "fail",
+      label: `${entry.label} on :${entry.port}`,
+      detail: results === null ? "" : r?.open ? "answered" : "no response",
+    };
+  });
+
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">Probe your TV</h1>
+        <p className="screen-subtitle">
+          We'll knock on each backend's port and see what answers. No state-changing
+          commands sent.
+        </p>
+      </div>
+      <div className="grid-2" style={{ alignItems: "start" }}>
+        <div className="card">
+          <h2 className="section-title">Probe target</h2>
+          <div className="stack">
+            <div className="field">
+              <label className="field-label">TV IP</label>
+              <input className="input" value={ip} onChange={(e) => setIp(e.target.value)} />
+              <div className="field-hint">Same network as this PC and your Kodi box.</div>
+            </div>
+            <button className="btn primary" onClick={probe} disabled={probing}>
+              <Icon name="search" size={13} /> {probing ? "Probing…" : "Probe the TV"}
+            </button>
+          </div>
+        </div>
+        <div className="stack">
+          <DiagLog
+            title="Port probe"
+            checks={checks}
+            footer={
+              results === null ? (
+                <span className="muted">Probe the TV to see which backends answer.</span>
+              ) : backend ? (
+                <>
+                  <strong className="success-text">Looks controllable.</strong> We'll use the{" "}
+                  <code>{backend}</code> backend — it answered on the network.
+                </>
+              ) : (
+                <span className="muted">
+                  Nothing answered. Check the IP / debugging, or choose a method manually.
+                </span>
+              )
+            }
+            footerKind={backend ? "success" : ""}
+          />
+        </div>
+      </div>
+      <FooterNav
+        go={go}
+        back="step4_notfound"
+        next={backend ? "step4_test" : null}
+        nextLabel={backend ? `Use ${backend}` : "Continue"}
+        set={set}
+        setKeys={backend ? { tvBackend: backend, tvModel: "probed" } : undefined}
+      />
+    </div>
+  );
+}
+
+// ============================================================
+// STEP 3 — ADB allow-debugging heads up
+// ============================================================
+export function Step4AdbWarn(props: ScreenProps) {
+  const { go, state } = props;
+  const isAdb = state.tvBackend === "adb" || (state.tvModel || "").includes("q");
+  if (!isAdb) {
+    return <Step4Test {...props} />;
+  }
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">Heads-up: your TV may ask permission.</h1>
+        <p className="screen-subtitle">
+          ADB control needs the TV to trust this app the first time we connect. The TV
+          (not us) shows the prompt — read it from across the room if you can.
+        </p>
+      </div>
+      <div className="split" style={{ marginTop: 8 }}>
+        <div className="tv-mockup">
+          <div className="tv-mockup-screen">
+            <div className="tv-mockup-text">▼ Allow USB debugging?</div>
+            <div className="tv-mockup-text bright">"Always allow from this computer"</div>
+            <div className="tv-mockup-text" style={{ fontSize: 10 }}>
+              Cancel &nbsp; · &nbsp; OK
+            </div>
+          </div>
+          <div className="stand" />
+        </div>
+        <div className="stack">
+          <div className="callout warn">
+            <span className="callout-icon">
+              <Icon name="warn" size={13} stroke={2.2} />
+            </span>
+            <div className="callout-body">
+              <strong>Pick "Always allow from this computer"</strong>, not the plain OK. A
+              one-time accept can drop on a TV reboot and break silently later.
+            </div>
+          </div>
+          <div className="callout info">
+            <span className="callout-icon">
+              <Icon name="info" size={13} stroke={2.2} />
+            </span>
+            <div className="callout-body">
+              <strong>No prompt at all?</strong> The dialog only appears if Developer
+              Options → USB debugging is already on. If you don't see it, debugging is off
+              — enable it and try again.
+            </div>
+          </div>
+          <button className="btn primary lg" onClick={() => go("step4_test")}>
+            I'm ready — send the test
+          </button>
+        </div>
+      </div>
+      <FooterNav go={go} back="step4_model" />
+    </div>
+  );
+}
+
+// ============================================================
+// STEP 3 — Control test
+// ============================================================
+type TestPhase = "ready" | "sending" | "sent";
+
+export function Step4Test({ go, state, set }: ScreenProps) {
+  const [phase, setPhase] = useState<TestPhase>("ready");
+  useEffect(() => {
+    if (phase === "sending") {
+      const t = setTimeout(() => setPhase("sent"), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [phase]);
+
+  const checks: DiagCheck[] =
+    phase === "sending"
+      ? [
+          { status: "pass", label: "ADB connected to 10.0.1.51:5555", detail: "RSA pairing accepted" },
+          { status: "run",  label: "Send KEYCODE_VOLUME_MUTE",        detail: "test command (no input change)" },
+          { status: "pending", label: "Confirm with you",             detail: "waiting for you" },
+        ]
+      : phase === "sent"
+        ? [
+            { status: "pass", label: "ADB connected to 10.0.1.51:5555", detail: "RSA pairing accepted" },
+            { status: "pass", label: "Send KEYCODE_VOLUME_MUTE",        detail: "command transmitted · 124 ms" },
+            { status: "run",  label: "Did your TV mute / unmute?",      detail: "waiting for your answer" },
+          ]
+        : [
+            { status: "pending", label: "ADB connected to 10.0.1.51:5555", detail: "" },
+            { status: "pending", label: "Send KEYCODE_VOLUME_MUTE",        detail: "" },
+            { status: "pending", label: "Confirm with you",                detail: "" },
+          ];
+
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">Can we control your TV?</h1>
+        <p className="screen-subtitle">
+          Quick test — we'll send a mute blip. No inputs change, no OPPO wake. Just
+          answers one question: <em>can we drive this TV at all?</em>
+        </p>
+      </div>
+      <div className="grid-2" style={{ alignItems: "start" }}>
+        <div className="stack">
+          <DiagLog
+            title="Basic control test"
+            checks={checks}
+            footer={
+              phase === "ready" ? (
+                <span className="muted">Click "Send test signal" when you're ready.</span>
+              ) : phase === "sending" ? (
+                <>Listen for the mute click or watch the on-screen indicator.</>
+              ) : (
+                <strong>Did your TV react?</strong>
+              )
+            }
+            footerKind={phase === "sent" ? "success" : ""}
+          />
+          {phase === "ready" && (
+            <button className="btn primary lg" onClick={() => setPhase("sending")}>
+              <Icon name="play" size={14} /> Send test signal
+            </button>
+          )}
+          {phase === "sent" && (
+            <div className="row" style={{ gap: 10 }}>
+              <button
+                className="btn primary lg"
+                onClick={() => {
+                  set({ tvVerified: true });
+                  go("step5_intro");
+                }}
+              >
+                <Icon name="check" size={14} /> Yes — it reacted
+              </button>
+              <button className="btn outline" onClick={() => go("step4_fail")}>
+                No
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="tv-mockup">
+          <div className="tv-mockup-screen">
+            {phase === "sending" ? (
+              <>
+                <div className="tv-mockup-text bright">🔇 MUTE</div>
+                <div className="tv-mockup-text" style={{ fontSize: 10 }}>
+                  sent · {state.tvModel || "your TV"}
+                </div>
+              </>
+            ) : phase === "sent" ? (
+              <>
+                <div className="tv-mockup-text bright">— check your TV —</div>
+                <div className="tv-mockup-text">did you hear it?</div>
+              </>
+            ) : (
+              <>
+                <div className="tv-mockup-text">TV idle</div>
+                <div className="tv-mockup-text" style={{ fontSize: 10 }}>
+                  {state.tvModel || "—"}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="stand" />
+        </div>
+      </div>
+      <FooterNav go={go} back="step4_adb_warn" />
+    </div>
+  );
+}
+
+// ============================================================
+// STEP 3 — Test failed
+// ============================================================
+export function Step4Fail({ go, set }: ScreenProps) {
+  return (
+    <div className="screen">
+      <div className="screen-header">
+        <h1 className="screen-title">Let's figure out why.</h1>
+        <p className="screen-subtitle">
+          An unsupported TV never ends the wizard — even if we can't drive it, you'll
+          land on manual switching.
+        </p>
+      </div>
+      <div className="stack">
+        <DiagnoseTile
+          go={go}
+          icon="plug"
+          title="Pairing wasn't accepted / debugging off"
+          desc="Most common. Re-check the on-TV prompt, or enable Developer Options → USB debugging."
+          action="Retry the test"
+          target="step4_adb_warn"
+        />
+        <DiagnoseTile
+          go={go}
+          icon="network"
+          title="Connected, but the command did nothing"
+          desc="ADB connected fine but the TV ignored the keycode. We'll flag this and use a fallback for HDMI input later."
+          action="Flag as 'input-finding deferred'"
+          target="step5_intro"
+          tag="advanced"
+          onClick={() => set({ tvAdbWeak: true, tvVerified: true })}
+        />
+        <DiagnoseTile
+          go={go}
+          icon="cross"
+          title="Nothing reached the TV at all"
+          desc="Wrong IP, wrong subnet, or guest-WiFi / VLAN split. Try a different backend, or fall back to manual switching."
+          action="Drop to manual switching"
+          target="step5_intro"
+          onClick={() => set({ tvManualSwitch: true, tvVerified: true })}
+        />
+      </div>
+      <FooterNav go={go} back="step4_test" />
+    </div>
+  );
+}
+
+type DiagnoseTileProps = {
+  go: (id: ScreenId) => void;
+  icon: IconName;
+  title: string;
+  desc: string;
+  action: string;
+  target: ScreenId;
+  tag?: string;
+  onClick?: () => void;
+};
+
+function DiagnoseTile({ go, icon, title, desc, action, target, tag, onClick }: DiagnoseTileProps) {
+  return (
+    <button
+      className="tile"
+      onClick={() => {
+        if (onClick) onClick();
+        go(target);
+      }}
+    >
+      <div className="tile-icon">
+        <Icon name={icon} size={20} />
+      </div>
+      <div className="tile-body">
+        <div className="tile-title">
+          {title} {tag && <span className="tile-badge advanced">{tag}</span>}
+        </div>
+        <div className="tile-desc">{desc}</div>
+      </div>
+      <span className="chip accent">
+        {action} <Icon name="chevR" size={11} />
+      </span>
+    </button>
+  );
+}
+

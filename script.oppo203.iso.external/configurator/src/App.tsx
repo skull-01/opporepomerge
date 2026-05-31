@@ -24,17 +24,18 @@ import { Step0Chain } from "./screens/Step0Chain";
 import { Step0Exit } from "./screens/Step0Exit";
 import { Step1Intro, Step1TierA, Step1TierB, Step1TierC } from "./screens/step1";
 import { Step2Brand, Step2Test, Step2Fail } from "./screens/step2";
+import { Step3Mode } from "./screens/step3";
 import {
-  Step3Brand,
-  Step3Model,
-  Step3NotFound,
-  Step3Probe,
-  Step3AdbWarn,
-  Step3Test,
-  Step3Fail,
-} from "./screens/step3";
-import { Step4Intro, Step4Ask, Step4Fallback, Step4Done } from "./screens/step4";
-import { Step5Ask, Step5Brand, Step5Model } from "./screens/step5";
+  Step4Brand,
+  Step4Model,
+  Step4NotFound,
+  Step4Probe,
+  Step4AdbWarn,
+  Step4Test,
+  Step4Fail,
+} from "./screens/step4";
+import { Step5Intro, Step5Ask, Step5Fallback, Step5Done } from "./screens/step5";
+import { Step6Ask, Step6Brand, Step6Model } from "./screens/step6";
 import { TestSetup, TestConfirm, TestSuccess } from "./screens/test";
 import type { ScreenProps } from "./screens/types";
 
@@ -53,20 +54,21 @@ const SCREEN_RENDERERS: Record<ScreenId, (props: ScreenProps) => JSX.Element> = 
   step2_brand: Step2Brand,
   step2_test: Step2Test,
   step2_fail: Step2Fail,
-  step3_brand: Step3Brand,
-  step3_model: Step3Model,
-  step3_notfound: Step3NotFound,
-  step3_probe: Step3Probe,
-  step3_adb_warn: Step3AdbWarn,
-  step3_test: Step3Test,
-  step3_fail: Step3Fail,
-  step4_intro: Step4Intro,
-  step4_ask: Step4Ask,
-  step4_fallback: Step4Fallback,
-  step4_done: Step4Done,
+  step3_mode: Step3Mode,
+  step4_brand: Step4Brand,
+  step4_model: Step4Model,
+  step4_notfound: Step4NotFound,
+  step4_probe: Step4Probe,
+  step4_adb_warn: Step4AdbWarn,
+  step4_test: Step4Test,
+  step4_fail: Step4Fail,
+  step5_intro: Step5Intro,
   step5_ask: Step5Ask,
-  step5_brand: Step5Brand,
-  step5_model: Step5Model,
+  step5_fallback: Step5Fallback,
+  step5_done: Step5Done,
+  step6_ask: Step6Ask,
+  step6_brand: Step6Brand,
+  step6_model: Step6Model,
   test_setup: TestSetup,
   test_confirm: TestConfirm,
   test_success: TestSuccess,

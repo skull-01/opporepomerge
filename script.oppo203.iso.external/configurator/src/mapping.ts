@@ -72,7 +72,7 @@ export function avrAddonBackend(dbBackend: AvrBackend | null, brand: string | nu
 }
 
 /**
- * AVR control settings, emitted only when the user actively picked a receiver in Step 5 — so
+ * AVR control settings, emitted only when the user actively picked a receiver in Step 6 — so
  * skipping the optional step never disturbs an existing add-on AVR config. `avr_control_enabled`
  * is set true only when the chosen driver has every field it needs to actually run:
  *   - native non-Sony drivers (Denon/Marantz, Yamaha, Onkyo/Integra, Pioneer): host + player input;
@@ -111,7 +111,7 @@ function avrSettings(state: WizardState): AddonSettings {
   // player input on handoff, and restores the Kodi input on exit. The add-on reads these
   // (avr_control.py: avr_settings_summary / validate_avr_settings); we only emit them when
   // control is actually enabled. The restore target is the receiver input the Kodi box is
-  // plugged into, captured in Step 5 (avrKodiInput) - distinct from kodiInput, which is the
+  // plugged into, captured in Step 6 (avrKodiInput) - distinct from kodiInput, which is the
   // TV's HDMI input used by the TV-chain switcher. A blank avrKodiInput emits no restore
   // input, which the add-on treats as a non-fatal skip (avr_sequence.py). Native (non-Sony)
   // drivers only; Sony returned above.

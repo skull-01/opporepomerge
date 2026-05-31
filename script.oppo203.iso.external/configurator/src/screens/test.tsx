@@ -258,7 +258,7 @@ export function TestSetup({ go, state, set }: ScreenProps) {
 
       <FooterNav
         go={go}
-        back="step5_ask"
+        back="step6_ask"
         next={nextScreen}
         nextLabel={nextLabel}
       />
@@ -335,7 +335,7 @@ export function TestConfirm({ go }: ScreenProps) {
       : answers.play === false
         ? "step2_test"
         : answers.switch === false
-          ? "step3_test"
+          ? "step4_test"
           : "step1_intro";
   const nextLabel = !allAnswered
     ? undefined
@@ -344,7 +344,7 @@ export function TestConfirm({ go }: ScreenProps) {
       : answers.play === false
         ? "Fix routing → Step 2"
         : answers.switch === false
-          ? "Fix TV → Step 3"
+          ? "Fix TV → Step 4"
           : "Fix keymap → Step 1";
 
   return (
@@ -367,7 +367,7 @@ export function TestConfirm({ go }: ScreenProps) {
         <Question
           n="2"
           label="Did your TV switch to the player's input?"
-          owner="Step 3 · TV / Step 4 input capture"
+          owner="Step 4 · TV / Step 5 input capture"
           value={answers.switch}
           onChange={(v) => setAnswers({ ...answers, switch: v })}
         />

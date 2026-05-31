@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chainNodeIds, isAvrChain, step4NextScreen } from "./steps";
+import { chainNodeIds, isAvrChain, step5NextScreen } from "./steps";
 
 describe("isAvrChain", () => {
   it("is true only for the AVR chain", () => {
@@ -29,10 +29,10 @@ describe("chainNodeIds", () => {
   });
 });
 
-describe("step4NextScreen", () => {
+describe("step5NextScreen", () => {
   it("hands off to the receiver step in both chains (the AVR chain leads with it)", () => {
-    expect(step4NextScreen("kodi_avr_tv_player")).toBe("step5_ask");
-    expect(step4NextScreen("kodi_tv_player")).toBe("step5_ask");
-    expect(step4NextScreen(null)).toBe("step5_ask");
+    expect(step5NextScreen("kodi_avr_tv_player")).toBe("step6_ask");
+    expect(step5NextScreen("kodi_tv_player")).toBe("step6_ask");
+    expect(step5NextScreen(null)).toBe("step6_ask");
   });
 });
