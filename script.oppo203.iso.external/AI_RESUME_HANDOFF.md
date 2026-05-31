@@ -5,7 +5,7 @@ repo. Read this file **first**. Treat live code + `git`/`gh` output as authorita
 file is the map and the memory.
 
 **Repo:** `github.com/skull-01/script.oppo203.iso.external` · **Default branch:** `main`
-**Last sync:** `main`@`9419bea` + this 2026-05-31 db-growth+debug-view EOD · **2026-05-31 (EOD, latest) — DB growth + developer debug view (configurator):** operator picked `resume` → Configurator theme 1, then directed AVR-DB growth, TV-DB growth, a planned **developer debug view**, and a final **merge all**. **4 configurator PRs merged to `main`** — [#139](https://github.com/skull-01/script.oppo203.iso.external/pull/139) dedicated Step-5 receiver **restore-input field** (new `state.avrKodiInput` → `avr_restore_input`, replacing the TV `kodiInput` reuse; blank ⇒ non-fatal skip; `type="string"` so no add-on change), [#140](https://github.com/skull-01/script.oppo203.iso.external/pull/140) **AVR DB +15** `validated:false` 2026 model rows (`db_version`→`2026.05.31-avr-2018-2026`), [#141](https://github.com/skull-01/script.oppo203.iso.external/pull/141) **TV DB +28** `validated:false` 2026 rows **+ a NEW `tv_db_consistency.test.ts`** two-copy guard the TV DB lacked, [#142](https://github.com/skull-01/script.oppo203.iso.external/pull/142) **developer debug view** (`src/debug/log.ts` redacting ring buffer + `src/ipc.ts` `invoke` wrapper migrating all call sites + global docked `DebugPanel.tsx`; **Ctrl+Shift+D**, off by default; secrets redacted). All DB rows `validated:false` (**operator fact-check**). Merged locally (`--no-ff`); checklist Phase-A rows union-merged; one `step5.tsx` import conflict resolved (keep `isAvrChain` + route `invoke` via `../ipc`). **Post-merge `main`@`9419bea` green (software-only):** configurator `tsc --noEmit` + `vite build` + **146 vitest**; **addon untouched** (configurator + docs only) → stays **976/3**. **No add-on code change.** **0 open PRs.** See §3b. · **Prior — 2026-05-31 (EOD) — AVR follow-ups + two-chains session (configurator):** operator picked `resume` → **AVR follow-ups**, then directed **merge everything** and a new **two-playback-chains** theme. **8 configurator PRs merged to `main` this session** — AVR follow-ups: [#134](https://github.com/skull-01/script.oppo203.iso.external/pull/134) `avr_db_consistency.test.ts` (pins the two `avr-models.json` copies byte-identical + schema invariants — closes the no-guard gap), [#135](https://github.com/skull-01/script.oppo203.iso.external/pull/135) Step-5 receiver **reachability probe** (reuses the generic `tv_port_probe`; Denon 23 / Yamaha 80 / Onkyo·Pioneer 60128; Sony+custom show no probe). Then **merge everything** landed the 5 prior addon robustness drafts **#129–#133** to `main` (the 7 `type:bug` fixes — `ruff format` CI red now clean). Then the **two-playback-chains** theme: [#136](https://github.com/skull-01/script.oppo203.iso.external/pull/136) Step-0 chain picker + `state.topology` (`kodi_tv_player` | `kodi_avr_tv_player`), [#137](https://github.com/skull-01/script.oppo203.iso.external/pull/137) topology-aware flow + chain viz (Receiver node; Step-4 receiver wording; pure helpers `isAvrChain`/`chainNodeIds`/`step4NextScreen`), [#138](https://github.com/skull-01/script.oppo203.iso.external/pull/138) mapping writes the AVR-switcher settings (`avr_power_on_enabled` + `avr_restore_enabled`/`avr_restore_input` from the Step-4 Kodi input; `tv_switching_enabled` gated off in the AVR chain). **Soft default** (null topology ⇒ TV chain; both chains keep escape hatches). **Software-verified only** — configurator `tsc -b` + `vite build` + **123 vitest** green; addon **976 pass / 3 skip**, ruff check + `ruff format --check` clean. **No add-on code change** — every emitted setting already exists in `settings.xml` and is read by `avr_control.py`. Phase-A/C rows added per PR; **operator closes the 7 bugs after Phase-C** (PRs are merged but the issues stay OPEN per only-operator-closes). **0 open PRs.** See §3b. · **Prior — 2026-05-31 (EOD) — naming-consistency + draft-merge session:** merged **9 PRs** to `main` — configurator: Sony brand-badge fix ([#120](https://github.com/skull-01/script.oppo203.iso.external/pull/120)), v0.5.0 Step-5 verification checklist entry ([#121](https://github.com/skull-01/script.oppo203.iso.external/pull/121)), **Sony AVR auto-enable** ([#122](https://github.com/skull-01/script.oppo203.iso.external/pull/122) — captures PSK+ack+input-URI so Sony enables like the other backends), and a **naming-consistency sweep** (`oppoInput`→`playerInput` [#124](https://github.com/skull-01/script.oppo203.iso.external/pull/124); `players.json`→`players-models.json` [#125](https://github.com/skull-01/script.oppo203.iso.external/pull/125); `CONFIGURATOR_HANDOFF` map [#127](https://github.com/skull-01/script.oppo203.iso.external/pull/127); new `docs/NAMING_CONVENTIONS.md` + historical flags [#128](https://github.com/skull-01/script.oppo203.iso.external/pull/128)); addon: **TV backend modules renamed `tv_*`** for parity with `avr_` ([#126](https://github.com/skull-01/script.oppo203.iso.external/pull/126)), and the two prior-session drafts landed — **read-only OPPO status probe** ([#118](https://github.com/skull-01/script.oppo203.iso.external/pull/118)) + **functional-flow diagrams** ([#119](https://github.com/skull-01/script.oppo203.iso.external/pull/119)). Filed `type:bug` **[#123](https://github.com/skull-01/script.oppo203.iso.external/issues/123)** (pre-existing `ruff format` drift on 3 test files — the only CI "Lint and format" red). **0 open PRs.** · **Configurator `v0.5.0` shipped + published as the repo's GitHub "Latest"** — an **AVR (AV receiver) feature in two releases**: `v0.4.0` added an **AVR control database** (224 AV-receiver/processor **model families** 2018–2025 across 10 brands — Denon/Marantz/Yamaha/Onkyo/Pioneer/Integra/Sony/Anthem/Arcam/NAD — schema v2, the TV-DB twin) + a typed `avrdb.ts` loader + an **optional Step 5 (AV Receiver)** picker + 18 vitest ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`); then `v0.5.0` **wired Step 5 into the add-on `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum: Pioneer→`pioneer_eiscp`, Sony→`sony_audio_api` configured-but-off, custom_command no-op; conservative `avr_control_enabled`; Receiver-control card captures IP + player input) for true TV/Player parity ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`). Published **`configurator-v0.5.0`** (MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256, unsigned, software-verified only; published assets re-downloaded byte-identical). **No add-on code change** — like the TV DB, the AVR DB isn't loaded by the add-on at runtime, and the add-on already shipped the AVR settings + guarded drivers → no add-on release. Repo-wide "Latest" sits on `configurator-v0.5.0` (flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`8c35f28`:** addon **963 passed, 3 skipped** (coverage 99%; mypy `--gate` 49/0; ruff check clean); configurator **103 vitest + `tsc -b` + `npm run build` OK** (one known CI red: pre-existing `ruff format` drift on 3 test files, tracked by #123) · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
+**Last sync:** `main`@`1a1aae6` + this 2026-06-01 SVM3 four-option EOD · **2026-06-01 (EOD, latest) — SVM3 four-option playback architecture: planned + built BOTH sides as 7 stacked DRAFT PRs (none merged; `main` code unchanged at `1a1aae6`).** Operator handed in `FOUR_OPTION_PLAYBACK_ARCHITECTURE_SVM3_BUILD_PLAN_BUNDLE.zip`, approved a canonical-format plan, then directed "complete full session A" + "complete session B." **Addon Session A** (review/merge #143→#144→#145): `playback_monitor_mode` + four-option preset (`settings_reader`, reader-only) [[#143](https://github.com/skull-01/script.oppo203.iso.external/pull/143) `cbae76e`]; `OppoSvm3PlaybackMonitor` — a `#SVM 3` verbose-mode monitor that confirms playback/progress from `@UPL`/`@UTC` [[#144](https://github.com/skull-01/script.oppo203.iso.external/pull/144) `3b63054`]; shared `run_playback_session()` both entry points delegate to + split-truth `oppo203iso-status.json` [[#145](https://github.com/skull-01/script.oppo203.iso.external/pull/145) `d5ba5ab`]. Gate up to **1036/3**, coverage 99% (new modules 100%), mypy `--strict` 51/0, ruff clean. **Configurator Session B** (review/merge #146→#147→#148→#149): new **Step 3 "Playback mode"** + renumber TV/HDMI/AVR→4/5/6 [[#146](https://github.com/skull-01/script.oppo203.iso.external/pull/146) `df4012c`]; SVM3-vs-Legacy choice emitting the consistent `playback_architecture(_preset)` + `playback_monitor_mode` triple [[#147](https://github.com/skull-01/script.oppo203.iso.external/pull/147) `5d24d5f`]; SVM3 capability probe in the player test (reuses `oppo_query`, no Rust change) [[#148](https://github.com/skull-01/script.oppo203.iso.external/pull/148) `27c01d2`]; final-test status split + SVM3 honesty note [[#149](https://github.com/skull-01/script.oppo203.iso.external/pull/149) `2dfa86c`]. `tsc -b` + up to **155 vitest** + `vite build` green. **No code on `main`** (all draft); **operator to file 3 `area:addon` ENH issues**; the new settings key was authorized in-session; SVM3 **not** hardware-validated. Phase A/C rows for all 7 in the checklist. See §3a / §3b. · **Prior — 2026-05-31 (EOD) — DB growth + developer debug view (configurator):** operator picked `resume` → Configurator theme 1, then directed AVR-DB growth, TV-DB growth, a planned **developer debug view**, and a final **merge all**. **4 configurator PRs merged to `main`** — [#139](https://github.com/skull-01/script.oppo203.iso.external/pull/139) dedicated Step-5 receiver **restore-input field** (new `state.avrKodiInput` → `avr_restore_input`, replacing the TV `kodiInput` reuse; blank ⇒ non-fatal skip; `type="string"` so no add-on change), [#140](https://github.com/skull-01/script.oppo203.iso.external/pull/140) **AVR DB +15** `validated:false` 2026 model rows (`db_version`→`2026.05.31-avr-2018-2026`), [#141](https://github.com/skull-01/script.oppo203.iso.external/pull/141) **TV DB +28** `validated:false` 2026 rows **+ a NEW `tv_db_consistency.test.ts`** two-copy guard the TV DB lacked, [#142](https://github.com/skull-01/script.oppo203.iso.external/pull/142) **developer debug view** (`src/debug/log.ts` redacting ring buffer + `src/ipc.ts` `invoke` wrapper migrating all call sites + global docked `DebugPanel.tsx`; **Ctrl+Shift+D**, off by default; secrets redacted). All DB rows `validated:false` (**operator fact-check**). Merged locally (`--no-ff`); checklist Phase-A rows union-merged; one `step5.tsx` import conflict resolved (keep `isAvrChain` + route `invoke` via `../ipc`). **Post-merge `main`@`9419bea` green (software-only):** configurator `tsc --noEmit` + `vite build` + **146 vitest**; **addon untouched** (configurator + docs only) → stays **976/3**. **No add-on code change.** **0 open PRs.** See §3b. · **Prior — 2026-05-31 (EOD) — AVR follow-ups + two-chains session (configurator):** operator picked `resume` → **AVR follow-ups**, then directed **merge everything** and a new **two-playback-chains** theme. **8 configurator PRs merged to `main` this session** — AVR follow-ups: [#134](https://github.com/skull-01/script.oppo203.iso.external/pull/134) `avr_db_consistency.test.ts` (pins the two `avr-models.json` copies byte-identical + schema invariants — closes the no-guard gap), [#135](https://github.com/skull-01/script.oppo203.iso.external/pull/135) Step-5 receiver **reachability probe** (reuses the generic `tv_port_probe`; Denon 23 / Yamaha 80 / Onkyo·Pioneer 60128; Sony+custom show no probe). Then **merge everything** landed the 5 prior addon robustness drafts **#129–#133** to `main` (the 7 `type:bug` fixes — `ruff format` CI red now clean). Then the **two-playback-chains** theme: [#136](https://github.com/skull-01/script.oppo203.iso.external/pull/136) Step-0 chain picker + `state.topology` (`kodi_tv_player` | `kodi_avr_tv_player`), [#137](https://github.com/skull-01/script.oppo203.iso.external/pull/137) topology-aware flow + chain viz (Receiver node; Step-4 receiver wording; pure helpers `isAvrChain`/`chainNodeIds`/`step4NextScreen`), [#138](https://github.com/skull-01/script.oppo203.iso.external/pull/138) mapping writes the AVR-switcher settings (`avr_power_on_enabled` + `avr_restore_enabled`/`avr_restore_input` from the Step-4 Kodi input; `tv_switching_enabled` gated off in the AVR chain). **Soft default** (null topology ⇒ TV chain; both chains keep escape hatches). **Software-verified only** — configurator `tsc -b` + `vite build` + **123 vitest** green; addon **976 pass / 3 skip**, ruff check + `ruff format --check` clean. **No add-on code change** — every emitted setting already exists in `settings.xml` and is read by `avr_control.py`. Phase-A/C rows added per PR; **operator closes the 7 bugs after Phase-C** (PRs are merged but the issues stay OPEN per only-operator-closes). **0 open PRs.** See §3b. · **Prior — 2026-05-31 (EOD) — naming-consistency + draft-merge session:** merged **9 PRs** to `main` — configurator: Sony brand-badge fix ([#120](https://github.com/skull-01/script.oppo203.iso.external/pull/120)), v0.5.0 Step-5 verification checklist entry ([#121](https://github.com/skull-01/script.oppo203.iso.external/pull/121)), **Sony AVR auto-enable** ([#122](https://github.com/skull-01/script.oppo203.iso.external/pull/122) — captures PSK+ack+input-URI so Sony enables like the other backends), and a **naming-consistency sweep** (`oppoInput`→`playerInput` [#124](https://github.com/skull-01/script.oppo203.iso.external/pull/124); `players.json`→`players-models.json` [#125](https://github.com/skull-01/script.oppo203.iso.external/pull/125); `CONFIGURATOR_HANDOFF` map [#127](https://github.com/skull-01/script.oppo203.iso.external/pull/127); new `docs/NAMING_CONVENTIONS.md` + historical flags [#128](https://github.com/skull-01/script.oppo203.iso.external/pull/128)); addon: **TV backend modules renamed `tv_*`** for parity with `avr_` ([#126](https://github.com/skull-01/script.oppo203.iso.external/pull/126)), and the two prior-session drafts landed — **read-only OPPO status probe** ([#118](https://github.com/skull-01/script.oppo203.iso.external/pull/118)) + **functional-flow diagrams** ([#119](https://github.com/skull-01/script.oppo203.iso.external/pull/119)). Filed `type:bug` **[#123](https://github.com/skull-01/script.oppo203.iso.external/issues/123)** (pre-existing `ruff format` drift on 3 test files — the only CI "Lint and format" red). **0 open PRs.** · **Configurator `v0.5.0` shipped + published as the repo's GitHub "Latest"** — an **AVR (AV receiver) feature in two releases**: `v0.4.0` added an **AVR control database** (224 AV-receiver/processor **model families** 2018–2025 across 10 brands — Denon/Marantz/Yamaha/Onkyo/Pioneer/Integra/Sony/Anthem/Arcam/NAD — schema v2, the TV-DB twin) + a typed `avrdb.ts` loader + an **optional Step 5 (AV Receiver)** picker + 18 vitest ([PR #109](https://github.com/skull-01/script.oppo203.iso.external/pull/109) merge `6251cdf`); then `v0.5.0` **wired Step 5 into the add-on `settings.xml`** (`avrAddonBackend()` maps DB→add-on enum: Pioneer→`pioneer_eiscp`, Sony→`sony_audio_api` configured-but-off, custom_command no-op; conservative `avr_control_enabled`; Receiver-control card captures IP + player input) for true TV/Player parity ([PR #110](https://github.com/skull-01/script.oppo203.iso.external/pull/110) merge `bc3ad0e`). Published **`configurator-v0.5.0`** (MSI 3,174,400 B + NSIS 2,071,403 B + SHA-256, unsigned, software-verified only; published assets re-downloaded byte-identical). **No add-on code change** — like the TV DB, the AVR DB isn't loaded by the add-on at runtime, and the add-on already shipped the AVR settings + guarded drivers → no add-on release. Repo-wide "Latest" sits on `configurator-v0.5.0` (flip to add-on `v2.9.13` with `gh release edit v2.9.13 --latest` if desired). · **Tests on `main`@`8c35f28`:** addon **963 passed, 3 skipped** (coverage 99%; mypy `--gate` 49/0; ruff check clean); configurator **103 vitest + `tsc -b` + `npm run build` OK** (one known CI red: pre-existing `ruff format` drift on 3 test files, tracked by #123) · **Still pending (prior session, untouched):** teaching-commentary Step 2 (`external_player.py`, comments-only) checkpointed as `wip:` `62b22eb` on branch `claude/teaching-comments-extplayer-r3k8m2x9` (pushed, **not** on `main`), awaiting the operator's Step-2 style sign-off (§3a/§3c)
 **Latest release:** add-on `v2.9.13`; configurator **`configurator-v0.5.0`** (now holds the
 repo-wide GitHub **"Latest"** badge) — **wires the AVR Step 5 selection into the add-on's
 `settings.xml`** (`avr_backend`/`avr_host`/`avr_player_input` + conservative `avr_control_enabled`;
@@ -177,11 +177,42 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
-**As of 2026-05-31 (EOD, latest — `merge everything` landed the robustness drafts).** **Clean
-stopping point — no addon work in flight; `main`@`2ae4b16`; 0 open PRs.** This session's **`merge
-everything`** directive merged the prior session's **5 robustness draft PRs (#129–#133)** to `main`,
-fixing **all 7 open `type:bug` issues**. Each is now ON `main` but its **issue stays OPEN** awaiting
-operator Phase-C + close (only-operator-closes):
+**As of 2026-06-01 (EOD — SVM3 four-option playback, addon side / "Session A").** **Clean stopping
+point — no addon work in flight; `main` unchanged (still `1a1aae6`); the new work is 3 stacked DRAFT
+PRs, not merged.** The operator approved the SVM3 / four-option build plan (handed in as
+`FOUR_OPTION_PLAYBACK_ARCHITECTURE_SVM3_BUILD_PLAN_BUNDLE.zip`) and directed "complete full session A."
+Three stacked addon draft PRs — review/merge **in order #143 → #144 → #145**:
+
+- **[#143](https://github.com/skull-01/script.oppo203.iso.external/pull/143) (`cbae76e`)** — adds the
+  monitor axis `playback_monitor_mode` (`legacy`|`svm3`, default legacy) + `architecture_preset()` /
+  `normalize_architecture()` in `settings_reader.py`. The combined `playback_architecture_preset` is
+  configurator-written + source-of-truth, derived from the legacy fields when absent (**no add-on
+  default**, so it can't mask a `service_interception` install). Reader-only — mirrors the existing
+  `playback_architecture` pattern (no `settings.xml`/`strings.po` change). `tests/test_architecture_presets.py`
+  (18). **No runtime change.**
+- **[#144](https://github.com/skull-01/script.oppo203.iso.external/pull/144) (`3b63054`)** — new
+  `resources/lib/oppo/playback_monitor_svm3.py` (`OppoSvm3PlaybackMonitor`): a persistent `#SVM 3`
+  client extending `oppo_tcp_client` — `#QVM`+restore, `@UPL PLAY`→confirmed_playback, advancing
+  `@UTC`→confirmed_progress, bounded ring buffer + summary logging. Code-default tuning (no new
+  persistent settings); not yet wired. `tests/test_svm3_playback_monitor.py` (32) → module **100%**.
+- **[#145](https://github.com/skull-01/script.oppo203.iso.external/pull/145) (`d5ba5ab`)** — new
+  `resources/lib/kodi/playback_session.py` `run_playback_session()`: the single sequence both
+  `external_player.main()` and `service._run_interception()` now delegate to; monitor branch =
+  legacy (`hold_playback`) | svm3 (the monitor, **falling back to legacy on connect failure**);
+  writes a split-truth `oppo203iso-status.json`. `tests/test_playback_session_modes.py` (10).
+
+Each PR's gate was green on its branch (pytest up to **1036 pass / 3 skip**, coverage **99%** — both
+new modules 100%, mypy `--strict` 51/0, ruff clean). **Operator to file 3 `area:addon` ENH issues**
+(monitor_mode+preset; SVM3 monitor — relates to **#113** verify-played; shared session engine); the
+new settings key was authorized in-session. Phase A/C rows for all three are in
+`docs/MANUAL_VERIFICATION_CHECKLIST.md`. **Pairs with configurator Session B PRs #146–#149 (§3b)**,
+which seed `playback_monitor_mode` + `playback_architecture_preset`. **Heads-up:** #145 rewrote
+`external_player.main()`, so the paused teaching-commentary wip branch (comments-only) needs a rebase
+before resuming.
+
+**Prior — robustness drafts merged (still the `main` baseline):** the earlier `merge everything`
+session merged the 5 robustness draft PRs (#129–#133) to `main`, fixing all 7 open `type:bug` issues;
+each is ON `main` but its **issue stays OPEN** awaiting operator Phase-C + close (only-operator-closes):
 
 - **[#129](https://github.com/skull-01/script.oppo203.iso.external/pull/129) (`396634c`)** —
   `hold_playback` bounded holds + verbose_push→`_hold_tcp_qpl_poll` fallback (#112/#115/#116);
@@ -210,14 +241,15 @@ sign-off. **Heads-up:** #129 (now merged) changed `external_player.py` *logic*; 
 vs logic). Do **not** push/merge it unprompted.
 
 **Candidate themes for next addon session** (pick one, per §4):
-1. **Phase-C the 7 merged bug fixes (#111/#112/#114/#115/#116/#117/#123)** — operator runs the
-   on-device steps in the checklist, confirms the judgment constants, closes the 7 issues. No agent
-   code — fastest path to a clean backlog. ← resume here.
-2. **#113 verify-played follow-through** — operator runs the merged status probe on real hardware
-   (Phase C), pastes `oppo-status-probe.txt`, then wire #113 `verify_playback_started()` into
-   `fast_start` from the real `#QPL`/`#QTE`/`#QFN` fields.
+1. **Review + merge the SVM3 stack (#143 → #144 → #145)** — review each draft in order and merge
+   (or `merge everything` in order); file the 3 ENH issues; then Phase-C the SVM3 modes on real
+   hardware (the new checklist rows: `#QVM`/`#SVM 3` accepted, `@UPL`/`@UTC` confirm playback, the
+   verbose mode restored on exit). ← resume here.
+2. **Phase-C the 7 merged bug fixes (#111/#112/#114/#115/#116/#117/#123)** + **#113 verify-played**
+   (SVM3 is now its richer realization) — operator on-device steps; close the issues. No agent code.
 3. **Teaching-commentary pass (cross-area, PAUSED — awaiting Step-2 sign-off)** — reproduce §3c's
-   verbatim briefing EXACTLY when proposing (operator directive); rebase the wip branch first.
+   verbatim briefing EXACTLY when proposing (operator directive); **rebase the wip branch first**
+   (#145 changed `external_player.main()`).
 
 ---
 
@@ -289,12 +321,41 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
-**As of 2026-05-31 (EOD, latest — DB-growth + developer-debug-view session).** **Clean
-stopping point — no configurator work in flight, 0 open PRs; everything merged to `main`
-(HEAD `9419bea`).** Operator picked `resume` → Configurator theme 1, then directed three more
-themes and a final **merge all**. **4 configurator PRs merged this session** (PR-only, no tracked
-issues; merged locally `--no-ff`, Phase-A checklist rows union-merged, one `step5.tsx` import
-conflict resolved to keep `isAvrChain` + route `invoke` through `../ipc`):
+**As of 2026-06-01 (EOD — SVM3 four-option wizard, configurator side / "Session B").** **Clean
+stopping point — no configurator work in flight; `main` unchanged (still `1a1aae6`); the new work is
+4 stacked DRAFT PRs, not merged.** Operator directed "complete session B" — the configurator half of
+the SVM3 four-option build. Four stacked configurator draft PRs — review/merge **in order #146 →
+#147 → #148 → #149** (each `base` = the previous):
+
+- **[#146](https://github.com/skull-01/script.oppo203.iso.external/pull/146) (`df4012c`)** — inserts a
+  new **Step 3 "Playback mode"** after Player and **renumbers TV 3→4, HDMI 4→5, AV Receiver 5→6**.
+  Mechanical, behavior-preserving rename: `screens/step3|4|5.tsx`→`step4|5|6.tsx`, `Step3|4|5*`→`Step4|5|6*`,
+  `step3_*/step4_*/step5_*` ScreenIds, `step4NextScreen`→`step5NextScreen`, `steps.ts` maps + `App.tsx`
+  renderers; new placeholder `step3.tsx`; Player routes to `step3_mode`. All step-number display copy +
+  comments updated to the new numbering (AGENTS.md "names match the UI"). **No TV/HDMI/AVR/Player logic changed.**
+- **[#147](https://github.com/skull-01/script.oppo203.iso.external/pull/147) (`5d24d5f`)** — the Step 3
+  screen offers **SVM3** vs **Legacy** (`state.monitorMode`, new `MonitorMode` type, default legacy);
+  `mapping.ts` emits the consistent **triple** `playback_architecture` + `playback_monitor_mode` +
+  derived `playback_architecture_preset` (which addon #143 reads, treating the preset as source of truth).
+  `mapping.test.ts` +5 (four-combo consistency).
+- **[#148](https://github.com/skull-01/script.oppo203.iso.external/pull/148) (`27c01d2`)** — the Step 2
+  player test runs an **SVM3 capability probe** (`#QVM`→`#SVM 3`→restore) reusing `oppo_query` (**no Rust
+  change**); new parsers `parseOppoVerboseMode`/`parseSvm3Accepted` (`probes.ts`, +4); stores
+  `state.svm3Supported` and recommends the matching Step-3 default (svm3 if accepted, else legacy);
+  never gates the power test.
+- **[#149](https://github.com/skull-01/script.oppo203.iso.external/pull/149) (`2dfa86c`)** — the final
+  Playback Test screen reports the four-option pieces **separately** (Kodi route / playback confirmation /
+  TV-AVR) + an honest SVM3 note (confirmed only once the player reports it). Presentational only.
+
+**Software-verified only:** `tsc -b` + `vite build` + **up to 155 vitest** green on each branch (146
+base +5 mapping +4 probes). **No add-on code change** — the configurator emits the keys addon Session A
+(#143/#145) reads. SVM3 stays labelled *recommended for validation / new installs*, not hardware-validated.
+Phase A/C rows for all four are in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. _(The B1 rename obsoleted a
+spawned "fix Step N copy" task chip — that copy was already fixed in #146; the chip is safe to dismiss.)_
+
+**Prior — DB-growth + developer-debug-view session (merged to `main`, `9419bea`):** 4 configurator PRs
+(PR-only, merged locally `--no-ff`, checklist rows union-merged, one `step5.tsx` import conflict resolved
+to keep `isAvrChain` + route `invoke` through `../ipc`):
 
 - **Dedicated Step-5 receiver restore-input field** ([PR #139](https://github.com/skull-01/script.oppo203.iso.external/pull/139), `90bd36b`) — the PR #138
   follow-up: new `state.avrKodiInput`, captured in a Step-5 "Kodi input on the receiver" field (AVR
@@ -327,16 +388,15 @@ DB rows `validated:false` (**operator fact-check**); new behaviors are Phase-A/C
 [[configurator-avr-db-no-consistency-guard]], [[configurator-control-tests-are-mocked]].
 
 **Resume here next (configurator), pick one (per §4):**
-1. **Wire-level debug transcripts (PR #142 PR-3)** — emit `debug-log` events from the Rust commands
-   (`oppo_query` / `tcp_probe` / ssh) for raw sent/received bytes; JS `listen()` merges them into the
-   debug log. The IPC layer already shows command + reply, so this is a depth upgrade.
+1. **Review + merge the SVM3 wizard stack (#146 → #147 → #148 → #149)** — review each draft in order
+   and merge; then Phase-C the new Playback-mode step + the SVM3 probe in the built app, pairing the
+   deploy with addon Session A #143/#145 so the emitted preset/monitor_mode is actually read. ← resume here.
 2. **Fact-check + Phase-C the merged 2026 DB rows** — verify the AVR (#140) + TV (#141)
-   `validated:false` rows against real product data + hardware; especially Hisense platform-by-region,
+   `validated:false` rows against real product data; especially Hisense platform-by-region,
    Integra model-year, and the Yamaha entry-tier network-control caveat.
-3. **Thread `state.topology` into `shell/AppHeader.tsx`** (flagged #138) — small cleanup so the
-   unused alternate header reflects the AVR chain. _(The `tv_port_probe` → `tcp_port_probe` rename
-   flagged in #135 was reviewed 2026-05-31 and **declined** — kept as-is: it's a generic TCP probe
-   but the operator opted not to churn the name. Don't re-raise.)_
+3. **Wire-level debug transcripts (PR #142 PR-3)** — emit `debug-log` events from the Rust commands for
+   raw sent/received bytes. _(The `tv_port_probe`→`tcp_port_probe` rename flagged in #135 stays
+   **declined** — don't re-raise. `state.topology` into `shell/AppHeader.tsx` from #138 is still open.)_
 4. **Install + smoke-test the published `v0.5.0` binary** on a clean Windows machine (operator action).
 
 **Prior — 2026-05-31 (EOD) — AVR follow-ups + two-playback-chains session (5 configurator PRs, all merged).** Two themes shipped, all merged:
@@ -1482,6 +1542,17 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   **No issues opened/closed/retitled → §17a cache unchanged.** All new DB rows `validated:false`
   (operator fact-check) with Phase-A/C rows in the checklist. 3 pre-existing untracked files
   (`.claude/launch.json`, two `*_RECONSTRUCTION.md`) left uncommitted (not agent-made this session).
+- **2026-06-01 (EOD)** — SVM3 four-option playback architecture, **both areas** in one
+  operator-directed session. Unzipped + understood the build-plan bundle, produced a canonical-format
+  plan (Go-gated; decisions locked via AskUserQuestion), then built **Session A** (3 stacked addon
+  draft PRs #143–#145: `playback_monitor_mode`+preset, `OppoSvm3PlaybackMonitor`, shared
+  `run_playback_session()`) and **Session B** (4 stacked configurator draft PRs #146–#149:
+  Playback-mode step + renumber, choice+emit triple, SVM3 probe, final-test status split). **Nothing
+  merged — `main` code unchanged at `1a1aae6`; all 7 PRs are drafts.** Refreshed the header (last
+  sync), §3a, §3b, §19. Memory: added `playercorefactory-two-generators`. **No issues
+  opened/closed/retitled → §17a cache unchanged** (3 `area:addon` ENH issues recommended for the
+  operator to file; new settings key authorized in-session). 3 pre-existing untracked files left
+  uncommitted (not agent-made). Software-verified only; SVM3 **not** hardware-validated.
 
 ---
 
