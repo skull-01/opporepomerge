@@ -787,10 +787,68 @@ fn stop_oppo_live_monitor(monitor: tauri::State<'_, LiveMonitor>) -> Result<(), 
     Ok(())
 }
 
+/// Build the raw HTTP request for one Roku ECP keypress (e.g. an input key like "InputHDMI1").
+/// Mirrors resources/lib/tv/tv_roku_ecp_control.py (POST /keypress/<key> on :8060). The key is
+/// validated alphanumeric so it cannot inject a different request path.
+fn roku_keypress_request(host: &str, key: &str) -> Result<String, String> {
+    if key.is_empty() || !key.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(format!(
+            "invalid Roku key '{key}' (expected an alphanumeric ECP key like InputHDMI1)"
+        ));
+    }
+    Ok(format!(
+        "POST /keypress/{key} HTTP/1.0\r\nHost: {host}:8060\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    ))
+}
+
+/// Switch a Roku TV input by sending one ECP keypress to host:8060, mirroring the add-on's
+/// tv_roku_ecp_control.send_keypress. Returns the HTTP status line on a 200. Software-verified
+/// only -- not hardware-tested against a real Roku TV.
+#[tauri::command]
+fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<String, String> {
+    let request = roku_keypress_request(&host, &key)?;
+    let ms = timeout_ms.unwrap_or(3000);
+    let timeout = Duration::from_millis(ms);
+    let mut stream = connect_timeout(&host, 8060, ms)?;
+    stream.set_read_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    stream.set_write_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
+    let mut data: Vec<u8> = Vec::new();
+    let mut chunk = [0u8; 512];
+    loop {
+        match stream.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(n) => {
+                data.extend_from_slice(&chunk[..n]);
+                if data.contains(&b'\n') || data.len() > 4096 {
+                    break;
+                }
+            }
+            Err(ref e)
+                if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut =>
+            {
+                break
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+    let text = String::from_utf8_lossy(&data);
+    let status = text.lines().next().unwrap_or("").trim().to_string();
+    if status.contains("200") {
+        Ok(status)
+    } else if status.is_empty() {
+        Err("no response from the Roku TV (is the IP correct and ECP enabled?)".into())
+    } else {
+        Err(format!("Roku TV returned: {status}"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, parse_addon_version, parse_verbose_mode, to_hex,
+        classify_frame, extract_zip_into, parse_addon_version, parse_verbose_mode,
+        roku_keypress_request, to_hex,
     };
 
     #[test]
@@ -865,6 +923,21 @@ mod tests {
             .is_file());
         let _ = std::fs::remove_dir_all(&tmp);
     }
+
+    #[test]
+    fn roku_keypress_request_builds_a_valid_post_for_an_input_key() {
+        let req = roku_keypress_request("10.0.1.55", "InputHDMI1").unwrap();
+        assert!(req.starts_with("POST /keypress/InputHDMI1 HTTP/1.0\r\n"));
+        assert!(req.contains("Host: 10.0.1.55:8060\r\n"));
+        assert!(req.ends_with("\r\n\r\n"));
+    }
+
+    #[test]
+    fn roku_keypress_request_rejects_path_injection_and_junk() {
+        assert!(roku_keypress_request("10.0.1.55", "../launch/dev").is_err());
+        assert!(roku_keypress_request("10.0.1.55", "Input HDMI1").is_err());
+        assert!(roku_keypress_request("10.0.1.55", "").is_err());
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -887,6 +960,7 @@ pub fn run() {
             deploy_ssh,
             bundled_addon_info,
             install_addon,
+            tv_switch_roku,
             start_oppo_live_monitor,
             stop_oppo_live_monitor
         ])
