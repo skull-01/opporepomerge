@@ -180,6 +180,7 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
 
   if (state.tvBackend) {
     out.tv_backend = state.tvBackend;
+    if (state.tvIp) out.tv_ip = state.tvIp;
     Object.assign(out, hdmiInputSettings(state.tvBackend, state.playerInput, state.kodiInput));
   }
 

@@ -7,11 +7,26 @@ function make(patch: Partial<WizardState>): WizardState {
 }
 
 describe("livenessTargets", () => {
-  it("always checks the Kodi box and the player, never the TV", () => {
+  it("checks the Kodi box and the player, and omits the TV until an IP is captured", () => {
     const targets = livenessTargets(make({ topology: "kodi_tv_player" }));
     expect(targets.map((t) => t.id)).toEqual(["kodi", "player"]);
     const player = targets.find((t) => t.id === "player");
     expect(player).toMatchObject({ host: INITIAL_STATE.playerIp, port: 23, kind: "oppo" });
+  });
+
+  it("adds the TV when a backend with a TCP port and an IP are set, else omits it", () => {
+    expect(
+      livenessTargets(make({ tvBackend: "roku_ecp", tvIp: "10.0.1.55" })).find((t) => t.id === "tv")
+    ).toMatchObject({ host: "10.0.1.55", port: 8060, kind: "tcp" });
+    expect(
+      livenessTargets(make({ tvBackend: "adb", tvIp: "10.0.1.55" })).find((t) => t.id === "tv")?.port
+    ).toBe(5555);
+    expect(livenessTargets(make({ tvBackend: "roku_ecp", tvIp: "" })).some((t) => t.id === "tv")).toBe(
+      false
+    );
+    expect(
+      livenessTargets(make({ tvBackend: "smartthings", tvIp: "10.0.1.55" })).some((t) => t.id === "tv")
+    ).toBe(false);
   });
 
   it("probes the Kodi box on SSH 22 by default and SMB 445 for tier B", () => {

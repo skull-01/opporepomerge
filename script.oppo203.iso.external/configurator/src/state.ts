@@ -71,6 +71,7 @@ export type WizardState = {
   tvRegion: TvRegion | null;
   tvModel: string | null;
   tvBackend: TvBackend | null;
+  tvIp: string;
   tvPlatform: string | null;
   tvVerified: boolean;
   tvAdbWeak: boolean;
@@ -131,6 +132,7 @@ export const INITIAL_STATE: WizardState = {
   tvRegion: null,
   tvModel: null,
   tvBackend: null,
+  tvIp: "",
   tvPlatform: null,
   tvVerified: false,
   tvAdbWeak: false,

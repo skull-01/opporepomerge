@@ -300,8 +300,8 @@ export function Step4NotFound({ go, set }: ScreenProps) {
 // ============================================================
 // STEP 3 — Probe
 // ============================================================
-export function Step4Probe({ go, set }: ScreenProps) {
-  const [ip, setIp] = useState("10.0.1.51");
+export function Step4Probe({ go, state, set }: ScreenProps) {
+  const ip = state.tvIp || "10.0.1.51";
   const [probing, setProbing] = useState(false);
   const [results, setResults] = useState<PortResult[] | null>(null);
 
@@ -343,7 +343,7 @@ export function Step4Probe({ go, set }: ScreenProps) {
           <div className="stack">
             <div className="field">
               <label className="field-label">TV IP</label>
-              <input className="input" value={ip} onChange={(e) => setIp(e.target.value)} />
+              <input className="input" value={ip} onChange={(e) => set({ tvIp: e.target.value })} />
               <div className="field-hint">Same network as this PC and your Kodi box.</div>
             </div>
             <button className="btn primary" onClick={probe} disabled={probing}>
