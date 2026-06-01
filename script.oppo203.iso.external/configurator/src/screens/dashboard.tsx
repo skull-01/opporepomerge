@@ -23,6 +23,7 @@ type LiveFrame = { seq: number; kind: string; raw: string };
 const DEVICE_ICON: Record<LivenessTarget["id"], IconName> = {
   kodi: "kodi",
   player: "player",
+  tv: "tv",
   avr: "avr",
 };
 

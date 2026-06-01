@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -409,6 +410,198 @@ fn deploy_ssh(
 }
 
 // ============================================================
+// Add-on install — bundle the Kodi add-on inside the configurator and lay it down
+// ============================================================
+//
+// The configurator bundles the add-on ZIP as a Tauri resource (resource_dir()/addon/<id>.zip).
+// `bundled_addon_info` reads the version Kodi will see; `install_addon` lays the add-on into the
+// Kodi `addons/` directory over the same transports as the config deploy (SSH / local-or-SMB), or
+// copies the ZIP for a manual "Install from zip file". The on-box install (SSH unzip, Kodi restart,
+// the add-on actually loading) is software-verified only -- not hardware-tested.
+
+const ADDON_ID: &str = "script.oppo203.iso.external";
+
+/// Pull the `version="..."` off the first `<addon ...>` element of an addon.xml string.
+fn parse_addon_version(xml: &str) -> Option<String> {
+    let start = xml.find("<addon")?;
+    let rest = &xml[start..];
+    let key = rest.find("version=\"")?;
+    let after = &rest[key + "version=\"".len()..];
+    let end = after.find('"')?;
+    Some(after[..end].to_string())
+}
+
+/// Read the bundled add-on's declared version from the `addon.xml` inside the ZIP.
+fn read_addon_version_from_zip(zip_path: &Path) -> Result<String, String> {
+    let file = fs::File::open(zip_path)
+        .map_err(|e| format!("bundled add-on not found at {}: {e}", zip_path.display()))?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+    for i in 0..zip.len() {
+        let mut entry = zip.by_index(i).map_err(|e| e.to_string())?;
+        if entry.name().ends_with("addon.xml") {
+            let mut xml = String::new();
+            entry.read_to_string(&mut xml).map_err(|e| e.to_string())?;
+            if let Some(v) = parse_addon_version(&xml) {
+                return Ok(v);
+            }
+        }
+    }
+    Err("addon.xml with a version attribute not found in the bundle".into())
+}
+
+/// Extract every file in `zip_path` into `dest`, preserving the archive's relative layout (the
+/// add-on ZIP carries a top-level `script.oppo203.iso.external/` folder). Returns the file count.
+/// `enclosed_name` rejects absolute / `..` members (zip-slip), so a hostile archive can't escape.
+fn extract_zip_into(zip_path: &Path, dest: &Path) -> Result<usize, String> {
+    let file = fs::File::open(zip_path).map_err(|e| e.to_string())?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+    let mut written = 0usize;
+    for i in 0..zip.len() {
+        let mut entry = zip.by_index(i).map_err(|e| e.to_string())?;
+        let rel = match entry.enclosed_name() {
+            Some(p) => p.to_path_buf(),
+            None => continue,
+        };
+        let out = dest.join(&rel);
+        if entry.is_dir() {
+            fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+            continue;
+        }
+        if let Some(parent) = out.parent() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+        let mut buf = Vec::with_capacity(entry.size() as usize);
+        entry.read_to_end(&mut buf).map_err(|e| e.to_string())?;
+        fs::write(&out, &buf).map_err(|e| e.to_string())?;
+        written += 1;
+    }
+    Ok(written)
+}
+
+#[derive(serde::Serialize)]
+struct BundledAddonInfo {
+    addon_id: String,
+    version: String,
+    path: String,
+}
+
+fn bundled_addon_zip(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let dir = app.path().resource_dir().map_err(|e| e.to_string())?;
+    Ok(dir.join("addon").join(format!("{ADDON_ID}.zip")))
+}
+
+/// Report the add-on version the bundle would install (read from the bundled ZIP's addon.xml).
+#[tauri::command]
+fn bundled_addon_info(app: tauri::AppHandle) -> Result<BundledAddonInfo, String> {
+    let zip = bundled_addon_zip(&app)?;
+    let version = read_addon_version_from_zip(&zip)?;
+    Ok(BundledAddonInfo {
+        addon_id: ADDON_ID.to_string(),
+        version,
+        path: zip.to_string_lossy().into_owned(),
+    })
+}
+
+#[derive(serde::Serialize)]
+struct InstallReport {
+    addon_id: String,
+    version: String,
+    files: usize,
+    target: String,
+    backed_up: Option<String>,
+}
+
+/// Lay the bundled add-on into a Kodi `addons/` directory.
+///
+/// `tier` "A" installs over SSH (push the ZIP, expand it on the box with `python3 -m zipfile`,
+/// backing up any existing copy first; optional Kodi restart). "B" extracts the bundle directly
+/// into a local or SMB-mounted `addons_path`. "C" copies the ZIP there for a manual "Install from
+/// zip file". SSH/box behaviour is software-verified only -- not hardware-tested.
+#[tauri::command]
+fn install_addon(
+    app: tauri::AppHandle,
+    tier: String,
+    host: Option<String>,
+    user: Option<String>,
+    addons_path: String,
+    restart: bool,
+) -> Result<InstallReport, String> {
+    let zip = bundled_addon_zip(&app)?;
+    let version = read_addon_version_from_zip(&zip)?;
+
+    match tier.as_str() {
+        "A" => {
+            let host = host.ok_or("ssh host required for tier A")?;
+            let user = user.ok_or("ssh user required for tier A")?;
+            validate_ssh_target(&host, &user)?;
+            let ssh_target = format!("{user}@{host}");
+            let base = addons_path.trim_end_matches('/');
+            let remote_dir = format!("{base}/{ADDON_ID}");
+            let remote_zip = format!("{base}/.{ADDON_ID}.oppocfg.zip");
+            let stamp = backup_suffix();
+            let bytes = fs::read(&zip).map_err(|e| e.to_string())?;
+            // Push the ZIP bytes, then expand on the box. `python3 -m zipfile` is present wherever
+            // the add-on runs; fall back to `unzip`. Back up an existing install first.
+            run_ssh_stdin(
+                &ssh_target,
+                &format!("mkdir -p '{base}' && cat > '{remote_zip}'"),
+                &bytes,
+            )?;
+            let script = format!(
+                "if [ -d '{remote_dir}' ]; then mv '{remote_dir}' '{remote_dir}.{stamp}.bak' && printf 'BAK:%s\\n' '{remote_dir}.{stamp}.bak'; fi && (python3 -m zipfile -e '{remote_zip}' '{base}/' || unzip -oq '{remote_zip}' -d '{base}/') && rm -f '{remote_zip}'"
+            );
+            let out = run_ssh_capture(&ssh_target, &script)?;
+            let backed_up = out
+                .lines()
+                .find(|l| l.starts_with("BAK:"))
+                .map(|l| l.trim_start_matches("BAK:").to_string());
+            if restart {
+                run_ssh(&ssh_target, "systemctl restart kodi")?;
+            }
+            Ok(InstallReport {
+                addon_id: ADDON_ID.to_string(),
+                version,
+                files: 0,
+                target: remote_dir,
+                backed_up,
+            })
+        }
+        "B" => {
+            let dest = PathBuf::from(&addons_path);
+            let addon_dir = dest.join(ADDON_ID);
+            let mut backed_up = None;
+            if addon_dir.exists() {
+                let bak = format!("{}.{}.bak", addon_dir.to_string_lossy(), backup_suffix());
+                fs::rename(&addon_dir, &bak).map_err(|e| e.to_string())?;
+                backed_up = Some(bak);
+            }
+            let files = extract_zip_into(&zip, &dest)?;
+            Ok(InstallReport {
+                addon_id: ADDON_ID.to_string(),
+                version,
+                files,
+                target: addon_dir.to_string_lossy().into_owned(),
+                backed_up,
+            })
+        }
+        "C" => {
+            let dest = PathBuf::from(&addons_path);
+            fs::create_dir_all(&dest).map_err(|e| e.to_string())?;
+            let out = dest.join(format!("{ADDON_ID}.zip"));
+            fs::copy(&zip, &out).map_err(|e| e.to_string())?;
+            Ok(InstallReport {
+                addon_id: ADDON_ID.to_string(),
+                version,
+                files: 1,
+                target: out.to_string_lossy().into_owned(),
+                backed_up: None,
+            })
+        }
+        other => Err(format!("unknown install tier '{other}'")),
+    }
+}
+
+// ============================================================
 // Live OPPO verbose-mode monitor (dashboard live stream)
 // ============================================================
 //
@@ -594,9 +787,69 @@ fn stop_oppo_live_monitor(monitor: tauri::State<'_, LiveMonitor>) -> Result<(), 
     Ok(())
 }
 
+/// Build the raw HTTP request for one Roku ECP keypress (e.g. an input key like "InputHDMI1").
+/// Mirrors resources/lib/tv/tv_roku_ecp_control.py (POST /keypress/<key> on :8060). The key is
+/// validated alphanumeric so it cannot inject a different request path.
+fn roku_keypress_request(host: &str, key: &str) -> Result<String, String> {
+    if key.is_empty() || !key.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(format!(
+            "invalid Roku key '{key}' (expected an alphanumeric ECP key like InputHDMI1)"
+        ));
+    }
+    Ok(format!(
+        "POST /keypress/{key} HTTP/1.0\r\nHost: {host}:8060\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+    ))
+}
+
+/// Switch a Roku TV input by sending one ECP keypress to host:8060, mirroring the add-on's
+/// tv_roku_ecp_control.send_keypress. Returns the HTTP status line on a 200. Software-verified
+/// only -- not hardware-tested against a real Roku TV.
+#[tauri::command]
+fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<String, String> {
+    let request = roku_keypress_request(&host, &key)?;
+    let ms = timeout_ms.unwrap_or(3000);
+    let timeout = Duration::from_millis(ms);
+    let mut stream = connect_timeout(&host, 8060, ms)?;
+    stream.set_read_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    stream.set_write_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
+    let mut data: Vec<u8> = Vec::new();
+    let mut chunk = [0u8; 512];
+    loop {
+        match stream.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(n) => {
+                data.extend_from_slice(&chunk[..n]);
+                if data.contains(&b'\n') || data.len() > 4096 {
+                    break;
+                }
+            }
+            Err(ref e)
+                if e.kind() == std::io::ErrorKind::WouldBlock
+                    || e.kind() == std::io::ErrorKind::TimedOut =>
+            {
+                break
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+    let text = String::from_utf8_lossy(&data);
+    let status = text.lines().next().unwrap_or("").trim().to_string();
+    if status.contains("200") {
+        Ok(status)
+    } else if status.is_empty() {
+        Err("no response from the Roku TV (is the IP correct and ECP enabled?)".into())
+    } else {
+        Err(format!("Roku TV returned: {status}"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{classify_frame, parse_verbose_mode, to_hex};
+    use super::{
+        classify_frame, extract_zip_into, parse_addon_version, parse_verbose_mode,
+        roku_keypress_request, to_hex,
+    };
 
     #[test]
     fn classifies_verbose_frames() {
@@ -628,6 +881,63 @@ mod tests {
     fn to_hex_non_utf8_bytes() {
         assert_eq!(to_hex(&[0xff, 0x00, 0x1b]), "ff 00 1b");
     }
+
+    #[test]
+    fn parses_addon_version_attribute() {
+        assert_eq!(
+            parse_addon_version(r#"<addon id="x" version="2.9.14" name="y">"#),
+            Some("2.9.14".to_string())
+        );
+        assert_eq!(
+            parse_addon_version("<addon\n  version=\"1.0.0-exp\">"),
+            Some("1.0.0-exp".to_string())
+        );
+        assert_eq!(parse_addon_version("<nope/>"), None);
+    }
+
+    #[test]
+    fn extract_zip_into_lays_down_files_and_dirs() {
+        use std::io::Write as _;
+        let tmp = std::env::temp_dir().join(format!("oppocfg-ztest-{}", super::backup_suffix()));
+        std::fs::create_dir_all(&tmp).unwrap();
+        let zip_path = tmp.join("a.zip");
+        {
+            let f = std::fs::File::create(&zip_path).unwrap();
+            let mut zw = zip::ZipWriter::new(f);
+            let opts = zip::write::SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Stored);
+            zw.start_file("script.oppo203.iso.external/addon.xml", opts)
+                .unwrap();
+            zw.write_all(b"<addon version=\"9.9.9\"/>").unwrap();
+            zw.start_file("script.oppo203.iso.external/resources/lib/x.py", opts)
+                .unwrap();
+            zw.write_all(b"print(1)").unwrap();
+            zw.finish().unwrap();
+        }
+        let dest = tmp.join("out");
+        let n = extract_zip_into(&zip_path, &dest).unwrap();
+        assert_eq!(n, 2);
+        assert!(dest.join("script.oppo203.iso.external/addon.xml").is_file());
+        assert!(dest
+            .join("script.oppo203.iso.external/resources/lib/x.py")
+            .is_file());
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn roku_keypress_request_builds_a_valid_post_for_an_input_key() {
+        let req = roku_keypress_request("10.0.1.55", "InputHDMI1").unwrap();
+        assert!(req.starts_with("POST /keypress/InputHDMI1 HTTP/1.0\r\n"));
+        assert!(req.contains("Host: 10.0.1.55:8060\r\n"));
+        assert!(req.ends_with("\r\n\r\n"));
+    }
+
+    #[test]
+    fn roku_keypress_request_rejects_path_injection_and_junk() {
+        assert!(roku_keypress_request("10.0.1.55", "../launch/dev").is_err());
+        assert!(roku_keypress_request("10.0.1.55", "Input HDMI1").is_err());
+        assert!(roku_keypress_request("10.0.1.55", "").is_err());
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -648,6 +958,9 @@ pub fn run() {
             oppo_query,
             ssh_test,
             deploy_ssh,
+            bundled_addon_info,
+            install_addon,
+            tv_switch_roku,
             start_oppo_live_monitor,
             stop_oppo_live_monitor
         ])

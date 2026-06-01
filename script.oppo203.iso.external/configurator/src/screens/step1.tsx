@@ -269,8 +269,8 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
       <FooterNav
         go={go}
         back="step1_intro"
-        next={tested ? "step2_brand" : null}
-        nextLabel="Continue to Player"
+        next={tested ? "step0_chain" : null}
+        nextLabel="Continue to HDMI switcher"
         set={set}
         setKeys={{ kodiVerified: true }}
       />
@@ -389,8 +389,8 @@ export function Step1TierB({ go, state, set }: ScreenProps) {
       <FooterNav
         go={go}
         back="step1_intro"
-        next={tested ? "step2_brand" : null}
-        nextLabel="Continue to Player"
+        next={tested ? "step0_chain" : null}
+        nextLabel="Continue to HDMI switcher"
         set={set}
         setKeys={{ kodiVerified: true }}
       />
@@ -540,8 +540,8 @@ export function Step1TierC({ go, state, set }: ScreenProps) {
       <FooterNav
         go={go}
         back="step1_intro"
-        next="step2_brand"
-        nextLabel="Continue to Player"
+        next="step0_chain"
+        nextLabel="Continue to HDMI switcher"
         set={set}
         setKeys={{ kodiVerified: true }}
       />

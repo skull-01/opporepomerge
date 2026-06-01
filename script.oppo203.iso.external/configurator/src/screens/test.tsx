@@ -1,9 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../icons";
 import { Chain } from "../shell/Chain";
-import { DiagLog } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
-import { applyToKodi, type ApplyResult } from "../apply";
+import { applyToKodi, installAddonToKodi, type ApplyResult } from "../apply";
 import { isAvrChain, type ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
@@ -120,24 +119,20 @@ export function TestSetup({ go, state, set }: ScreenProps) {
                 </div>
                 {!copied ? (
                   <button className="btn primary" onClick={() => setCopied(true)}>
-                    <Icon name="download" size={13} /> Copy test disc
+                    <Icon name="download" size={13} /> How to add a test file
                   </button>
                 ) : (
-                  <DiagLog
-                    title="Copying test disc"
-                    checks={[
-                      { status: "pass", label: "OPPO-Installer-Test-2160p.iso", detail: "4.2 GB · copied OK" },
-                      { status: "pass", label: "Path eligibility tag", detail: "contains '2160p' · disc-style" },
-                      { status: "pass", label: "Reachable from Kodi box", detail: "confirmed via SFTP read" },
-                    ]}
-                    footer={
-                      <>
-                        Copied. <strong>Rescan your Kodi library</strong> so the test file
-                        appears, then play it from Kodi.
-                      </>
-                    }
-                    footerKind="success"
-                  />
+                  <div className="callout info">
+                    <span className="callout-icon">
+                      <Icon name="info" size={13} stroke={2.2} />
+                    </span>
+                    <div className="callout-body">
+                      Automated copy isn't wired up yet. Copy a tagged UHD test file (a
+                      name containing <code>2160p</code> or <code>UHD</code>) onto the
+                      share yourself, <strong>rescan your Kodi library</strong> so it
+                      appears, then play it from Kodi.
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
@@ -356,9 +351,9 @@ export function TestConfirm({ go, state }: ScreenProps) {
     : allYes
       ? "See the summary"
       : answers.play === false
-        ? "Fix routing → Step 2"
+        ? "Fix routing → Step 3"
         : answers.switch === false
-          ? "Fix TV → Step 4"
+          ? "Fix TV → Step 5"
           : "Fix keymap → Step 1";
 
   return (
@@ -407,14 +402,14 @@ export function TestConfirm({ go, state }: ScreenProps) {
         <Question
           n="1"
           label="Did the test disc start playing on your player?"
-          owner="Step 2 · Player / playercorefactory routing"
+          owner="Step 3 · Player / playercorefactory routing"
           value={answers.play}
           onChange={(v) => setAnswers({ ...answers, play: v })}
         />
         <Question
           n="2"
           label="Did your TV switch to the player's input?"
-          owner="Step 4 · TV / Step 5 input capture"
+          owner="Step 5 · TV / Step 6 input capture"
           value={answers.switch}
           onChange={(v) => setAnswers({ ...answers, switch: v })}
         />
@@ -527,16 +522,23 @@ export function TestSuccess({ go, state }: ScreenProps) {
 
   const apply = async () => {
     setApplying(true);
-    setResult(await applyToKodi(state));
+    const install = await installAddonToKodi(state);
+    if (!install.ok) {
+      setResult(install);
+      setApplying(false);
+      return;
+    }
+    const applied = await applyToKodi(state);
+    setResult({ ok: applied.ok, detail: `${install.detail} ${applied.detail}` });
     setApplying(false);
   };
 
   const applyLabel =
     state.tier === "A"
-      ? "Apply to Kodi (SSH + restart)"
+      ? "Install add-on + apply (SSH + restart)"
       : state.tier === "B"
-        ? "Apply to Kodi (SMB)"
-        : "Generate files to copy";
+        ? "Install add-on + apply (SMB)"
+        : "Bundle add-on + generate files";
 
   return (
     <div className="screen">

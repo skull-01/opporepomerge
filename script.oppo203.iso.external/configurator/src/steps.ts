@@ -1,5 +1,11 @@
+// Internal step handles. The displayed order/number is set by STEPS below, NOT by the id name:
+// the SSH-first re-sequence put Kodi (step1) first and the HDMI switcher (step_switch, screens
+// step0_chain) second, so e.g. id "step2" is displayed as "Step 3". The ids are kept stable on
+// purpose -- they are persisted in state.json (the resumed `screen`), so renaming them would
+// strand existing sessions. See the STEPS array for the user-facing numbering.
 export type StepId =
   | "step0"
+  | "step_switch"
   | "step1"
   | "step2"
   | "step3"
@@ -54,27 +60,30 @@ export type Step = {
   num: string;
 };
 
-// Step ids match the displayed order and number: 0 prereq, 1 Kodi, 2 Player, 3 Playback mode,
-// 4 TV, 5 HDMI Input, 6 AV receiver (optional), then the final test. Player precedes the
+// SSH-first re-sequence: the DISPLAYED order/number is set by STEPS, NOT by the id name --
+// 0 prerequisite gate, 1 Kodi/SSH, 2 HDMI switcher (screens `step0_chain`), 3 Player, 4 Playback
+// mode, 5 TV, 6 HDMI Input, 7 AV receiver, then the test. Ids are kept stable (persisted in
+// state.json), so `step2` shows as "Step 3", etc. Player precedes the
 // playback-mode step and TV so the HDMI-input step sits next to the TV step; the optional
 // receiver step trails the core chain just before the test. The `step2_*` screens are the
 // Player screens, `step3_*` is Playback mode, `step4_*` are TV, `step5_*` are HDMI, `step6_*`
 // are the AV receiver — file names, ids, and labels all line up so the code reads the way the
 // UI does.
 export const STEPS: readonly Step[] = [
-  { id: "step0", label: "Playback chain setup", num: "0" },
+  { id: "step0", label: "Prerequisite", num: "0" },
   { id: "step1", label: "Kodi box", num: "1" },
-  { id: "step2", label: "Player", num: "2" },
-  { id: "step3", label: "Playback mode", num: "3" },
-  { id: "step4", label: "TV", num: "4" },
-  { id: "step5", label: "HDMI Input", num: "5" },
-  { id: "step6", label: "AV Receiver", num: "6" },
+  { id: "step_switch", label: "HDMI switcher", num: "2" },
+  { id: "step2", label: "Player", num: "3" },
+  { id: "step3", label: "Playback mode", num: "4" },
+  { id: "step4", label: "TV", num: "5" },
+  { id: "step5", label: "HDMI Input", num: "6" },
+  { id: "step6", label: "AV Receiver", num: "7" },
   { id: "test", label: "Playback Test", num: "✓" },
 ] as const;
 
 export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
   step0_gate: "step0",
-  step0_chain: "step0",
+  step0_chain: "step_switch",
   step0_exit: "step0",
   step1_intro: "step1",
   step1_tierA: "step1",
@@ -140,6 +149,8 @@ export function firstScreenOfStep(stepId: StepId): ScreenId {
   switch (stepId) {
     case "step0":
       return "step0_gate";
+    case "step_switch":
+      return "step0_chain";
     case "step1":
       return "step1_intro";
     case "step2":

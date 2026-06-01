@@ -41,7 +41,7 @@ export function Step0Gate({ go }: ScreenProps) {
           </div>
         </div>
         <div className="row" style={{ gap: 10 }}>
-          <button className="btn primary lg" onClick={() => go("step0_chain")}>
+          <button className="btn primary lg" onClick={() => go("step1_intro")}>
             I can already play ISOs on my player
             <Icon name="chevR" size={14} />
           </button>

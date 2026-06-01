@@ -70,6 +70,14 @@ describe("wizardStateToAddonSettings", () => {
     expect(out.roku_kodi_key).toBe("InputHDMI2");
   });
 
+  it("emits tv_ip only when a TV backend and IP are both set", () => {
+    expect(
+      wizardStateToAddonSettings(makeState({ tvBackend: "roku_ecp", tvIp: "10.0.1.55" })).tv_ip,
+    ).toBe("10.0.1.55");
+    expect(wizardStateToAddonSettings(makeState({ tvBackend: "roku_ecp" })).tv_ip).toBeUndefined();
+    expect(wizardStateToAddonSettings(makeState({ tvIp: "10.0.1.55" })).tv_ip).toBeUndefined();
+  });
+
   it("maps Sony HDMI inputs to integer port strings", () => {
     const out = wizardStateToAddonSettings(
       makeState({ tvBackend: "sony_bravia", playerInput: 3, kodiInput: 1 }),
@@ -307,11 +315,11 @@ describe("avrAddonBackend", () => {
 });
 
 describe("wizardStateToAddonSettings — six-option playback preset", () => {
-  it("defaults to the legacy playercorefactory preset", () => {
+  it("defaults to the http_handoff svm3 preset", () => {
     const out = wizardStateToAddonSettings(INITIAL_STATE);
-    expect(out.playback_monitor_mode).toBe("legacy");
-    expect(out.playback_architecture).toBe("external_player");
-    expect(out.playback_architecture_preset).toBe("playercorefactory_legacy");
+    expect(out.playback_monitor_mode).toBe("svm3");
+    expect(out.playback_architecture).toBe("http_handoff");
+    expect(out.playback_architecture_preset).toBe("http_handoff_svm3");
   });
 
   it("emits playercorefactory_svm3 for external_player + svm3", () => {
@@ -381,6 +389,28 @@ describe("wizardStateToAddonSettings — six-option playback preset", () => {
     }
     expect(emitted.size).toBe(6);
     expect([...emitted].sort()).toEqual([...CANONICAL_SIX].sort());
+  });
+
+  it("emits the OPPO http path translation for http_handoff when captured", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        playbackArchitecture: "http_handoff",
+        oppoPathFrom: "smb://nas/Movies",
+        oppoPathTo: "//nas/Movies",
+        oppoDiscFolderRoot: false,
+      }),
+    );
+    expect(out.oppo_http_path_from).toBe("smb://nas/Movies");
+    expect(out.oppo_http_path_to).toBe("//nas/Movies");
+    expect(out.oppo_http_disc_folder_root).toBe("false");
+  });
+
+  it("omits the http path translation for non-http_handoff routings", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "service_interception", oppoPathFrom: "x", oppoPathTo: "y" }),
+    );
+    expect(out.oppo_http_path_from).toBeUndefined();
+    expect(out.oppo_http_disc_folder_root).toBeUndefined();
   });
 
   it("emits json_payload mode only for the http_handoff routing", () => {
