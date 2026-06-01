@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — OPPO power-cycle command (Phase 4.1) (PR #181, issue #180)
+
+- **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/cfg-oppo-power-5d8c1a90`, base `main`. Implementing SHA: `0b5a8f1`. Tracks **#180**.
+- **What changed (software-verified only):** new `oppo_power` `#[tauri::command]` in `lib.rs` — the power-cycle primitive the Phase 4 self-test needs (the activate/signin/play start sequence already shipped in #174's `oppo_http_play`). Pure `oppo_power_token` maps `off`/`on`/`eject` → `#POF`/`#PON`/`#EJT` (clones lacking `#PON`, per `hardware_presets.py`); `oppo_power` delegates to `oppo_query` so it shares the CR-terminated send + the `debug-wire` transcript. Gate: **cargo 35** (1 new token test) / `cargo fmt --check` clean / **zero build warnings**. No new crate; `resources/` untouched.
+- **Operator verifies (Phase A):** read `oppo_power_token` + `oppo_power` and the 1 cargo test; confirm the tokens match `hardware_presets.py` and that it reuses `oppo_query` rather than re-implementing the socket loop.
+- **Operator verifies (Phase C — built app + real OPPO):** invoke `oppo_power` with `off` then `on` (or `eject` for a clone) and confirm the player actually powers down/up. **Not hardware-validated.**
+
 ### Configurator — TV input-switch commands (Phase 3.1) (PR #179, issue #178)
 
 - **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/cfg-tv-switch-7e2b9c44`, base `main`. Implementing SHA: `9aa9e1c`. Tracks **#178**.

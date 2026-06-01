@@ -295,6 +295,34 @@ fn oppo_query(
     Ok(String::from_utf8_lossy(&data).trim().to_string())
 }
 
+/// Map a power action to its OPPO IP-control token (Phase 4 self-test power-cycle). `#POF` powers
+/// off, `#PON` powers on stock OPPO, `#EJT` wakes clones that lack `#PON` (hardware_presets.py).
+fn oppo_power_token(action: &str) -> Result<&'static str, String> {
+    match action.trim().to_ascii_lowercase().as_str() {
+        "off" | "power_off" => Ok("#POF"),
+        "on" | "power_on" => Ok("#PON"),
+        "eject" | "wake" => Ok("#EJT"),
+        other => Err(format!(
+            "unknown OPPO power action '{other}' (expected off/on/eject)"
+        )),
+    }
+}
+
+/// Power the OPPO off/on (or wake a clone via eject) over IP control, for the Phase 4 self-test
+/// power-cycle. Delegates to oppo_query so it shares the CR-terminated send + wire transcript.
+/// Best-effort + hardware-pending.
+#[tauri::command]
+fn oppo_power(
+    app: tauri::AppHandle,
+    host: String,
+    port: Option<u16>,
+    action: String,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    let token = oppo_power_token(&action)?;
+    oppo_query(app, host, port, Some(token.to_string()), timeout_ms)
+}
+
 fn ssh_base_args(target: &str) -> Vec<String> {
     vec![
         "-o".into(),
@@ -1520,11 +1548,20 @@ mod tests {
         eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
         format_external_command, http_get_request, json_post_request, kodi_enable_body,
         kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
-        oppo_play_request, oppo_signin_request, parse_addon_version, parse_kodi_active_player_id,
-        parse_kodi_log_file, parse_kodi_player_file, parse_verbose_mode, percent_encode,
-        roku_keypress_request, smartthings_command_url, smartthings_set_input_body,
-        sony_audio_set_input_payload, sony_bravia_set_input_body, to_hex, yamaha_input_path,
+        oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
+        parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
+        parse_verbose_mode, percent_encode, roku_keypress_request, smartthings_command_url,
+        smartthings_set_input_body, sony_audio_set_input_payload, sony_bravia_set_input_body,
+        to_hex, yamaha_input_path,
     };
+
+    #[test]
+    fn oppo_power_token_maps_actions() {
+        assert_eq!(oppo_power_token("off").unwrap(), "#POF");
+        assert_eq!(oppo_power_token("Power_On").unwrap(), "#PON");
+        assert_eq!(oppo_power_token(" eject ").unwrap(), "#EJT");
+        assert!(oppo_power_token("explode").is_err());
+    }
 
     #[test]
     fn sony_bravia_body_selects_hdmi_port() {
@@ -1866,6 +1903,7 @@ pub fn run() {
             tcp_probe,
             tv_port_probe,
             oppo_query,
+            oppo_power,
             ssh_test,
             deploy_ssh,
             kodi_now_playing,
