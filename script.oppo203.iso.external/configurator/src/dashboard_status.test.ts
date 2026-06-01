@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { INITIAL_STATE, type WizardState } from "./state";
-import { statusReadPlan } from "./dashboard_status";
-import { ADDON_DATA_STATUS_REL } from "./oppo_status";
+import { canStartLiveStream, statusReadPlan } from "./dashboard_status";
+import { ADDON_DATA_STATUS_REL, parseOppoStatus } from "./oppo_status";
 
 function make(patch: Partial<WizardState>): WizardState {
   return { ...INITIAL_STATE, ...patch };
@@ -35,5 +35,24 @@ describe("statusReadPlan", () => {
       if (plan.supported) return;
       expect(plan.note).toMatch(/manual mode/i);
     }
+  });
+});
+
+describe("canStartLiveStream (dual-subscriber gate)", () => {
+  it("blocks while the add-on reports an active session", () => {
+    const starting = parseOppoStatus(
+      JSON.stringify({ session_state: "starting", media_file: "x" })
+    );
+    const gate = canStartLiveStream(starting);
+    expect(gate.allowed).toBe(false);
+    expect(gate.reason).toMatch(/mid-session/i);
+  });
+
+  it("allows when the session has stopped/failed or there is no record", () => {
+    const stopped = parseOppoStatus(JSON.stringify({ session_state: "stopped" }));
+    const failed = parseOppoStatus(JSON.stringify({ session_state: "failed" }));
+    expect(canStartLiveStream(stopped).allowed).toBe(true);
+    expect(canStartLiveStream(failed).allowed).toBe(true);
+    expect(canStartLiveStream(null).allowed).toBe(true);
   });
 });

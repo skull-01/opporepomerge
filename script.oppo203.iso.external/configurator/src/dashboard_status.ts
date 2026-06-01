@@ -44,6 +44,26 @@ export function statusReadPlan(state: WizardState): StatusReadPlan {
   };
 }
 
+/**
+ * Whether it is safe to open the configurator's own verbose-mode stream to the player. The OPPO
+ * treats verbose mode as a device-global setting, so the configurator must not drive `#SVM` while
+ * the add-on is mid-session - its own SVM3 monitor would fight ours (the dual-subscriber risk).
+ * Blocked when the add-on reports an active ("starting") session; allowed when stopped/failed or
+ * when there is no session record yet.
+ */
+export function canStartLiveStream(
+  status: OppoSessionStatus | null
+): { allowed: boolean; reason: string | null } {
+  if (status?.sessionState === "starting") {
+    return {
+      allowed: false,
+      reason:
+        "Player is mid-session - live stream paused so the configurator doesn't fight the add-on's own monitor.",
+    };
+  }
+  return { allowed: true, reason: null };
+}
+
 export type StatusReadResult = {
   // false only when the tier has no remote link (manual). true means we attempted a read.
   supported: boolean;
