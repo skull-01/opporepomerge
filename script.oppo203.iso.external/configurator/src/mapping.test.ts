@@ -232,6 +232,170 @@ describe("wizardStateToAddonSettings", () => {
   });
 });
 
+describe("wizardStateToAddonSettings — per-backend TV control config", () => {
+  it("writes the Sony Bravia PSK alongside its HDMI ports", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ tvBackend: "sony_bravia", tvSonyPsk: "abcd1234", playerInput: 3, kodiInput: 1 }),
+    );
+    expect(out.sony_psk).toBe("abcd1234");
+    expect(out.sony_oppo_hdmi_port).toBe("3");
+    expect(out.sony_kodi_hdmi_port).toBe("1");
+  });
+
+  it("omits sony_psk when the PSK is blank", () => {
+    const out = wizardStateToAddonSettings(makeState({ tvBackend: "sony_bravia", tvSonyPsk: "" }));
+    expect(out.sony_psk).toBeUndefined();
+  });
+
+  it("derives the two ADB HDMI keyevent shells from the captured HDMI numbers", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ tvBackend: "adb", playerInput: 2, kodiInput: 4 }),
+    );
+    expect(out.oppo_input_adb_shell).toBe("input keyevent KEYCODE_TV_INPUT_HDMI_2");
+    expect(out.kodi_input_adb_shell).toBe("input keyevent KEYCODE_TV_INPUT_HDMI_4");
+  });
+
+  it("omits the ADB shells when the HDMI inputs are not plain numbers", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ tvBackend: "adb", playerInput: "cec", kodiInput: null }),
+    );
+    expect(out.oppo_input_adb_shell).toBeUndefined();
+    expect(out.kodi_input_adb_shell).toBeUndefined();
+  });
+
+  it("writes the LG OPPO/Kodi command templates verbatim (no {tv_ip} substitution)", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        tvBackend: "lg_command",
+        tvOppoCommand: "lgtv --ssl setInput HDMI_1",
+        tvKodiCommand: "lgtv --ssl setInput HDMI_2",
+      }),
+    );
+    expect(out.lg_oppo_command).toBe("lgtv --ssl setInput HDMI_1");
+    expect(out.lg_kodi_command).toBe("lgtv --ssl setInput HDMI_2");
+  });
+
+  it("writes the Samsung command templates verbatim, keeping the {tv_ip} placeholder", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        tvBackend: "samsung_command",
+        tvOppoCommand: "samsungctl --host {tv_ip} KEY_HDMI1",
+        tvKodiCommand: "samsungctl --host {tv_ip} KEY_HDMI2",
+      }),
+    );
+    expect(out.samsung_oppo_command).toBe("samsungctl --host {tv_ip} KEY_HDMI1");
+    expect(out.samsung_kodi_command).toBe("samsungctl --host {tv_ip} KEY_HDMI2");
+  });
+
+  it("writes the custom command templates verbatim", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        tvBackend: "custom_command",
+        tvOppoCommand: "curl -s http://{tv_ip}/oppo",
+        tvKodiCommand: "curl -s http://{tv_ip}/kodi",
+      }),
+    );
+    expect(out.custom_oppo_command).toBe("curl -s http://{tv_ip}/oppo");
+    expect(out.custom_kodi_command).toBe("curl -s http://{tv_ip}/kodi");
+  });
+
+  it("emits no command keys for an external backend when both templates are blank", () => {
+    const out = wizardStateToAddonSettings(makeState({ tvBackend: "lg_command" }));
+    expect(out.lg_oppo_command).toBeUndefined();
+    expect(out.lg_kodi_command).toBeUndefined();
+  });
+
+  it("does not cross command keys between the external backends", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ tvBackend: "lg_command", tvOppoCommand: "x", tvKodiCommand: "y" }),
+    );
+    expect(out.samsung_oppo_command).toBeUndefined();
+    expect(out.custom_oppo_command).toBeUndefined();
+  });
+
+  it("writes the five SmartThings settings and acknowledges when all are present", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        tvBackend: "smartthings",
+        tvSmartThingsToken: "st-token-xyz",
+        tvSmartThingsDeviceId: "dev-123",
+        tvSmartThingsOppoInputId: "HDMI1",
+        tvSmartThingsKodiInputId: "HDMI2",
+      }),
+    );
+    expect(out.smartthings_token).toBe("st-token-xyz");
+    expect(out.smartthings_device_id).toBe("dev-123");
+    expect(out.smartthings_oppo_input_id).toBe("HDMI1");
+    expect(out.smartthings_kodi_input_id).toBe("HDMI2");
+    expect(out.smartthings_experimental_acknowledged).toBe("true");
+  });
+
+  it("does not acknowledge SmartThings until token + device + both inputs are present", () => {
+    const base: Partial<WizardState> = {
+      tvBackend: "smartthings",
+      tvSmartThingsToken: "st-token-xyz",
+      tvSmartThingsDeviceId: "dev-123",
+      tvSmartThingsOppoInputId: "HDMI1",
+      tvSmartThingsKodiInputId: "HDMI2",
+    };
+    expect(
+      wizardStateToAddonSettings(makeState({ ...base, tvSmartThingsToken: "" }))
+        .smartthings_experimental_acknowledged,
+    ).toBeUndefined();
+    expect(
+      wizardStateToAddonSettings(makeState({ ...base, tvSmartThingsKodiInputId: "" }))
+        .smartthings_experimental_acknowledged,
+    ).toBeUndefined();
+  });
+
+  it("emits no SmartThings settings when every field is blank", () => {
+    const out = wizardStateToAddonSettings(makeState({ tvBackend: "smartthings" }));
+    expect(out.smartthings_token).toBeUndefined();
+    expect(out.smartthings_device_id).toBeUndefined();
+    expect(out.smartthings_oppo_input_id).toBeUndefined();
+    expect(out.smartthings_kodi_input_id).toBeUndefined();
+    expect(out.smartthings_experimental_acknowledged).toBeUndefined();
+  });
+
+  it("does not leak one backend's control config when another backend is selected", () => {
+    // All TV control fields populated, but the chosen backend is ADB: only the ADB shells emit.
+    const out = wizardStateToAddonSettings(
+      makeState({
+        tvBackend: "adb",
+        playerInput: 1,
+        kodiInput: 2,
+        tvSonyPsk: "psk",
+        tvOppoCommand: "cmd-oppo",
+        tvKodiCommand: "cmd-kodi",
+        tvSmartThingsToken: "tok",
+        tvSmartThingsDeviceId: "dev",
+        tvSmartThingsOppoInputId: "HDMI1",
+        tvSmartThingsKodiInputId: "HDMI2",
+      }),
+    );
+    expect(out.oppo_input_adb_shell).toBe("input keyevent KEYCODE_TV_INPUT_HDMI_1");
+    expect(out.sony_psk).toBeUndefined();
+    expect(out.lg_oppo_command).toBeUndefined();
+    expect(out.custom_oppo_command).toBeUndefined();
+    expect(out.smartthings_token).toBeUndefined();
+    expect(out.smartthings_experimental_acknowledged).toBeUndefined();
+  });
+
+  it("emits no TV control config at all when no TV backend is selected", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({
+        tvBackend: null,
+        tvSonyPsk: "psk",
+        tvOppoCommand: "cmd",
+        tvSmartThingsToken: "tok",
+      }),
+    );
+    expect(out.sony_psk).toBeUndefined();
+    expect(out.lg_oppo_command).toBeUndefined();
+    expect(out.smartthings_token).toBeUndefined();
+  });
+});
+
 describe("topology-aware AVR switcher settings", () => {
   const denonAvrChain: Partial<WizardState> = {
     topology: "kodi_avr_tv_player",

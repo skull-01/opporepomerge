@@ -79,6 +79,17 @@ export type WizardState = {
   // Sony Bravia TV Pre-Shared Key, captured in the Step 5 switch test (the only place the TV
   // PSK is needed today); handled as a secret like avrSonyPsk.
   tvSonyPsk: string;
+  // External-command TV backends (lg_command / samsung_command / custom_command): the raw
+  // {tv_ip}-templated command strings the add-on runs over SSH to switch to the OPPO and back
+  // to Kodi. Captured in Step 5 and written verbatim — {tv_ip} is substituted on-device.
+  tvOppoCommand: string;
+  tvKodiCommand: string;
+  // SmartThings backend: the cloud bearer token (a secret, like tvSonyPsk), the device id, and
+  // the OPPO/Kodi input ids. Captured in Step 5; feed both the switch test and the add-on config.
+  tvSmartThingsToken: string;
+  tvSmartThingsDeviceId: string;
+  tvSmartThingsOppoInputId: string;
+  tvSmartThingsKodiInputId: string;
 
   avrBrand: string | null;
   avrRegion: AvrRegion | null;
@@ -147,6 +158,12 @@ export const INITIAL_STATE: WizardState = {
   tvAdbWeak: false,
   tvManualSwitch: false,
   tvSonyPsk: "",
+  tvOppoCommand: "",
+  tvKodiCommand: "",
+  tvSmartThingsToken: "",
+  tvSmartThingsDeviceId: "",
+  tvSmartThingsOppoInputId: "",
+  tvSmartThingsKodiInputId: "",
   avrBrand: null,
   avrRegion: null,
   avrModel: null,

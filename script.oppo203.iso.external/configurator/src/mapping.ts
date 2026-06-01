@@ -26,9 +26,10 @@ function hdmiNumber(value: InputAddress): number | null {
 }
 
 /**
- * Input-addressable backends (Roku ECP, Sony Bravia) map a bare HDMI number directly to
- * their setting fields. ADB / *_command / SmartThings inputs are preset- or
- * user-command-driven and are wired in the TV-input slice, not here.
+ * The HDMI-number-addressable part of a TV backend: Roku ECP and Sony Bravia map a bare HDMI
+ * number straight to their input fields. The rest of each backend's runtime config (the Sony
+ * PSK, the ADB keyevent shells, the LG/Samsung/custom command templates, the SmartThings
+ * credentials) is captured in Step 5 and emitted by tvControlSettings.
  */
 function hdmiInputSettings(
   backend: string,
@@ -44,6 +45,70 @@ function hdmiInputSettings(
   } else if (backend === "sony_bravia") {
     if (oppo != null) out.sony_oppo_hdmi_port = String(oppo);
     if (kodi != null) out.sony_kodi_hdmi_port = String(kodi);
+  }
+  return out;
+}
+
+/** The adb keyevent that selects discrete HDMI N — mirrors step5_switch adbHdmiCommand and the
+ * add-on's tv_adb_control default. */
+function adbHdmiShell(hdmi: number): string {
+  return `input keyevent KEYCODE_TV_INPUT_HDMI_${hdmi}`;
+}
+
+/**
+ * The runtime config the add-on needs to actually drive the selected TV backend, beyond the bare
+ * HDMI ports in hdmiInputSettings. Each branch writes only its own keys, and only when the values
+ * are present, so a half-filled or switched backend never leaks stale config from another:
+ *   - sony_bravia: the Pre-Shared Key the Sony API authenticates with (the HDMI ports come from
+ *     hdmiInputSettings).
+ *   - adb: the two HDMI keyevent shells, derived from the captured HDMI numbers (KEYCODE_TV_INPUT_
+ *     HDMI_<n>) — no extra UI, mirroring step5_switch.
+ *   - lg/samsung/custom_command: the user's raw {tv_ip}-templated OPPO/Kodi command strings,
+ *     written verbatim; the add-on substitutes {tv_ip} at runtime (tv_control._run_external).
+ *   - smartthings: the bearer token, device id, and OPPO/Kodi input ids; the experimental
+ *     acknowledgement is set true only once all four are present, matching the add-on's own gate
+ *     (tv_smartthings_control.is_acknowledged / validation_metadata).
+ * The token is a secret like the AVR Sony PSK: it must reach settings.xml for the add-on, and the
+ * debug redactor (debug/log.ts SENSITIVE_KEY) masks it in the panel.
+ */
+function tvControlSettings(state: WizardState): AddonSettings {
+  const out: AddonSettings = {};
+  const oppo = hdmiNumber(state.playerInput);
+  const kodi = hdmiNumber(state.kodiInput);
+  switch (state.tvBackend) {
+    case "sony_bravia":
+      if (state.tvSonyPsk) out.sony_psk = state.tvSonyPsk;
+      break;
+    case "adb":
+      if (oppo != null) out.oppo_input_adb_shell = adbHdmiShell(oppo);
+      if (kodi != null) out.kodi_input_adb_shell = adbHdmiShell(kodi);
+      break;
+    case "lg_command":
+      if (state.tvOppoCommand) out.lg_oppo_command = state.tvOppoCommand;
+      if (state.tvKodiCommand) out.lg_kodi_command = state.tvKodiCommand;
+      break;
+    case "samsung_command":
+      if (state.tvOppoCommand) out.samsung_oppo_command = state.tvOppoCommand;
+      if (state.tvKodiCommand) out.samsung_kodi_command = state.tvKodiCommand;
+      break;
+    case "custom_command":
+      if (state.tvOppoCommand) out.custom_oppo_command = state.tvOppoCommand;
+      if (state.tvKodiCommand) out.custom_kodi_command = state.tvKodiCommand;
+      break;
+    case "smartthings": {
+      const token = state.tvSmartThingsToken;
+      const device = state.tvSmartThingsDeviceId;
+      const oppoInput = state.tvSmartThingsOppoInputId;
+      const kodiInput = state.tvSmartThingsKodiInputId;
+      if (token) out.smartthings_token = token;
+      if (device) out.smartthings_device_id = device;
+      if (oppoInput) out.smartthings_oppo_input_id = oppoInput;
+      if (kodiInput) out.smartthings_kodi_input_id = kodiInput;
+      if (token && device && oppoInput && kodiInput) {
+        out.smartthings_experimental_acknowledged = "true";
+      }
+      break;
+    }
   }
   return out;
 }
@@ -185,6 +250,7 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     out.tv_backend = state.tvBackend;
     if (state.tvIp) out.tv_ip = state.tvIp;
     Object.assign(out, hdmiInputSettings(state.tvBackend, state.playerInput, state.kodiInput));
+    Object.assign(out, tvControlSettings(state));
   }
 
   Object.assign(out, avrSettings(state));
