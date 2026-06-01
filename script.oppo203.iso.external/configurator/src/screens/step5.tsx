@@ -1,9 +1,16 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
 import { invoke } from "../ipc";
+import { parseOppoPowerReply, type PortResult } from "../probes";
 import type { InputAddress } from "../state";
 import { planSwitch, type SwitchExtras } from "../step5_switch";
+import {
+  autoFindMethod,
+  autoFindProbePorts,
+  sweepCommandFor,
+  SWEEP_INPUTS,
+} from "../step5_autofind";
 import { isAvrChain, step5NextScreen } from "../steps";
 import type { ScreenProps } from "./types";
 
@@ -375,138 +382,203 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 4 — ADB-weak fallback funnel
+// STEP 4 — Auto-find inputs (driven sweep where the backend allows, manual otherwise)
 // ============================================================
-export function Step5Fallback({ go, set }: ScreenProps) {
+type Reachability = { tvOpen: boolean | null; oppoPower: "on" | "off" | "unknown" | null };
+
+export function Step5Fallback({ go, state, set }: ScreenProps) {
+  const method = autoFindMethod(state);
+
+  const [scanning, setScanning] = useState(false);
+  const [reach, setReach] = useState<Reachability>({ tvOpen: null, oppoPower: null });
+  const [sweepIdx, setSweepIdx] = useState(0);
+  const [sweepBusy, setSweepBusy] = useState(false);
+  const [sweepErr, setSweepErr] = useState<string | null>(null);
+  const [foundOppo, setFoundOppo] = useState<number | null>(null);
+
+  const scan = async () => {
+    setScanning(true);
+    setSweepErr(null);
+    const ports = autoFindProbePorts(state);
+    let tvOpen: boolean | null = null;
+    let oppoPower: "on" | "off" | "unknown" | null = null;
+    try {
+      if (state.tvIp && ports.length > 0) {
+        const r = await invoke<PortResult[]>("tv_port_probe", { host: state.tvIp, ports });
+        tvOpen = r.some((p) => p.open);
+      }
+    } catch {
+      tvOpen = false;
+    }
+    try {
+      if (state.playerIp) {
+        const raw = await invoke<string>("oppo_query", {
+          host: state.playerIp,
+          port: 23,
+          command: "#QPW",
+        });
+        oppoPower = parseOppoPowerReply(raw);
+      }
+    } catch {
+      oppoPower = null;
+    }
+    setReach({ tvOpen, oppoPower });
+    setScanning(false);
+  };
+
+  const sweepHdmi = SWEEP_INPUTS[sweepIdx];
+  const fireSweep = async () => {
+    const cmd = sweepCommandFor(state, sweepHdmi);
+    if (!cmd) return;
+    setSweepBusy(true);
+    setSweepErr(null);
+    try {
+      await invoke<string>(cmd.command, cmd.args);
+    } catch (e) {
+      setSweepErr(String(e));
+    } finally {
+      setSweepBusy(false);
+    }
+  };
+  const confirmOppoHere = () => {
+    setFoundOppo(sweepHdmi);
+    set({ playerInput: sweepHdmi, kodiInput: sweepHdmi === 1 ? 2 : 1 });
+  };
+  const notHere = () => {
+    setSweepErr(null);
+    setSweepIdx((i) => (i + 1) % SWEEP_INPUTS.length);
+  };
+
+  const manualEntry = (
+    <div className="card">
+      <h3 className="sub-title">Enter it manually</h3>
+      <div className="tile-desc" style={{ marginBottom: 8 }}>
+        Pick the HDMI number your {isAvrChain(state.topology) ? "receiver" : "TV"} shows for the
+        OPPO. We store it as a real input number; the Kodi box takes another.
+      </div>
+      <div className="row" style={{ gap: 6 }}>
+        {[1, 2, 3, 4].map((n) => (
+          <button
+            key={n}
+            className="filter-pill"
+            onClick={() => {
+              set({ playerInput: n, kodiInput: n === 1 ? 2 : 1 });
+              go("step5_done");
+            }}
+          >
+            HDMI {n}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="screen">
       <div className="screen-header">
         <h1 className="screen-title">Let's find it together.</h1>
         <p className="screen-subtitle">
-          Your TV connected but ignores discrete HDMI keys. We'll walk three fallbacks,
-          most-reliable first. Each rung confirms before we move on.
+          {method === "sweep"
+            ? "No TV protocol reports the active input, so we switch to each HDMI in turn and you tell us when the OPPO appears — a real, driven sweep."
+            : "This backend can't drive discrete HDMI inputs from here, so we'll confirm what we can reach and then take the input number from you."}
         </p>
       </div>
+
       <div className="stack">
-        <FallbackRung
-          num="1"
-          status="active"
-          title="Ask the number"
-          desc="Tell us the HDMI number and we'll fire KEYCODE_TV_INPUT_HDMI_N. Stores a real HDMI number."
-          action={
-            <div className="row" style={{ gap: 6 }}>
-              {[1, 2, 3, 4].map((n) => (
-                <button
-                  key={n}
-                  className="filter-pill"
-                  onClick={() => {
-                    set({ playerInput: n, kodiInput: n === 1 ? 2 : 1 });
-                    go("step5_done");
-                  }}
-                >
-                  HDMI {n}
-                </button>
-              ))}
+        <div className="card">
+          <div className="row" style={{ gap: 10, alignItems: "center" }}>
+            <button className="btn outline sm" onClick={scan} disabled={scanning}>
+              <Icon name="search" size={13} /> {scanning ? "Scanning…" : "Scan reachability"}
+            </button>
+            {reach.tvOpen != null && (
+              <span className={reach.tvOpen ? "success-text" : "muted"} style={{ fontSize: 12.5 }}>
+                TV control port {reach.tvOpen ? "answered" : "didn't answer"}
+              </span>
+            )}
+            {reach.oppoPower != null && (
+              <span className="muted" style={{ fontSize: 12.5 }}>
+                · OPPO {reach.oppoPower === "unknown" ? "reachable" : `power ${reach.oppoPower}`}
+              </span>
+            )}
+          </div>
+          {reach.oppoPower === "off" && (
+            <div className="field-hint" style={{ marginTop: 6 }}>
+              The OPPO reports power off — turn it on so you can see it on the TV during the sweep.
             </div>
-          }
-        />
-        <FallbackRung
-          num="2"
-          status="next"
-          title="CEC One-Touch-Play"
-          desc="Wake the OPPO so it asserts active source over CEC; the TV follows. Stores 'OPPO = CEC-asserted input' — no number needed."
-          action={
-            <button
-              className="btn outline sm"
-              onClick={() => {
-                set({ playerInput: "cec", kodiInput: 1 });
-                go("step5_done");
-              }}
-            >
-              Use CEC fallback
-            </button>
-          }
-        />
-        <FallbackRung
-          num="3"
-          status="next"
-          title="Blind-cycle (last resort)"
-          desc="Send the input-advance key; you tell us when the OPPO appears. Stores the lossy record — 'input after N advances' — flagged as brittle internally."
-          action={
-            <button
-              className="btn outline sm"
-              onClick={() => {
-                set({ playerInput: "cycle:2", kodiInput: "cycle:1" });
-                go("step5_done");
-              }}
-            >
-              Cycle now
-            </button>
-          }
-        />
-        <FallbackRung
-          num="4"
-          status="exit"
-          title="None of the above worked"
-          desc="Switch inputs with your TV remote yourself. The add-on simply won't try to drive the TV."
-          action={
-            <button
-              className="btn ghost sm"
-              onClick={() => {
-                set({ tvManualSwitch: true });
-                go("step5_done");
-              }}
-            >
-              Manual switching
-            </button>
-          }
-        />
-      </div>
-      <FooterNav go={go} back="step5_intro" />
-    </div>
-  );
-}
-
-type RungStatus = "active" | "next" | "exit";
-
-function FallbackRung({
-  num,
-  status,
-  title,
-  desc,
-  action,
-}: {
-  num: string;
-  status: RungStatus;
-  title: string;
-  desc: string;
-  action: ReactNode;
-}) {
-  return (
-    <div className="tile" style={{ cursor: "default", alignItems: "center" }}>
-      <div
-        className="tile-icon"
-        style={{
-          background: status === "active" ? "var(--accent-soft)" : "var(--surface-2)",
-          color: status === "active" ? "var(--accent)" : "var(--muted)",
-          fontWeight: 700,
-          fontFamily: "var(--font-display)",
-        }}
-      >
-        {num}
-      </div>
-      <div className="tile-body">
-        <div className="tile-title">
-          {title}{" "}
-          {status === "active" && (
-            <span className="chip accent" style={{ marginLeft: 6 }}>
-              Try this first
-            </span>
           )}
         </div>
-        <div className="tile-desc">{desc}</div>
+
+        {method === "sweep" ? (
+          foundOppo != null ? (
+            <div className="callout success">
+              <span className="callout-icon">
+                <Icon name="check" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                Found the OPPO on <code>HDMI {foundOppo}</code>. We stored it as the handoff input
+                and set the Kodi box to <code>HDMI {foundOppo === 1 ? 2 : 1}</code> — adjust on the
+                next screen if that's not right.
+                <div style={{ marginTop: 10 }}>
+                  <button className="btn primary" onClick={() => go("step5_done")}>
+                    Looks right — continue <Icon name="chevR" size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="card">
+              <h3 className="sub-title">Sweep · trying HDMI {sweepHdmi}</h3>
+              <div className="tile-desc" style={{ marginBottom: 10 }}>
+                We'll switch your TV to <code>HDMI {sweepHdmi}</code>. Watch the screen — if you see
+                the OPPO, confirm it; otherwise we move to the next input.
+              </div>
+              <div className="row" style={{ gap: 10 }}>
+                <button className="btn primary" onClick={fireSweep} disabled={sweepBusy}>
+                  <Icon name="play" size={14} /> {sweepBusy ? "Switching…" : `Switch to HDMI ${sweepHdmi}`}
+                </button>
+                <button className="btn outline" onClick={confirmOppoHere}>
+                  <Icon name="check" size={14} /> I see the OPPO
+                </button>
+                <button className="btn ghost" onClick={notHere}>
+                  Not here — next
+                </button>
+              </div>
+              {sweepErr && (
+                <div className="callout warn" style={{ marginTop: 10 }}>
+                  <span className="callout-icon">
+                    <Icon name="warn" size={13} stroke={2.2} />
+                  </span>
+                  <div className="callout-body">
+                    Switch failed: <code>{sweepErr}</code>. Check the TV IP / reachability above, or
+                    enter the number manually below.
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        ) : null}
+
+        {manualEntry}
+
+        <div className="tile" style={{ cursor: "default", alignItems: "center" }}>
+          <div className="tile-body">
+            <div className="tile-title">None of this worked</div>
+            <div className="tile-desc">
+              Switch inputs with your remote yourself — the add-on won't try to drive the TV.
+            </div>
+          </div>
+          <button
+            className="btn ghost sm"
+            onClick={() => {
+              set({ tvManualSwitch: true });
+              go("step5_done");
+            }}
+          >
+            Manual switching
+          </button>
+        </div>
       </div>
-      <div>{action}</div>
+      <FooterNav go={go} back="step5_intro" />
     </div>
   );
 }
