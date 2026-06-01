@@ -12,6 +12,16 @@ import {
   type LiveFrame,
   type Svm3Confirm,
 } from "../svm3_confirm";
+import {
+  applyRewrite,
+  canFireHttpPlay,
+  INITIAL_SELF_TEST,
+  selfTestPlaybackConfirmed,
+  SELF_TEST_STEPS,
+  type SelfTestState,
+  type SelfTestStepId,
+  type StepStatus,
+} from "../self_test";
 import type { ScreenProps } from "./types";
 
 // One copy-progress frame emitted by the Rust `copy_to_share` command (see lib.rs `CopyProgress`).
@@ -353,6 +363,10 @@ export function TestSetup({ go, state, set }: ScreenProps) {
       )}
 
       {mode !== null && (
+        <SelfTestOrchestrator go={go} state={state} />
+      )}
+
+      {mode !== null && (
         <Svm3ConfirmCard playerIp={state.playerIp} svm3={state.monitorMode === "svm3"} />
       )}
 
@@ -574,6 +588,276 @@ function ConfirmBadge({ on, label }: { on: boolean; label: string }) {
         {label}
       </span>
     </span>
+  );
+}
+
+// How long the confirm step watches the verbose feed for @UPL PLAY before giving up (ms).
+const CONFIRM_TIMEOUT_MS = 25000;
+
+const STEP_DOT: Record<StepStatus, { color: string; glyph: string }> = {
+  idle: { color: "#9CA3AF", glyph: "•" },
+  running: { color: "#2563EB", glyph: "…" },
+  ok: { color: "#16A34A", glyph: "✓" },
+  fail: { color: "#DC2626", glyph: "✕" },
+  skipped: { color: "#9CA3AF", glyph: "–" },
+};
+
+/**
+ * Watch the verbose-mode-3 feed until the player reports @UPL PLAY (resolves true) or a timeout
+ * elapses (resolves false). Starts + stops the live monitor itself, so the confirm step is a single
+ * awaitable; reuses the Phase 4.3 fold so the oracle is the same as the standalone watch card.
+ */
+async function confirmPlaybackViaSvm3(
+  playerIp: string,
+  onFrame: (f: LiveFrame, v: Svm3Confirm) => void,
+): Promise<boolean> {
+  let verdict: Svm3Confirm = INITIAL_SVM3_CONFIRM;
+  let unlisten: (() => void) | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const settle = async (result: boolean): Promise<boolean> => {
+    if (timer) clearTimeout(timer);
+    if (unlisten) unlisten();
+    try {
+      await invoke("stop_oppo_live_monitor");
+    } catch {
+      // best-effort
+    }
+    return result;
+  };
+  return new Promise<boolean>((resolve) => {
+    void listen<LiveFrame>("oppo-live", (e) => {
+      verdict = foldSvm3Frame(verdict, e.payload);
+      onFrame(e.payload, verdict);
+      if (verdict.confirmedPlayback) void settle(true).then(resolve);
+    }).then(async (u) => {
+      unlisten = u;
+      timer = setTimeout(() => void settle(false).then(resolve), CONFIRM_TIMEOUT_MS);
+      try {
+        await invoke("start_oppo_live_monitor", { host: playerIp, port: 23 });
+      } catch (err) {
+        onFrame({ seq: -1, kind: "error", raw: `monitor failed: ${String(err)}` }, verdict);
+        void settle(false).then(resolve);
+      }
+    });
+  });
+}
+
+// Sequence the full OPPO self-test: power-cycle → reach-share → http_handoff play → SVM3-confirm →
+// control-forwarding. Each step records ok/fail/skipped with an honest fallback; none of it is
+// hardware-verifiable in-session. Reuses oppo_power, oppo_http_play, kodi_now_playing, and the
+// live monitor already on main.
+function SelfTestOrchestrator({
+  go,
+  state,
+}: {
+  go: (id: ScreenId) => void;
+  state: ScreenProps["state"];
+}) {
+  const [steps, setSteps] = useState<SelfTestState>(INITIAL_SELF_TEST);
+  const [kodiPath, setKodiPath] = useState("");
+  const [running, setRunning] = useState(false);
+  const [notes, setNotes] = useState<Partial<Record<SelfTestStepId, string>>>({});
+  const [frames, setFrames] = useState<LiveFrame[]>([]);
+
+  const oppoPath = applyRewrite(kodiPath, state.oppoPathFrom, state.oppoPathTo);
+  const haveRewrite = state.oppoPathFrom.trim().length > 0;
+
+  const setStep = (id: SelfTestStepId, status: StepStatus, note?: string) => {
+    setSteps((s) => ({ ...s, [id]: status }));
+    if (note !== undefined) setNotes((n) => ({ ...n, [id]: note }));
+  };
+
+  const captureKodi = async () => {
+    setNotes((n) => ({ ...n, play: "" }));
+    try {
+      const p = await invoke<string | null>("kodi_now_playing", {
+        host: state.kodiIp,
+        user: state.sshUser,
+      });
+      if (p) setKodiPath(p);
+      else setNotes((n) => ({ ...n, play: "Kodi reported nothing playing — start the file first." }));
+    } catch (e) {
+      setNotes((n) => ({ ...n, play: `Kodi query failed: ${String(e)}` }));
+    }
+  };
+
+  const run = async () => {
+    setRunning(true);
+    setFrames([]);
+    setSteps(INITIAL_SELF_TEST);
+    setNotes({});
+
+    // 1) Power-cycle: #POF then #PON. A failure is non-fatal — the rest of the test can still run.
+    setStep("power_cycle", "running");
+    try {
+      await invoke("oppo_power", { host: state.playerIp, action: "off" });
+      await invoke("oppo_power", { host: state.playerIp, action: "on" });
+      setStep("power_cycle", "ok", "#POF then #PON sent.");
+    } catch (e) {
+      setStep("power_cycle", "fail", `Power-cycle failed (continuing): ${String(e)}`);
+    }
+
+    // 2) Reach the share: no command for http_handoff (the player mounts it on play). Informational.
+    setStep(
+      "mount",
+      "skipped",
+      "No mount command for http_handoff — the player mounts the share itself on play.",
+    );
+
+    // 3) Play via http_handoff. Needs an OPPO-visible path; skip honestly if we don't have one.
+    if (!canFireHttpPlay(oppoPath)) {
+      setStep("play", "skipped", "No OPPO path — capture the Kodi path and the from→to mapping first.");
+      setStep("confirm", "skipped", "Skipped: nothing was played.");
+    } else {
+      setStep("play", "running");
+      let played = false;
+      try {
+        await invoke<string>("oppo_http_play", { host: state.playerIp, oppoPath });
+        setStep("play", "ok", `Sent /playnormalfile for ${oppoPath}`);
+        played = true;
+      } catch (e) {
+        setStep("play", "fail", `Play handoff failed: ${String(e)}`);
+      }
+
+      // 4) Confirm via SVM3 — only meaningful if the play was actually sent.
+      if (played) {
+        setStep("confirm", "running");
+        const ok = await confirmPlaybackViaSvm3(state.playerIp, (f) => {
+          setFrames((prev) => [...prev.slice(-29), f]);
+        });
+        setStep(
+          "confirm",
+          ok ? "ok" : "fail",
+          ok
+            ? "Player reported @UPL PLAY."
+            : "No @UPL PLAY within the watch window — confirm manually below.",
+        );
+      } else {
+        setStep("confirm", "skipped", "Skipped: the play handoff didn't send.");
+      }
+    }
+
+    // 5) Control forwarding stays operator-confirmed — it can't be auto-verified.
+    setStep(
+      "control",
+      "skipped",
+      "Drive the disc menu with your Kodi remote, then answer the questions below.",
+    );
+
+    setRunning(false);
+  };
+
+  const playbackConfirmed = selfTestPlaybackConfirmed(steps);
+
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <h3 className="sub-title" style={{ margin: 0 }}>
+          Automated self-test
+        </h3>
+        <button className="btn primary sm" onClick={run} disabled={running}>
+          <Icon name="bolt" size={13} /> {running ? "Running…" : "Run self-test"}
+        </button>
+      </div>
+      <p className="muted" style={{ fontSize: 12.5, marginTop: 6 }}>
+        Power-cycles the player, hands off the file with <code>http_handoff</code>, and confirms
+        playback from the player's own SVM3 status — then you confirm control forwarding. Each step
+        falls back honestly; nothing here is hardware-validated.
+      </p>
+
+      <div className="field" style={{ marginTop: 4 }}>
+        <label className="field-label">Test file — path as Kodi sees it</label>
+        <div className="row" style={{ gap: 8 }}>
+          <input
+            className="input"
+            value={kodiPath}
+            placeholder="smb://10.0.1.10/Movies/test-uhd-2160p.iso"
+            onChange={(e) => setKodiPath(e.target.value)}
+            disabled={running}
+          />
+          <button className="btn outline" onClick={captureKodi} disabled={running}>
+            Capture from Kodi
+          </button>
+        </div>
+        {haveRewrite ? (
+          <div className="field-hint">
+            OPPO-visible path: <code>{oppoPath || "—"}</code>{" "}
+            <span className="muted">(via {state.oppoPathFrom} → {state.oppoPathTo})</span>
+          </div>
+        ) : (
+          <div className="field-hint" style={{ color: "var(--danger)" }}>
+            No from→to mapping captured (Player step) — the play step will be skipped.
+          </div>
+        )}
+      </div>
+
+      <div className="stack-sm" style={{ marginTop: 10 }}>
+        {SELF_TEST_STEPS.map((step, i) => {
+          const status = steps[step.id];
+          const dot = STEP_DOT[status];
+          return (
+            <div key={step.id} className="row" style={{ gap: 10, alignItems: "flex-start" }}>
+              <span
+                style={{
+                  minWidth: 18,
+                  color: dot.color,
+                  fontFamily: "var(--font-display)",
+                  fontWeight: 700,
+                  fontSize: 13,
+                }}
+              >
+                {dot.glyph}
+              </span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>
+                  {i + 1}. {step.label}
+                </div>
+                <div className="muted" style={{ fontSize: 11.5 }}>
+                  {notes[step.id] || step.detail}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {frames.length > 0 && (
+        <div
+          style={{
+            maxHeight: 110,
+            overflowY: "auto",
+            marginTop: 10,
+            fontFamily: "var(--font-mono)",
+            fontSize: 11.5,
+            lineHeight: 1.6,
+          }}
+        >
+          {frames.map((f) => (
+            <div key={f.seq} style={{ color: FRAME_COLORS[f.kind] }}>
+              {f.raw}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {playbackConfirmed && (
+        <div className="callout success" style={{ marginTop: 10 }}>
+          <span className="callout-icon">
+            <Icon name="check" size={13} stroke={2.2} />
+          </span>
+          <div className="callout-body">
+            <strong>Playback confirmed by the player.</strong> Now drive the disc menu with your
+            Kodi remote and confirm control forwarding.
+          </div>
+        </div>
+      )}
+
+      <div className="row" style={{ gap: 8, marginTop: 12 }}>
+        <button className="btn outline" onClick={() => go("test_confirm")} disabled={running}>
+          Confirm control forwarding <Icon name="chevR" size={13} />
+        </button>
+      </div>
+    </div>
   );
 }
 
