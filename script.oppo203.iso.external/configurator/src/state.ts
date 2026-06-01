@@ -76,6 +76,9 @@ export type WizardState = {
   tvVerified: boolean;
   tvAdbWeak: boolean;
   tvManualSwitch: boolean;
+  // Sony Bravia TV Pre-Shared Key, captured in the Step 5 switch test (the only place the TV
+  // PSK is needed today); handled as a secret like avrSonyPsk.
+  tvSonyPsk: string;
 
   avrBrand: string | null;
   avrRegion: AvrRegion | null;
@@ -143,6 +146,7 @@ export const INITIAL_STATE: WizardState = {
   tvVerified: false,
   tvAdbWeak: false,
   tvManualSwitch: false,
+  tvSonyPsk: "",
   avrBrand: null,
   avrRegion: null,
   avrModel: null,
