@@ -35,7 +35,7 @@ export type PlayerBrand =
 
 export type InputAddress = number | "cec" | string | null;
 
-export type PlaybackArchitecture = "external_player" | "service_interception";
+export type PlaybackArchitecture = "external_player" | "service_interception" | "http_handoff";
 
 /**
  * How the add-on confirms OPPO playback (Step 3 "Playback mode"):
