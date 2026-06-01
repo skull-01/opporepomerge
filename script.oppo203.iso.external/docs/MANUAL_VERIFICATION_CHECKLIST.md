@@ -29,6 +29,18 @@ implementing SHA(s) on the issue and append a row here.
 
 ---
 
+## Addon backlog audit + Phase-C runbook
+
+The open `area:addon` bug/ENH backlog is already merged to `main`; what remains is your
+on-device Phase C. A per-issue **audit** — confirmed-fixed evidence (`file:line` + the pinning
+test) plus the exact on-device steps — lives in [`docs/audit/`](audit/README.md). Start there
+for the Phase-C steps; the detailed pre-merge rows below remain the per-PR record.
+
+- [`addon_robustness_audit.md`](audit/addon_robustness_audit.md) — #111 / #112 / #114 / #115 / #116 / #117 / #123 (robustness; merged #129–#133).
+- [`addon_svm3_audit.md`](audit/addon_svm3_audit.md) — #150 / #151 / #152 + #113 verify-played (SVM3; merged #143–#145). Note: the audit flags #113 as **fully realized for SVM3, partial for legacy** — decide its disposition at Phase C.
+
+---
+
 ## Phase A — pre-merge
 
 ### Add-on + configurator — http_handoff routing: six-option playback (PRs #154/#155/#156/#157)
