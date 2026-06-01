@@ -369,6 +369,15 @@ are a maintained matrix"** norm now in `AGENTS.md` + §4 of the handoff. *Option
 hardening:* a single shared preset source consumed by both sides + a Python parity test
 (the AVR/TV-DB-guard pattern) for fully-automated cross-language parity.
 
+**Phase 1 built + released as `configurator-v0.6.0-experimental2` (2026-06-01).** The
+bundle-and-install feature (PR-1.1 / 1.2 / 1.4 + the NAS-path plumbing of 1.3) is on branch
+`claude/cfg-phase1-install-addon-5c1d8a30` (`46deeb2`) and shipped as a GitHub **pre-release**
+(MSI + NSIS + SHA256), **off `main`** — main's configurator stays at v0.5.0. Software-verified
+only (cargo test 7/7, `tsc` + 178 vitest + `vite build`); the on-box install + OPPO NAS path are
+**hardware-pending**. **Deferred:** the Step-2 NAS-path capture UI (the `http_handoff` default is
+*inert* until set) and the add-on version stamp (bundle self-reports `2.9.13`). **Next:**
+hardware-verify (Phase A/B/C), then promote the branch to a PR + merge.
+
 ---
 
 ## §7 How to keep this file useful
