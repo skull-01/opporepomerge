@@ -1101,14 +1101,355 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
     }
 }
 
+// ============================================================
+// AVR input switching (Phase 3.1) -- per-brand builders + best-effort fire
+// ============================================================
+//
+// Mirrors the add-on's AVR drivers (resources/lib/avr/): Denon/Marantz telnet `SI<input>` on :23,
+// Onkyo/Integra/Pioneer eISCP `!1SLI<hh>` framed on :60128, Yamaha MusicCast/YXC HTTP `setInput`
+// on :80, and the experimental Sony Audio Control API JSON-RPC `setPlayContent` POST. The builders
+// are pure (unit-tested against the add-on's wire format); the fire commands open one short-lived
+// socket like tv_switch_roku and are best-effort -- hardware-pending, not validated in-session.
+
+const DENON_PORT: u16 = 23;
+const EISCP_PORT: u16 = 60128;
+const YAMAHA_PORT: u16 = 80;
+const SONY_AUDIO_PORT: u16 = 80;
+
+/// Build a Denon/Marantz input-select command (`SI<INPUT>`), validating like the add-on's
+/// VALID_DENON_INPUT_RE (`^[A-Za-z0-9_/-]{1,32}$`, upper-cased). The wire frame appends CR.
+fn denon_input_command(input: &str) -> Result<String, String> {
+    let text = input.trim().to_ascii_uppercase();
+    let n = text.chars().count();
+    let ok = (1..=32).contains(&n)
+        && text
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | '-'));
+    if !ok {
+        return Err(format!("invalid Denon/Marantz input '{input}'"));
+    }
+    Ok(format!("SI{text}"))
+}
+
+/// Build an Onkyo/Pioneer eISCP input-select payload (`!1SLI<HH>`) from a 2-hex-digit code.
+fn eiscp_input_payload(code: &str) -> Result<String, String> {
+    let text = code.trim().to_ascii_uppercase();
+    if text.len() != 2 || !text.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(format!(
+            "invalid eISCP input '{code}' (expected 2 hex digits)"
+        ));
+    }
+    Ok(format!("!1SLI{text}"))
+}
+
+/// Frame an eISCP payload: `ISCP` magic + big-endian header/data sizes + version, the payload
+/// terminated with CR. Mirrors build_eiscp_frame in avr_onkyo_eiscp.py.
+fn eiscp_frame(payload: &str) -> Vec<u8> {
+    let body = format!("{payload}\r");
+    let body_bytes = body.as_bytes();
+    let mut frame = Vec::with_capacity(16 + body_bytes.len());
+    frame.extend_from_slice(b"ISCP");
+    frame.extend_from_slice(&16u32.to_be_bytes());
+    frame.extend_from_slice(&(body_bytes.len() as u32).to_be_bytes());
+    frame.extend_from_slice(&[1, 0, 0, 0]);
+    frame.extend_from_slice(body_bytes);
+    frame
+}
+
+/// Build the Yamaha MusicCast/YXC `setInput` path+query for a validated input
+/// (`^[A-Za-z0-9_/-]{1,64}$`). Fired as a raw HTTP GET.
+fn yamaha_input_path(input: &str) -> Result<String, String> {
+    let text = input.trim();
+    let n = text.chars().count();
+    let ok = (1..=64).contains(&n)
+        && text
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | '-'));
+    if !ok {
+        return Err(format!("invalid Yamaha input '{input}'"));
+    }
+    Ok(format!(
+        "/YamahaExtendedControl/v1/main/setInput?input={}",
+        percent_encode(text)
+    ))
+}
+
+/// Compact, key-sorted Sony Audio Control API JSON-RPC body (matches build_sony_audio_payload:
+/// serde_json's default Map is a BTreeMap, so keys serialize sorted like Python's sort_keys=True).
+fn sony_audio_payload(method: &str, params: serde_json::Value) -> String {
+    serde_json::json!({"method": method, "params": params, "id": 1, "version": "1.0"}).to_string()
+}
+
+/// The Sony Audio Control API `setPlayContent` body for an input URI.
+fn sony_audio_set_input_payload(uri: &str) -> String {
+    sony_audio_payload("setPlayContent", serde_json::json!([{"uri": uri}]))
+}
+
+/// Raw HTTP/1.0 GET request for host:port + an absolute path/query.
+fn http_get_request(host: &str, port: u16, path_query: &str) -> String {
+    format!("GET {path_query} HTTP/1.0\r\nHost: {host}:{port}\r\nConnection: close\r\n\r\n")
+}
+
+/// Raw HTTP/1.0 JSON POST request. `extra_headers` (each `Name: value\r\n`) is inserted verbatim.
+fn json_post_request(host: &str, port: u16, path: &str, body: &str, extra_headers: &str) -> String {
+    format!(
+        "POST {path} HTTP/1.0\r\nHost: {host}:{port}\r\nContent-Type: application/json; charset=UTF-8\r\nContent-Length: {len}\r\n{extra_headers}Connection: close\r\n\r\n{body}",
+        len = body.len()
+    )
+}
+
+/// Interpret a device reply: HTTP 2xx (or a non-HTTP raw echo) is Ok, other HTTP codes are Err.
+fn device_response_ok(resp: &str) -> Result<String, String> {
+    let first = resp.lines().next().unwrap_or("").trim().to_string();
+    if first.is_empty() {
+        return Err("no response from the device".to_string());
+    }
+    match first
+        .split_whitespace()
+        .nth(1)
+        .and_then(|c| c.parse::<u16>().ok())
+    {
+        Some(c) if (200..300).contains(&c) => Ok(first),
+        Some(_) => Err(format!("device returned: {first}")),
+        None => Ok(first),
+    }
+}
+
+/// First non-empty reply line, or a "sent" note when the device stays silent (Denon/eISCP often do).
+fn first_line_or_sent(resp: &str) -> String {
+    let line = resp
+        .lines()
+        .map(str::trim)
+        .find(|l| !l.is_empty())
+        .unwrap_or("");
+    if line.is_empty() {
+        "command sent (no response)".to_string()
+    } else {
+        line.to_string()
+    }
+}
+
+/// Open one short-lived TCP connection, send `payload`, and return the device's reply (best-effort,
+/// lossy UTF-8). Shared by the Denon/eISCP (raw) and Yamaha/Sony (HTTP) fire commands.
+fn socket_exchange(
+    host: &str,
+    port: u16,
+    payload: &[u8],
+    timeout_ms: u64,
+) -> Result<String, String> {
+    let mut stream = connect_timeout(host, port, timeout_ms)?;
+    let t = Duration::from_millis(timeout_ms);
+    stream
+        .set_read_timeout(Some(t))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(t))
+        .map_err(|e| e.to_string())?;
+    stream.write_all(payload).map_err(|e| e.to_string())?;
+    let mut resp = Vec::new();
+    let mut chunk = [0u8; 1024];
+    loop {
+        match stream.read(&mut chunk) {
+            Ok(0) => break,
+            Ok(n) => {
+                resp.extend_from_slice(&chunk[..n]);
+                if resp.len() >= 8192 {
+                    break;
+                }
+            }
+            Err(_) => break,
+        }
+    }
+    Ok(String::from_utf8_lossy(&resp).into_owned())
+}
+
+/// Switch a Denon/Marantz receiver to an input over telnet (:23), mirroring send_denon_command.
+/// Best-effort + hardware-pending.
+#[tauri::command]
+fn avr_switch_denon(
+    host: String,
+    input: String,
+    port: Option<u16>,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    let command = denon_input_command(&input)?;
+    let resp = socket_exchange(
+        &host,
+        port.unwrap_or(DENON_PORT),
+        format!("{command}\r").as_bytes(),
+        timeout_ms.unwrap_or(4000),
+    )?;
+    Ok(first_line_or_sent(&resp))
+}
+
+/// Switch an Onkyo/Integra/Pioneer receiver to an input over eISCP (:60128). Best-effort +
+/// hardware-pending. Pioneer shares the protocol -- the brand label lives configurator-side.
+#[tauri::command]
+fn avr_switch_eiscp(
+    host: String,
+    input_code: String,
+    port: Option<u16>,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    let frame = eiscp_frame(&eiscp_input_payload(&input_code)?);
+    let resp = socket_exchange(
+        &host,
+        port.unwrap_or(EISCP_PORT),
+        &frame,
+        timeout_ms.unwrap_or(4000),
+    )?;
+    Ok(first_line_or_sent(&resp))
+}
+
+/// Switch a Yamaha MusicCast/YXC receiver to an input over HTTP (:80). Best-effort +
+/// hardware-pending.
+#[tauri::command]
+fn avr_switch_yamaha(
+    host: String,
+    input: String,
+    port: Option<u16>,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    let p = port.unwrap_or(YAMAHA_PORT);
+    let request = http_get_request(&host, p, &yamaha_input_path(&input)?);
+    let resp = socket_exchange(&host, p, request.as_bytes(), timeout_ms.unwrap_or(5000))?;
+    device_response_ok(&resp)
+}
+
+/// Switch a Sony AV receiver to an input via the experimental Audio Control API (`setPlayContent`
+/// POST). Best-effort + hardware-pending.
+#[tauri::command]
+fn avr_switch_sony_audio(
+    host: String,
+    input_uri: String,
+    api_path: Option<String>,
+    psk: Option<String>,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    if input_uri.trim().is_empty() {
+        return Err("input_uri is empty".to_string());
+    }
+    let path = api_path
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty())
+        .unwrap_or_else(|| "/sony/audio".to_string());
+    if !path.starts_with('/') || path.contains("..") || path.contains('\r') || path.contains('\n') {
+        return Err(format!("invalid Sony Audio API path '{path}'"));
+    }
+    let extra = match psk.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        Some(p) => format!("X-Auth-PSK: {p}\r\n"),
+        None => String::new(),
+    };
+    let body = sony_audio_set_input_payload(input_uri.trim());
+    let request = json_post_request(&host, SONY_AUDIO_PORT, &path, &body, &extra);
+    let resp = socket_exchange(
+        &host,
+        SONY_AUDIO_PORT,
+        request.as_bytes(),
+        timeout_ms.unwrap_or(5000),
+    )?;
+    device_response_ok(&resp)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, kodi_enable_body, kodi_enable_ok, kodi_get_item_body,
-        oppo_info_request, oppo_play_payload, oppo_play_request, oppo_signin_request,
-        parse_addon_version, parse_kodi_active_player_id, parse_kodi_log_file,
-        parse_kodi_player_file, parse_verbose_mode, percent_encode, roku_keypress_request, to_hex,
+        classify_frame, denon_input_command, device_response_ok, eiscp_frame, eiscp_input_payload,
+        extract_zip_into, first_line_or_sent, http_get_request, json_post_request,
+        kodi_enable_body, kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
+        oppo_play_request, oppo_signin_request, parse_addon_version, parse_kodi_active_player_id,
+        parse_kodi_log_file, parse_kodi_player_file, parse_verbose_mode, percent_encode,
+        roku_keypress_request, sony_audio_set_input_payload, to_hex, yamaha_input_path,
     };
+
+    #[test]
+    fn denon_input_command_builds_si_and_upper_cases() {
+        assert_eq!(denon_input_command("bd").unwrap(), "SIBD");
+        assert_eq!(denon_input_command(" Game ").unwrap(), "SIGAME");
+    }
+
+    #[test]
+    fn denon_input_command_rejects_junk() {
+        assert!(denon_input_command("").is_err());
+        assert!(denon_input_command("BD;rm").is_err());
+        assert!(denon_input_command(&"X".repeat(33)).is_err());
+    }
+
+    #[test]
+    fn eiscp_input_payload_requires_two_hex_digits() {
+        assert_eq!(eiscp_input_payload("23").unwrap(), "!1SLI23");
+        assert_eq!(eiscp_input_payload("0a").unwrap(), "!1SLI0A");
+        assert!(eiscp_input_payload("2").is_err());
+        assert!(eiscp_input_payload("ZZ").is_err());
+        assert!(eiscp_input_payload("233").is_err());
+    }
+
+    #[test]
+    fn eiscp_frame_has_iscp_magic_and_sizes() {
+        let frame = eiscp_frame("!1SLI23");
+        assert_eq!(&frame[0..4], b"ISCP");
+        assert_eq!(&frame[4..8], &16u32.to_be_bytes());
+        // payload is the command plus a trailing CR.
+        assert_eq!(&frame[8..12], &8u32.to_be_bytes());
+        assert_eq!(frame[12], 1);
+        assert_eq!(&frame[16..], b"!1SLI23\r");
+    }
+
+    #[test]
+    fn yamaha_input_path_targets_set_input() {
+        assert_eq!(
+            yamaha_input_path("hdmi1").unwrap(),
+            "/YamahaExtendedControl/v1/main/setInput?input=hdmi1"
+        );
+        assert!(yamaha_input_path("").is_err());
+        assert!(yamaha_input_path("bad input").is_err());
+    }
+
+    #[test]
+    fn sony_audio_payload_is_compact_and_key_sorted() {
+        let body = sony_audio_set_input_payload("extInput:hdmi?port=1");
+        assert!(body.contains(r#""method":"setPlayContent""#));
+        assert!(body.contains(r#""uri":"extInput:hdmi?port=1""#));
+        // sort_keys: id precedes method precedes params precedes version, with no spaces.
+        assert!(body.starts_with(r#"{"id":1,"method":"#));
+        assert!(!body.contains(", "));
+    }
+
+    #[test]
+    fn json_post_request_sets_content_length() {
+        let body = "{\"a\":1}";
+        let req = json_post_request("10.0.0.5", 80, "/sony/audio", body, "X-Auth-PSK: k\r\n");
+        assert!(req.starts_with("POST /sony/audio HTTP/1.0\r\n"));
+        assert!(req.contains(&format!("Content-Length: {}\r\n", body.len())));
+        assert!(req.contains("X-Auth-PSK: k\r\n"));
+        assert!(req.ends_with(body));
+    }
+
+    #[test]
+    fn http_get_request_is_well_formed() {
+        let req = http_get_request("10.0.0.6", 80, "/x?y=1");
+        assert!(req.starts_with("GET /x?y=1 HTTP/1.0\r\n"));
+        assert!(req.contains("Host: 10.0.0.6:80\r\n"));
+    }
+
+    #[test]
+    fn device_response_ok_reads_http_status() {
+        assert!(device_response_ok("HTTP/1.1 200 OK\r\n\r\n{}").is_ok());
+        assert!(device_response_ok("HTTP/1.0 403 Forbidden\r\n").is_err());
+        assert!(device_response_ok("").is_err());
+        // a non-HTTP raw echo (e.g. a Denon ack) is treated as a reply, not an error.
+        assert!(device_response_ok("SIBD").is_ok());
+    }
+
+    #[test]
+    fn first_line_or_sent_handles_silence() {
+        assert_eq!(first_line_or_sent("  \n SIBD \n"), "SIBD");
+        assert_eq!(first_line_or_sent("   "), "command sent (no response)");
+    }
 
     #[test]
     fn kodi_enable_body_targets_set_addon_enabled() {
@@ -1333,6 +1674,10 @@ pub fn run() {
             install_addon,
             kodi_set_addon_enabled,
             tv_switch_roku,
+            avr_switch_denon,
+            avr_switch_eiscp,
+            avr_switch_yamaha,
+            avr_switch_sony_audio,
             start_oppo_live_monitor,
             stop_oppo_live_monitor
         ])
