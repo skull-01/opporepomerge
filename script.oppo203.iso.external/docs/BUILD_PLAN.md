@@ -150,7 +150,12 @@ power-cycle/mount/play, test-file copy) plus the **add-on copy** is the new work
   **(A)** cut a Final `v2.9.14` from `main` and bundle it *(recommended — a
   real, evidenced release for an install flow)*; **(B)** bundle the existing
   `v2.9.14-experimental`; **(C)** build `main` fresh at configurator-build time
-  (unpinned). *Pending operator confirmation.*
+  (unpinned). **RESOLVED 2026-06-01 → C.** No separate add-on release; the
+  configurator build runs `tools/package_installable_zip.py` on `main` (PR-1.1),
+  bundling an *unpinned* `main` snapshot. **Phase 0 dissolves into PR-1.1.**
+  ⚠️ Labelling wrinkle: `main`'s `version.py` (`2.9.13`) lags its post-2.9.13 code,
+  so a fresh bundle self-reports `2.9.13` — fixed in PR-1.1 (bump `main` to a dev
+  version, or stamp the bundled ZIP at build time).
 - **D-2 · Test-ISO source (Phase 4).** A real UHD ISO is multi-GB — **cannot be
   bundled**. Download a master vs. user-supplies a master to copy from.
 - **D-3 · Add-on *enablement* after file-drop.** Restart-only (the in-flow test
