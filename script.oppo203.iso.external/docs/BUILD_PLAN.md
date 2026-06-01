@@ -386,6 +386,12 @@ HTTP play, the Roku switch) are **unvalidated**. **Next:** hardware-verify on a 
 TV, then promote the PRs to ready and merge. Phase 3 remaining (adb / Sony / AVR switch backends +
 switch-and-verify UI) and Phase 4 (OPPO power-cycle + ISO copy + play) are paused pending hardware.
 
+**`configurator-v0.6.0-experimental3` (2026-06-01)** = the three branches **integrated** (branch
+`claude/cfg-experimental3-integration`, `5dcb087`) and published as one GitHub pre-release (MSI +
+NSIS + SHA256): the cumulative **install + SSH-first flow + Roku switch**. The `lib.rs` merge kept
+both command sets; gate `cargo test` 9/9 · `tsc` · **180 vitest** · `vite build`. Off `main`;
+software-verified only, hardware-pending.
+
 ---
 
 ## §7 How to keep this file useful
