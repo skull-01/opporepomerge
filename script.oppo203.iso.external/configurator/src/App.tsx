@@ -19,6 +19,7 @@ import {
   type StepId,
 } from "./steps";
 import { setCurrentStep } from "./debug/log";
+import { startWireListener } from "./debug/wireListener";
 import { Step0Gate } from "./screens/Step0Gate";
 import { Step0Chain } from "./screens/Step0Chain";
 import { Step0Exit } from "./screens/Step0Exit";
@@ -113,6 +114,18 @@ export default function App() {
   useEffect(() => {
     setCurrentStep(stepId);
   }, [stepId]);
+
+  // Stream raw wire frames (OPPO IP-control bytes) from Rust into the debug log. No-op in a
+  // non-Tauri context (vite preview / tests), where the event bridge is absent.
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    void startWireListener()
+      .then((un) => {
+        unlisten = un;
+      })
+      .catch(() => {});
+    return () => unlisten?.();
+  }, []);
   const completed = computeCompleted(state, screen);
   const chainActive = SCREEN_TO_CHAIN[screen];
   const useSidebar = PROGRESS_VARIANT === "sidebar";

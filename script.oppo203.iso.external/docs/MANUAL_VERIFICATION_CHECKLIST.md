@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — wire-level OPPO transcript in the developer debug panel (PR #142 PR-3)
+
+- **Branch:** `claude/cfg-wire-transcripts-9d4e2b16` (draft PR). PR-only theme; completes the deferred PR-3 of the developer debug view (PR #142).
+- **What changed (software-verified only):** the Rust `oppo_query` command now emits `debug-wire` Tauri events for the raw bytes it sends (the CR-terminated command) and receives (the reply) over TCP:23 — payload carries direction / host / port / hex / lossy-text / length. A new `src/debug/wireListener.ts` subscribes via `@tauri-apps/api/event` and records them through a new `recordWire()` into the existing ring buffer (`log.ts`; `DebugEntry` is now an `ipc` | `wire` discriminated union); `DebugPanel.tsx` renders wire rows (→ sent / ← recv, byte count, hex + text on expand). **Scoped to the OPPO IP-control path only** — `deploy_ssh` / `read_ssh_file` / `deploy_to_userdata` are deliberately NOT instrumented, because their payloads are the generated `settings.xml` (Sony PSK / SmartThings token) and the key-based redactor cannot sanitize a raw byte stream. Off by default (the panel is gated behind Ctrl+Shift+D). Gate: frontend `tsc -b` + **157 vitest** + `vite build`; Rust `cargo check` + `cargo test` (3 `to_hex` tests). No add-on change.
+- **Operator verifies (Phase A):** read the `oppo_query` diff (emits sent/recv; the returned reply string is unchanged), `wireListener.ts`, the `log.ts` `ipc`|`wire` union + `recordWire`, and the `DebugPanel` wire-row branch. Confirm only `oppo_query` emits (no ssh/deploy/file command does) and that `statusOf` no longer counts wire frames as errors.
+- **Operator verifies (Phase C — built app + real OPPO):** `npm run tauri` (or `cargo`) build the app, launch it, press **Ctrl+Shift+D**, run the Step 2 player test / SVM3 probe against a real OPPO, and confirm the panel shows the sent `#QVM`/`#QPW` bytes and the received `@…` reply (hex + text), filtered to the current step. Confirm **no secrets** appear and that a Tier-A SSH deploy does **not** dump `settings.xml` bytes. **Not hardware-validated.**
+
 ### Configurator — Live Session Dashboard: gated live verbose stream (Theme 2 / PR D3)
 
 - **Merged to `main`:** PR #160 → merge `e8d35bf` (code `c69b904`; branch since deleted). Third of three dashboard PRs (D1 #158 → D2 #164 → D3 #160).

@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import {
   redact,
   record,
+  recordWire,
   getEntries,
   clearEntries,
   setCurrentStep,
@@ -64,7 +65,9 @@ describe("record + getEntries", () => {
     const e = getEntries();
     expect(e.map((x) => x.seq)).toEqual([0, 1]);
     expect(e.map((x) => x.step)).toEqual(["step2", "step4"]);
-    expect(e[0].command).toBe("oppo_query");
+    const first = e[0];
+    if (first.kind !== "ipc") throw new Error("expected an ipc entry");
+    expect(first.command).toBe("oppo_query");
   });
 
   it("caps the ring buffer at 500 (drops oldest)", () => {
@@ -81,6 +84,42 @@ describe("record + getEntries", () => {
     record({ ts: 1, command: "x", args: {}, durationMs: 0, ok: true });
     clearEntries();
     expect(getEntries()).toEqual([]);
+  });
+});
+
+describe("recordWire", () => {
+  it("appends a kind:'wire' entry stamped with the current step, sharing the seq counter", () => {
+    setCurrentStep("step2");
+    record({ ts: 1, command: "oppo_query", args: {}, durationMs: 5, ok: true, result: "@UPL PLAY" });
+    recordWire({
+      ts: 2,
+      direction: "sent",
+      label: "oppo_query",
+      host: "10.0.1.7",
+      port: 23,
+      hex: "23 51 56 4d 0d",
+      text: "#QVM\r",
+      len: 5,
+    });
+    const e = getEntries();
+    expect(e.map((x) => x.seq)).toEqual([0, 1]);
+    expect(e[0].kind).toBe("ipc");
+    const wire = e[1];
+    if (wire.kind !== "wire") throw new Error("expected a wire entry");
+    expect(wire).toMatchObject({
+      direction: "sent",
+      label: "oppo_query",
+      hex: "23 51 56 4d 0d",
+      len: 5,
+      step: "step2",
+    });
+  });
+
+  it("interleaves sent/recv wire frames in order, newest last", () => {
+    recordWire({ ts: 1, direction: "sent", label: "oppo_query", host: "h", port: 23, hex: "", text: "#QVM\r", len: 5 });
+    recordWire({ ts: 2, direction: "recv", label: "oppo_query", host: "h", port: 23, hex: "", text: "@UPL PLAY", len: 9 });
+    const dirs = getEntries().map((x) => (x.kind === "wire" ? x.direction : x.command));
+    expect(dirs).toEqual(["sent", "recv"]);
   });
 });
 
@@ -101,6 +140,7 @@ describe("subscribe", () => {
 
 describe("entriesForView", () => {
   const mk = (seq: number, step: DebugEntry["step"]): DebugEntry => ({
+    kind: "ipc",
     seq,
     ts: seq,
     step,

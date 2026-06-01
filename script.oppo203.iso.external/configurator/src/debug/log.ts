@@ -1,10 +1,14 @@
 import type { StepId } from "../steps";
 
-/** One captured IPC round-trip, shown in the developer debug view (Ctrl+Shift+D). */
-export type DebugEntry = {
+type BaseEntry = {
   seq: number;
   ts: number;
   step: StepId | null;
+};
+
+/** One captured IPC round-trip (the `invoke` wrapper), shown in the debug view (Ctrl+Shift+D). */
+export type IpcEntry = BaseEntry & {
+  kind: "ipc";
   command: string;
   args: unknown;
   durationMs: number;
@@ -12,6 +16,23 @@ export type DebugEntry = {
   result?: unknown;
   error?: string;
 };
+
+/**
+ * One raw frame on a command's underlying wire (currently the OPPO IP-control TCP path),
+ * pushed from Rust as a `debug-wire` event. Only the no-secret OPPO path emits these.
+ */
+export type WireEntry = BaseEntry & {
+  kind: "wire";
+  direction: "sent" | "recv";
+  label: string;
+  host: string;
+  port: number;
+  hex: string;
+  text: string;
+  len: number;
+};
+
+export type DebugEntry = IpcEntry | WireEntry;
 
 const MAX_ENTRIES = 500;
 const MAX_STRING = 2000;
@@ -58,9 +79,17 @@ export function setCurrentStep(step: StepId | null): void {
   currentStep = step;
 }
 
-/** Append a captured call: assigns the sequence number, stamps the current step, notifies. */
-export function record(e: Omit<DebugEntry, "seq" | "step">): void {
-  const entry: DebugEntry = { ...e, seq, step: currentStep };
+/** Append a captured IPC call: assigns the sequence number, stamps the current step, notifies. */
+export function record(e: Omit<IpcEntry, "seq" | "step" | "kind">): void {
+  const entry: IpcEntry = { ...e, kind: "ipc", seq, step: currentStep };
+  seq += 1;
+  entries = [...entries, entry].slice(-MAX_ENTRIES);
+  emit();
+}
+
+/** Append a raw wire frame (from a `debug-wire` event): same seq/step/ring-buffer as record(). */
+export function recordWire(e: Omit<WireEntry, "seq" | "step" | "kind">): void {
+  const entry: WireEntry = { ...e, kind: "wire", seq, step: currentStep };
   seq += 1;
   entries = [...entries, entry].slice(-MAX_ENTRIES);
   emit();
