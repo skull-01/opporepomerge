@@ -601,6 +601,32 @@ fn install_addon(
     }
 }
 
+/// Build the Kodi JSON-RPC body that enables the add-on (`Addons.SetAddonEnabled`).
+fn kodi_enable_body(addon_id: &str) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"Addons.SetAddonEnabled","params":{{"addonid":"{addon_id}","enabled":true}}}}"#
+    )
+}
+
+/// True when Kodi acknowledged the enable with `"result":"OK"`.
+fn kodi_enable_ok(reply: &str) -> bool {
+    reply.replace(' ', "").contains(r#""result":"OK""#)
+}
+
+/// Enable the installed add-on via Kodi JSON-RPC over SSH, so a freshly-dropped add-on doesn't
+/// sit disabled (D-3). Returns true on Kodi's `"result":"OK"`; the caller falls back to a manual
+/// Kodi restart on false/Err. Hardware-pending.
+#[tauri::command]
+fn kodi_set_addon_enabled(host: String, user: String) -> Result<bool, String> {
+    validate_ssh_target(&host, &user)?;
+    let target = format!("{user}@{host}");
+    let cmd = format!(
+        "curl -s --max-time 8 -H 'content-type: application/json' http://localhost:8080/jsonrpc -d '{}'",
+        kodi_enable_body(ADDON_ID)
+    );
+    Ok(kodi_enable_ok(&run_ssh_capture(&target, &cmd)?))
+}
+
 // ============================================================
 // Live OPPO verbose-mode monitor (dashboard live stream)
 // ============================================================
@@ -847,9 +873,25 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, parse_addon_version, parse_verbose_mode,
-        roku_keypress_request, to_hex,
+        classify_frame, extract_zip_into, kodi_enable_body, kodi_enable_ok, parse_addon_version,
+        parse_verbose_mode, roku_keypress_request, to_hex,
     };
+
+    #[test]
+    fn kodi_enable_body_targets_set_addon_enabled() {
+        let b = kodi_enable_body("script.oppo203.iso.external");
+        assert!(b.contains(r#""method":"Addons.SetAddonEnabled""#));
+        assert!(b.contains(r#""addonid":"script.oppo203.iso.external""#));
+        assert!(b.contains(r#""enabled":true"#));
+    }
+
+    #[test]
+    fn kodi_enable_ok_reads_result_ok() {
+        assert!(kodi_enable_ok(r#"{"id":1,"jsonrpc":"2.0","result":"OK"}"#));
+        assert!(kodi_enable_ok(r#"{"result": "OK"}"#));
+        assert!(!kodi_enable_ok(r#"{"error":{"code":-32602}}"#));
+        assert!(!kodi_enable_ok("not json"));
+    }
 
     #[test]
     fn classifies_verbose_frames() {
@@ -960,6 +1002,7 @@ pub fn run() {
             deploy_ssh,
             bundled_addon_info,
             install_addon,
+            kodi_set_addon_enabled,
             tv_switch_roku,
             start_oppo_live_monitor,
             stop_oppo_live_monitor
