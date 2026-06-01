@@ -2,7 +2,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{TcpStream, ToSocketAddrs, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -34,7 +34,10 @@ fn save_wizard_state(app: tauri::AppHandle, state: Value) -> Result<(), String> 
 /// Write the generated files (keyed by path relative to Kodi userdata/) into the app's
 /// data dir under `generated/`, mirroring the userdata layout. Returns the output dir.
 #[tauri::command]
-fn generate_files(app: tauri::AppHandle, files: BTreeMap<String, String>) -> Result<String, String> {
+fn generate_files(
+    app: tauri::AppHandle,
+    files: BTreeMap<String, String>,
+) -> Result<String, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let out = dir.join("generated");
     for (rel, contents) in &files {
@@ -92,7 +95,9 @@ fn validate_ssh_component(label: &str, v: &str) -> Result<(), String> {
         .chars()
         .find(|&c| !(c.is_ascii_alphanumeric() || matches!(c, '.' | ':' | '_' | '-')))
     {
-        return Err(format!("ssh {label} '{v}' contains an invalid character '{c}'"));
+        return Err(format!(
+            "ssh {label} '{v}' contains an invalid character '{c}'"
+        ));
     }
     Ok(())
 }
@@ -109,7 +114,9 @@ fn read_userdata_file(userdata_path: String, rel: String) -> Result<Option<Strin
     if !path.exists() {
         return Ok(None);
     }
-    fs::read_to_string(&path).map(Some).map_err(|e| e.to_string())
+    fs::read_to_string(&path)
+        .map(Some)
+        .map_err(|e| e.to_string())
 }
 
 /// Deploy files (keyed by path relative to userdata/) into a Kodi userdata directory,
@@ -248,14 +255,20 @@ fn oppo_query(
     let ms = timeout_ms.unwrap_or(3000);
     let timeout = Duration::from_millis(ms);
     let mut stream = connect_timeout(&host, port, ms)?;
-    stream.set_read_timeout(Some(timeout)).map_err(|e| e.to_string())?;
-    stream.set_write_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    stream
+        .set_read_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
     let mut cmd = command.unwrap_or_else(|| "#QPW".to_string());
     if !cmd.ends_with('\r') {
         cmd.push('\r');
     }
     emit_wire(&app, "sent", &host, port, cmd.as_bytes());
-    stream.write_all(cmd.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .write_all(cmd.as_bytes())
+        .map_err(|e| e.to_string())?;
     // OPPO replies are CR-terminated; a single read() can return a partial or echoed frame.
     // Accumulate until we see the CR terminator, the peer closes, or the read times out.
     let mut data: Vec<u8> = Vec::new();
@@ -407,6 +420,206 @@ fn deploy_ssh(
         run_ssh(&target, "systemctl restart kodi")?;
     }
     Ok(DeployReport { written, backed_up })
+}
+
+// ============================================================
+// Kodi "what is playing" probe (Phase 1b NAS-path capture; area:configurator, issue #173)
+// ============================================================
+//
+// Reads the exact path Kodi is currently playing, over the existing SSH channel, so the
+// configurator can learn the Kodi-visible side of the http_handoff path rewrite
+// (`oppo_http_path_from`). Primary: Kodi JSON-RPC on the box (its web server need only listen
+// on localhost); fallback: the most recent "OpenFile" entry in kodi.log. The OPPO-visible side
+// is captured separately (`#QFN` / `/getmovieplayinfo`); see D-4 / Phase 1b in docs/BUILD_PLAN.md.
+
+const KODI_ACTIVE_PLAYERS_BODY: &str =
+    r#"{"jsonrpc":"2.0","id":1,"method":"Player.GetActivePlayers"}"#;
+
+fn kodi_jsonrpc_cmd(body: &str) -> String {
+    format!(
+        "curl -s --max-time 8 -H 'content-type: application/json' http://localhost:8080/jsonrpc -d '{body}'"
+    )
+}
+
+fn kodi_get_item_body(player_id: i64) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"Player.GetItem","params":{{"playerid":{player_id},"properties":["file"]}}}}"#
+    )
+}
+
+/// First active player id from a `Player.GetActivePlayers` reply (None when nothing is playing).
+fn parse_kodi_active_player_id(json: &str) -> Option<i64> {
+    let v: serde_json::Value = serde_json::from_str(json).ok()?;
+    v.get("result")?
+        .as_array()?
+        .iter()
+        .find_map(|p| p.get("playerid").and_then(serde_json::Value::as_i64))
+}
+
+/// The `file` of the playing item from a `Player.GetItem` reply (None when absent/empty).
+fn parse_kodi_player_file(json: &str) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(json).ok()?;
+    let file = v.get("result")?.get("item")?.get("file")?.as_str()?.trim();
+    (!file.is_empty()).then(|| file.to_string())
+}
+
+/// Fallback: the path from the most recent "OpenFile"/"Opening" line in a kodi.log tail.
+fn parse_kodi_log_file(text: &str) -> Option<String> {
+    let mut found = None;
+    for line in text.lines() {
+        for marker in ["OpenFile: ", "Opening: ", "Opening stream: "] {
+            if let Some(idx) = line.find(marker) {
+                let rest = line[idx + marker.len()..]
+                    .trim()
+                    .trim_matches(|c| c == '"' || c == '\'');
+                if !rest.is_empty() {
+                    found = Some(rest.to_string());
+                }
+            }
+        }
+    }
+    found
+}
+
+/// Read the path Kodi is currently playing, over SSH. Primary: Kodi JSON-RPC on the box
+/// (`Player.GetActivePlayers` -> `Player.GetItem{file}`); fallback: the last "OpenFile" line in
+/// `~/.kodi/temp/kodi.log`. Returns None when nothing resolvable is playing.
+#[tauri::command]
+fn kodi_now_playing(host: String, user: String) -> Result<Option<String>, String> {
+    validate_ssh_target(&host, &user)?;
+    let target = format!("{user}@{host}");
+    if let Ok(players) = run_ssh_capture(&target, &kodi_jsonrpc_cmd(KODI_ACTIVE_PLAYERS_BODY)) {
+        if let Some(pid) = parse_kodi_active_player_id(&players) {
+            if let Ok(item) = run_ssh_capture(&target, &kodi_jsonrpc_cmd(&kodi_get_item_body(pid)))
+            {
+                if let Some(file) = parse_kodi_player_file(&item) {
+                    return Ok(Some(file));
+                }
+            }
+        }
+    }
+    // Fallback: most recent opened file from the Kodi log (constant path -> no shell injection).
+    if let Ok(tail) = run_ssh_capture(&target, "tail -n 400 ~/.kodi/temp/kodi.log 2>/dev/null") {
+        if let Some(file) = parse_kodi_log_file(&tail) {
+            return Ok(Some(file));
+        }
+    }
+    Ok(None)
+}
+
+// ============================================================
+// OPPO HTTP play (Phase 1b verify-by-playing; ported from oppo_control.py:346-445)
+// ============================================================
+//
+// The undocumented OPPO community HTTP "app" API on port 436: a 6-byte 0x55 UDP broadcast
+// "activate" wakes the API, /signin opens a session, and /playnormalfile?payload=<urlencoded
+// JSON> starts a network file. Ported as raw HTTP/1.0 over TCP (the tv_switch_roku shape) so the
+// verify step can fire a play and then confirm real playback via SVM3 @UPL PLAY. The handshake
+// and payload are undocumented -> verified on a real OPPO, not in-session.
+
+const OPPO_HTTP_PORT: u16 = 436;
+
+/// Percent-encode every byte that is not RFC3986-unreserved (matches Python's
+/// urllib.parse.quote(s, safe="")), so a JSON payload survives as one query value.
+fn percent_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() * 3);
+    for &b in s.as_bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
+}
+
+/// The /playnormalfile JSON payload (json_payload mode), matching `_build_json_payload`.
+fn oppo_play_payload(oppo_path: &str) -> String {
+    serde_json::json!({
+        "path": oppo_path,
+        "index": 0,
+        "type": 1,
+        "appDeviceType": 2,
+        "extraNetPath": "",
+        "playMode": 0
+    })
+    .to_string()
+}
+
+/// Raw HTTP/1.0 GET for an OPPO app-API endpoint + already-built query string.
+fn oppo_http_request(host: &str, endpoint: &str, query: &str) -> String {
+    format!(
+        "GET {endpoint}?{query} HTTP/1.0\r\nHost: {host}:{OPPO_HTTP_PORT}\r\nConnection: close\r\n\r\n"
+    )
+}
+
+fn oppo_signin_request(host: &str) -> String {
+    oppo_http_request(
+        host,
+        "/signin",
+        &percent_encode(r#"{"user":"","password":""}"#),
+    )
+}
+
+fn oppo_play_request(host: &str, oppo_path: &str) -> String {
+    let query = format!("payload={}", percent_encode(&oppo_play_payload(oppo_path)));
+    oppo_http_request(host, "/playnormalfile", &query)
+}
+
+/// Send a raw request to the OPPO app API and return whatever it sends back (best-effort read).
+fn oppo_http_exchange(host: &str, request: &str, timeout_ms: u64) -> Result<String, String> {
+    let mut stream = connect_timeout(host, OPPO_HTTP_PORT, timeout_ms)?;
+    let t = Duration::from_millis(timeout_ms);
+    stream
+        .set_read_timeout(Some(t))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(t))
+        .map_err(|e| e.to_string())?;
+    stream
+        .write_all(request.as_bytes())
+        .map_err(|e| e.to_string())?;
+    let mut resp = String::new();
+    let _ = stream.read_to_string(&mut resp);
+    Ok(resp)
+}
+
+/// Fire a network-file play on the OPPO over the undocumented HTTP app API
+/// (activate broadcast -> /signin -> /playnormalfile). `oppo_path` is the OPPO-visible path
+/// (already rewritten via oppo_http_path_from/to). Phase 1b verify-by-playing calls this, then
+/// confirms real playback via SVM3 @UPL PLAY. Best-effort + hardware-pending.
+#[tauri::command]
+fn oppo_http_play(host: String, oppo_path: String) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    if oppo_path.trim().is_empty() {
+        return Err("oppo_path is empty".to_string());
+    }
+    // 1) activate: a 6-byte 0x55 UDP broadcast wakes the HTTP API (non-fatal).
+    if let Ok(sock) = UdpSocket::bind("0.0.0.0:0") {
+        let _ = sock.set_broadcast(true);
+        let _ = sock.send_to(&[0x55u8; 6], ("255.255.255.255", OPPO_HTTP_PORT));
+    }
+    // 2) signin: open a session (non-fatal -- some firmware needs it, some doesn't).
+    let _ = oppo_http_exchange(&host, &oppo_signin_request(&host), 5000);
+    // 3) play.
+    oppo_http_exchange(&host, &oppo_play_request(&host, &oppo_path), 10000)
+}
+
+/// Raw HTTP/1.0 GET for the OPPO /getmovieplayinfo now-playing endpoint (no query).
+fn oppo_info_request(host: &str) -> String {
+    format!("GET /getmovieplayinfo HTTP/1.0\r\nHost: {host}:{OPPO_HTTP_PORT}\r\nConnection: close\r\n\r\n")
+}
+
+/// Best-effort read of the OPPO's /getmovieplayinfo (undocumented now-playing). Returns the
+/// response body for the UI to parse; the payload shape is unverified -> hardware-pending.
+#[tauri::command]
+fn oppo_playback_info(host: String) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    let raw = oppo_http_exchange(&host, &oppo_info_request(&host), 5000)?;
+    Ok(raw
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or(raw))
 }
 
 // ============================================================
@@ -620,10 +833,7 @@ fn kodi_enable_ok(reply: &str) -> bool {
 fn kodi_set_addon_enabled(host: String, user: String) -> Result<bool, String> {
     validate_ssh_target(&host, &user)?;
     let target = format!("{user}@{host}");
-    let cmd = format!(
-        "curl -s --max-time 8 -H 'content-type: application/json' http://localhost:8080/jsonrpc -d '{}'",
-        kodi_enable_body(ADDON_ID)
-    );
+    let cmd = kodi_jsonrpc_cmd(&kodi_enable_body(ADDON_ID));
     Ok(kodi_enable_ok(&run_ssh_capture(&target, &cmd)?))
 }
 
@@ -713,10 +923,22 @@ fn read_brief(stream: &mut TcpStream) -> String {
 }
 
 fn emit_frame(app: &tauri::AppHandle, seq: u64, kind: &str, raw: String) {
-    let _ = app.emit("oppo-live", LiveFrame { seq, kind: kind.to_string(), raw });
+    let _ = app.emit(
+        "oppo-live",
+        LiveFrame {
+            seq,
+            kind: kind.to_string(),
+            raw,
+        },
+    );
 }
 
-fn run_live_loop(app: tauri::AppHandle, mut stream: TcpStream, prior: Option<u8>, stop: Arc<AtomicBool>) {
+fn run_live_loop(
+    app: tauri::AppHandle,
+    mut stream: TcpStream,
+    prior: Option<u8>,
+    stop: Arc<AtomicBool>,
+) {
     let mut seq: u64 = 0;
     let mut buf: Vec<u8> = Vec::new();
     let mut chunk = [0u8; 512];
@@ -796,7 +1018,10 @@ fn start_oppo_live_monitor(
     let stop = Arc::new(AtomicBool::new(false));
     let stop_thread = stop.clone();
     let join = std::thread::spawn(move || run_live_loop(app, stream, prior, stop_thread));
-    *guard = Some(LiveHandle { stop, join: Some(join) });
+    *guard = Some(LiveHandle {
+        stop,
+        join: Some(join),
+    });
     Ok(())
 }
 
@@ -836,9 +1061,15 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
     let ms = timeout_ms.unwrap_or(3000);
     let timeout = Duration::from_millis(ms);
     let mut stream = connect_timeout(&host, 8060, ms)?;
-    stream.set_read_timeout(Some(timeout)).map_err(|e| e.to_string())?;
-    stream.set_write_timeout(Some(timeout)).map_err(|e| e.to_string())?;
-    stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .set_read_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
+    stream
+        .write_all(request.as_bytes())
+        .map_err(|e| e.to_string())?;
     let mut data: Vec<u8> = Vec::new();
     let mut chunk = [0u8; 512];
     loop {
@@ -873,8 +1104,10 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, kodi_enable_body, kodi_enable_ok, parse_addon_version,
-        parse_verbose_mode, roku_keypress_request, to_hex,
+        classify_frame, extract_zip_into, kodi_enable_body, kodi_enable_ok, kodi_get_item_body,
+        oppo_info_request, oppo_play_payload, oppo_play_request, oppo_signin_request,
+        parse_addon_version, parse_kodi_active_player_id, parse_kodi_log_file,
+        parse_kodi_player_file, parse_verbose_mode, percent_encode, roku_keypress_request, to_hex,
     };
 
     #[test]
@@ -980,6 +1213,99 @@ mod tests {
         assert!(roku_keypress_request("10.0.1.55", "Input HDMI1").is_err());
         assert!(roku_keypress_request("10.0.1.55", "").is_err());
     }
+
+    #[test]
+    fn kodi_get_item_body_pins_playerid_and_file_property() {
+        let body = kodi_get_item_body(1);
+        assert!(body.contains(r#""method":"Player.GetItem""#));
+        assert!(body.contains(r#""playerid":1"#));
+        assert!(body.contains(r#""properties":["file"]"#));
+    }
+
+    #[test]
+    fn parses_active_player_id() {
+        assert_eq!(
+            parse_kodi_active_player_id(r#"{"result":[{"playerid":1,"type":"video"}]}"#),
+            Some(1)
+        );
+        assert_eq!(parse_kodi_active_player_id(r#"{"result":[]}"#), None);
+        assert_eq!(
+            parse_kodi_active_player_id(r#"{"result":[{"type":"video"}]}"#),
+            None
+        );
+        assert_eq!(parse_kodi_active_player_id("not json"), None);
+    }
+
+    #[test]
+    fn parses_player_file_path() {
+        assert_eq!(
+            parse_kodi_player_file(
+                r#"{"result":{"item":{"file":"smb://nas/Movies/Film.iso","label":"Film"}}}"#
+            ),
+            Some("smb://nas/Movies/Film.iso".to_string())
+        );
+        assert_eq!(
+            parse_kodi_player_file(r#"{"result":{"item":{"label":"x"}}}"#),
+            None
+        );
+        assert_eq!(
+            parse_kodi_player_file(r#"{"result":{"item":{"file":"  "}}}"#),
+            None
+        );
+        assert_eq!(parse_kodi_player_file("nonsense"), None);
+    }
+
+    #[test]
+    fn parses_last_opened_file_from_log() {
+        let log = "2026-06-01 11:59 T:1 info <general>: VideoPlayer::OpenFile: nfs://10.0.0.5/v1/Old.mkv\n2026-06-01 12:00 T:1 info <general>: CVideoPlayer::OpenFile: smb://nas/Movies/Film.iso\n2026-06-01 12:00 T:1 debug <general>: something else";
+        assert_eq!(
+            parse_kodi_log_file(log),
+            Some("smb://nas/Movies/Film.iso".to_string())
+        );
+        assert_eq!(parse_kodi_log_file("no markers here"), None);
+    }
+
+    #[test]
+    fn percent_encode_matches_quote_safe_empty() {
+        assert_eq!(percent_encode("abcABC123-_.~"), "abcABC123-_.~");
+        assert_eq!(percent_encode("a b/c"), "a%20b%2Fc");
+        assert_eq!(percent_encode("{\"k\":\"v\"}"), "%7B%22k%22%3A%22v%22%7D");
+    }
+
+    #[test]
+    fn oppo_play_payload_has_the_spec_fields() {
+        let p = oppo_play_payload("smb://nas/Movies/Film.iso");
+        assert!(p.contains(r#""path":"smb://nas/Movies/Film.iso""#));
+        assert!(p.contains(r#""index":0"#));
+        assert!(p.contains(r#""type":1"#));
+        assert!(p.contains(r#""appDeviceType":2"#));
+        assert!(p.contains(r#""extraNetPath":"""#));
+        assert!(p.contains(r#""playMode":0"#));
+    }
+
+    #[test]
+    fn oppo_play_request_is_a_playnormalfile_get() {
+        let req = oppo_play_request("10.0.0.9", "smb://nas/x.iso");
+        assert!(req.starts_with("GET /playnormalfile?payload=%7B"));
+        assert!(req.contains("HTTP/1.0\r\n"));
+        assert!(req.contains("Host: 10.0.0.9:436\r\n"));
+        assert!(req.ends_with("\r\n\r\n"));
+    }
+
+    #[test]
+    fn oppo_signin_request_targets_signin() {
+        let req = oppo_signin_request("10.0.0.9");
+        assert!(req.starts_with("GET /signin?%7B"));
+        assert!(req.contains("Host: 10.0.0.9:436\r\n"));
+    }
+
+    #[test]
+    fn oppo_info_request_targets_getmovieplayinfo() {
+        let req = oppo_info_request("10.0.0.9");
+        assert!(req.starts_with("GET /getmovieplayinfo HTTP/1.0\r\n"));
+        assert!(req.contains("Host: 10.0.0.9:436\r\n"));
+        assert!(req.ends_with("\r\n\r\n"));
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1000,6 +1326,9 @@ pub fn run() {
             oppo_query,
             ssh_test,
             deploy_ssh,
+            kodi_now_playing,
+            oppo_http_play,
+            oppo_playback_info,
             bundled_addon_info,
             install_addon,
             kodi_set_addon_enabled,
