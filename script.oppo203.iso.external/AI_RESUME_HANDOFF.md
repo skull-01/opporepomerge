@@ -423,13 +423,13 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
-**As of 2026-06-02 (this session — ALL of Phases 3/4/5 built + MERGED to `main`; 15 PRs).**
+**As of 2026-06-02 (this session — ALL of Phases 3/4/5 built + MERGED to `main`; 13 PRs).**
 **Clean stopping point — all work merged to `main`; 0 open PRs from this session; nothing left on this machine.**
 Operator picked `resume` → "build all of Phases 3/4/5, full auth, **merge to main as I go**, **finer PRs**, **file ENH issues**."
 Delivered the **Rust + add-on backend layer** the UI phases depend on. **Foundation merged first:**
 [#174](https://github.com/skull-01/script.oppo203.iso.external/pull/174) (Phase 1b NAS capture) +
 [#175](https://github.com/skull-01/script.oppo203.iso.external/pull/175) (D-3 enablement, DRY'd onto `kodi_jsonrpc_cmd`).
-**Then 6 PRs:**
+**Then 4 backend PRs:**
 - **Phase 3.1 AVR** — [#177](https://github.com/skull-01/script.oppo203.iso.external/pull/177) `2bf0663` (issue #176): `avr_switch_denon`/`_eiscp`/`_yamaha`/`_sony_audio` + pure builders (Denon `SI` :23, eISCP `!1SLI` framed :60128, Yamaha `setInput` :80, Sony Audio `setPlayContent` POST).
 - **Phase 3.1 TV** — [#179](https://github.com/skull-01/script.oppo203.iso.external/pull/179) `9aa9e1c` (issue #178): `tv_switch_sony_bravia` (HTTP); `tv_switch_adb`/`tv_switch_external` run on the Kodi box **over SSH** like the add-on; `smartthings_switch_request` (builder; HTTPS deferred — no TLS crate). Complements Roku.
 - **Phase 4.1** — [#181](https://github.com/skull-01/script.oppo203.iso.external/pull/181) `0b5a8f1` (issue #180): `oppo_power` (off/on/eject → `#POF`/`#PON`/`#EJT`) delegating to `oppo_query`. (activate/signin/play already in #174.)
