@@ -172,10 +172,14 @@ power-cycle/mount/play, test-file copy) plus the **add-on copy** is the new work
   ⚠️ Labelling wrinkle: `main`'s `version.py` (`2.9.13`) lags its post-2.9.13 code,
   so a fresh bundle self-reports `2.9.13` — fixed in PR-1.1 (bump `main` to a dev
   version, or stamp the bundled ZIP at build time).
-- **D-2 · Test-ISO source (Phase 4).** A real UHD ISO is multi-GB — **cannot be
-  bundled**. Download a master vs. user-supplies a master to copy from.
-- **D-3 · Add-on *enablement* after file-drop.** Restart-only (the in-flow test
-  catches a disabled add-on) vs. Kodi JSON-RPC `Addons.SetAddonEnabled`.
+- **D-2 · Test-ISO source (Phase 4). RESOLVED 2026-06-02 → user-supplies.** The
+  operator supplies the master ISO/disc separately; PR-4.2 ships **placeholder
+  wiring** (a user-chosen source path, no bundled/downloaded master). The real
+  test uses the operator's own disc.
+- **D-3 · Add-on *enablement* after file-drop. RESOLVED 2026-06-02 → JSON-RPC
+  with manual fallback.** Enable via Kodi JSON-RPC `Addons.SetAddonEnabled`
+  (over the existing SSH channel); **if it fails, instruct the operator to
+  restart Kodi manually.**
 
 ### ⛓ Foundational dependency — OPPO NAS-path mapping
 
