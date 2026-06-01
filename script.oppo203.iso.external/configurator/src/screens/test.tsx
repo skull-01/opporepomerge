@@ -6,6 +6,12 @@ import { Chain } from "../shell/Chain";
 import { FooterNav } from "../shell/FooterNav";
 import { applyToKodi, installAddonToKodi, type ApplyResult } from "../apply";
 import { isAvrChain, type ScreenId } from "../steps";
+import {
+  foldSvm3Frame,
+  INITIAL_SVM3_CONFIRM,
+  type LiveFrame,
+  type Svm3Confirm,
+} from "../svm3_confirm";
 import type { ScreenProps } from "./types";
 
 // One copy-progress frame emitted by the Rust `copy_to_share` command (see lib.rs `CopyProgress`).
@@ -338,12 +344,16 @@ export function TestSetup({ go, state, set }: ScreenProps) {
                   className="muted"
                   style={{ fontSize: 11.5, marginTop: 8, fontFamily: "var(--font-mono)" }}
                 >
-                  we wait here · no commands sent until you tell us how it went
+                  we only watch the player's status feed · no control commands sent
                 </div>
               </div>
             )}
           </div>
         </div>
+      )}
+
+      {mode !== null && (
+        <Svm3ConfirmCard playerIp={state.playerIp} svm3={state.monitorMode === "svm3"} />
       )}
 
       <FooterNav
@@ -407,6 +417,163 @@ function CopyProgressBar({
         )}
       </div>
     </div>
+  );
+}
+
+// Colors for the live verbose-mode frame tail, matching the dashboard's stream view.
+const FRAME_COLORS: Record<string, string> = {
+  upl: "#2563EB",
+  utc: "#6B7280",
+  status: "#0D9488",
+  error: "#DC2626",
+  info: "#9CA3AF",
+};
+
+// Live SVM3 confirmation: opens the configurator's own verbose-mode-3 connection to the player and
+// confirms playback from real `@UPL PLAY` / advancing `@UTC` frames, instead of a manual yes/no.
+// Read-only and opt-in; stops on unmount so it restores the player's prior verbose mode. Reuses the
+// same start/stop_oppo_live_monitor commands + oppo-live event the dashboard streams.
+function Svm3ConfirmCard({ playerIp, svm3 }: { playerIp: string; svm3: boolean }) {
+  const [streaming, setStreaming] = useState(false);
+  const [frames, setFrames] = useState<LiveFrame[]>([]);
+  const [verdict, setVerdict] = useState<Svm3Confirm>(INITIAL_SVM3_CONFIRM);
+  const [err, setErr] = useState<string | null>(null);
+  const verdictRef = useRef<Svm3Confirm>(INITIAL_SVM3_CONFIRM);
+
+  useEffect(() => {
+    let alive = true;
+    let unlisten: (() => void) | undefined;
+    void listen<LiveFrame>("oppo-live", (e) => {
+      setFrames((f) => [...f.slice(-29), e.payload]);
+      const next = foldSvm3Frame(verdictRef.current, e.payload);
+      verdictRef.current = next;
+      setVerdict(next);
+    }).then((u) => {
+      if (alive) unlisten = u;
+      else u();
+    });
+    return () => {
+      alive = false;
+      if (unlisten) unlisten();
+      // Always release the player's verbose mode when leaving the screen.
+      void invoke("stop_oppo_live_monitor").catch(() => {});
+    };
+  }, []);
+
+  const start = async () => {
+    setErr(null);
+    setFrames([]);
+    verdictRef.current = INITIAL_SVM3_CONFIRM;
+    setVerdict(INITIAL_SVM3_CONFIRM);
+    try {
+      await invoke("start_oppo_live_monitor", { host: playerIp, port: 23 });
+      setStreaming(true);
+    } catch (e) {
+      setErr(`Could not start: ${String(e)}`);
+      setStreaming(false);
+    }
+  };
+
+  const stop = async () => {
+    try {
+      await invoke("stop_oppo_live_monitor");
+    } catch {
+      // best-effort
+    }
+    setStreaming(false);
+  };
+
+  return (
+    <div className="card" style={{ marginTop: 14 }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <h3 className="sub-title" style={{ margin: 0 }}>
+          Live playback confirmation (SVM3)
+        </h3>
+        {streaming ? (
+          <button className="btn outline sm" onClick={stop}>
+            <Icon name="cross" size={13} /> Stop watching
+          </button>
+        ) : (
+          <button className="btn outline sm" onClick={start}>
+            <Icon name="play" size={13} /> Watch the player
+          </button>
+        )}
+      </div>
+      <p className="muted" style={{ fontSize: 12.5, marginTop: 6 }}>
+        We open a read-only verbose-mode-3 connection to <code>{playerIp}</code> and confirm
+        playback from what the player reports — <code>@UPL PLAY</code> plus an advancing{" "}
+        <code>@UTC</code> time code — not a guess.
+      </p>
+
+      {!svm3 && (
+        <div className="callout warn" style={{ marginTop: 4 }}>
+          <span className="callout-icon">
+            <Icon name="warn" size={13} stroke={2.2} />
+          </span>
+          <div className="callout-body">
+            Your playback mode is <strong>Legacy</strong>, not SVM3. You can still watch the live
+            feed here, but the add-on won't use it to confirm playback at runtime.
+          </div>
+        </div>
+      )}
+
+      <div className="row" style={{ gap: 18, marginTop: 10 }}>
+        <ConfirmBadge on={verdict.confirmedPlayback} label="playback confirmed" />
+        <ConfirmBadge on={verdict.confirmedProgress} label="progress advancing" />
+        <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+          {verdict.playbackState ? `state ${verdict.playbackState}` : "state —"}
+          {verdict.utcTicks > 0 ? ` · ${verdict.utcTicks} ticks` : ""}
+        </span>
+      </div>
+
+      {err && (
+        <div className="muted" style={{ fontSize: 12, marginTop: 8, color: "var(--danger)" }}>
+          {err}
+        </div>
+      )}
+
+      <div
+        style={{
+          maxHeight: 132,
+          overflowY: "auto",
+          marginTop: 10,
+          fontFamily: "var(--font-mono)",
+          fontSize: 11.5,
+          lineHeight: 1.6,
+        }}
+      >
+        {frames.length === 0 ? (
+          <span className="muted">
+            {streaming ? "waiting for the player to push frames…" : "not watching"}
+          </span>
+        ) : (
+          frames.map((f) => (
+            <div key={f.seq} style={{ color: FRAME_COLORS[f.kind] }}>
+              {f.raw}
+            </div>
+          ))
+        )}
+      </div>
+
+      <div
+        className="muted"
+        style={{ fontSize: 11, marginTop: 10, fontFamily: "var(--font-mono)" }}
+      >
+        read-only · restores the player's prior verbose mode on stop · software-verified, not
+        hardware-validated
+      </div>
+    </div>
+  );
+}
+
+function ConfirmBadge({ on, label }: { on: boolean; label: string }) {
+  return (
+    <span className="row" style={{ gap: 5, alignItems: "center" }}>
+      <Icon name={on ? "check" : "cross"} size={13} style={{ color: on ? "#16A34A" : "#9CA3AF" }} />
+      <span className="muted" style={{ fontSize: 12 }}>
+        {label}
+      </span>
+    </span>
   );
 }
 
