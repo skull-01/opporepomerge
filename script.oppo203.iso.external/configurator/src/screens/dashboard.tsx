@@ -12,6 +12,7 @@ import {
   type OppoSessionState,
   type OppoSessionStatus,
 } from "../oppo_status";
+import { chainNodeViews, type ChainLiveness, type ChainNodeView } from "../dashboard_chain";
 import type { ScreenProps } from "./types";
 
 // How often the dashboard re-checks device liveness + session status while it is open.
@@ -164,6 +165,79 @@ function SessionCard({ result }: { result: StatusReadResult | null }) {
   );
 }
 
+const CHAIN_LIVENESS: Record<ChainLiveness, { dot: string; text: string }> = {
+  up: { dot: "#16A34A", text: "reachable" },
+  down: { dot: "#DC2626", text: "no answer" },
+  checking: { dot: "#9CA3AF", text: "checking…" },
+  unprobed: { dot: "#9CA3AF", text: "no liveness probe" },
+  "no-address": { dot: "#9CA3AF", text: "no address" },
+};
+
+function ChainNodeRow({ node, isLast }: { node: ChainNodeView; isLast: boolean }) {
+  const live = CHAIN_LIVENESS[node.liveness];
+  return (
+    <div className="stack-sm" style={{ gap: 4 }}>
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <div className="row" style={{ gap: 8, alignItems: "center" }}>
+          <Icon name={DEVICE_ICON[node.id]} size={16} />
+          <span>{node.label}</span>
+          {node.host && (
+            <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+              {node.host}
+            </span>
+          )}
+        </div>
+        <div className="row" style={{ gap: 8, alignItems: "center" }}>
+          <span className="muted" style={{ fontSize: 12 }}>{live.text}</span>
+          <span
+            aria-label={live.text}
+            style={{
+              width: 9,
+              height: 9,
+              borderRadius: "50%",
+              background: live.dot,
+              display: "inline-block",
+              flexShrink: 0,
+            }}
+          />
+        </div>
+      </div>
+      {node.activity && (
+        <div className="row" style={{ gap: 6, alignItems: "center", paddingLeft: 24 }}>
+          <Icon name="play" size={11} style={{ color: "#2563EB" }} />
+          <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+            {node.activity}
+          </span>
+        </div>
+      )}
+      {!isLast && (
+        <div className="muted" style={{ paddingLeft: 7, fontSize: 12, lineHeight: 1 }}>
+          ↓
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChainCard({ nodes }: { nodes: ChainNodeView[] }) {
+  return (
+    <div className="card">
+      <h2 className="section-title">Playback chain</h2>
+      <div className="divider" />
+      <div className="stack-sm">
+        {nodes.map((n, i) => (
+          <ChainNodeRow key={n.id} node={n} isLast={i === nodes.length - 1} />
+        ))}
+      </div>
+      <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
+        Every hop on the configured chain, in signal order. Liveness is a reachability probe;
+        activity comes from the add-on's session, so only the player reports live playback. The
+        receiver appears only in an AVR chain.
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({ go, state }: ScreenProps) {
   const targets = livenessTargets(state);
   // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.
@@ -259,6 +333,9 @@ export function Dashboard({ go, state }: ScreenProps) {
   }, []);
 
   const gate = canStartLiveStream(session?.status ?? null);
+  // Full-chain view: every node in topology order, fed the probe map + parsed session we already
+  // poll. LiveStatus carries { reachable } so it is accepted directly as the probe shape.
+  const chainViews = chainNodeViews(state, statuses, session?.status ?? null);
 
   const startStream = async () => {
     if (!gate.allowed) {
@@ -349,6 +426,8 @@ export function Dashboard({ go, state }: ScreenProps) {
       </div>
 
       <SessionCard result={session} />
+
+      <ChainCard nodes={chainViews} />
 
       <div className="card">
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
