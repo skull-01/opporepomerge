@@ -177,6 +177,20 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
 ## §3a Addon work — in progress
 
+**As of 2026-06-02 (this session — Phase 5.1 richer session status MERGED; one add-on change).**
+The configurator-track "build Phases 3/4/5" session included **one add-on change** (operator opted into 5.1):
+[#183](https://github.com/skull-01/script.oppo203.iso.external/pull/183) `332c0ba` (issue **#182**) enriches
+`resources/lib/kodi/playback_session.py`'s `oppo203iso-status.json` with `session_id` (stable per session),
+`started_at`/`updated_at`, and a `phase` field (`launching`→`monitoring`→`ended`) + a mid-session heartbeat —
+so the live dashboard (Phase 5.2/5.3) can show de-duplicated session telemetry (the identity #166/#168 wanted).
+**Backward-compatible** (new optional fields; the configurator's existing `parseOppoStatus` ignores them until
+5.2 consumes them). Gate: **pytest 1046/3, mypy --strict 51/0, ruff clean, coverage 99%** (`playback_session.py`
+100%). SHA-commented + left OPEN. **Ships on the next configurator build (D-1=C bundles `main` fresh) — no
+separate add-on release.** Otherwise the add-on backlog is unchanged from EOD #4 below (Phase-C pending on the
+merged SVM3 / http_handoff / robustness work).
+
+---
+
 **As of 2026-06-01 (EOD #6 — guided-install initiative; the add-on side is a release, not new code).**
 **Clean stopping point — no add-on runtime change this session; `main` add-on unchanged (1045/3 green).**
 The `http_handoff`/SVM3/preset runtime already on `main` (post-2.9.13) was **built + published as a
@@ -408,6 +422,33 @@ branch unprompted.
   PRs #129–#133; see the **current** candidate themes at the top of §3a.
 
 ## §3b Configurator work — in progress
+
+**As of 2026-06-02 (this session — backend layer for Phases 3/4/5 built + MERGED to `main`; 8 PRs).**
+**Clean stopping point — all work merged to `main`; 0 open PRs from this session; nothing left on this machine.**
+Operator picked `resume` → "build all of Phases 3/4/5, full auth, **merge to main as I go**, **finer PRs**, **file ENH issues**."
+Delivered the **Rust + add-on backend layer** the UI phases depend on. **Foundation merged first:**
+[#174](https://github.com/skull-01/script.oppo203.iso.external/pull/174) (Phase 1b NAS capture) +
+[#175](https://github.com/skull-01/script.oppo203.iso.external/pull/175) (D-3 enablement, DRY'd onto `kodi_jsonrpc_cmd`).
+**Then 6 PRs:**
+- **Phase 3.1 AVR** — [#177](https://github.com/skull-01/script.oppo203.iso.external/pull/177) `2bf0663` (issue #176): `avr_switch_denon`/`_eiscp`/`_yamaha`/`_sony_audio` + pure builders (Denon `SI` :23, eISCP `!1SLI` framed :60128, Yamaha `setInput` :80, Sony Audio `setPlayContent` POST).
+- **Phase 3.1 TV** — [#179](https://github.com/skull-01/script.oppo203.iso.external/pull/179) `9aa9e1c` (issue #178): `tv_switch_sony_bravia` (HTTP); `tv_switch_adb`/`tv_switch_external` run on the Kodi box **over SSH** like the add-on; `smartthings_switch_request` (builder; HTTPS deferred — no TLS crate). Complements Roku.
+- **Phase 4.1** — [#181](https://github.com/skull-01/script.oppo203.iso.external/pull/181) `0b5a8f1` (issue #180): `oppo_power` (off/on/eject → `#POF`/`#PON`/`#EJT`) delegating to `oppo_query`. (activate/signin/play already in #174.)
+- **Phase 5.1 (🟦 add-on)** — [#183](https://github.com/skull-01/script.oppo203.iso.external/pull/183) `332c0ba` (issue #182): richer `oppo203iso-status.json` — `session_id`/`started_at`/`updated_at`/`phase` + mid-session heartbeat. Ships on next configurator build (D-1=C). See §3a.
+
+Gate green on `main`: **cargo 35 / tsc / 190 vitest / vite build**; add-on **pytest 1046/3, mypy --strict 51/0, ruff clean, coverage 99%** (`playback_session.py` 100%). All **software-verified ONLY — hardware-pending** (every switch/power path opens one short-lived socket like `tv_switch_roku`; none tried against a real TV/AVR/OPPO). ENH #176/#178/#180/#182 SHA-commented + left OPEN. Checklist Phase A/C rows added per PR.
+
+**Resume here next (configurator) — the remaining UI layer that wires these backends (each its own PR off `main`, per §4):**
+1. **Phase 3.2 — switch-and-verify UI.** Replace the simulated switch in `configurator/src/screens/step5.tsx` (the "configurator can't drive the switch yet" copy + the manual-switch fallback) with a real **Test** action that dispatches to the right `tv_switch_*` / `avr_switch_*` command by `state.tvBackend` / `state.topology` / the AVR backend + the picked HDMI input + IP/PSK, shows the reply, and keeps an honest manual fallback where the backend can't confirm. Wire via `src/ipc.ts` `invoke`.
+2. **Phase 3.3 — auto-find inputs.** Replace the step5 "find it for me" stub (auto-detect Kodi/OPPO HDMI where the backend allows).
+3. **Phase 4.2 — test-ISO copy.** Rust `copy_to_share` (chunked + progress events) + `test.tsx` user-supplied source-path field + progress bar (D-2 placeholder).
+4. **Phase 4.3 — live SVM3 during self-test.** Wire `start_oppo_live_monitor` into the self-test (confirm on `@UPL`/`@UTC`).
+5. **Phase 4.4 — self-test orchestration.** `oppo_power` off→on → mount → `oppo_http_play` → SVM3-confirm → control-forward test.
+6. **Phase 5.2 — dashboard.** Extend `oppo_status.ts` `parseOppoStatus` for the new `session_id`/`started_at`/`phase` fields + exact session dedup in `session_log.ts`; add **TV liveness** (`tv_ip` persisted) + auto-start the live stream.
+7. **Phase 5.3 — full-chain view.** Unified Kodi/OPPO/TV/AVR live status.
+
+⚠️ Phases 3.2/3.3 both edit `step5.tsx`; 4.2/4.4 both edit `test.tsx`; 5.2/5.3 both edit the dashboard — sequence those pairs (don't parallelize on the same file). `docs/BUILD_PLAN.md` §4 has the per-PR detail.
+
+---
 
 **As of 2026-06-02 (EOD #7 — merged guided-install to `main`; built Phase 1b NAS-path capture (#174);
 resolved D-2/D-3 + built D-3 (#175)).** **Clean stopping point — all work committed + pushed; `main`@`7554c15`;

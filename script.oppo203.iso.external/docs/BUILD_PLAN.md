@@ -12,10 +12,16 @@ trigger and is allowed to lag the live state between refreshes. Phase/PR IDs
 below are **planning placeholders** (`ENH-…`) until the operator files the
 matching `area:configurator` / `area:addon` issues.
 
-**Last refreshed:** 2026-06-02 · added **D-4** (NAS-path observe-and-verify
-capture + manual fallback, **SMB/NFS only**) and **Phase 1b**. Prior: 2026-06-01 · **committed to
-`main`** together with the six-preset matrix norm (`AGENTS.md`) + the handoff §4
-pointer.
+**Last refreshed:** 2026-06-02 (later) · **backend layer for Phases 3/4/5 built + merged to `main`**
+(operator: "build all of Phases 3/4/5, merge as I go, finer PRs"). Foundation #174/#175 merged; then
+**Phase 3.1** AVR switch ([#177](https://github.com/skull-01/script.oppo203.iso.external/pull/177), issue #176) + TV switch
+([#179](https://github.com/skull-01/script.oppo203.iso.external/pull/179), issue #178); **Phase 4.1** `oppo_power`
+([#181](https://github.com/skull-01/script.oppo203.iso.external/pull/181), issue #180); **Phase 5.1** add-on richer status
+([#183](https://github.com/skull-01/script.oppo203.iso.external/pull/183), issue #182). **Software-verified only — hardware-pending.**
+**Remaining = the UI layer:** Phase 3.2/3.3 (step5 switch-and-verify + auto-find), 4.2/4.3/4.4 (ISO copy + live SVM3 + orchestration),
+5.2/5.3 (dashboard consume + TV liveness + full-chain). See `AI_RESUME_HANDOFF.md` §3b for the per-PR resume list. · Prior:
+2026-06-02 · added **D-4** (NAS-path observe-and-verify capture + manual fallback, **SMB/NFS only**) and **Phase 1b**. Prior:
+2026-06-01 · **committed to `main`** together with the six-preset matrix norm (`AGENTS.md`) + the handoff §4 pointer.
 
 **This file lives on `main`; feature branches should not edit it** (causes
 add/add merge conflicts per the session-continuity convention).
