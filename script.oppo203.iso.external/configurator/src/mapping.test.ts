@@ -351,6 +351,17 @@ describe("wizardStateToAddonSettings — six-option playback preset", () => {
     expect(out.playback_architecture_preset).toBe("http_handoff_legacy");
   });
 
+  it("emits json_payload mode only for the http_handoff routing", () => {
+    const http = wizardStateToAddonSettings(makeState({ playbackArchitecture: "http_handoff" }));
+    expect(http.oppo_http_payload_mode).toBe("json_payload");
+    const pcf = wizardStateToAddonSettings(makeState({ playbackArchitecture: "external_player" }));
+    expect(pcf.oppo_http_payload_mode).toBeUndefined();
+    const svc = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "service_interception" }),
+    );
+    expect(svc.oppo_http_payload_mode).toBeUndefined();
+  });
+
   it("keeps the emitted triple internally consistent across all six combos", () => {
     const archByRouting = {
       playercorefactory: "external_player",
