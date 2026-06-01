@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import traceback
 from typing import TYPE_CHECKING, Any
 
@@ -54,15 +55,32 @@ def _external_player() -> Any:
     return ep
 
 
+def _now() -> float:
+    return time.time()
+
+
+def _new_session_id() -> str:
+    """A short random id stable across one session's status writes, so the configurator can tell two
+    back-to-back sessions apart (the status schema previously carried no session identity)."""
+    return os.urandom(8).hex()
+
+
 def _status(
     media_file: str,
     launch_source: str,
     arch: dict[str, str],
     *,
     session_state: str,
+    phase: str,
+    session_id: str,
+    started_at: float,
     snapshot: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     status: dict[str, Any] = {
+        "session_id": session_id,
+        "started_at": started_at,
+        "updated_at": _now(),
+        "phase": phase,
         "launch_source": launch_source,
         "architecture_preset": arch["preset"],
         "routing_mode": arch["routing"],
@@ -160,7 +178,25 @@ def run_playback_session(
     """
     ep = player if player is not None else _external_player()
     arch = normalize_architecture(settings)
-    _write_status(settings, _status(media_file, launch_source, arch, session_state="starting"))
+    session_id = _new_session_id()
+    started_at = _now()
+
+    def write(state: str, phase: str, snapshot: dict[str, Any] | None = None) -> None:
+        _write_status(
+            settings,
+            _status(
+                media_file,
+                launch_source,
+                arch,
+                session_state=state,
+                phase=phase,
+                session_id=session_id,
+                started_at=started_at,
+                snapshot=snapshot,
+            ),
+        )
+
+    write("starting", "launching")
     rc = 0
     snapshot: dict[str, Any] | None = None
     try:
@@ -169,6 +205,7 @@ def run_playback_session(
             ep.fast_start_http(settings, media_file)
         else:
             ep.fast_start(settings, media_file, preflight_result=preflight_result)
+        write("starting", "monitoring")
         snapshot = _dispatch_monitor(settings, ep, arch)
     except Exception:
         traceback.print_exc()
@@ -179,14 +216,5 @@ def run_playback_session(
         except Exception:
             traceback.print_exc()
         ep.clear_session_active(settings)
-        _write_status(
-            settings,
-            _status(
-                media_file,
-                launch_source,
-                arch,
-                session_state="failed" if rc else "stopped",
-                snapshot=snapshot,
-            ),
-        )
+        write("failed" if rc else "stopped", "ended", snapshot)
     return rc

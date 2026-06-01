@@ -138,6 +138,23 @@ def test_legacy_status_reports_no_confirmation(monkeypatch, tmp_path):
     assert status["session_state"] == "stopped"
 
 
+def test_status_carries_session_identity_and_phases(monkeypatch, tmp_path):
+    writes = []
+    real_write = ps._write_status
+    monkeypatch.setattr(ps, "_write_status", lambda s, st: writes.append(st) or real_write(s, st))
+    _patch_ep(monkeypatch, [])
+    ps.run_playback_session(_settings(tmp_path), "/m.iso", "playercorefactory")
+    # three writes -- launching -> monitoring -> ended -- sharing one session_id + started_at.
+    assert [w["phase"] for w in writes] == ["launching", "monitoring", "ended"]
+    assert len({w["session_id"] for w in writes}) == 1
+    assert next(iter({w["session_id"] for w in writes}))  # non-empty id
+    assert len({w["started_at"] for w in writes}) == 1
+    assert all(isinstance(w["updated_at"], float) for w in writes)
+    final = _read_status(tmp_path)
+    assert final["phase"] == "ended"
+    assert final["session_state"] == "stopped"
+
+
 # -- failure / cleanup ------------------------------------------------------
 
 
