@@ -36,7 +36,8 @@ export type ScreenId =
   | "step6_model"
   | "test_setup"
   | "test_confirm"
-  | "test_success";
+  | "test_success"
+  | "dashboard";
 
 export type ChainTarget =
   | "media"
@@ -100,6 +101,7 @@ export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
   test_setup: "test",
   test_confirm: "test",
   test_success: "test",
+  dashboard: "test",
 };
 
 export const SCREEN_TO_CHAIN: Record<ScreenId, ChainTarget> = {
@@ -131,6 +133,7 @@ export const SCREEN_TO_CHAIN: Record<ScreenId, ChainTarget> = {
   test_setup: "all",
   test_confirm: "all",
   test_success: "all",
+  dashboard: "all",
 };
 
 export function firstScreenOfStep(stepId: StepId): ScreenId {

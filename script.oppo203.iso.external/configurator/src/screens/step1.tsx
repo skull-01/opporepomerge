@@ -46,7 +46,9 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
       </h2>
       <p className="screen-subtitle" style={{ marginTop: 4, marginBottom: 10 }}>
         How Kodi hands a disc image to your player. External Player is the standard,
-        most predictable path; Service Interception is an alternate for special setups.
+        most predictable path; Service Interception is an alternate for special setups;
+        HTTP Handoff launches the file over the player's community NAS HTTP API
+        (recommended for validation / new installs, not yet hardware-validated).
       </p>
       <div className="row" style={{ gap: 8, marginBottom: 22 }}>
         <button
@@ -64,6 +66,14 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
           onClick={() => set({ playbackArchitecture: "service_interception" })}
         >
           Service Interception
+        </button>
+        <button
+          className={`filter-pill ${
+            state.playbackArchitecture === "http_handoff" ? "selected" : ""
+          }`.trim()}
+          onClick={() => set({ playbackArchitecture: "http_handoff" })}
+        >
+          HTTP Handoff (community NAS)
         </button>
       </div>
 

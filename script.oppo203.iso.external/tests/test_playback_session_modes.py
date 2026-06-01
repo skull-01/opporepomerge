@@ -1,7 +1,7 @@
-"""PR A3: run_playback_session -- the shared four-option session engine.
+"""run_playback_session -- the shared six-option session engine.
 
-Both routings (playercorefactory and service-interception) call this one
-function, so these pin that:
+The three routings (playercorefactory, service-interception, http_handoff) call
+this one function, so these pin that:
 
 * the sequence is always mark -> fast_start -> monitor -> fast_return -> clear;
 * monitor_mode legacy runs the existing hold_playback; svm3 runs the SVM3 monitor
@@ -200,6 +200,114 @@ def test_svm3_connect_failure_falls_back_to_legacy_hold(monkeypatch, tmp_path):
     assert "hold" in calls  # fell back to the legacy hold
     # restore/close still ran is not asserted here (connect raised before enable);
     # the fallback path is what matters.
+
+
+# -- http_handoff routing (run_playback_session launch branch) --------------
+
+
+def test_http_handoff_routing_uses_fast_start_http(monkeypatch, tmp_path):
+    calls = []
+    _patch_ep(monkeypatch, calls)
+    monkeypatch.setattr(ep, "fast_start_http", lambda s, f: calls.append(("fast_start_http", f)))
+    rc = ps.run_playback_session(
+        _settings(tmp_path, playback_architecture_preset="http_handoff_legacy"),
+        "/mnt/nfs1/m.iso",
+        "playercorefactory",
+    )
+    assert rc == 0
+    assert ("fast_start_http", "/mnt/nfs1/m.iso") in calls
+    assert not any(isinstance(c, tuple) and c[0] == "fast_start" for c in calls)
+    assert "hold" in calls  # legacy monitor still runs after the HTTP launch
+
+
+def test_http_handoff_svm3_launches_http_then_svm3_monitor(monkeypatch, tmp_path):
+    monkeypatch.setattr(svm3mod, "OppoSvm3PlaybackMonitor", FakeMonitor)
+    calls = []
+    _patch_ep(monkeypatch, calls)
+    monkeypatch.setattr(ep, "fast_start_http", lambda s, f: calls.append(("fast_start_http", f)))
+    ps.run_playback_session(
+        _settings(tmp_path, playback_architecture_preset="http_handoff_svm3"),
+        "/mnt/nfs1/m.iso",
+        "playercorefactory",
+    )
+    status = _read_status(tmp_path)
+    assert status["routing_mode"] == "http_handoff"
+    assert status["monitor_mode"] == "svm3"
+    assert ("fast_start_http", "/mnt/nfs1/m.iso") in calls
+    assert "hold" not in calls  # svm3 monitor, not the legacy hold
+
+
+# -- external_player.fast_start_http / _start_oppo_http (the real launch) ----
+
+
+class _AvrResult:
+    def __init__(self, ok=True, skipped=True):
+        self.ok = ok
+        self.skipped = skipped
+        self.warnings: list[str] = []
+
+
+def _patch_http(monkeypatch, *, play=None):
+    # _start_oppo_http imports oppo_control lazily; depending on suite import order the
+    # bare and package module names can be distinct objects, so patch every one present.
+    import importlib
+
+    play_fn = play or (lambda s, f: "@OK")
+    seen: set[int] = set()
+    for name in ("resources.lib.oppo.oppo_control", "oppo_control"):
+        try:
+            mod = importlib.import_module(name)
+        except Exception:
+            continue
+        if id(mod) in seen:
+            continue
+        seen.add(id(mod))
+        monkeypatch.setattr(mod, "activate_http_api", lambda s: True, raising=False)
+        monkeypatch.setattr(mod, "signin_http_api", lambda s: "", raising=False)
+        monkeypatch.setattr(mod, "play_media_http_api", play_fn, raising=False)
+
+
+def test_fast_start_http_runs_tv_avr_then_http_launch(monkeypatch):
+    order = []
+    monkeypatch.setattr(ep, "log", lambda m: None)
+    monkeypatch.setattr(ep, "_safe_tv_switch", lambda s, t: order.append(("tv", t)))
+    monkeypatch.setattr(ep, "pre_playback_sequence", lambda s: order.append("avr") or _AvrResult())
+    _patch_http(monkeypatch, play=lambda s, f: order.append(("play", f)) or "@OK")
+    ep.fast_start_http(sr.Settings({}), "/mnt/nfs1/m.iso")
+    assert order == [("tv", "oppo"), "avr", ("play", "/mnt/nfs1/m.iso")]
+
+
+def test_start_oppo_http_failure_is_nonfatal(monkeypatch):
+    logs = []
+    monkeypatch.setattr(ep, "log", lambda m: logs.append(m))
+
+    def boom(s, f):
+        raise RuntimeError("http down")
+
+    _patch_http(monkeypatch, play=boom)
+    ep._start_oppo_http(sr.Settings({}), "/mnt/nfs1/m.iso")  # must not raise
+    assert any("HTTP handoff failed" in m for m in logs)
+
+
+def test_start_oppo_http_honors_startup_delay(monkeypatch):
+    slept = []
+    monkeypatch.setattr(ep, "log", lambda m: None)
+    monkeypatch.setattr(ep.time, "sleep", lambda n: slept.append(n))
+    _patch_http(monkeypatch)
+    ep._start_oppo_http(sr.Settings({"startup_delay": "1"}), "/m.iso")
+    assert slept == [1]
+
+
+def test_fast_start_http_logs_avr_warning_nonfatal(monkeypatch):
+    logs = []
+    monkeypatch.setattr(ep, "log", lambda m: logs.append(m))
+    monkeypatch.setattr(ep, "_safe_tv_switch", lambda s, t: None)
+    monkeypatch.setattr(ep, "pre_playback_sequence", lambda s: _AvrResult(ok=False, skipped=False))
+    _patch_http(monkeypatch)
+    ep.fast_start_http(
+        sr.Settings({"fast_changeover": "false"}), "/m.iso"
+    )  # also covers no-changeover
+    assert any("AVR pre-playback sequence warning" in m for m in logs)
 
 
 # -- status writer edges ----------------------------------------------------

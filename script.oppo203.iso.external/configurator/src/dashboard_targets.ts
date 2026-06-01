@@ -1,0 +1,72 @@
+import type { WizardState } from "./state";
+import { isAvrChain } from "./steps";
+
+/**
+ * How the dashboard checks one device for liveness:
+ *   "tcp"  - a plain TCP connect (tcp_probe): reachable if the port accepts a connection.
+ *   "oppo" - an OPPO #QPW query (oppo_query): reachable if the player replies, and the reply
+ *            also yields a power state to show.
+ */
+export type LivenessKind = "tcp" | "oppo";
+
+export type LivenessTarget = {
+  id: "kodi" | "player" | "avr";
+  label: string;
+  host: string;
+  port: number;
+  kind: LivenessKind;
+};
+
+/**
+ * The AVR control port to probe, by control backend. Mirrors controlProbePort() in
+ * screens/step6.tsx and resources/lib/avr/avr_presets.py (Denon/Marantz telnet 23, Yamaha YXC
+ * HTTP 80, Onkyo/Pioneer eISCP 60128). Sony (authenticated HTTP/PSK) and custom_command have no
+ * plain TCP check, so they return null and the receiver row is omitted rather than shown wrong.
+ */
+function avrControlPort(backend: WizardState["avrBackend"]): number | null {
+  switch (backend) {
+    case "denon_marantz":
+      return 23;
+    case "yamaha_yxc":
+      return 80;
+    case "onkyo_eiscp":
+      return 60128;
+    default:
+      return null;
+  }
+}
+
+/**
+ * The devices the dashboard checks for liveness, derived from the configured chain. Only devices
+ * the wizard actually persists an address for are included:
+ *   - Kodi box (kodiIp) - probed on its deploy transport port (SMB 445 for tier B, else SSH 22).
+ *   - OPPO player (playerIp) - queried over IP control on 23 (also surfaces power state).
+ *   - AV receiver (avrIp) - AVR chain only, and only for a backend with a TCP control port.
+ * The TV is intentionally absent: the wizard never stores a TV IP (Step 4 probes an ad-hoc
+ * address that is not persisted), so there is nothing reliable to check from saved state.
+ */
+export function livenessTargets(state: WizardState): LivenessTarget[] {
+  const targets: LivenessTarget[] = [
+    {
+      id: "kodi",
+      label: "Kodi box",
+      host: state.kodiIp,
+      port: state.tier === "B" ? 445 : 22,
+      kind: "tcp",
+    },
+    {
+      id: "player",
+      label: "Player",
+      host: state.playerIp,
+      port: 23,
+      kind: "oppo",
+    },
+  ];
+  if (isAvrChain(state.topology)) {
+    const port = avrControlPort(state.avrBackend);
+    if (state.avrIp && port != null) {
+      targets.push({ id: "avr", label: "Receiver", host: state.avrIp, port, kind: "tcp" });
+    }
+  }
+  return targets;
+}

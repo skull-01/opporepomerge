@@ -1,4 +1,4 @@
-"""Shared playback-session engine for the four-option architecture (PR A3).
+"""Shared playback-session engine for the six-option playback architecture.
 
 Both entry points run the *same* sequence:
 
@@ -7,8 +7,10 @@ Both entry points run the *same* sequence:
 
 mark the session active -> ``fast_start`` (TV switch + AVR pre-sequence + OPPO
 start) -> hold/monitor until playback ends -> ``fast_return`` (stop + AVR/TV
-restore) -> clear the session. This module is that single sequence, so the two
-routings can never drift apart.
+restore) -> clear the session. This module is that single sequence, so the
+routings can never drift apart. When the resolved routing is ``http_handoff`` the
+launch step uses ``fast_start_http`` (the community OPPO HTTP file launch) instead
+of the TCP/disc start; the monitor axis (legacy/svm3) is unchanged.
 
 The monitor branch is chosen by ``playback_monitor_mode`` (resolved through
 ``settings_reader.normalize_architecture``): ``legacy`` runs the existing
@@ -163,7 +165,10 @@ def run_playback_session(
     snapshot: dict[str, Any] | None = None
     try:
         ep.mark_session_active(settings)
-        ep.fast_start(settings, media_file, preflight_result=preflight_result)
+        if arch["routing"] == "http_handoff":
+            ep.fast_start_http(settings, media_file)
+        else:
+            ep.fast_start(settings, media_file, preflight_result=preflight_result)
         snapshot = _dispatch_monitor(settings, ep, arch)
     except Exception:
         traceback.print_exc()

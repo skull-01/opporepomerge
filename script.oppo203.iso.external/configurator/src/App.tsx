@@ -38,6 +38,7 @@ import {
 import { Step5Intro, Step5Ask, Step5Fallback, Step5Done } from "./screens/step5";
 import { Step6Ask, Step6Brand, Step6Model } from "./screens/step6";
 import { TestSetup, TestConfirm, TestSuccess } from "./screens/test";
+import { Dashboard } from "./screens/dashboard";
 import type { ScreenProps } from "./screens/types";
 
 // Picking the progress variant in production — change here, not at runtime.
@@ -73,6 +74,7 @@ const SCREEN_RENDERERS: Record<ScreenId, (props: ScreenProps) => JSX.Element> = 
   test_setup: TestSetup,
   test_confirm: TestConfirm,
   test_success: TestSuccess,
+  dashboard: Dashboard,
 };
 
 export default function App() {

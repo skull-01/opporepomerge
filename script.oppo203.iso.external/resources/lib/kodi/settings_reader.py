@@ -178,7 +178,7 @@ ENUM_VALUES = {
     "hold_mode": ["fixed_timeout", "manual_file", "http_poll", "tcp_qpl_poll", "verbose_push"],
     "oppo_verbose_mode": ["0", "2", "3"],
     "oppo_http_payload_mode": ["raw_path", "json_payload"],
-    "playback_architecture": ["external_player", "service_interception"],
+    "playback_architecture": ["external_player", "service_interception", "http_handoff"],
     "playback_monitor_mode": ["legacy", "svm3"],
     "oppo_hardware_model": [
         "udp_203",
@@ -203,23 +203,26 @@ ENUM_VALUES = {
 }
 
 
-# Four-option playback architecture (PR A1). Two independent axes -- routing (how
-# Kodi hands a disc to the controller: playercorefactory vs service interception)
-# and monitor (how playback is confirmed: legacy vs svm3) -- are also exposed as
-# one combined playback_architecture_preset that the configurator writes.
+# Playback architecture. Two independent axes -- routing (how Kodi hands a disc to
+# the controller: playercorefactory, service interception, or http_handoff) and
+# monitor (how playback is confirmed: legacy vs svm3) -- are also exposed as one
+# combined playback_architecture_preset that the configurator writes. Three routing
+# values x two monitor values give the six supported presets.
 # normalize_architecture() treats an explicit, valid preset as the source of
 # truth; when it is absent it derives the preset from the legacy
 # playback_architecture + playback_monitor_mode. The preset has no DEFAULTS entry
 # on purpose: a default would mask a pre-existing service_interception install, so
 # "absent" must mean "derive from the legacy fields" and existing users keep their
 # current behavior.
-PLAYBACK_ROUTING_MODES = ("playercorefactory", "service_interception")
+PLAYBACK_ROUTING_MODES = ("playercorefactory", "service_interception", "http_handoff")
 PLAYBACK_MONITOR_MODES = ("legacy", "svm3")
 PLAYBACK_ARCHITECTURE_PRESETS = (
     "playercorefactory_legacy",
     "service_interception_legacy",
     "playercorefactory_svm3",
     "service_interception_svm3",
+    "http_handoff_legacy",
+    "http_handoff_svm3",
 )
 
 # The stored playback_architecture enum predates the four-option model and names
@@ -228,6 +231,7 @@ _ROUTING_ALIASES = {
     "external_player": "playercorefactory",
     "playercorefactory": "playercorefactory",
     "service_interception": "service_interception",
+    "http_handoff": "http_handoff",
 }
 
 _PRESET_BY_AXES = {
@@ -235,6 +239,8 @@ _PRESET_BY_AXES = {
     ("service_interception", "legacy"): "service_interception_legacy",
     ("playercorefactory", "svm3"): "playercorefactory_svm3",
     ("service_interception", "svm3"): "service_interception_svm3",
+    ("http_handoff", "legacy"): "http_handoff_legacy",
+    ("http_handoff", "svm3"): "http_handoff_svm3",
 }
 _AXES_BY_PRESET = {preset: axes for axes, preset in _PRESET_BY_AXES.items()}
 
