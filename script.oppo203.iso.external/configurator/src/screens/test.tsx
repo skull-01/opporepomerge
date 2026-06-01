@@ -1,19 +1,82 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { Icon, type IconName } from "../icons";
+import { invoke } from "../ipc";
 import { Chain } from "../shell/Chain";
 import { FooterNav } from "../shell/FooterNav";
 import { applyToKodi, installAddonToKodi, type ApplyResult } from "../apply";
 import { isAvrChain, type ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
+// One copy-progress frame emitted by the Rust `copy_to_share` command (see lib.rs `CopyProgress`).
+type CopyProgress = { bytes_copied: number; total: number; percent: number };
+
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let v = n / 1024;
+  let i = 0;
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024;
+    i++;
+  }
+  return `${v.toFixed(1)} ${units[i]}`;
+}
+
 // ============================================================
 // TEST — Setup (copy disc OR play your own)
 // ============================================================
 type TestMode = "disc" | "own" | null;
+type CopyPhase = "idle" | "copying" | "done" | "error";
 
 export function TestSetup({ go, state, set }: ScreenProps) {
   const [mode, setMode] = useState<TestMode>(state.testMode);
   const [copied, setCopied] = useState(false);
+
+  // Test-ISO copy (Phase 4.2; D-2 = the operator supplies the source disc/ISO).
+  const [sourcePath, setSourcePath] = useState("");
+  const [destPath, setDestPath] = useState("\\\\nas\\Movies\\_test\\test-uhd-2160p.iso");
+  const [copyPhase, setCopyPhase] = useState<CopyPhase>("idle");
+  const [progress, setProgress] = useState<CopyProgress | null>(null);
+  const [copyErr, setCopyErr] = useState<string | null>(null);
+  // Track copy-in-flight in a ref so the progress listener (subscribed once) only updates the bar
+  // while our own copy is running.
+  const copyingRef = useRef(false);
+
+  useEffect(() => {
+    let alive = true;
+    let unlisten: (() => void) | undefined;
+    void listen<CopyProgress>("copy-progress", (e) => {
+      if (copyingRef.current) setProgress(e.payload);
+    }).then((u) => {
+      if (alive) unlisten = u;
+      else u();
+    });
+    return () => {
+      alive = false;
+      if (unlisten) unlisten();
+    };
+  }, []);
+
+  const startCopy = async () => {
+    setCopyErr(null);
+    setProgress(null);
+    setCopyPhase("copying");
+    copyingRef.current = true;
+    try {
+      await invoke<{ dest: string; bytes_copied: number }>("copy_to_share", {
+        sourcePath,
+        destPath,
+      });
+      setCopyPhase("done");
+      setCopied(true);
+    } catch (e) {
+      setCopyErr(String(e));
+      setCopyPhase("error");
+    } finally {
+      copyingRef.current = false;
+    }
+  };
 
   const pick = (m: "disc" | "own") => {
     setMode(m);
@@ -33,8 +96,8 @@ export function TestSetup({ go, state, set }: ScreenProps) {
         <h1 className="screen-title">Full setup test.</h1>
         <p className="screen-subtitle">
           End to end: handoff, TV switch, play, and Kodi-remote menu control. You pick how
-          to test — use our bundled disc, or use one of your own files if you have a UHD
-          ISO already in your library.
+          to test — copy a UHD ISO you supply onto the shared library, or play one you
+          already have there.
         </p>
       </div>
 
@@ -46,13 +109,13 @@ export function TestSetup({ go, state, set }: ScreenProps) {
             </div>
             <div className="tile-body">
               <div className="tile-title">
-                Use our test disc{" "}
+                Copy a test ISO to the share{" "}
                 <span className="tile-badge recommended">Recommended</span>
               </div>
               <div className="tile-desc">
-                We made a small UHD ISO ourselves — playable, with a navigable menu, named
-                to trigger Kodi's eligibility rules. We'll copy it into your library so
-                both Kodi and your player can see it.
+                Point us at a UHD ISO <strong>you supply</strong> (named to trigger Kodi's
+                eligibility rules) and we'll copy it onto the library both Kodi and your
+                player can see.
               </div>
             </div>
             <Icon name="chevR" size={16} />
@@ -94,17 +157,28 @@ export function TestSetup({ go, state, set }: ScreenProps) {
               </div>
               <div className="stack">
                 <div className="field">
-                  <label className="field-label">Save location</label>
-                  <div className="row" style={{ gap: 8 }}>
-                    <input
-                      className="input"
-                      defaultValue="\\nas\Movies\_test\"
-                      style={{ flex: 1 }}
-                    />
-                    <button className="btn outline sm">
-                      <Icon name="folder" size={13} /> Browse…
-                    </button>
+                  <label className="field-label">Test ISO on this PC</label>
+                  <input
+                    className="input"
+                    value={sourcePath}
+                    placeholder="C:\Users\you\Downloads\test-uhd-2160p.iso"
+                    onChange={(e) => setSourcePath(e.target.value)}
+                    disabled={copyPhase === "copying"}
+                  />
+                  <div className="field-hint">
+                    The UHD-tagged disc image <strong>you supply</strong> — name it with{" "}
+                    <code>2160p</code> or <code>UHD</code> so Kodi's eligibility rule trips.
                   </div>
+                </div>
+                <div className="field">
+                  <label className="field-label">Destination on the shared library</label>
+                  <input
+                    className="input"
+                    value={destPath}
+                    placeholder="\\nas\Movies\_test\test-uhd-2160p.iso"
+                    onChange={(e) => setDestPath(e.target.value)}
+                    disabled={copyPhase === "copying"}
+                  />
                 </div>
                 <div className="callout warn">
                   <span className="callout-icon">
@@ -114,26 +188,46 @@ export function TestSetup({ go, state, set }: ScreenProps) {
                     Must be on the media library{" "}
                     <strong>both Kodi and your player use</strong> — not just a folder on
                     this PC. If your library is a NAS or shared folder, point here to that
-                    share.
+                    share (a local path or a <code>\\server\share</code> UNC path).
                   </div>
                 </div>
-                {!copied ? (
-                  <button className="btn primary" onClick={() => setCopied(true)}>
-                    <Icon name="download" size={13} /> How to add a test file
+
+                {copyPhase !== "idle" && (
+                  <CopyProgressBar phase={copyPhase} progress={progress} error={copyErr} />
+                )}
+
+                <div className="row" style={{ gap: 8 }}>
+                  <button
+                    className="btn primary"
+                    onClick={startCopy}
+                    disabled={copyPhase === "copying" || !sourcePath.trim() || !destPath.trim()}
+                  >
+                    <Icon name="download" size={13} />{" "}
+                    {copyPhase === "copying"
+                      ? "Copying…"
+                      : copyPhase === "done"
+                        ? "Copy again"
+                        : "Copy to the share"}
                   </button>
-                ) : (
+                </div>
+                {copyPhase === "done" && (
                   <div className="callout info">
                     <span className="callout-icon">
                       <Icon name="info" size={13} stroke={2.2} />
                     </span>
                     <div className="callout-body">
-                      Automated copy isn't wired up yet. Copy a tagged UHD test file (a
-                      name containing <code>2160p</code> or <code>UHD</code>) onto the
-                      share yourself, <strong>rescan your Kodi library</strong> so it
-                      appears, then play it from Kodi.
+                      Copied. Now <strong>rescan your Kodi library</strong> so it appears, then
+                      play it from Kodi.
                     </div>
                   </div>
                 )}
+                <div
+                  className="muted"
+                  style={{ fontSize: 11, fontFamily: "var(--font-mono)" }}
+                >
+                  placeholder wiring · you supply the disc · software-verified, not
+                  hardware-validated
+                </div>
               </div>
             </div>
           )}
@@ -194,8 +288,9 @@ export function TestSetup({ go, state, set }: ScreenProps) {
                     <Icon name="info" size={13} stroke={2.2} />
                   </span>
                   <div className="callout-body">
-                    <strong>Nothing tagged UHD in your library?</strong> Switch to our
-                    test disc instead — we'll copy one that's correctly tagged.
+                    <strong>Nothing tagged UHD in your library?</strong> Switch to the copy
+                    option instead — point us at a UHD ISO you supply and we'll copy it onto
+                    the share.
                   </div>
                 </div>
               </div>
@@ -257,6 +352,60 @@ export function TestSetup({ go, state, set }: ScreenProps) {
         next={nextScreen}
         nextLabel={nextLabel}
       />
+    </div>
+  );
+}
+
+function CopyProgressBar({
+  phase,
+  progress,
+  error,
+}: {
+  phase: CopyPhase;
+  progress: CopyProgress | null;
+  error: string | null;
+}) {
+  const pct = phase === "done" ? 100 : (progress?.percent ?? 0);
+  const barColor = phase === "error" ? "var(--danger)" : "var(--accent)";
+  return (
+    <div className="stack-sm">
+      <div
+        style={{
+          height: 8,
+          borderRadius: 5,
+          background: "var(--surface-2)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          role="progressbar"
+          aria-valuenow={pct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          style={{
+            width: `${pct}%`,
+            height: "100%",
+            background: barColor,
+            transition: "width 120ms linear",
+          }}
+        />
+      </div>
+      <div
+        className="muted"
+        style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}
+      >
+        {phase === "error" ? (
+          <span style={{ color: "var(--danger)" }}>Copy failed: {error}</span>
+        ) : phase === "done" ? (
+          "100% — copy complete"
+        ) : progress ? (
+          `${pct}% · ${formatBytes(progress.bytes_copied)}${
+            progress.total > 0 ? ` of ${formatBytes(progress.total)}` : ""
+          }`
+        ) : (
+          "starting…"
+        )}
+      </div>
     </div>
   );
 }
