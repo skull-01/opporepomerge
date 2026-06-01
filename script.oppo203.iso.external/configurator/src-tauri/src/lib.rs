@@ -410,6 +410,90 @@ fn deploy_ssh(
 }
 
 // ============================================================
+// Kodi "what is playing" probe (Phase 1b NAS-path capture; area:configurator, issue #173)
+// ============================================================
+//
+// Reads the exact path Kodi is currently playing, over the existing SSH channel, so the
+// configurator can learn the Kodi-visible side of the http_handoff path rewrite
+// (`oppo_http_path_from`). Primary: Kodi JSON-RPC on the box (its web server need only listen
+// on localhost); fallback: the most recent "OpenFile" entry in kodi.log. The OPPO-visible side
+// is captured separately (`#QFN` / `/getmovieplayinfo`); see D-4 / Phase 1b in docs/BUILD_PLAN.md.
+
+const KODI_ACTIVE_PLAYERS_BODY: &str =
+    r#"{"jsonrpc":"2.0","id":1,"method":"Player.GetActivePlayers"}"#;
+
+fn kodi_jsonrpc_cmd(body: &str) -> String {
+    format!(
+        "curl -s --max-time 8 -H 'content-type: application/json' http://localhost:8080/jsonrpc -d '{body}'"
+    )
+}
+
+fn kodi_get_item_body(player_id: i64) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"Player.GetItem","params":{{"playerid":{player_id},"properties":["file"]}}}}"#
+    )
+}
+
+/// First active player id from a `Player.GetActivePlayers` reply (None when nothing is playing).
+fn parse_kodi_active_player_id(json: &str) -> Option<i64> {
+    let v: serde_json::Value = serde_json::from_str(json).ok()?;
+    v.get("result")?
+        .as_array()?
+        .iter()
+        .find_map(|p| p.get("playerid").and_then(serde_json::Value::as_i64))
+}
+
+/// The `file` of the playing item from a `Player.GetItem` reply (None when absent/empty).
+fn parse_kodi_player_file(json: &str) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(json).ok()?;
+    let file = v.get("result")?.get("item")?.get("file")?.as_str()?.trim();
+    (!file.is_empty()).then(|| file.to_string())
+}
+
+/// Fallback: the path from the most recent "OpenFile"/"Opening" line in a kodi.log tail.
+fn parse_kodi_log_file(text: &str) -> Option<String> {
+    let mut found = None;
+    for line in text.lines() {
+        for marker in ["OpenFile: ", "Opening: ", "Opening stream: "] {
+            if let Some(idx) = line.find(marker) {
+                let rest = line[idx + marker.len()..]
+                    .trim()
+                    .trim_matches(|c| c == '"' || c == '\'');
+                if !rest.is_empty() {
+                    found = Some(rest.to_string());
+                }
+            }
+        }
+    }
+    found
+}
+
+/// Read the path Kodi is currently playing, over SSH. Primary: Kodi JSON-RPC on the box
+/// (`Player.GetActivePlayers` -> `Player.GetItem{file}`); fallback: the last "OpenFile" line in
+/// `~/.kodi/temp/kodi.log`. Returns None when nothing resolvable is playing.
+#[tauri::command]
+fn kodi_now_playing(host: String, user: String) -> Result<Option<String>, String> {
+    validate_ssh_target(&host, &user)?;
+    let target = format!("{user}@{host}");
+    if let Ok(players) = run_ssh_capture(&target, &kodi_jsonrpc_cmd(KODI_ACTIVE_PLAYERS_BODY)) {
+        if let Some(pid) = parse_kodi_active_player_id(&players) {
+            if let Ok(item) = run_ssh_capture(&target, &kodi_jsonrpc_cmd(&kodi_get_item_body(pid))) {
+                if let Some(file) = parse_kodi_player_file(&item) {
+                    return Ok(Some(file));
+                }
+            }
+        }
+    }
+    // Fallback: most recent opened file from the Kodi log (constant path -> no shell injection).
+    if let Ok(tail) = run_ssh_capture(&target, "tail -n 400 ~/.kodi/temp/kodi.log 2>/dev/null") {
+        if let Some(file) = parse_kodi_log_file(&tail) {
+            return Ok(Some(file));
+        }
+    }
+    Ok(None)
+}
+
+// ============================================================
 // Add-on install — bundle the Kodi add-on inside the configurator and lay it down
 // ============================================================
 //
@@ -847,8 +931,9 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, parse_addon_version, parse_verbose_mode,
-        roku_keypress_request, to_hex,
+        classify_frame, extract_zip_into, kodi_get_item_body, parse_addon_version,
+        parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
+        parse_verbose_mode, roku_keypress_request, to_hex,
     };
 
     #[test]
@@ -938,6 +1023,57 @@ mod tests {
         assert!(roku_keypress_request("10.0.1.55", "Input HDMI1").is_err());
         assert!(roku_keypress_request("10.0.1.55", "").is_err());
     }
+
+    #[test]
+    fn kodi_get_item_body_pins_playerid_and_file_property() {
+        let body = kodi_get_item_body(1);
+        assert!(body.contains(r#""method":"Player.GetItem""#));
+        assert!(body.contains(r#""playerid":1"#));
+        assert!(body.contains(r#""properties":["file"]"#));
+    }
+
+    #[test]
+    fn parses_active_player_id() {
+        assert_eq!(
+            parse_kodi_active_player_id(r#"{"result":[{"playerid":1,"type":"video"}]}"#),
+            Some(1)
+        );
+        assert_eq!(parse_kodi_active_player_id(r#"{"result":[]}"#), None);
+        assert_eq!(
+            parse_kodi_active_player_id(r#"{"result":[{"type":"video"}]}"#),
+            None
+        );
+        assert_eq!(parse_kodi_active_player_id("not json"), None);
+    }
+
+    #[test]
+    fn parses_player_file_path() {
+        assert_eq!(
+            parse_kodi_player_file(
+                r#"{"result":{"item":{"file":"smb://nas/Movies/Film.iso","label":"Film"}}}"#
+            ),
+            Some("smb://nas/Movies/Film.iso".to_string())
+        );
+        assert_eq!(
+            parse_kodi_player_file(r#"{"result":{"item":{"label":"x"}}}"#),
+            None
+        );
+        assert_eq!(
+            parse_kodi_player_file(r#"{"result":{"item":{"file":"  "}}}"#),
+            None
+        );
+        assert_eq!(parse_kodi_player_file("nonsense"), None);
+    }
+
+    #[test]
+    fn parses_last_opened_file_from_log() {
+        let log = "2026-06-01 11:59 T:1 info <general>: VideoPlayer::OpenFile: nfs://10.0.0.5/v1/Old.mkv\n2026-06-01 12:00 T:1 info <general>: CVideoPlayer::OpenFile: smb://nas/Movies/Film.iso\n2026-06-01 12:00 T:1 debug <general>: something else";
+        assert_eq!(
+            parse_kodi_log_file(log),
+            Some("smb://nas/Movies/Film.iso".to_string())
+        );
+        assert_eq!(parse_kodi_log_file("no markers here"), None);
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -958,6 +1094,7 @@ pub fn run() {
             oppo_query,
             ssh_test,
             deploy_ssh,
+            kodi_now_playing,
             bundled_addon_info,
             install_addon,
             tv_switch_roku,
