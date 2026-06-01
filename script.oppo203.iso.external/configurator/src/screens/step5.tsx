@@ -1,7 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { Icon } from "../icons";
 import { FooterNav } from "../shell/FooterNav";
+import { invoke } from "../ipc";
 import type { InputAddress } from "../state";
+import { planSwitch, type SwitchExtras } from "../step5_switch";
 import { isAvrChain, step5NextScreen } from "../steps";
 import type { ScreenProps } from "./types";
 
@@ -81,14 +83,41 @@ export function Step5Intro({ go, state }: ScreenProps) {
 // ============================================================
 // STEP 4 — Ask-first
 // ============================================================
+type SmartThingsReply = { url: string; body: string };
+
 export function Step5Ask({ go, state, set }: ScreenProps) {
   const [step, setStep] = useState<"oppo" | "kodi">("oppo");
   const [picked, setPicked] = useState<number | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
+  const [extTemplate, setExtTemplate] = useState("");
+  const [stDeviceId, setStDeviceId] = useState("");
+  const [stInputId, setStInputId] = useState("");
+
+  const [testing, setTesting] = useState(false);
+  const [reply, setReply] = useState<string | null>(null);
+  const [stRequest, setStRequest] = useState<SmartThingsReply | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const avr = isAvrChain(state.topology);
+  const extras: SwitchExtras = {
+    externalTemplate: extTemplate,
+    smartthingsDeviceId: stDeviceId,
+    smartthingsInputId: stInputId,
+  };
+  // In the AVR chain the receiver switches by its own input string, so a tile isn't required to
+  // build the plan; in the TV chain the plan needs the picked HDMI number.
+  const plan = picked != null || avr ? planSwitch(state, step, picked ?? 0, extras) : null;
+
+  const resetReplies = () => {
+    setReply(null);
+    setStRequest(null);
+    setError(null);
+  };
   const pick = (n: number) => {
     setPicked(n);
     setConfirmed(false);
+    resetReplies();
   };
   const next = () => {
     if (step === "oppo") {
@@ -96,22 +125,45 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
       setStep("kodi");
       setPicked(null);
       setConfirmed(false);
+      resetReplies();
     } else {
       set({ kodiInput: picked });
       go("step5_done");
     }
   };
 
+  const runTest = async () => {
+    if (!plan || plan.disposition === "manual") return;
+    setTesting(true);
+    resetReplies();
+    try {
+      if (plan.disposition === "request") {
+        const req = await invoke<SmartThingsReply>(plan.command, plan.args);
+        setStRequest(req);
+      } else {
+        const raw = await invoke<string>(plan.command, plan.args);
+        setReply(raw);
+      }
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const targetName = step === "oppo" ? "OPPO" : "Kodi box";
+  const seeName = step === "oppo" ? "the OPPO" : "Kodi";
+
   return (
     <div className="screen">
       <div className="screen-header">
         <h1 className="screen-title">
-          Which {isAvrChain(state.topology) ? "receiver" : "HDMI"} input is your{" "}
-          {step === "oppo" ? "OPPO" : "Kodi box"} on?
+          Which {avr ? "receiver" : "HDMI"} input is your {targetName} on?
         </h1>
         <p className="screen-subtitle">
-          If you know, pick it and we'll switch to it and confirm. If you don't, we can
-          find it for you instead.
+          {avr
+            ? "We'll ask the receiver to switch to its configured input and show its reply. Confirm visually — receivers rarely report the active input."
+            : "Pick it and run the test switch — we'll drive the switch where we can and show the device reply. Not sure? We can find it for you instead."}
         </p>
       </div>
 
@@ -132,48 +184,178 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
           <button className="btn outline" onClick={() => go("step5_fallback")}>
             <Icon name="search" size={14} /> Not sure — find it for me
           </button>
+
+          {state.tvBackend === "sony_bravia" && !avr && (
+            <div className="field">
+              <label className="field-label">Sony TV Pre-Shared Key</label>
+              <input
+                className="input"
+                type="password"
+                value={state.tvSonyPsk}
+                onChange={(e) => {
+                  set({ tvSonyPsk: e.target.value });
+                  resetReplies();
+                }}
+              />
+              <div className="field-hint">Set on the TV under IP Control. Needed to test the switch.</div>
+            </div>
+          )}
+          {(state.tvBackend === "lg_command" ||
+            state.tvBackend === "samsung_command" ||
+            state.tvBackend === "custom_command") &&
+            !avr && (
+              <div className="field">
+                <label className="field-label">TV switch command</label>
+                <input
+                  className="input"
+                  placeholder="e.g. curl -s http://{tv_ip}/..."
+                  value={extTemplate}
+                  onChange={(e) => {
+                    setExtTemplate(e.target.value);
+                    resetReplies();
+                  }}
+                />
+                <div className="field-hint">
+                  Run on the Kodi box over SSH. Use <code>{"{tv_ip}"}</code> for the TV address.
+                </div>
+              </div>
+            )}
+          {state.tvBackend === "smartthings" && !avr && (
+            <div className="grid-2" style={{ alignItems: "start" }}>
+              <div className="field">
+                <label className="field-label">SmartThings device id</label>
+                <input
+                  className="input"
+                  value={stDeviceId}
+                  onChange={(e) => {
+                    setStDeviceId(e.target.value);
+                    resetReplies();
+                  }}
+                />
+              </div>
+              <div className="field">
+                <label className="field-label">Input id</label>
+                <input
+                  className="input"
+                  placeholder="HDMI1"
+                  value={stInputId}
+                  onChange={(e) => {
+                    setStInputId(e.target.value);
+                    resetReplies();
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="stack">
           <div className="tv-mockup">
             <div className="tv-mockup-screen">
-              {picked && confirmed ? (
+              {confirmed && (picked || avr) ? (
                 <>
                   <div className="tv-mockup-text bright">
                     {step === "oppo" ? "OPPO M9205 V1" : "Kodi · CoreELEC"}
                   </div>
-                  <div className="tv-mockup-text">on HDMI {picked}</div>
+                  <div className="tv-mockup-text">confirmed{picked ? ` · HDMI ${picked}` : ""}</div>
                 </>
-              ) : picked ? (
+              ) : testing ? (
+                <div className="tv-mockup-text">switching…</div>
+              ) : reply ? (
                 <>
-                  <div className="tv-mockup-text">switched to HDMI {picked}</div>
+                  <div className="tv-mockup-text">switch sent</div>
                   <div className="tv-mockup-text" style={{ fontSize: 10 }}>
-                    do you see {step === "oppo" ? "your player" : "Kodi"}?
+                    do you see {seeName}?
                   </div>
                 </>
+              ) : picked || avr ? (
+                <div className="tv-mockup-text">ready to test</div>
               ) : (
                 <div className="tv-mockup-text">— pick an input —</div>
               )}
             </div>
             <div className="stand" />
           </div>
-          {picked && (
-            <>
-              <div className="callout info">
-                <span className="callout-icon">
-                  <Icon name="info" size={13} stroke={2.2} />
-                </span>
-                <div className="callout-body">
-                  Switch your TV or receiver to <code>HDMI {picked}</code> with your
-                  remote — the configurator can't drive the switch yet. Do you see{" "}
-                  {step === "oppo" ? "the OPPO" : "Kodi"} on screen?
+
+          {plan && plan.disposition === "manual" && (
+            <div className="callout info">
+              <span className="callout-icon">
+                <Icon name="info" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                {plan.reason} Switch {avr ? "the receiver" : "your TV"} to the right input yourself,
+                then confirm you see {seeName}.
+              </div>
+            </div>
+          )}
+
+          {plan && plan.disposition !== "manual" && (
+            <button className="btn primary" onClick={runTest} disabled={testing}>
+              <Icon name="play" size={14} />{" "}
+              {testing
+                ? "Testing…"
+                : plan.disposition === "request"
+                  ? "Build switch request"
+                  : "Test switch"}
+            </button>
+          )}
+
+          {error && (
+            <div className="callout warn">
+              <span className="callout-icon">
+                <Icon name="warn" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                Switch command failed: <code>{error}</code>. Check the IP/credentials, or switch
+                with the remote and confirm below.
+              </div>
+            </div>
+          )}
+
+          {reply && (
+            <div className="callout info">
+              <span className="callout-icon">
+                <Icon name="info" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                Device replied: <code>{reply}</code>. A reply means the command was accepted — it is
+                not a guarantee the input changed, so confirm you see {seeName} on screen.
+              </div>
+            </div>
+          )}
+
+          {stRequest && (
+            <div className="callout info">
+              <span className="callout-icon">
+                <Icon name="info" size={13} stroke={2.2} />
+              </span>
+              <div className="callout-body">
+                SmartThings is a cloud HTTPS call with your bearer token — the add-on fires it
+                on-device, the configurator only builds it:
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 6 }}>
+                  POST {stRequest.url}
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, marginTop: 2 }}>
+                  {stRequest.body}
                 </div>
               </div>
+            </div>
+          )}
+
+          {(picked || avr) && (
+            <>
               <div className="row" style={{ gap: 10 }}>
                 <button className="btn primary" onClick={() => setConfirmed(true)}>
-                  <Icon name="check" size={14} /> Yes, that's it
+                  <Icon name="check" size={14} /> Yes, I see {seeName}
                 </button>
-                <button className="btn outline" onClick={() => setPicked(null)}>
+                <button
+                  className="btn outline"
+                  onClick={() => {
+                    setPicked(null);
+                    setConfirmed(false);
+                    resetReplies();
+                  }}
+                >
                   No — pick a different one
                 </button>
               </div>
