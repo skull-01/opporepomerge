@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { Icon, type IconName } from "../icons";
 import { invoke } from "../ipc";
 import { parseOppoPowerReply } from "../probes";
 import { livenessTargets, type LivenessTarget } from "../dashboard_targets";
-import { readOppoStatus, type StatusReadResult } from "../dashboard_status";
+import { canStartLiveStream, readOppoStatus, type StatusReadResult } from "../dashboard_status";
 import type { OppoSessionState, OppoSessionStatus } from "../oppo_status";
 import type { ScreenProps } from "./types";
 
@@ -16,10 +17,21 @@ type LiveStatus = {
   detail: string;
 };
 
+// One verbose-mode push frame streamed from the Rust monitor (see lib.rs `LiveFrame`).
+type LiveFrame = { seq: number; kind: string; raw: string };
+
 const DEVICE_ICON: Record<LivenessTarget["id"], IconName> = {
   kodi: "kodi",
   player: "player",
   avr: "avr",
+};
+
+const FRAME_COLORS: Record<string, string> = {
+  upl: "#2563EB",
+  utc: "#6B7280",
+  status: "#0D9488",
+  error: "#DC2626",
+  info: "#9CA3AF",
 };
 
 function dotColor(reachable: boolean | null): string {
@@ -127,6 +139,14 @@ export function Dashboard({ go, state }: ScreenProps) {
   const [checking, setChecking] = useState(false);
   const [nonce, setNonce] = useState(0);
 
+  const [streaming, setStreaming] = useState(false);
+  const [frames, setFrames] = useState<LiveFrame[]>([]);
+  const [streamErr, setStreamErr] = useState<string | null>(null);
+  const streamingRef = useRef(false);
+  useEffect(() => {
+    streamingRef.current = streaming;
+  }, [streaming]);
+
   useEffect(() => {
     let alive = true;
     const list = livenessTargets(state);
@@ -141,6 +161,14 @@ export function Dashboard({ go, state }: ScreenProps) {
       setSession(sess);
       setLastChecked(new Date().toLocaleTimeString());
       setChecking(false);
+      // Safety: if the add-on starts a session while we're streaming, drop our verbose
+      // connection so the two don't fight over the player's device-global verbose mode.
+      if (streamingRef.current && sess.status?.sessionState === "starting") {
+        streamingRef.current = false;
+        void invoke("stop_oppo_live_monitor").catch(() => {});
+        setStreaming(false);
+        setStreamErr("Stopped: the add-on started a playback session.");
+      }
     };
     void runAll();
     const h = setInterval(() => void runAll(), POLL_MS);
@@ -149,6 +177,50 @@ export function Dashboard({ go, state }: ScreenProps) {
       clearInterval(h);
     };
   }, [targetsKey, state.tier, state.sshUser, state.kodiPlatform, state.smbSharePath, nonce]);
+
+  // Subscribe to the Rust live stream once; stop the monitor on unmount (restores verbose mode).
+  useEffect(() => {
+    let alive = true;
+    let unlisten: (() => void) | undefined;
+    void listen<LiveFrame>("oppo-live", (e) => {
+      setFrames((f) => [...f.slice(-99), e.payload]);
+    }).then((u) => {
+      if (alive) unlisten = u;
+      else u();
+    });
+    return () => {
+      alive = false;
+      if (unlisten) unlisten();
+      void invoke("stop_oppo_live_monitor").catch(() => {});
+    };
+  }, []);
+
+  const gate = canStartLiveStream(session?.status ?? null);
+
+  const startStream = async () => {
+    if (!gate.allowed) {
+      setStreamErr(gate.reason);
+      return;
+    }
+    setStreamErr(null);
+    setFrames([]);
+    try {
+      await invoke("start_oppo_live_monitor", { host: state.playerIp, port: 23 });
+      setStreaming(true);
+    } catch (e) {
+      setStreamErr(`Could not start: ${String(e)}`);
+      setStreaming(false);
+    }
+  };
+
+  const stopStream = async () => {
+    try {
+      await invoke("stop_oppo_live_monitor");
+    } catch {
+      // best-effort
+    }
+    setStreaming(false);
+  };
 
   return (
     <div className="screen">
@@ -211,14 +283,67 @@ export function Dashboard({ go, state }: ScreenProps) {
 
       <SessionCard result={session} />
 
+      <div className="card">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <h2 className="section-title">Live stream (verbose mode 3)</h2>
+          {streaming ? (
+            <button className="btn outline" onClick={stopStream}>
+              <Icon name="cross" size={13} /> Stop
+            </button>
+          ) : (
+            <button className="btn outline" onClick={startStream} disabled={!gate.allowed}>
+              <Icon name="play" size={13} /> Start
+            </button>
+          )}
+        </div>
+        <div className="divider" />
+        {!gate.allowed && (
+          <div className="callout warn" style={{ width: "100%", marginBottom: 10 }}>
+            <span className="callout-icon">
+              <Icon name="warn" size={13} stroke={2.2} />
+            </span>
+            <div className="callout-body">{gate.reason}</div>
+          </div>
+        )}
+        {streamErr && (
+          <div className="muted" style={{ fontSize: 12, marginBottom: 8 }}>{streamErr}</div>
+        )}
+        <div
+          style={{
+            maxHeight: 180,
+            overflowY: "auto",
+            fontFamily: "var(--font-mono)",
+            fontSize: 11.5,
+            lineHeight: 1.6,
+          }}
+        >
+          {frames.length === 0 ? (
+            <span className="muted">
+              {streaming ? "waiting for the player to push frames…" : "not streaming"}
+            </span>
+          ) : (
+            frames.map((f) => (
+              <div key={f.seq} style={{ color: FRAME_COLORS[f.kind] }}>
+                {f.raw}
+              </div>
+            ))
+          )}
+        </div>
+        <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
+          Opens the configurator's own <code>#SVM 3</code> connection to the player and restores
+          the prior verbose mode on stop. Disabled while the add-on owns a session, so the two
+          never drive the player's device-global verbose mode at once.
+        </div>
+      </div>
+
       <div className="callout info" style={{ width: "100%", marginBottom: 14 }}>
         <span className="callout-icon">
           <Icon name="info" size={13} stroke={2.2} />
         </span>
         <div className="callout-body">
           This is a network-reachability check, not a full health report — the TV isn't listed
-          because the wizard doesn't store a TV address. Software-verified: liveness and session
-          status depend on the real devices answering.
+          because the wizard doesn't store a TV address. Software-verified: liveness, session
+          status, and the live stream depend on the real devices answering.
         </div>
       </div>
 
