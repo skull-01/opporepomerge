@@ -5,6 +5,7 @@ import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { BrandIcon } from "../shell/BrandIcon";
 import { parseOppoPowerReply, parseOppoVerboseMode, parseSvm3Accepted } from "../probes";
+import { deriveRewrite, parseOppoPlayingPath } from "../nas_path";
 import { PLAYER_BRANDS, hwModelFor, isWakeRewriteBrand } from "../players";
 import { BUNDLED_PLAYERS_DB, playerModelByHw } from "../playersdb";
 import type { ScreenProps } from "./types";
@@ -119,6 +120,8 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
           )}
         </div>
       )}
+
+      {selected && selectedModel && <OppoNasPathCard state={state} set={set} />}
 
       <FooterNav
         go={go}
@@ -400,6 +403,153 @@ function HintTile({ num, title, desc }: { num: string; title: string; desc: stri
         <div className="tile-title">{title}</div>
         <div className="tile-desc">{desc}</div>
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// OPPO media-path capture (Phase 1b; http_handoff path rewrite, issue #173)
+// ============================================================
+function OppoNasPathCard({ state, set }: Pick<ScreenProps, "state" | "set">) {
+  const [kodiPath, setKodiPath] = useState("");
+  const [oppoPath, setOppoPath] = useState("");
+  const [busy, setBusy] = useState<"" | "kodi" | "oppo">("");
+  const [note, setNote] = useState("");
+  const [manual, setManual] = useState(false);
+
+  const captureKodi = async () => {
+    setBusy("kodi");
+    setNote("");
+    try {
+      const p = await invoke<string | null>("kodi_now_playing", {
+        host: state.kodiIp,
+        user: state.sshUser,
+      });
+      if (p) setKodiPath(p);
+      else setNote("Kodi reported nothing playing — start the file in Kodi, then capture.");
+    } catch (e) {
+      setNote(`Kodi query failed: ${String(e)}`);
+    }
+    setBusy("");
+  };
+
+  const readOppo = async () => {
+    setBusy("oppo");
+    setNote("");
+    try {
+      const raw = await invoke<string>("oppo_playback_info", { host: state.playerIp });
+      const found = parseOppoPlayingPath(raw);
+      if (found) setOppoPath(found);
+      else setNote("Couldn't read a path from the OPPO — type the path it shows for this file.");
+    } catch (e) {
+      setNote(`OPPO read failed: ${String(e)}`);
+    }
+    setBusy("");
+  };
+
+  const rewrite = deriveRewrite(kodiPath, oppoPath);
+  const saved =
+    rewrite !== null && state.oppoPathFrom === rewrite.from && state.oppoPathTo === rewrite.to;
+
+  return (
+    <div className="card" style={{ marginTop: 18 }}>
+      <h2 className="section-title">OPPO media path (http_handoff launch)</h2>
+      <p className="muted" style={{ fontSize: 12.5, marginTop: -2 }}>
+        Play one file <strong>both</strong> ways and we map the path the OPPO needs. Only used by
+        the <code>http_handoff</code> launch — skip it for the other modes.
+      </p>
+
+      <div className="field">
+        <label className="field-label">Path as Kodi sees it</label>
+        <div className="row" style={{ gap: 8 }}>
+          <input
+            className="input"
+            value={kodiPath}
+            placeholder="smb://10.0.1.10/Movies/Film.iso"
+            onChange={(e) => setKodiPath(e.target.value)}
+          />
+          <button className="btn outline" disabled={busy !== ""} onClick={captureKodi}>
+            {busy === "kodi" ? "Reading…" : "Capture from Kodi"}
+          </button>
+        </div>
+        <div className="field-hint">Play the file in Kodi, then capture — read live over SSH.</div>
+      </div>
+
+      <div className="field">
+        <label className="field-label">Path as the OPPO sees it</label>
+        <div className="row" style={{ gap: 8 }}>
+          <input
+            className="input"
+            value={oppoPath}
+            placeholder="MyNAS/Movies/Film.iso"
+            onChange={(e) => setOppoPath(e.target.value)}
+          />
+          <button className="btn outline" disabled={busy !== ""} onClick={readOppo}>
+            {busy === "oppo" ? "Reading…" : "Read from OPPO"}
+          </button>
+        </div>
+        <div className="field-hint">
+          SMB <code>smb://host/share/…</code> · NFS <code>nfs://host/export/…</code> — the OPPO
+          uses its own share label, not the IP.
+        </div>
+      </div>
+
+      {note && (
+        <div className="callout warn" style={{ marginTop: 4 }}>
+          <div className="callout-body">{note}</div>
+        </div>
+      )}
+
+      {rewrite ? (
+        <div className="callout info" style={{ marginTop: 8 }}>
+          <div className="callout-body">
+            Rewrite <code>{rewrite.from}</code> → <code>{rewrite.to}</code>
+            <div className="row" style={{ gap: 8, marginTop: 8 }}>
+              <button
+                className="btn primary"
+                onClick={() => set({ oppoPathFrom: rewrite.from, oppoPathTo: rewrite.to })}
+              >
+                Use this mapping
+              </button>
+              {saved && <span className="success-text">Saved.</span>}
+            </div>
+          </div>
+        </div>
+      ) : kodiPath.trim() && oppoPath.trim() ? (
+        <div className="muted" style={{ fontSize: 12, marginTop: 8 }}>
+          Those paths don't share a common tail — are they the same file?
+        </div>
+      ) : null}
+
+      <button
+        className="btn outline"
+        style={{ marginTop: 10, fontSize: 12 }}
+        onClick={() => setManual((m) => !m)}
+      >
+        {manual ? "Hide manual entry" : "Enter the prefixes manually"}
+      </button>
+      {manual && (
+        <div className="grid-2" style={{ marginTop: 8 }}>
+          <div className="field">
+            <label className="field-label">oppo_http_path_from</label>
+            <input
+              className="input"
+              value={state.oppoPathFrom}
+              placeholder="smb://10.0.1.10/Movies/"
+              onChange={(e) => set({ oppoPathFrom: e.target.value })}
+            />
+          </div>
+          <div className="field">
+            <label className="field-label">oppo_http_path_to</label>
+            <input
+              className="input"
+              value={state.oppoPathTo}
+              placeholder="MyNAS/Movies/"
+              onChange={(e) => set({ oppoPathTo: e.target.value })}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
