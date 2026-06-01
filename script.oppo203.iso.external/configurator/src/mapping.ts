@@ -137,16 +137,18 @@ function avrSettings(state: WizardState): AddonSettings {
  */
 export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
   // Routing axis in the preset vocabulary; the stored playback_architecture's "external_player"
-  // is the playercorefactory routing.
+  // is the playercorefactory routing. http_handoff carries through unchanged.
   const routing =
     state.playbackArchitecture === "service_interception"
       ? "service_interception"
-      : "playercorefactory";
+      : state.playbackArchitecture === "http_handoff"
+        ? "http_handoff"
+        : "playercorefactory";
   const out: AddonSettings = {
     // Architecture is chosen on the Kodi-box screen and written explicitly.
     playback_architecture: state.playbackArchitecture,
     architecture_choice_made: "true",
-    // Monitor axis (Step 3) + the combined four-option preset, derived here so the triple is
+    // Monitor axis (Step 3) + the combined six-option preset, derived here so the triple is
     // always internally consistent. The add-on treats playback_architecture_preset as the
     // source of truth and back-fills it from the legacy fields when absent (settings_reader).
     playback_monitor_mode: state.monitorMode,

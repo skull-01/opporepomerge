@@ -306,7 +306,7 @@ describe("avrAddonBackend", () => {
   });
 });
 
-describe("wizardStateToAddonSettings — four-option playback preset", () => {
+describe("wizardStateToAddonSettings — six-option playback preset", () => {
   it("defaults to the legacy playercorefactory preset", () => {
     const out = wizardStateToAddonSettings(INITIAL_STATE);
     expect(out.playback_monitor_mode).toBe("legacy");
@@ -336,12 +336,32 @@ describe("wizardStateToAddonSettings — four-option playback preset", () => {
     expect(out.playback_architecture_preset).toBe("service_interception_legacy");
   });
 
-  it("keeps the emitted triple internally consistent across all four combos", () => {
+  it("emits http_handoff_svm3 for http_handoff + svm3", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "http_handoff", monitorMode: "svm3" }),
+    );
+    expect(out.playback_architecture).toBe("http_handoff");
+    expect(out.playback_architecture_preset).toBe("http_handoff_svm3");
+  });
+
+  it("emits http_handoff_legacy for http_handoff + legacy", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "http_handoff", monitorMode: "legacy" }),
+    );
+    expect(out.playback_architecture_preset).toBe("http_handoff_legacy");
+  });
+
+  it("keeps the emitted triple internally consistent across all six combos", () => {
     const archByRouting = {
       playercorefactory: "external_player",
       service_interception: "service_interception",
+      http_handoff: "http_handoff",
     } as const;
-    for (const routing of ["playercorefactory", "service_interception"] as const) {
+    for (const routing of [
+      "playercorefactory",
+      "service_interception",
+      "http_handoff",
+    ] as const) {
       for (const monitor of ["legacy", "svm3"] as const) {
         const out = wizardStateToAddonSettings(
           makeState({ playbackArchitecture: archByRouting[routing], monitorMode: monitor }),

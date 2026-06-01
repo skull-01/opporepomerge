@@ -325,12 +325,14 @@ type Answers = { play: Answer; switch: Answer; menu: Answer };
 
 export function TestConfirm({ go, state }: ScreenProps) {
   const [answers, setAnswers] = useState<Answers>({ play: null, switch: null, menu: null });
-  // Report the four-option pieces this test exercises, separately — the routing axis, how
+  // Report the six-option pieces this test exercises, separately — the routing axis, how
   // playback is confirmed (the Step 3 monitor choice), and the TV/AVR switcher.
   const routingLabel =
     state.playbackArchitecture === "service_interception"
       ? "Service interception"
-      : "Playercorefactory";
+      : state.playbackArchitecture === "http_handoff"
+        ? "HTTP handoff (community NAS)"
+        : "Playercorefactory";
   const svm3 = state.monitorMode === "svm3";
   const tvAvrLabel = isAvrChain(state.topology)
     ? `AV receiver${state.avrBackend ? ` · ${state.avrBackend}` : ""}`
