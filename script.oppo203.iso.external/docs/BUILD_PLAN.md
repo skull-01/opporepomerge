@@ -18,8 +18,10 @@ matching `area:configurator` / `area:addon` issues.
 ([#179](https://github.com/skull-01/script.oppo203.iso.external/pull/179), issue #178); **Phase 4.1** `oppo_power`
 ([#181](https://github.com/skull-01/script.oppo203.iso.external/pull/181), issue #180); **Phase 5.1** add-on richer status
 ([#183](https://github.com/skull-01/script.oppo203.iso.external/pull/183), issue #182). **Software-verified only — hardware-pending.**
-**Remaining = the UI layer:** Phase 3.2/3.3 (step5 switch-and-verify + auto-find), 4.2/4.3/4.4 (ISO copy + live SVM3 + orchestration),
-5.2/5.3 (dashboard consume + TV liveness + full-chain). See `AI_RESUME_HANDOFF.md` §3b for the per-PR resume list. · Prior:
+**UI layer ALSO merged** (via 3 parallel sub-agents): Phase 3.2/3.3 ([#184](https://github.com/skull-01/script.oppo203.iso.external/pull/184)/[#188](https://github.com/skull-01/script.oppo203.iso.external/pull/188)),
+4.2/4.3/4.4 ([#185](https://github.com/skull-01/script.oppo203.iso.external/pull/185)/[#187](https://github.com/skull-01/script.oppo203.iso.external/pull/187)/[#190](https://github.com/skull-01/script.oppo203.iso.external/pull/190)),
+5.2/5.3 ([#186](https://github.com/skull-01/script.oppo203.iso.external/pull/186)/[#189](https://github.com/skull-01/script.oppo203.iso.external/pull/189)) — issues #191–#197. **ALL of Phases 3/4/5 now on `main`**
+(combined gate: `tsc` / **247 vitest** / `vite build` / `cargo` **37**); only Phase-C hardware validation remains. See `AI_RESUME_HANDOFF.md` §3b. · Prior:
 2026-06-02 · added **D-4** (NAS-path observe-and-verify capture + manual fallback, **SMB/NFS only**) and **Phase 1b**. Prior:
 2026-06-01 · **committed to `main`** together with the six-preset matrix norm (`AGENTS.md`) + the handoff §4 pointer.
 

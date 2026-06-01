@@ -423,7 +423,7 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
-**As of 2026-06-02 (this session — backend layer for Phases 3/4/5 built + MERGED to `main`; 8 PRs).**
+**As of 2026-06-02 (this session — ALL of Phases 3/4/5 built + MERGED to `main`; 15 PRs).**
 **Clean stopping point — all work merged to `main`; 0 open PRs from this session; nothing left on this machine.**
 Operator picked `resume` → "build all of Phases 3/4/5, full auth, **merge to main as I go**, **finer PRs**, **file ENH issues**."
 Delivered the **Rust + add-on backend layer** the UI phases depend on. **Foundation merged first:**
@@ -437,16 +437,14 @@ Delivered the **Rust + add-on backend layer** the UI phases depend on. **Foundat
 
 Gate green on `main`: **cargo 35 / tsc / 190 vitest / vite build**; add-on **pytest 1046/3, mypy --strict 51/0, ruff clean, coverage 99%** (`playback_session.py` 100%). All **software-verified ONLY — hardware-pending** (every switch/power path opens one short-lived socket like `tv_switch_roku`; none tried against a real TV/AVR/OPPO). ENH #176/#178/#180/#182 SHA-commented + left OPEN. Checklist Phase A/C rows added per PR.
 
-**Resume here next (configurator) — the remaining UI layer that wires these backends (each its own PR off `main`, per §4):**
-1. **Phase 3.2 — switch-and-verify UI.** Replace the simulated switch in `configurator/src/screens/step5.tsx` (the "configurator can't drive the switch yet" copy + the manual-switch fallback) with a real **Test** action that dispatches to the right `tv_switch_*` / `avr_switch_*` command by `state.tvBackend` / `state.topology` / the AVR backend + the picked HDMI input + IP/PSK, shows the reply, and keeps an honest manual fallback where the backend can't confirm. Wire via `src/ipc.ts` `invoke`.
-2. **Phase 3.3 — auto-find inputs.** Replace the step5 "find it for me" stub (auto-detect Kodi/OPPO HDMI where the backend allows).
-3. **Phase 4.2 — test-ISO copy.** Rust `copy_to_share` (chunked + progress events) + `test.tsx` user-supplied source-path field + progress bar (D-2 placeholder).
-4. **Phase 4.3 — live SVM3 during self-test.** Wire `start_oppo_live_monitor` into the self-test (confirm on `@UPL`/`@UTC`).
-5. **Phase 4.4 — self-test orchestration.** `oppo_power` off→on → mount → `oppo_http_play` → SVM3-confirm → control-forward test.
-6. **Phase 5.2 — dashboard.** Extend `oppo_status.ts` `parseOppoStatus` for the new `session_id`/`started_at`/`phase` fields + exact session dedup in `session_log.ts`; add **TV liveness** (`tv_ip` persisted) + auto-start the live stream.
-7. **Phase 5.3 — full-chain view.** Unified Kodi/OPPO/TV/AVR live status.
+**UI layer COMPLETE — built by 3 parallel sub-agents (operator: "run it as parallel sub-agents"), all MERGED to `main`:**
+- **3.2** switch-and-verify ([#184](https://github.com/skull-01/script.oppo203.iso.external/pull/184), issue #191) · **3.3** auto-find ([#188](https://github.com/skull-01/script.oppo203.iso.external/pull/188), #192) — `step5.tsx` (new `step5_switch.ts`/`step5_autofind.ts`).
+- **4.2** test-ISO copy + Rust `copy_to_share` ([#185](https://github.com/skull-01/script.oppo203.iso.external/pull/185), #193) · **4.3** live SVM3 ([#187](https://github.com/skull-01/script.oppo203.iso.external/pull/187), #194) · **4.4** self-test orchestration ([#190](https://github.com/skull-01/script.oppo203.iso.external/pull/190), #195) — `test.tsx` (+ `svm3_confirm.ts`/`self_test.ts`).
+- **5.2** dashboard consume + TV liveness + auto-start ([#186](https://github.com/skull-01/script.oppo203.iso.external/pull/186), #196) · **5.3** full-chain view ([#189](https://github.com/skull-01/script.oppo203.iso.external/pull/189), #197) — `dashboard.tsx` (+ `dashboard_chain.ts`, `oppo_status.ts`).
 
-⚠️ Phases 3.2/3.3 both edit `step5.tsx`; 4.2/4.4 both edit `test.tsx`; 5.2/5.3 both edit the dashboard — sequence those pairs (don't parallelize on the same file). `docs/BUILD_PLAN.md` §4 has the per-PR detail.
+Combined-`main` gate green: **tsc / 247 vitest / vite build / cargo fmt + 37 cargo tests / zero warnings**. ENH **#191–#197** SHA-commented + left OPEN; Phase A/C rows in the checklist. All **software-verified ONLY — hardware-pending**. **Deferred:** `session_id` exact-dedup in `session_log.ts` (that file isn't on `main` — it lived only on unmerged draft #166); `parseOppoStatus` now exposes `sessionId` so it's a one-liner once that session-log work lands.
+
+**Nothing left to BUILD for Phases 3/4/5.** The only remaining work is **operator Phase-C hardware validation** of the whole guided-install flow (install → SSH-first → HDMI switch → OPPO self-test → monitor) on a real Kodi/OPPO/TV/AVR — `docs/MANUAL_VERIFICATION_CHECKLIST.md` has the per-phase steps. The configurator bundles `main` fresh (D-1=C), so the next build carries everything including the add-on status change (5.1). **Mechanics note:** the 7 UI PRs were built as 3 stacked sets; merged bottom-up by retargeting each stacked child to `main` first ([[stacked-pr-local-merge-status]]).
 
 ---
 

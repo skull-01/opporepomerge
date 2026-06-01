@@ -43,6 +43,18 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — Phases 3/4/5 UI layer (this session; built by 3 parallel sub-agents, merged to `main`)
+
+All **software-verified only — hardware-pending** (no real Kodi/OPPO/TV/AVR reachable). Combined-`main` gate green: `tsc` / **247 vitest** / `vite build` / `cargo fmt` + **37 cargo tests** / zero warnings. Each wires the backend commands merged earlier this session (Phases 3.1/4.1/5.1). Frozen contracts (`mapping.ts` enums, the six presets, `playback_session`) untouched.
+
+- **3.2 switch-and-verify** (PR #184 `c54bcb6`, issue #191): step5 real Test-switch dispatching to `tv_switch_*`/`avr_switch_*` by state; SmartThings builds-and-displays; honest manual fallback. *Phase C:* with a real TV/AVR, run Test and confirm the input actually changes.
+- **3.3 auto-find inputs** (PR #188 `81b3405`, issue #192): Scan (`tv_port_probe`/`oppo_query`) + driven HDMI sweep with user confirm; replaced the fabricated-value stub. *Phase C:* confirm the sweep lands the right input on real hardware.
+- **4.2 test-ISO copy** (PR #185 `a0e9eb1`, issue #193): Rust `copy_to_share` (1 MiB chunks, `copy-progress` events, temp-then-rename) + `test.tsx` source/dest/progress UI (D-2 user-supplies). *Phase C:* copy a real ISO to the share; confirm progress + integrity + the OPPO sees it.
+- **4.3 live SVM3** (PR #187 `c4a97e0`, issue #194): `svm3_confirm` folds `oppo-live` (UPL PLAY → playback, advancing UTC → progress); read-only card. *Phase C:* play on a real OPPO; confirm the badges light from real frames.
+- **4.4 self-test orchestration** (PR #190 `b0e590d`, issue #195): power-cycle → `oppo_http_play` (rewritten path) → SVM3-confirm → control-forward; per-step ok/fail/skipped. *Phase C:* run the whole self-test end-to-end on real hardware.
+- **5.2 dashboard consume + TV liveness + auto-start** (PR #186 `1e3fec3`, issue #196): `parseOppoStatus` reads `session_id`/`started_at`/`updated_at`/`phase`; lifecycle/age/staleness; auto-start live stream (dual-subscriber guard intact); TV liveness. *Phase C:* open the dashboard during a real session; confirm phase/age + TV liveness; confirm no secret leaks. **Deferred:** `session_id` exact-dedup in `session_log.ts` (that file is not on `main` — only draft #166).
+- **5.3 full-chain view** (PR #189 `824cc29`, issue #197): `chainNodeViews` topology-ordered Kodi/OPPO/TV/AVR liveness + activity; `ChainCard`. *Phase C:* confirm every node's liveness/activity against the real chain.
+
 ### Add-on — richer session status (session_id/started_at/phase) (Phase 5.1) (PR #183, issue #182)
 
 - **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/addon-live-status-6b2f9c33`, base `main`. Implementing SHA: `332c0ba`. Tracks **#182**. **Add-on (`resources/`) change** — ships on the next configurator build (D-1=C bundles `main` fresh); no separate add-on release.
