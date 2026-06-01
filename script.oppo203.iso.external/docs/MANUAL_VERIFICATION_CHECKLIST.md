@@ -43,6 +43,10 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — full TV-backend config persistence (PR #198, issue #199; merged to `main`)
+
+**Software-verified only — hardware-pending.** `mapping.ts` previously persisted only Roku keys + Sony Bravia HDMI ports, so the add-on couldn't drive the other TV backends after setup. `wizardStateToAddonSettings` now emits each backend's full runtime config (value-guarded, per selected backend): `sony_psk`; the two `*_input_adb_shell` keyevents derived from the HDMI numbers; the verbatim `lg_/samsung_/custom_oppo_command`+`_kodi_command` `{tv_ip}` templates; and the 5 `smartthings_*` settings (token/device/oppo+kodi input ids + `experimental_acknowledged` gated on all four). New persisted Step-5 fields; the SmartThings token is `type=password` + redactor-masked. Add-on untouched (it already reads these keys). Gate: `tsc` / **261 vitest** / `vite build`. *Phase C:* configure each TV backend (Sony Bravia PSK, adb, an LG/Samsung/custom command, SmartThings token+device+inputs), apply, and confirm the add-on drives the switch on real hardware; confirm the token never appears in the debug panel / settings snapshot.
+
 ### Configurator — Phases 3/4/5 UI layer (this session; built by 3 parallel sub-agents, merged to `main`)
 
 All **software-verified only — hardware-pending** (no real Kodi/OPPO/TV/AVR reachable). Combined-`main` gate green: `tsc` / **247 vitest** / `vite build` / `cargo fmt` + **37 cargo tests** / zero warnings. Each wires the backend commands merged earlier this session (Phases 3.1/4.1/5.1). Frozen contracts (`mapping.ts` enums, the six presets, `playback_session`) untouched.
