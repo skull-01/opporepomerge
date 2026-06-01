@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — TV input-switch commands (Phase 3.1) (PR #179, issue #178)
+
+- **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/cfg-tv-switch-7e2b9c44`, base `main`. Implementing SHA: `9aa9e1c`. Tracks **#178**.
+- **What changed (software-verified only):** per-backend TV input-switch paths in `lib.rs`, mirroring `resources/lib/tv/` (complements the existing Roku `tv_switch_roku`). `tv_switch_sony_bravia` fires `setPlayContent extInput:hdmi?port=N` POST to `/sony/avContent` with `X-Auth-PSK` directly over HTTP; `tv_switch_adb` and `tv_switch_external` run the add-on's on-box command (`adb connect`+`adb shell`, or the `{tv_ip}`-templated lg/samsung/custom command) **on the Kodi box over the existing SSH channel** (`run_ssh_capture`), exactly where the add-on runs them; `smartthings_switch_request` builds the cloud `setInputSource` request (URL+body) for the UI to display (HTTPS firing is out of scope — no TLS crate). Pure builders unit-tested (`sony_bravia_set_input_body`, `format_external_command`, `adb_switch_command_line`, `smartthings_command_url`/`_set_input_body`). Gate: **cargo 34** (4 new builder tests) / `cargo fmt --check` clean / **zero build warnings**. No new crate; `resources/` untouched.
+- **Operator verifies (Phase A):** read the new TV section in `lib.rs` + the 4 cargo tests; confirm the wire formats match `tv_control.py` (`_sony_set_hdmi`, `_run_external`), `tv_adb_control.py`, and `tv_smartthings_control._build_command_payload`; confirm `validate_ssh_target`/`validate_ssh_component` guard every host, and that adb/external execute over SSH (not a local Windows subprocess).
+- **Operator verifies (Phase C — built app + real TV):** with a real Sony Bravia (PSK), Android-TV (adb), or LG/Samsung/custom TV, invoke the matching `tv_switch_*` command and confirm the TV changes input; for SmartThings, confirm the built request matches what the add-on would POST. **None of this is hardware-validated.**
+
 ### Configurator — AVR input-switch commands (Phase 3.1) (PR #177, issue #176)
 
 - **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/cfg-avr-switch-3a1f0e2b`, base `main`. Implementing SHA: `2bf0663`. Tracks **#176**.
