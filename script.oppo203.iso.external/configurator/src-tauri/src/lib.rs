@@ -2,7 +2,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Read, Write};
-use std::net::{TcpStream, ToSocketAddrs};
+use std::net::{TcpStream, ToSocketAddrs, UdpSocket};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -494,6 +494,94 @@ fn kodi_now_playing(host: String, user: String) -> Result<Option<String>, String
 }
 
 // ============================================================
+// OPPO HTTP play (Phase 1b verify-by-playing; ported from oppo_control.py:346-445)
+// ============================================================
+//
+// The undocumented OPPO community HTTP "app" API on port 436: a 6-byte 0x55 UDP broadcast
+// "activate" wakes the API, /signin opens a session, and /playnormalfile?payload=<urlencoded
+// JSON> starts a network file. Ported as raw HTTP/1.0 over TCP (the tv_switch_roku shape) so the
+// verify step can fire a play and then confirm real playback via SVM3 @UPL PLAY. The handshake
+// and payload are undocumented -> verified on a real OPPO, not in-session.
+
+const OPPO_HTTP_PORT: u16 = 436;
+
+/// Percent-encode every byte that is not RFC3986-unreserved (matches Python's
+/// urllib.parse.quote(s, safe="")), so a JSON payload survives as one query value.
+fn percent_encode(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() * 3);
+    for &b in s.as_bytes() {
+        if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+            out.push(b as char);
+        } else {
+            out.push_str(&format!("%{b:02X}"));
+        }
+    }
+    out
+}
+
+/// The /playnormalfile JSON payload (json_payload mode), matching `_build_json_payload`.
+fn oppo_play_payload(oppo_path: &str) -> String {
+    serde_json::json!({
+        "path": oppo_path,
+        "index": 0,
+        "type": 1,
+        "appDeviceType": 2,
+        "extraNetPath": "",
+        "playMode": 0
+    })
+    .to_string()
+}
+
+/// Raw HTTP/1.0 GET for an OPPO app-API endpoint + already-built query string.
+fn oppo_http_request(host: &str, endpoint: &str, query: &str) -> String {
+    format!(
+        "GET {endpoint}?{query} HTTP/1.0\r\nHost: {host}:{OPPO_HTTP_PORT}\r\nConnection: close\r\n\r\n"
+    )
+}
+
+fn oppo_signin_request(host: &str) -> String {
+    oppo_http_request(host, "/signin", &percent_encode(r#"{"user":"","password":""}"#))
+}
+
+fn oppo_play_request(host: &str, oppo_path: &str) -> String {
+    let query = format!("payload={}", percent_encode(&oppo_play_payload(oppo_path)));
+    oppo_http_request(host, "/playnormalfile", &query)
+}
+
+/// Send a raw request to the OPPO app API and return whatever it sends back (best-effort read).
+fn oppo_http_exchange(host: &str, request: &str, timeout_ms: u64) -> Result<String, String> {
+    let mut stream = connect_timeout(host, OPPO_HTTP_PORT, timeout_ms)?;
+    let t = Duration::from_millis(timeout_ms);
+    stream.set_read_timeout(Some(t)).map_err(|e| e.to_string())?;
+    stream.set_write_timeout(Some(t)).map_err(|e| e.to_string())?;
+    stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
+    let mut resp = String::new();
+    let _ = stream.read_to_string(&mut resp);
+    Ok(resp)
+}
+
+/// Fire a network-file play on the OPPO over the undocumented HTTP app API
+/// (activate broadcast -> /signin -> /playnormalfile). `oppo_path` is the OPPO-visible path
+/// (already rewritten via oppo_http_path_from/to). Phase 1b verify-by-playing calls this, then
+/// confirms real playback via SVM3 @UPL PLAY. Best-effort + hardware-pending.
+#[tauri::command]
+fn oppo_http_play(host: String, oppo_path: String) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    if oppo_path.trim().is_empty() {
+        return Err("oppo_path is empty".to_string());
+    }
+    // 1) activate: a 6-byte 0x55 UDP broadcast wakes the HTTP API (non-fatal).
+    if let Ok(sock) = UdpSocket::bind("0.0.0.0:0") {
+        let _ = sock.set_broadcast(true);
+        let _ = sock.send_to(&[0x55u8; 6], ("255.255.255.255", OPPO_HTTP_PORT));
+    }
+    // 2) signin: open a session (non-fatal -- some firmware needs it, some doesn't).
+    let _ = oppo_http_exchange(&host, &oppo_signin_request(&host), 5000);
+    // 3) play.
+    oppo_http_exchange(&host, &oppo_play_request(&host, &oppo_path), 10000)
+}
+
+// ============================================================
 // Add-on install — bundle the Kodi add-on inside the configurator and lay it down
 // ============================================================
 //
@@ -931,9 +1019,10 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, kodi_get_item_body, parse_addon_version,
+        classify_frame, extract_zip_into, kodi_get_item_body, oppo_play_payload,
+        oppo_play_request, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
-        parse_verbose_mode, roku_keypress_request, to_hex,
+        parse_verbose_mode, percent_encode, roku_keypress_request, to_hex,
     };
 
     #[test]
@@ -1074,6 +1163,40 @@ mod tests {
         );
         assert_eq!(parse_kodi_log_file("no markers here"), None);
     }
+
+    #[test]
+    fn percent_encode_matches_quote_safe_empty() {
+        assert_eq!(percent_encode("abcABC123-_.~"), "abcABC123-_.~");
+        assert_eq!(percent_encode("a b/c"), "a%20b%2Fc");
+        assert_eq!(percent_encode("{\"k\":\"v\"}"), "%7B%22k%22%3A%22v%22%7D");
+    }
+
+    #[test]
+    fn oppo_play_payload_has_the_spec_fields() {
+        let p = oppo_play_payload("smb://nas/Movies/Film.iso");
+        assert!(p.contains(r#""path":"smb://nas/Movies/Film.iso""#));
+        assert!(p.contains(r#""index":0"#));
+        assert!(p.contains(r#""type":1"#));
+        assert!(p.contains(r#""appDeviceType":2"#));
+        assert!(p.contains(r#""extraNetPath":"""#));
+        assert!(p.contains(r#""playMode":0"#));
+    }
+
+    #[test]
+    fn oppo_play_request_is_a_playnormalfile_get() {
+        let req = oppo_play_request("10.0.0.9", "smb://nas/x.iso");
+        assert!(req.starts_with("GET /playnormalfile?payload=%7B"));
+        assert!(req.contains("HTTP/1.0\r\n"));
+        assert!(req.contains("Host: 10.0.0.9:436\r\n"));
+        assert!(req.ends_with("\r\n\r\n"));
+    }
+
+    #[test]
+    fn oppo_signin_request_targets_signin() {
+        let req = oppo_signin_request("10.0.0.9");
+        assert!(req.starts_with("GET /signin?%7B"));
+        assert!(req.contains("Host: 10.0.0.9:436\r\n"));
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1095,6 +1218,7 @@ pub fn run() {
             ssh_test,
             deploy_ssh,
             kodi_now_playing,
+            oppo_http_play,
             bundled_addon_info,
             install_addon,
             tv_switch_roku,
