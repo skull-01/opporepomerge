@@ -160,6 +160,52 @@ def fast_start(
     start_oppo_after_optional_delay(settings, media_file, preflight_result)
 
 
+def _start_oppo_http(settings: Settings, media_file: str) -> None:
+    """Launch the file over the OPPO community HTTP API, reusing oppo_control.
+
+    Activation / signin / launch failures are non-fatal: logged with context so the
+    session still reaches cleanup + the monitor (which simply will not confirm)
+    rather than crashing Kodi. The HTTP API is community-reverse-engineered -- this
+    is not an official OPPO protocol claim.
+    """
+    try:
+        from ..oppo.oppo_control import (
+            activate_http_api,
+            play_media_http_api,
+            signin_http_api,
+        )
+    except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+        from oppo_control import (  # type: ignore[no-redef]
+            activate_http_api,
+            play_media_http_api,
+            signin_http_api,
+        )
+    startup_delay = int(settings.get("startup_delay", "0"))
+    if startup_delay > 0:
+        log(f"Waiting {startup_delay} second(s) before HTTP handoff.")
+        time.sleep(startup_delay)
+    try:
+        activate_http_api(settings)
+        signin_http_api(settings)
+        reply = play_media_http_api(settings, media_file)
+        log(f"OPPO HTTP handoff launched: {reply!r}")
+    except Exception as exc:
+        log(f"OPPO HTTP handoff failed (non-fatal): {exc}")
+
+
+def fast_start_http(settings: Settings, media_file: str) -> None:
+    """HTTP-handoff launch: TV switch + AVR pre-sequence, then the community OPPO
+    HTTP file launch instead of the TCP/disc start. The monitor axis (legacy/svm3)
+    confirms playback afterwards, exactly as for the other routings."""
+    if settings.get_bool("fast_changeover", True):
+        log("Fast changeover requested; v2 MVP uses safe TV-first startup order.")
+    _safe_tv_switch(settings, "oppo")
+    avr_result = pre_playback_sequence(settings)
+    if not avr_result.ok and not avr_result.skipped:
+        log(f"AVR pre-playback sequence warning (non-fatal): {avr_result.warnings}")
+    _start_oppo_http(settings, media_file)
+
+
 def fast_return(settings: Settings) -> None:
     log("Sending Oppo stop commands.")
     run_configured_commands(settings, "oppo_stop_commands")
