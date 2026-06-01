@@ -97,20 +97,19 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
   const [picked, setPicked] = useState<number | null>(null);
   const [confirmed, setConfirmed] = useState(false);
 
-  const [extTemplate, setExtTemplate] = useState("");
-  const [stDeviceId, setStDeviceId] = useState("");
-  const [stInputId, setStInputId] = useState("");
-
   const [testing, setTesting] = useState(false);
   const [reply, setReply] = useState<string | null>(null);
   const [stRequest, setStRequest] = useState<SmartThingsReply | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const avr = isAvrChain(state.topology);
+  // The external command and SmartThings input id are per-target: the test for this step reads the
+  // OPPO-side or Kodi-side persisted field, so the same values feed both the test and the add-on.
   const extras: SwitchExtras = {
-    externalTemplate: extTemplate,
-    smartthingsDeviceId: stDeviceId,
-    smartthingsInputId: stInputId,
+    externalTemplate: step === "oppo" ? state.tvOppoCommand : state.tvKodiCommand,
+    smartthingsDeviceId: state.tvSmartThingsDeviceId,
+    smartthingsInputId:
+      step === "oppo" ? state.tvSmartThingsOppoInputId : state.tvSmartThingsKodiInputId,
   };
   // In the AVR chain the receiver switches by its own input string, so a tile isn't required to
   // build the plan; in the TV chain the plan needs the picked HDMI number.
@@ -212,13 +211,19 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
             state.tvBackend === "custom_command") &&
             !avr && (
               <div className="field">
-                <label className="field-label">TV switch command</label>
+                <label className="field-label">
+                  {step === "oppo" ? "Switch-to-OPPO command" : "Switch-to-Kodi command"}
+                </label>
                 <input
                   className="input"
                   placeholder="e.g. curl -s http://{tv_ip}/..."
-                  value={extTemplate}
+                  value={step === "oppo" ? state.tvOppoCommand : state.tvKodiCommand}
                   onChange={(e) => {
-                    setExtTemplate(e.target.value);
+                    set(
+                      step === "oppo"
+                        ? { tvOppoCommand: e.target.value }
+                        : { tvKodiCommand: e.target.value },
+                    );
                     resetReplies();
                   }}
                 />
@@ -228,31 +233,56 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
               </div>
             )}
           {state.tvBackend === "smartthings" && !avr && (
-            <div className="grid-2" style={{ alignItems: "start" }}>
+            <>
               <div className="field">
-                <label className="field-label">SmartThings device id</label>
+                <label className="field-label">SmartThings token</label>
                 <input
                   className="input"
-                  value={stDeviceId}
+                  type="password"
+                  value={state.tvSmartThingsToken}
                   onChange={(e) => {
-                    setStDeviceId(e.target.value);
+                    set({ tvSmartThingsToken: e.target.value });
                     resetReplies();
                   }}
                 />
+                <div className="field-hint">Personal access token with device control scope.</div>
               </div>
-              <div className="field">
-                <label className="field-label">Input id</label>
-                <input
-                  className="input"
-                  placeholder="HDMI1"
-                  value={stInputId}
-                  onChange={(e) => {
-                    setStInputId(e.target.value);
-                    resetReplies();
-                  }}
-                />
+              <div className="grid-2" style={{ alignItems: "start" }}>
+                <div className="field">
+                  <label className="field-label">SmartThings device id</label>
+                  <input
+                    className="input"
+                    value={state.tvSmartThingsDeviceId}
+                    onChange={(e) => {
+                      set({ tvSmartThingsDeviceId: e.target.value });
+                      resetReplies();
+                    }}
+                  />
+                </div>
+                <div className="field">
+                  <label className="field-label">
+                    {step === "oppo" ? "OPPO input id" : "Kodi input id"}
+                  </label>
+                  <input
+                    className="input"
+                    placeholder="HDMI1"
+                    value={
+                      step === "oppo"
+                        ? state.tvSmartThingsOppoInputId
+                        : state.tvSmartThingsKodiInputId
+                    }
+                    onChange={(e) => {
+                      set(
+                        step === "oppo"
+                          ? { tvSmartThingsOppoInputId: e.target.value }
+                          : { tvSmartThingsKodiInputId: e.target.value },
+                      );
+                      resetReplies();
+                    }}
+                  />
+                </div>
               </div>
-            </div>
+            </>
           )}
         </div>
 
