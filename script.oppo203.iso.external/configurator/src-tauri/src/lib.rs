@@ -164,6 +164,137 @@ fn smb_test_write(userdata_path: String) -> Result<(), String> {
     Ok(())
 }
 
+// ============================================================
+// Test-ISO copy to the media share (Phase 4.2 self-test; D-2 = user supplies the ISO)
+// ============================================================
+//
+// The OPPO self-test needs a UHD-tagged file on the SAME media share Kodi and the player both
+// read. D-2 (locked): the operator supplies the master disc/ISO, so this is placeholder wiring --
+// it copies a user-CHOSEN source file to a user-chosen destination (a local path or an SMB UNC,
+// the same transport `deploy_to_userdata` uses on Windows), streaming it in chunks and emitting a
+// `copy-progress` event per chunk so the UI can show a progress bar for a multi-GB transfer. No
+// master ISO is bundled or downloaded. The real transfer + share visibility are hardware-pending.
+
+/// 1 MiB copy chunk -- big enough to keep a network share busy, small enough that progress events
+/// stay responsive on a multi-GB file.
+const COPY_CHUNK_BYTES: usize = 1024 * 1024;
+
+#[derive(serde::Serialize, Clone)]
+struct CopyProgress {
+    bytes_copied: u64,
+    total: u64,
+    percent: u8,
+}
+
+#[derive(serde::Serialize)]
+struct CopyReport {
+    dest: String,
+    bytes_copied: u64,
+}
+
+/// Integer percent (0..=100) of `copied`/`total`, saturating. A zero-byte total reads as complete
+/// (100) rather than dividing by zero, so an empty source still drives the bar to done.
+fn copy_progress_percent(copied: u64, total: u64) -> u8 {
+    if total == 0 {
+        return 100;
+    }
+    let pct = (copied as u128 * 100 / total as u128).min(100);
+    pct as u8
+}
+
+/// Validate the copy source and destination before opening anything: both must be non-empty and the
+/// destination must not be a bare directory path (we need a file name to write). Pure, so the UI's
+/// guardrails are unit-tested without touching the filesystem.
+fn validate_copy_paths(source: &str, dest: &str) -> Result<(), String> {
+    if source.trim().is_empty() {
+        return Err("source path is empty".to_string());
+    }
+    if dest.trim().is_empty() {
+        return Err("destination path is empty".to_string());
+    }
+    let ends_with_sep = dest.ends_with('/') || dest.ends_with('\\');
+    if ends_with_sep {
+        return Err("destination must include a file name, not just a folder".to_string());
+    }
+    Ok(())
+}
+
+/// Copy a user-chosen source file to a destination (local path or SMB UNC) in 1 MiB chunks,
+/// emitting a `copy-progress` event (bytesCopied/total/percent) per chunk. Writes to a sibling
+/// temp file then renames it into place, so an interrupted copy can't leave a half-written target
+/// in the library. Placeholder wiring for the Phase 4 self-test (D-2: the operator supplies the
+/// ISO); the real multi-GB transfer over a share is hardware-pending.
+#[tauri::command]
+fn copy_to_share(
+    app: tauri::AppHandle,
+    source_path: String,
+    dest_path: String,
+) -> Result<CopyReport, String> {
+    validate_copy_paths(&source_path, &dest_path)?;
+    let src = PathBuf::from(&source_path);
+    let dest = PathBuf::from(&dest_path);
+
+    let mut reader =
+        fs::File::open(&src).map_err(|e| format!("cannot open source '{}': {e}", src.display()))?;
+    let total = reader.metadata().map(|m| m.len()).unwrap_or(0);
+
+    if let Some(parent) = dest.parent() {
+        if !parent.as_os_str().is_empty() {
+            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        }
+    }
+    let tmp = PathBuf::from(format!("{}.oppocfg-copy-tmp", dest.to_string_lossy()));
+    let mut writer = fs::File::create(&tmp)
+        .map_err(|e| format!("cannot create destination '{}': {e}", tmp.display()))?;
+
+    let mut buf = vec![0u8; COPY_CHUNK_BYTES];
+    let mut copied: u64 = 0;
+    // Emit a 0% frame up front so the bar appears immediately, before the first chunk lands.
+    let _ = app.emit(
+        "copy-progress",
+        CopyProgress {
+            bytes_copied: 0,
+            total,
+            percent: copy_progress_percent(0, total),
+        },
+    );
+    loop {
+        let n = match reader.read(&mut buf) {
+            Ok(0) => break,
+            Ok(n) => n,
+            Err(e) => {
+                let _ = fs::remove_file(&tmp);
+                return Err(format!("read error after {copied} bytes: {e}"));
+            }
+        };
+        if let Err(e) = writer.write_all(&buf[..n]) {
+            let _ = fs::remove_file(&tmp);
+            return Err(format!("write error after {copied} bytes: {e}"));
+        }
+        copied += n as u64;
+        let _ = app.emit(
+            "copy-progress",
+            CopyProgress {
+                bytes_copied: copied,
+                total,
+                percent: copy_progress_percent(copied, total),
+            },
+        );
+    }
+    writer.flush().map_err(|e| e.to_string())?;
+    drop(writer);
+
+    if dest.exists() {
+        fs::remove_file(&dest).map_err(|e| e.to_string())?;
+    }
+    fs::rename(&tmp, &dest).map_err(|e| e.to_string())?;
+
+    Ok(CopyReport {
+        dest: dest.to_string_lossy().into_owned(),
+        bytes_copied: copied,
+    })
+}
+
 fn connect_timeout(host: &str, port: u16, timeout_ms: u64) -> Result<TcpStream, String> {
     let mut last = String::from("no address resolved");
     for addr in (host, port).to_socket_addrs().map_err(|e| e.to_string())? {
@@ -1544,15 +1675,15 @@ fn smartthings_switch_request(
 #[cfg(test)]
 mod tests {
     use super::{
-        adb_switch_command_line, classify_frame, denon_input_command, device_response_ok,
-        eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
+        adb_switch_command_line, classify_frame, copy_progress_percent, denon_input_command,
+        device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
         format_external_command, http_get_request, json_post_request, kodi_enable_body,
         kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
         oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
         parse_verbose_mode, percent_encode, roku_keypress_request, smartthings_command_url,
         smartthings_set_input_body, sony_audio_set_input_payload, sony_bravia_set_input_body,
-        to_hex, yamaha_input_path,
+        to_hex, validate_copy_paths, yamaha_input_path,
     };
 
     #[test]
@@ -1561,6 +1692,29 @@ mod tests {
         assert_eq!(oppo_power_token("Power_On").unwrap(), "#PON");
         assert_eq!(oppo_power_token(" eject ").unwrap(), "#EJT");
         assert!(oppo_power_token("explode").is_err());
+    }
+
+    #[test]
+    fn copy_progress_percent_is_saturating_and_zero_safe() {
+        assert_eq!(copy_progress_percent(0, 100), 0);
+        assert_eq!(copy_progress_percent(50, 100), 50);
+        assert_eq!(copy_progress_percent(100, 100), 100);
+        // never exceeds 100 even if copied somehow overshoots.
+        assert_eq!(copy_progress_percent(150, 100), 100);
+        // a zero-byte total reads as complete, not a divide-by-zero.
+        assert_eq!(copy_progress_percent(0, 0), 100);
+        // large (multi-GB) totals don't overflow the intermediate product.
+        assert_eq!(copy_progress_percent(8_000_000_000, 16_000_000_000), 50);
+    }
+
+    #[test]
+    fn validate_copy_paths_requires_both_and_a_file_name() {
+        assert!(validate_copy_paths("C:/src/test.iso", "\\\\nas\\Movies\\test.iso").is_ok());
+        assert!(validate_copy_paths("  ", "\\\\nas\\Movies\\test.iso").is_err());
+        assert!(validate_copy_paths("C:/src/test.iso", "   ").is_err());
+        // a bare directory destination (trailing separator) is rejected -- we need a file name.
+        assert!(validate_copy_paths("C:/src/test.iso", "\\\\nas\\Movies\\").is_err());
+        assert!(validate_copy_paths("C:/src/test.iso", "/mnt/share/").is_err());
     }
 
     #[test]
@@ -1900,6 +2054,7 @@ pub fn run() {
             read_ssh_file,
             deploy_to_userdata,
             smb_test_write,
+            copy_to_share,
             tcp_probe,
             tv_port_probe,
             oppo_query,
