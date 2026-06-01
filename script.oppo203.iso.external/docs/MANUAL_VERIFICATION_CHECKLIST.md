@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — AVR input-switch commands (Phase 3.1) (PR #177, issue #176)
+
+- **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/cfg-avr-switch-3a1f0e2b`, base `main`. Implementing SHA: `2bf0663`. Tracks **#176**.
+- **What changed (software-verified only):** four per-backend AVR input-switch paths in `lib.rs`, mirroring `resources/lib/avr/`. Pure builders — `denon_input_command` (`SI<INPUT>`), `eiscp_input_payload`/`eiscp_frame` (`!1SLI<hh>` ISCP-framed), `yamaha_input_path` (`/YamahaExtendedControl/v1/main/setInput?input=`), `sony_audio_set_input_payload` (compact key-sorted `setPlayContent`) — plus fire `#[tauri::command]`s `avr_switch_denon` (:23), `avr_switch_eiscp` (:60128), `avr_switch_yamaha` (:80), `avr_switch_sony_audio` (HTTP POST) that open one short-lived socket like `tv_switch_roku`. Gate: **cargo 30** (10 new builder tests) / `cargo fmt --check` clean / **zero build warnings**. No new crate; `resources/` untouched (addon suite unaffected).
+- **Operator verifies (Phase A):** read the new AVR section in `lib.rs` + the 10 cargo tests; confirm the wire formats match the add-on drivers (`avr_denon_marantz.py` `SI`, `avr_onkyo_eiscp.py` ISCP frame + `!1SLI`, `avr_yamaha.py` `setInput`, `avr_sony_audio.py` `setPlayContent`), and that `validate_ssh_component` guards each host.
+- **Operator verifies (Phase C — built app + real receiver):** with a real Denon/Marantz, Onkyo/Integra/Pioneer, Yamaha, or Sony AVR on the LAN, invoke the matching `avr_switch_*` command and confirm the receiver actually changes input. **None of this is hardware-validated.**
+
 ### Configurator — NAS-path capture so the http_handoff default is functional (PR #174, issue #173)
 
 - **Draft PR #174** (branch `claude/cfg-nas-path-capture-7c4e9a02`, base `main`); built on the merged guided-install initiative (#170/#171/#172). Tracks **#173** (D-4 / Phase 1b). Implementing SHAs: `dee2e62` (kodi_now_playing), `dc6f60d` (oppo_http_play), `0f62fe2` (deriveRewrite), `8882605` (capture UI + oppo_playback_info).
