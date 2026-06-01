@@ -375,8 +375,16 @@ bundle-and-install feature (PR-1.1 / 1.2 / 1.4 + the NAS-path plumbing of 1.3) i
 (MSI + NSIS + SHA256), **off `main`** — main's configurator stays at v0.5.0. Software-verified
 only (cargo test 7/7, `tsc` + 178 vitest + `vite build`); the on-box install + OPPO NAS path are
 **hardware-pending**. **Deferred:** the Step-2 NAS-path capture UI (the `http_handoff` default is
-*inert* until set) and the add-on version stamp (bundle self-reports `2.9.13`). **Next:**
-hardware-verify (Phase A/B/C), then promote the branch to a PR + merge.
+*inert* until set) and the add-on version stamp (bundle self-reports `2.9.13`). **Draft PRs (off `main`, 2026-06-01):**
+[#170](https://github.com/skull-01/script.oppo203.iso.external/pull/170) Phase 1 (install; also
+released as `configurator-v0.6.0-experimental2`) ·
+[#171](https://github.com/skull-01/script.oppo203.iso.external/pull/171) Phase 2 (SSH-first flow +
+honesty de-stub + persist TV IP; **browser-verified**) ·
+[#172](https://github.com/skull-01/script.oppo203.iso.external/pull/172) Phase 3 slice (Roku ECP
+TV-input switch). All **software-verified only** — the hardware paths (SSH install + unzip, OPPO
+HTTP play, the Roku switch) are **unvalidated**. **Next:** hardware-verify on a real Kodi / OPPO /
+TV, then promote the PRs to ready and merge. Phase 3 remaining (adb / Sony / AVR switch backends +
+switch-and-verify UI) and Phase 4 (OPPO power-cycle + ISO copy + play) are paused pending hardware.
 
 ---
 
