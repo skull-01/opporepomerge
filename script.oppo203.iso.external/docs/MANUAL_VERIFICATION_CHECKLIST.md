@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — Live Session Dashboard: current-session panel (Theme 2 / PR D2)
+
+- **Open draft** on branch `claude/cfg-live-dashboard-status-3b8e5d11` (stacked on D1; second of three dashboard PRs). **Not merged.**
+- **What changed (software-verified only):** the dashboard gains a **Current session** card that reads the add-on's `oppo203iso-status.json` and shows the session state (in progress / ended / failed), the media file, the preset / routing / monitor, and the `confirmed_playback` / `confirmed_progress` flags (plus OPPO state / UTC ticks / stop reason once stopped). New pure `oppo_status.ts` — the `OppoSessionStatus` type + a tolerant `parseOppoStatus()` mirroring `playback_session.py` `_status` (8 base keys + 3 snapshot keys) and `ADDON_DATA_STATUS_REL` (the sibling of `ADDON_DATA_SETTINGS_REL`). New `dashboard_status.ts` — a pure `statusReadPlan(state)` (tier A -> `read_ssh_file`, tier B -> `read_userdata_file`, manual -> unsupported) and a thin `readOppoStatus()` executor that **reuses the same file-read commands as applyToKodi**. **No Rust change, no new dependency, no add-on change.** The panel is honest that the file is written only at session start/end (a summary, not a live feed). New `oppo_status.test.ts` (5) + `dashboard_status.test.ts` (3). Gate: `tsc --noEmit` + **171 vitest** + `vite build` green.
+- **Operator verifies (Phase A):** read `oppo_status.ts` + `parseOppoStatus` tests (confirm a "starting" record parses with null snapshot fields, and wrong-typed/garbage input returns null), `dashboard_status.ts` + `statusReadPlan` tests (tier A/B routing, manual unsupported), and the `SessionCard` in `screens/dashboard.tsx`. Confirm it only **reads** and that tier C shows the manual-mode note rather than erroring.
+- **Operator verifies (Phase C — built app + real box):** with a tier A/B deployment, play a file through the add-on, then open **Live dashboard** and confirm the Current-session card matches the box's `oppo203iso-status.json` (state, preset/routing/monitor, confirmed flags). In manual mode confirm the card explains there is no remote link. **Not hardware-validated.**
+
 ### Configurator — Live Session Dashboard: device liveness (Theme 2 / PR D1)
 
 - **Open draft** on branch `claude/cfg-live-dashboard-shell-7c1a9f2e` (PR-only theme, no tracked issue; first of three stacked dashboard PRs D1→D2→D3). **Not merged.**

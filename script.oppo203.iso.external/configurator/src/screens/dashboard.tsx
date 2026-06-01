@@ -3,9 +3,11 @@ import { Icon, type IconName } from "../icons";
 import { invoke } from "../ipc";
 import { parseOppoPowerReply } from "../probes";
 import { livenessTargets, type LivenessTarget } from "../dashboard_targets";
+import { readOppoStatus, type StatusReadResult } from "../dashboard_status";
+import type { OppoSessionState, OppoSessionStatus } from "../oppo_status";
 import type { ScreenProps } from "./types";
 
-// How often the dashboard re-checks device liveness while it is open.
+// How often the dashboard re-checks device liveness + session status while it is open.
 const POLL_MS = 6000;
 
 type LiveStatus = {
@@ -26,6 +28,16 @@ function dotColor(reachable: boolean | null): string {
   return "#9CA3AF";
 }
 
+function stateBadge(s: OppoSessionState): { label: string; color: string } {
+  if (s === "starting") return { label: "in progress", color: "#2563EB" };
+  if (s === "failed") return { label: "failed", color: "#DC2626" };
+  return { label: "ended", color: "#16A34A" };
+}
+
+function baseName(path: string): string {
+  return path.split(/[\\/]/).pop() || path;
+}
+
 async function probeTarget(t: LivenessTarget): Promise<LiveStatus> {
   try {
     if (t.kind === "oppo") {
@@ -40,11 +52,77 @@ async function probeTarget(t: LivenessTarget): Promise<LiveStatus> {
   }
 }
 
+function ConfirmFlag({ on, label }: { on: boolean; label: string }) {
+  return (
+    <span className="row" style={{ gap: 5, alignItems: "center" }}>
+      <Icon name={on ? "check" : "cross"} size={13} style={{ color: on ? "#16A34A" : "#9CA3AF" }} />
+      <span className="muted" style={{ fontSize: 12 }}>{label}</span>
+    </span>
+  );
+}
+
+function SessionCard({ result }: { result: StatusReadResult | null }) {
+  let body: JSX.Element;
+  if (result == null) {
+    body = <span className="muted" style={{ fontSize: 12 }}>checking…</span>;
+  } else if (!result.supported || result.status == null) {
+    body = <span className="muted" style={{ fontSize: 12 }}>{result.note ?? "No session recorded yet."}</span>;
+  } else {
+    const s: OppoSessionStatus = result.status;
+    const badge = stateBadge(s.sessionState);
+    body = (
+      <div className="stack-sm">
+        <div className="row" style={{ gap: 8, alignItems: "center" }}>
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 600,
+              color: badge.color,
+              border: `1px solid ${badge.color}`,
+              borderRadius: 6,
+              padding: "1px 7px",
+            }}
+          >
+            {badge.label}
+          </span>
+          <span style={{ fontSize: 13 }}>{baseName(s.mediaFile) || "(no media)"}</span>
+        </div>
+        <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+          {s.architecturePreset} · {s.routingMode} · monitor {s.monitorMode}
+        </span>
+        <div className="row" style={{ gap: 16 }}>
+          <ConfirmFlag on={s.confirmedPlayback} label="playback confirmed" />
+          <ConfirmFlag on={s.confirmedProgress} label="progress confirmed" />
+        </div>
+        {(s.oppoPlaybackState || s.utcTickCount != null || s.stopReason) && (
+          <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+            {s.oppoPlaybackState ? `state ${s.oppoPlaybackState}` : ""}
+            {s.utcTickCount != null ? ` · ${s.utcTickCount} ticks` : ""}
+            {s.stopReason ? ` · ${s.stopReason}` : ""}
+          </span>
+        )}
+      </div>
+    );
+  }
+  return (
+    <div className="card">
+      <h2 className="section-title">Current session</h2>
+      <div className="divider" />
+      {body}
+      <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
+        The add-on writes this at session start and end, so it is a last/current-session summary,
+        not a live progress feed.
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({ go, state }: ScreenProps) {
   const targets = livenessTargets(state);
-  // Re-run the poller whenever a probed address changes; the effect reads state fresh.
+  // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.
   const targetsKey = targets.map((t) => `${t.id}:${t.host}:${t.port}:${t.kind}`).join("|");
   const [statuses, setStatuses] = useState<Record<string, LiveStatus>>({});
+  const [session, setSession] = useState<StatusReadResult | null>(null);
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [nonce, setNonce] = useState(0);
@@ -54,11 +132,13 @@ export function Dashboard({ go, state }: ScreenProps) {
     const list = livenessTargets(state);
     const runAll = async () => {
       setChecking(true);
-      const entries = await Promise.all(
-        list.map(async (t) => [t.id, await probeTarget(t)] as const)
-      );
+      const [entries, sess] = await Promise.all([
+        Promise.all(list.map(async (t) => [t.id, await probeTarget(t)] as const)),
+        readOppoStatus(state),
+      ]);
       if (!alive) return;
       setStatuses(Object.fromEntries(entries));
+      setSession(sess);
       setLastChecked(new Date().toLocaleTimeString());
       setChecking(false);
     };
@@ -68,15 +148,16 @@ export function Dashboard({ go, state }: ScreenProps) {
       alive = false;
       clearInterval(h);
     };
-  }, [targetsKey, nonce]);
+  }, [targetsKey, state.tier, state.sshUser, state.kodiPlatform, state.smbSharePath, nonce]);
 
   return (
     <div className="screen">
       <div className="screen-header">
         <h1 className="screen-title">Live dashboard.</h1>
         <p className="screen-subtitle">
-          A quick health view of your configured chain. The configurator pings each device it
-          has an address for, every few seconds, while this screen is open.
+          A quick health view of your configured chain. The configurator pings each device it has
+          an address for and reads the add-on's last session, every few seconds, while this screen
+          is open.
         </p>
       </div>
 
@@ -128,14 +209,16 @@ export function Dashboard({ go, state }: ScreenProps) {
         </div>
       </div>
 
+      <SessionCard result={session} />
+
       <div className="callout info" style={{ width: "100%", marginBottom: 14 }}>
         <span className="callout-icon">
           <Icon name="info" size={13} stroke={2.2} />
         </span>
         <div className="callout-body">
           This is a network-reachability check, not a full health report — the TV isn't listed
-          because the wizard doesn't store a TV address. Software-verified: liveness depends on
-          the real devices answering.
+          because the wizard doesn't store a TV address. Software-verified: liveness and session
+          status depend on the real devices answering.
         </div>
       </div>
 
