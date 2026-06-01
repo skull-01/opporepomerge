@@ -34,3 +34,33 @@ export function deriveRewrite(kodiPath: string, oppoPath: string): PathRewrite |
   if (from === to) return null;
   return { from, to };
 }
+
+/**
+ * Best-effort extraction of the currently-playing path from a raw OPPO /getmovieplayinfo body.
+ * The payload is undocumented, so this scans common path-bearing keys (recursing into nested
+ * objects/arrays) and returns the first plausible value; returns null when none is found, so the
+ * caller falls back to manual entry.
+ */
+export function parseOppoPlayingPath(raw: string): string | null {
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const keys = ["path", "filePath", "file_path", "currentPath", "file", "url", "fileName", "name"];
+  const visit = (obj: unknown): string | null => {
+    if (!obj || typeof obj !== "object") return null;
+    const rec = obj as Record<string, unknown>;
+    for (const k of keys) {
+      const v = rec[k];
+      if (typeof v === "string" && v.trim().length > 0) return v.trim();
+    }
+    for (const v of Object.values(rec)) {
+      const found = visit(v);
+      if (found) return found;
+    }
+    return null;
+  };
+  return visit(data);
+}

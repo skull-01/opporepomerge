@@ -581,6 +581,23 @@ fn oppo_http_play(host: String, oppo_path: String) -> Result<String, String> {
     oppo_http_exchange(&host, &oppo_play_request(&host, &oppo_path), 10000)
 }
 
+/// Raw HTTP/1.0 GET for the OPPO /getmovieplayinfo now-playing endpoint (no query).
+fn oppo_info_request(host: &str) -> String {
+    format!("GET /getmovieplayinfo HTTP/1.0\r\nHost: {host}:{OPPO_HTTP_PORT}\r\nConnection: close\r\n\r\n")
+}
+
+/// Best-effort read of the OPPO's /getmovieplayinfo (undocumented now-playing). Returns the
+/// response body for the UI to parse; the payload shape is unverified -> hardware-pending.
+#[tauri::command]
+fn oppo_playback_info(host: String) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    let raw = oppo_http_exchange(&host, &oppo_info_request(&host), 5000)?;
+    Ok(raw
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or(raw))
+}
+
 // ============================================================
 // Add-on install — bundle the Kodi add-on inside the configurator and lay it down
 // ============================================================
@@ -1019,8 +1036,8 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, kodi_get_item_body, oppo_play_payload,
-        oppo_play_request, oppo_signin_request, parse_addon_version,
+        classify_frame, extract_zip_into, kodi_get_item_body, oppo_info_request,
+        oppo_play_payload, oppo_play_request, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
         parse_verbose_mode, percent_encode, roku_keypress_request, to_hex,
     };
@@ -1197,6 +1214,14 @@ mod tests {
         assert!(req.starts_with("GET /signin?%7B"));
         assert!(req.contains("Host: 10.0.0.9:436\r\n"));
     }
+
+    #[test]
+    fn oppo_info_request_targets_getmovieplayinfo() {
+        let req = oppo_info_request("10.0.0.9");
+        assert!(req.starts_with("GET /getmovieplayinfo HTTP/1.0\r\n"));
+        assert!(req.contains("Host: 10.0.0.9:436\r\n"));
+        assert!(req.ends_with("\r\n\r\n"));
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1219,6 +1244,7 @@ pub fn run() {
             deploy_ssh,
             kodi_now_playing,
             oppo_http_play,
+            oppo_playback_info,
             bundled_addon_info,
             install_addon,
             tv_switch_roku,

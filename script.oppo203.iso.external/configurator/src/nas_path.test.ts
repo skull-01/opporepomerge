@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveRewrite } from "./nas_path";
+import { deriveRewrite, parseOppoPlayingPath } from "./nas_path";
 
 describe("deriveRewrite", () => {
   it("derives the prefix rewrite from matching Kodi and OPPO paths (SMB)", () => {
@@ -33,5 +33,25 @@ describe("deriveRewrite", () => {
       from: "smb://nas/share/",
       to: "Disc/",
     });
+  });
+});
+
+describe("parseOppoPlayingPath", () => {
+  it("pulls a path field from a flat payload", () => {
+    expect(parseOppoPlayingPath('{"path":"MyPC/Movies/Film.iso","state":"play"}')).toBe(
+      "MyPC/Movies/Film.iso",
+    );
+  });
+
+  it("finds a nested file field", () => {
+    expect(parseOppoPlayingPath('{"info":{"file":"Disc/x.iso"}}')).toBe("Disc/x.iso");
+  });
+
+  it("returns null when nothing path-like is present", () => {
+    expect(parseOppoPlayingPath('{"state":"stop","elapsed":0}')).toBeNull();
+  });
+
+  it("returns null on a non-JSON body", () => {
+    expect(parseOppoPlayingPath("<html>error</html>")).toBeNull();
   });
 });
