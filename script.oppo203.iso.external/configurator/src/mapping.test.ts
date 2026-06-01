@@ -351,6 +351,38 @@ describe("wizardStateToAddonSettings — six-option playback preset", () => {
     expect(out.playback_architecture_preset).toBe("http_handoff_legacy");
   });
 
+  // Completeness guard for the six-preset matrix. CANONICAL_SIX mirrors the add-on's
+  // PLAYBACK_ARCHITECTURE_PRESETS (resources/lib/kodi/settings_reader.py); a new or removed
+  // routing/monitor combo must change both sides at once per the "six playback-architecture
+  // presets are a maintained matrix" norm in AGENTS.md.
+  it("emits exactly the six canonical presets across the routing/monitor matrix", () => {
+    const ROUTINGS: WizardState["playbackArchitecture"][] = [
+      "external_player",
+      "service_interception",
+      "http_handoff",
+    ];
+    const MONITORS: WizardState["monitorMode"][] = ["legacy", "svm3"];
+    const CANONICAL_SIX = [
+      "playercorefactory_legacy",
+      "playercorefactory_svm3",
+      "service_interception_legacy",
+      "service_interception_svm3",
+      "http_handoff_legacy",
+      "http_handoff_svm3",
+    ];
+    const emitted = new Set<string>();
+    for (const playbackArchitecture of ROUTINGS) {
+      for (const monitorMode of MONITORS) {
+        emitted.add(
+          wizardStateToAddonSettings(makeState({ playbackArchitecture, monitorMode }))
+            .playback_architecture_preset,
+        );
+      }
+    }
+    expect(emitted.size).toBe(6);
+    expect([...emitted].sort()).toEqual([...CANONICAL_SIX].sort());
+  });
+
   it("emits json_payload mode only for the http_handoff routing", () => {
     const http = wizardStateToAddonSettings(makeState({ playbackArchitecture: "http_handoff" }));
     expect(http.oppo_http_payload_mode).toBe("json_payload");
