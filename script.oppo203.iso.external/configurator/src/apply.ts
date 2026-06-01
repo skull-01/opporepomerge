@@ -129,9 +129,22 @@ export async function installAddonToKodi(state: WizardState): Promise<InstallRes
         addonsPath: addonsDirForPlatform(platform),
         restart: true,
       });
+      // D-3: enable via JSON-RPC; fall back to a manual restart message if that doesn't take.
+      let note: string;
+      try {
+        const enabled = await invoke<boolean>("kodi_set_addon_enabled", {
+          host: state.kodiIp,
+          user: state.sshUser,
+        });
+        note = enabled
+          ? " Enabled it via Kodi."
+          : " Couldn't auto-enable — enable it in Kodi → Add-ons, or restart Kodi.";
+      } catch {
+        note = " Couldn't auto-enable — restart Kodi (or enable it in Add-ons) manually.";
+      }
       return {
         ok: true,
-        detail: `Installed add-on ${report.version} to ${report.target} over SSH (Kodi restarted).`,
+        detail: `Installed add-on ${report.version} to ${report.target} over SSH (Kodi restarted).${note}`,
       };
     }
     if (state.tier === "B") {

@@ -34,7 +34,10 @@ fn save_wizard_state(app: tauri::AppHandle, state: Value) -> Result<(), String> 
 /// Write the generated files (keyed by path relative to Kodi userdata/) into the app's
 /// data dir under `generated/`, mirroring the userdata layout. Returns the output dir.
 #[tauri::command]
-fn generate_files(app: tauri::AppHandle, files: BTreeMap<String, String>) -> Result<String, String> {
+fn generate_files(
+    app: tauri::AppHandle,
+    files: BTreeMap<String, String>,
+) -> Result<String, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let out = dir.join("generated");
     for (rel, contents) in &files {
@@ -92,7 +95,9 @@ fn validate_ssh_component(label: &str, v: &str) -> Result<(), String> {
         .chars()
         .find(|&c| !(c.is_ascii_alphanumeric() || matches!(c, '.' | ':' | '_' | '-')))
     {
-        return Err(format!("ssh {label} '{v}' contains an invalid character '{c}'"));
+        return Err(format!(
+            "ssh {label} '{v}' contains an invalid character '{c}'"
+        ));
     }
     Ok(())
 }
@@ -109,7 +114,9 @@ fn read_userdata_file(userdata_path: String, rel: String) -> Result<Option<Strin
     if !path.exists() {
         return Ok(None);
     }
-    fs::read_to_string(&path).map(Some).map_err(|e| e.to_string())
+    fs::read_to_string(&path)
+        .map(Some)
+        .map_err(|e| e.to_string())
 }
 
 /// Deploy files (keyed by path relative to userdata/) into a Kodi userdata directory,
@@ -248,14 +255,20 @@ fn oppo_query(
     let ms = timeout_ms.unwrap_or(3000);
     let timeout = Duration::from_millis(ms);
     let mut stream = connect_timeout(&host, port, ms)?;
-    stream.set_read_timeout(Some(timeout)).map_err(|e| e.to_string())?;
-    stream.set_write_timeout(Some(timeout)).map_err(|e| e.to_string())?;
+    stream
+        .set_read_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
     let mut cmd = command.unwrap_or_else(|| "#QPW".to_string());
     if !cmd.ends_with('\r') {
         cmd.push('\r');
     }
     emit_wire(&app, "sent", &host, port, cmd.as_bytes());
-    stream.write_all(cmd.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .write_all(cmd.as_bytes())
+        .map_err(|e| e.to_string())?;
     // OPPO replies are CR-terminated; a single read() can return a partial or echoed frame.
     // Accumulate until we see the CR terminator, the peer closes, or the read times out.
     let mut data: Vec<u8> = Vec::new();
@@ -477,7 +490,8 @@ fn kodi_now_playing(host: String, user: String) -> Result<Option<String>, String
     let target = format!("{user}@{host}");
     if let Ok(players) = run_ssh_capture(&target, &kodi_jsonrpc_cmd(KODI_ACTIVE_PLAYERS_BODY)) {
         if let Some(pid) = parse_kodi_active_player_id(&players) {
-            if let Ok(item) = run_ssh_capture(&target, &kodi_jsonrpc_cmd(&kodi_get_item_body(pid))) {
+            if let Ok(item) = run_ssh_capture(&target, &kodi_jsonrpc_cmd(&kodi_get_item_body(pid)))
+            {
                 if let Some(file) = parse_kodi_player_file(&item) {
                     return Ok(Some(file));
                 }
@@ -540,7 +554,11 @@ fn oppo_http_request(host: &str, endpoint: &str, query: &str) -> String {
 }
 
 fn oppo_signin_request(host: &str) -> String {
-    oppo_http_request(host, "/signin", &percent_encode(r#"{"user":"","password":""}"#))
+    oppo_http_request(
+        host,
+        "/signin",
+        &percent_encode(r#"{"user":"","password":""}"#),
+    )
 }
 
 fn oppo_play_request(host: &str, oppo_path: &str) -> String {
@@ -552,9 +570,15 @@ fn oppo_play_request(host: &str, oppo_path: &str) -> String {
 fn oppo_http_exchange(host: &str, request: &str, timeout_ms: u64) -> Result<String, String> {
     let mut stream = connect_timeout(host, OPPO_HTTP_PORT, timeout_ms)?;
     let t = Duration::from_millis(timeout_ms);
-    stream.set_read_timeout(Some(t)).map_err(|e| e.to_string())?;
-    stream.set_write_timeout(Some(t)).map_err(|e| e.to_string())?;
-    stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .set_read_timeout(Some(t))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(t))
+        .map_err(|e| e.to_string())?;
+    stream
+        .write_all(request.as_bytes())
+        .map_err(|e| e.to_string())?;
     let mut resp = String::new();
     let _ = stream.read_to_string(&mut resp);
     Ok(resp)
@@ -790,6 +814,29 @@ fn install_addon(
     }
 }
 
+/// Build the Kodi JSON-RPC body that enables the add-on (`Addons.SetAddonEnabled`).
+fn kodi_enable_body(addon_id: &str) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"Addons.SetAddonEnabled","params":{{"addonid":"{addon_id}","enabled":true}}}}"#
+    )
+}
+
+/// True when Kodi acknowledged the enable with `"result":"OK"`.
+fn kodi_enable_ok(reply: &str) -> bool {
+    reply.replace(' ', "").contains(r#""result":"OK""#)
+}
+
+/// Enable the installed add-on via Kodi JSON-RPC over SSH, so a freshly-dropped add-on doesn't
+/// sit disabled (D-3). Returns true on Kodi's `"result":"OK"`; the caller falls back to a manual
+/// Kodi restart on false/Err. Hardware-pending.
+#[tauri::command]
+fn kodi_set_addon_enabled(host: String, user: String) -> Result<bool, String> {
+    validate_ssh_target(&host, &user)?;
+    let target = format!("{user}@{host}");
+    let cmd = kodi_jsonrpc_cmd(&kodi_enable_body(ADDON_ID));
+    Ok(kodi_enable_ok(&run_ssh_capture(&target, &cmd)?))
+}
+
 // ============================================================
 // Live OPPO verbose-mode monitor (dashboard live stream)
 // ============================================================
@@ -876,10 +923,22 @@ fn read_brief(stream: &mut TcpStream) -> String {
 }
 
 fn emit_frame(app: &tauri::AppHandle, seq: u64, kind: &str, raw: String) {
-    let _ = app.emit("oppo-live", LiveFrame { seq, kind: kind.to_string(), raw });
+    let _ = app.emit(
+        "oppo-live",
+        LiveFrame {
+            seq,
+            kind: kind.to_string(),
+            raw,
+        },
+    );
 }
 
-fn run_live_loop(app: tauri::AppHandle, mut stream: TcpStream, prior: Option<u8>, stop: Arc<AtomicBool>) {
+fn run_live_loop(
+    app: tauri::AppHandle,
+    mut stream: TcpStream,
+    prior: Option<u8>,
+    stop: Arc<AtomicBool>,
+) {
     let mut seq: u64 = 0;
     let mut buf: Vec<u8> = Vec::new();
     let mut chunk = [0u8; 512];
@@ -959,7 +1018,10 @@ fn start_oppo_live_monitor(
     let stop = Arc::new(AtomicBool::new(false));
     let stop_thread = stop.clone();
     let join = std::thread::spawn(move || run_live_loop(app, stream, prior, stop_thread));
-    *guard = Some(LiveHandle { stop, join: Some(join) });
+    *guard = Some(LiveHandle {
+        stop,
+        join: Some(join),
+    });
     Ok(())
 }
 
@@ -999,9 +1061,15 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
     let ms = timeout_ms.unwrap_or(3000);
     let timeout = Duration::from_millis(ms);
     let mut stream = connect_timeout(&host, 8060, ms)?;
-    stream.set_read_timeout(Some(timeout)).map_err(|e| e.to_string())?;
-    stream.set_write_timeout(Some(timeout)).map_err(|e| e.to_string())?;
-    stream.write_all(request.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .set_read_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
+    stream
+        .set_write_timeout(Some(timeout))
+        .map_err(|e| e.to_string())?;
+    stream
+        .write_all(request.as_bytes())
+        .map_err(|e| e.to_string())?;
     let mut data: Vec<u8> = Vec::new();
     let mut chunk = [0u8; 512];
     loop {
@@ -1036,11 +1104,27 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, extract_zip_into, kodi_get_item_body, oppo_info_request,
-        oppo_play_payload, oppo_play_request, oppo_signin_request, parse_addon_version,
-        parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
-        parse_verbose_mode, percent_encode, roku_keypress_request, to_hex,
+        classify_frame, extract_zip_into, kodi_enable_body, kodi_enable_ok, kodi_get_item_body,
+        oppo_info_request, oppo_play_payload, oppo_play_request, oppo_signin_request,
+        parse_addon_version, parse_kodi_active_player_id, parse_kodi_log_file,
+        parse_kodi_player_file, parse_verbose_mode, percent_encode, roku_keypress_request, to_hex,
     };
+
+    #[test]
+    fn kodi_enable_body_targets_set_addon_enabled() {
+        let b = kodi_enable_body("script.oppo203.iso.external");
+        assert!(b.contains(r#""method":"Addons.SetAddonEnabled""#));
+        assert!(b.contains(r#""addonid":"script.oppo203.iso.external""#));
+        assert!(b.contains(r#""enabled":true"#));
+    }
+
+    #[test]
+    fn kodi_enable_ok_reads_result_ok() {
+        assert!(kodi_enable_ok(r#"{"id":1,"jsonrpc":"2.0","result":"OK"}"#));
+        assert!(kodi_enable_ok(r#"{"result": "OK"}"#));
+        assert!(!kodi_enable_ok(r#"{"error":{"code":-32602}}"#));
+        assert!(!kodi_enable_ok("not json"));
+    }
 
     #[test]
     fn classifies_verbose_frames() {
@@ -1247,6 +1331,7 @@ pub fn run() {
             oppo_playback_info,
             bundled_addon_info,
             install_addon,
+            kodi_set_addon_enabled,
             tv_switch_roku,
             start_oppo_live_monitor,
             stop_oppo_live_monitor
