@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — richer session status (session_id/started_at/phase) (Phase 5.1) (PR #183, issue #182)
+
+- **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/addon-live-status-6b2f9c33`, base `main`. Implementing SHA: `332c0ba`. Tracks **#182**. **Add-on (`resources/`) change** — ships on the next configurator build (D-1=C bundles `main` fresh); no separate add-on release.
+- **What changed (software-verified only):** `resources/lib/kodi/playback_session.py` now writes a richer `oppo203iso-status.json`: `session_id` (random, **stable across one session's writes** — the identity #166/#168 dedup wanted), `started_at`/`updated_at` epoch timestamps, and a `phase` field (`launching` → `monitoring` → `ended`) with a new **mid-session "monitoring" write** after the OPPO launch (previously only start + end were written). New fields are optional → the existing configurator `parseOppoStatus` is unaffected until Phase 5.2 consumes them. Gate: **pytest 1046/3**, **mypy --strict 51/0**, **ruff check + format clean**, **coverage 99%** (`playback_session.py` **100%**).
+- **Operator verifies (Phase A):** read the `playback_session.py` diff (the `write` closure + `_now`/`_new_session_id` + the `phase` progression) and `test_status_carries_session_identity_and_phases`; confirm the new keys are additive and the three writes share one `session_id`/`started_at`.
+- **Operator verifies (Phase C — built add-on + real session):** run a real OPPO playback session and confirm `oppo203iso-status.json` carries a stable `session_id`, advancing `updated_at`, and the `launching`→`monitoring`→`ended` phases. **Not hardware-validated.**
+
 ### Configurator — OPPO power-cycle command (Phase 4.1) (PR #181, issue #180)
 
 - **Merged to `main`** (operator chose "merge to main as I go"). Branch `claude/cfg-oppo-power-5d8c1a90`, base `main`. Implementing SHA: `0b5a8f1`. Tracks **#180**.
