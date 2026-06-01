@@ -17,7 +17,7 @@ export function Step3Mode({ go, state, set }: ScreenProps) {
   return (
     <div className="screen">
       <div className="screen-header">
-        <div className="screen-num">3</div>
+        <div className="screen-num">4</div>
         <h1 className="screen-title">How should playback be confirmed?</h1>
         <p className="screen-subtitle">
           Sending a play command isn&apos;t proof the disc is playing. SVM3 listens to the

@@ -84,7 +84,7 @@ export function Step6Ask({ go, set }: ScreenProps) {
   return (
     <div className="screen">
       <div className="screen-header">
-        <div className="screen-num">6</div>
+        <div className="screen-num">7</div>
         <h1 className="screen-title">Do you use an AV receiver?</h1>
         <p className="screen-subtitle">
           If your sound runs through an AV receiver or processor (player → receiver → TV), pick

@@ -11,12 +11,12 @@ import type { ScreenProps } from "./types";
 export function Step0Chain({ go, state, set }: ScreenProps) {
   const pick = (topology: Topology) => {
     set({ topology });
-    go("step1_intro");
+    go("step2_brand");
   };
   return (
     <div className="screen">
       <div className="screen-header">
-        <div className="screen-num">0</div>
+        <div className="screen-num">2</div>
         <h1 className="screen-title">How is your home theater wired?</h1>
         <p className="screen-subtitle">
           Pick the chain that matches your gear. It changes which steps we show and how the
@@ -52,7 +52,7 @@ export function Step0Chain({ go, state, set }: ScreenProps) {
             <div className="tile-desc">
               Your player plugs into an AV receiver. The receiver switches its input between
               the player and Kodi on handoff; the TV stays on one fixed input. We&apos;ll set
-              up the receiver in step 6.
+              up the receiver in step 7.
             </div>
           </div>
           <Icon name="chevR" size={16} />

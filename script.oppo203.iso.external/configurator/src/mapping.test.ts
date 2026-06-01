@@ -70,6 +70,14 @@ describe("wizardStateToAddonSettings", () => {
     expect(out.roku_kodi_key).toBe("InputHDMI2");
   });
 
+  it("emits tv_ip only when a TV backend and IP are both set", () => {
+    expect(
+      wizardStateToAddonSettings(makeState({ tvBackend: "roku_ecp", tvIp: "10.0.1.55" })).tv_ip,
+    ).toBe("10.0.1.55");
+    expect(wizardStateToAddonSettings(makeState({ tvBackend: "roku_ecp" })).tv_ip).toBeUndefined();
+    expect(wizardStateToAddonSettings(makeState({ tvIp: "10.0.1.55" })).tv_ip).toBeUndefined();
+  });
+
   it("maps Sony HDMI inputs to integer port strings", () => {
     const out = wizardStateToAddonSettings(
       makeState({ tvBackend: "sony_bravia", playerInput: 3, kodiInput: 1 }),

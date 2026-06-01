@@ -122,7 +122,7 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
 
       <FooterNav
         go={go}
-        back="step1_intro"
+        back="step0_chain"
         next={state.playerBrand && state.playerModel ? "step2_test" : null}
         nextLabel="Continue to control test"
       />
