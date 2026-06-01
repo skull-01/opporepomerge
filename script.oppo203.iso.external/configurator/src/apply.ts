@@ -1,5 +1,6 @@
 import { invoke } from "./ipc";
 import {
+  addonsDirForPlatform,
   buildTransferFiles,
   kodiTargetForPlatform,
   userdataDirForPlatform,
@@ -21,6 +22,11 @@ type DeployReport = { written: string[]; backed_up: string[] };
  */
 export function smbUserdataPath(sharePath: string): string {
   return sharePath.replace(/[\\/]+$/, "") + "\\userdata";
+}
+
+/** The Kodi addons directory inside an SMB share (sibling of the userdata folder). */
+export function smbAddonsPath(sharePath: string): string {
+  return smbUserdataPath(sharePath).replace(/userdata$/, "addons");
 }
 
 /**
@@ -99,6 +105,50 @@ export async function applyToKodi(state: WizardState): Promise<ApplyResult> {
       files: buildApplyFileSet(state, null, null),
     });
     return { ok: true, detail: `Files generated at ${dir} — copy them into your Kodi userdata folder.` };
+  } catch (e) {
+    return { ok: false, detail: String(e) };
+  }
+}
+
+export type InstallResult = { ok: boolean; detail: string };
+
+/**
+ * Install the bundled add-on into Kodi's addons/ directory via the chosen tier (the config write
+ * still goes through applyToKodi). Tier A installs over SSH (+restart); B extracts into the
+ * SMB/local addons dir; C points at the bundled ZIP for a manual "Install from zip file". The
+ * on-box install is software-verified only -- not hardware-tested.
+ */
+export async function installAddonToKodi(state: WizardState): Promise<InstallResult> {
+  try {
+    const platform: KodiPlatform = state.kodiPlatform ?? "coreelec";
+    if (state.tier === "A") {
+      const report = await invoke<{ version: string; target: string }>("install_addon", {
+        tier: "A",
+        host: state.kodiIp,
+        user: state.sshUser,
+        addonsPath: addonsDirForPlatform(platform),
+        restart: true,
+      });
+      return {
+        ok: true,
+        detail: `Installed add-on ${report.version} to ${report.target} over SSH (Kodi restarted).`,
+      };
+    }
+    if (state.tier === "B") {
+      const report = await invoke<{ version: string; files: number; target: string }>(
+        "install_addon",
+        { tier: "B", addonsPath: smbAddonsPath(state.smbSharePath), restart: false },
+      );
+      return {
+        ok: true,
+        detail: `Installed add-on ${report.version} (${report.files} files) to ${report.target}. Restart Kodi to load it.`,
+      };
+    }
+    const info = await invoke<{ version: string; path: string }>("bundled_addon_info");
+    return {
+      ok: true,
+      detail: `Manual install: add-on ${info.version} is bundled at ${info.path} — install it in Kodi via "Install from zip file".`,
+    };
   } catch (e) {
     return { ok: false, detail: String(e) };
   }

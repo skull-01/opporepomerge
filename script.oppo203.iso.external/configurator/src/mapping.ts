@@ -176,6 +176,9 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     // (oppo_http_path_from/to) is player- and mount-specific -- the wizard cannot know the
     // player's NAS mount namespace, so the operator sets it. Candidate; hardware-pending.
     out.oppo_http_payload_mode = "json_payload";
+    out.oppo_http_disc_folder_root = state.oppoDiscFolderRoot ? "true" : "false";
+    if (state.oppoPathFrom) out.oppo_http_path_from = state.oppoPathFrom;
+    if (state.oppoPathTo) out.oppo_http_path_to = state.oppoPathTo;
   }
 
   if (state.tvBackend) {
