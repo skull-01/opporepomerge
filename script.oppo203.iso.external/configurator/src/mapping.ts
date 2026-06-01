@@ -170,6 +170,14 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
   if (hardwareModel) out.oppo_hardware_model = hardwareModel;
   if (state.playerIp) out.oppo_ip = state.playerIp;
 
+  if (routing === "http_handoff") {
+    // The community NAS HTTP launch uses the documented JSON payload form (path / index /
+    // type / appDeviceType / extraNetPath / playMode). The OPPO-visible path translation
+    // (oppo_http_path_from/to) is player- and mount-specific -- the wizard cannot know the
+    // player's NAS mount namespace, so the operator sets it. Candidate; hardware-pending.
+    out.oppo_http_payload_mode = "json_payload";
+  }
+
   if (state.tvBackend) {
     out.tv_backend = state.tvBackend;
     Object.assign(out, hdmiInputSettings(state.tvBackend, state.playerInput, state.kodiInput));
