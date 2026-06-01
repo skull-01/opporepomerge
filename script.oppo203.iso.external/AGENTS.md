@@ -176,6 +176,43 @@ user to the configurator for anything that should persist across Kodi restarts.
 If a PR introduces add-on-side configuration outside an allowed exception, the operator
 will redirect it to the configurator.
 
+## The six playback-architecture presets are a maintained matrix
+
+The add-on is **one package with six runtime presets — not six builds**
+([`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) D-C). The presets are the cross-product
+of **3 routing modes** (`playercorefactory`, `service_interception`, `http_handoff`)
+× **2 monitor modes** (`legacy`, `svm3`). Single source of truth:
+`PLAYBACK_ARCHITECTURE_PRESETS` in `resources/lib/kodi/settings_reader.py`.
+`normalize_architecture()` resolves the chosen one from `playback_architecture_preset`
+at runtime; the configurator emits it (`configurator/src/mapping.ts` →
+`` `${routing}_${monitorMode}` ``); **all six share one dispatch** in
+`resources/lib/kodi/playback_session.py`.
+
+**Rule: any change touching playback routing or monitor logic must keep all six
+presets working — on both sides — and exercise all six.** Because the six share one
+dispatch, a fix to one path can silently break another while five stay green.
+
+Before promoting such a change out of draft, confirm every box:
+
+- [ ] `PLAYBACK_ARCHITECTURE_PRESETS` is unchanged — **or** changed deliberately on
+      *both* sides (the add-on list **and** the configurator routing/monitor enums) in
+      the **same** PR.
+- [ ] Add-on matrix guard green — `tests/test_architecture_presets.py`
+      (`PresetConsistencyGuard.test_every_preset_round_trips` iterates all six and pins
+      `len(...) == 6`).
+- [ ] Add-on dispatch exercised per routing — `tests/test_playback_session_modes.py`.
+- [ ] Configurator emits all six — `configurator/src/mapping.test.ts` (keep one
+      assertion per routing×monitor combo; **add the "emits all six" completeness guard
+      if missing**).
+- [ ] If a preset was added/removed: the `== 6` count guard, both enums, the
+      configurator Step-3 pills (`configurator/src/screens/step3.tsx`), and the preset
+      count in this norm are all updated in lock-step.
+
+Treat the preset set as a **cross-area contract** (like the AVR / TV / players DB
+consistency guards): never add or remove a routing/monitor combo on one side without
+the other side + its guard in the same change. The default install preset is
+`http_handoff_svm3` ([`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) D-A).
+
 ## Never edit operator-only / secret files
 
 - `.claude/settings.local.json`

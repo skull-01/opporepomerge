@@ -912,6 +912,16 @@ live in the 2026-05-30 post-EOD session transcript.
   invariant, workaround for a specific bug). Never explain WHAT — identifiers do that.
 - **Lint/test backstop** — `pytest -n auto` + `ruff check .` must pass before promoting a
   PR out of draft. For configurator changes: `npx tsc --noEmit && npm run build` too.
+- **Six-preset matrix is a maintained contract** — the add-on is **one package with six
+  runtime presets** (3 routing × 2 monitor), **not** six builds (`docs/BUILD_PLAN.md` D-C).
+  Any change to playback routing/monitor logic must keep all six working **on both sides**
+  and exercise all six — they share one dispatch (`resources/lib/kodi/playback_session.py`),
+  so a fix to one path can silently break another. The six are a cross-area contract:
+  add-on `PLAYBACK_ARCHITECTURE_PRESETS` (`resources/lib/kodi/settings_reader.py`) ↔
+  configurator `mapping.ts`. See the **"six playback-architecture presets are a maintained
+  matrix"** norm in [`AGENTS.md`](AGENTS.md); guards: `tests/test_architecture_presets.py`
+  (`PresetConsistencyGuard`, iterates all six), `tests/test_playback_session_modes.py`,
+  `configurator/src/mapping.test.ts`.
 - **Honest signature** — claim only what was actually run in this session. "Code compiles"
   ≠ "feature works". Distinguish typecheck / unit-tested / clicked-through / verified by
   operator. Never weaken the project's

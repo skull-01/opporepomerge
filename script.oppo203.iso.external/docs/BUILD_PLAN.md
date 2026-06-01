@@ -1,20 +1,26 @@
 # Build plan
 
 **Audience:** any AI agent or human contributor planning the next slice of
-work. This file is the **map** — it groups live open issues by area + theme,
-records the strategic direction the operator has set, and links out to the
-authoritative GitHub state.
+work. This file is the **map** — it records the strategic direction the
+operator has set, the current state of both areas, and the phased roadmap for
+the active initiative.
 
 **Source of truth:** open issues at
 [`gh issue list --state open`](https://github.com/skull-01/script.oppo203.iso.external/issues).
 This document is regenerated on demand by the `refresh the build plan`
-trigger and is allowed to lag the live state between refreshes.
+trigger and is allowed to lag the live state between refreshes. Phase/PR IDs
+below are **planning placeholders** (`ENH-…`) until the operator files the
+matching `area:configurator` / `area:addon` issues.
 
-**Last refreshed:** 2026-05-30
+**Last refreshed:** 2026-06-01 · **committed to `main`** together with the
+six-preset matrix norm (`AGENTS.md`) + the handoff §4 pointer.
+
+**This file lives on `main`; feature branches should not edit it** (causes
+add/add merge conflicts per the session-continuity convention).
 
 ---
 
-## §1 Strategic direction (2026-05-30)
+## §1 Strategic direction (2026-06-01)
 
 ### Two areas, one tree
 
@@ -22,104 +28,351 @@ Work is split into **`area:addon`** (Kodi add-on, Python under `resources/`)
 and **`area:configurator`** (Tauri 2 + React under `configurator/`). Every
 issue carries one area label. See `AI_RESUME_HANDOFF.md` §1.
 
+### Active initiative — *guided install + full setup flow*
+
+The configurator graduates from a **config-file writer** into a **guided
+installer + live monitor**: it gets SSH access to Kodi, sets up and **tests**
+HDMI switching, drives an **OPPO playback self-test** (copy a test ISO →
+power-cycle → mount → play → confirm via SVM3), then **installs the add-on
+itself** (pre-configured from the test results) and **transforms into a
+process monitor** for the whole playback chain.
+
+**This is a two-track effort. Both the add-on and the configurator need new
+builds.** The add-on's `http_handoff` / SVM3 / preset runtime already exists in
+source on `main` but is **not in any Final release** (it post-dates v2.9.13),
+so it must be built/released for the configurator to bundle a *working*
+add-on. Later phases add real add-on *code* (configurator handshake, richer
+live status).
+
 ### Configurator owns add-on configuration
 
 Since [`#40`](https://github.com/skull-01/script.oppo203.iso.external/pull/40)
 stripped the in-Kodi setup wizard, the **configurator is the single source of
-truth for add-on configuration**. The add-on stays read-mostly: it surfaces
-current values, accepts a small set of in-the-moment overrides, and routes
-the user to the configurator for anything persistent. Tracked under
-[`#41`](https://github.com/skull-01/script.oppo203.iso.external/issues/41).
-
-### Where each area stands
-
-- **Add-on — mature, at a clean baseline.** The type-hardening arc is complete
-  (ruff [`#38`](https://github.com/skull-01/script.oppo203.iso.external/issues/38)
-  → mypy [`#51`](https://github.com/skull-01/script.oppo203.iso.external/issues/51),
-  gate 49/0; #51 closed). Released at **v2.9.13**; CI-backed (`pytest -n auto`,
-  99% coverage, `mypy --gate`, ruff). Every open add-on issue is delivered +
-  merged, awaiting operator close.
-- **Configurator — feature-complete on paper, unproven on hardware.** The
-  7-slice wizard wiring
-  ([`#68`](https://github.com/skull-01/script.oppo203.iso.external/pull/68),
-  merged `454e5ab`) generates `playercorefactory.xml` + keymap + `settings.xml`
-  and deploys via three tiers (SSH / SMB / local copy). A `/code-review` filed
-  16 bugs (#72–#87), all fixed across #68 +
-  [`#88`](https://github.com/skull-01/script.oppo203.iso.external/pull/88).
-  **Software-verified only — no Kodi box / OPPO / TV has validated any deploy
-  path.** No CI of its own; the first Windows binary is in progress (see §3).
+truth for add-on configuration** (tracked under
+[`#41`](https://github.com/skull-01/script.oppo203.iso.external/issues/41)).
+The add-on stays read-mostly. This initiative extends that ownership from
+*configuration* to *installation*.
 
 ### Honest signature
 
 Release language remains **"software-verified; hardware validation not
-performed / not claimed"** until real tester reports back it up. Hardware
-sourcing (lending / donation / remote testing) is being solicited under
+performed / not claimed"** until a real tester reports back. Every new
+automation step in this initiative (real HDMI switch, OPPO power-cycle, HTTP
+play, multi-GB copy) is **unverifiable in-session** — gated by unit tests +
+render guards, with operator Phase A/B/C hardware verification. Hardware
+sourcing is solicited under
 [`#44`](https://github.com/skull-01/script.oppo203.iso.external/issues/44).
 
 ---
 
-## §2 Add-on (`area:addon`)
+## §2 Current state (2026-06-01 snapshot)
 
-### Open issues — all delivered, awaiting operator close
+### Add-on (`area:addon`)
 
-| # | Title | Delivered by | Status |
+- **Last Final release: `v2.9.13`.** A large post-2.9.13 refactor sits on
+  `main` and is **not in any Final release**: `resources/lib` reorganised into
+  `kodi/` / `oppo/` / `tv/`, plus new runtime — `oppo/playback_monitor_svm3.py`,
+  `kodi/playback_session.py`, `kodi/i18n.py` — and `wizard.py` / `wizard_polish.py`
+  removed (72 files, +2,722 / −3,582 vs the `v2.9.13` tag).
+- **`v2.9.14-experimental` cut 2026-06-01** (pre-release, tag
+  `v2.9.14-experimental`) **is** a build of that post-2.9.13 `main` — i.e. the
+  add-on build that *can* do `http_handoff_svm3`. It is the candidate the
+  configurator would bundle (see §4 decision D-1).
+- **Architecture is settings-driven, single package — no per-arch builds.**
+  `playback_session.py:162,168-171` routes at runtime; the source of truth is
+  the `playback_architecture_preset` setting
+  (`settings_reader.py:266,273` — six presets at `:219-226`).
+
+### Configurator (`area:configurator`)
+
+- **At `configurator-v0.5.0`** (`src-tauri/tauri.conf.json:4`,
+  `package.json` version `0.5.0`). Far past the README's stale "scaffold only"
+  line: working Tier A/B/C deploy, connectivity probes, choice→preset mapping,
+  debug capture, and a live dashboard.
+- **Decision→preset is already correct.** `mapping.ts:155` writes
+  `playback_architecture_preset = \`${routing}_${monitorMode}\``, which the
+  add-on prefers (`settings_reader.py:273`). The configurator also writes the
+  HTTP-path settings the add-on reads (`oppo_control.py:365-433`,
+  `settings_reader.py:70-136`).
+- **Does NOT install the add-on, and several control steps are simulations.**
+  (`step5.tsx:167` "Sent switch-to HDMI" has no `invoke`; `test.tsx:80-143`
+  test-disc copy is cosmetic — known scaffold.)
+
+### Audit — proposed flow vs. today
+
+| # | Proposed step | Status | Anchor / gap |
 |---|---|---|---|
-| [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38) | Clear ruff backlog on main | PR #50 `092444a` | merged — ruff clean whole-tree + CI |
-| [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41) | Configurator owns config; add-on read-mostly | PRs #45 / #46 + #88 (Part C) | merged — Phase A/C pending |
-| [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42) | Minimal in-add-on settings menu (IPs + language) | PRs #48 / #49 | merged — Phase A/C pending |
-| [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43) | Split `resources/lib` into TV / Oppo / AVR / Kodi | PR #47 `3ba5009` | merged — Phase A pending |
-| [#44](https://github.com/skull-01/script.oppo203.iso.external/issues/44) | Hardware-validation solicitation | PR #89 `9401fb3` | merged — standing community call |
-| [#57](https://github.com/skull-01/script.oppo203.iso.external/issues/57) | Change-scoped fast local test loop (testmon) | PRs #59 / #61 | merged — Phase C software check |
+| 1 | SSH to Kodi **first** | 🟡 Partial | SSH = Tier A in Step 1 (`step1.tsx:153`, `ssh_test` `lib.rs:346`); not first; creds not persisted |
+| 2 | TV-vs-AVR switcher choice | 🟢 Exists | topology `Step0Chain.tsx:11-59` |
+| 3 | Switcher IP + set up switching | 🟡 Partial | AVR IP persisted; **TV IP never stored** (`dashboard_targets.ts`) |
+| 4 | Find Kodi + OPPO HDMI input | 🟡 Partial | manual picker `step5.tsx:84-193`; auto-find unstubbed |
+| 5 | HDMI switch **test** + confirm | 🔴 Simulated | `step5.tsx:167` cosmetic; TV mute test is a UI sim |
+| 6 | OPPO IP + **SVM3 monitor during setup** | 🟡 Partial | one-shot probe `step2.tsx:150`; live monitor only in dashboard `lib.rs:555` |
+| 7 | Copy test file to ISO dir | 🔴 Stub | `test.tsx:80-143` cosmetic; no backend copy |
+| 8 | Power **off** then on OPPO | 🟡 Partial | wake `#PON`/`#EJT` exist; **`#POF` absent** |
+| 9 | Mount + play the file | 🔴 Absent | no mount/play automation |
+| 10 | Copy control mapping (keymap) | 🟢 Exists | `generate.ts:114-198`, deployed on apply |
+| 11 | Confirm ISO played | 🟢 Exists | `test_confirm` `test.tsx:326` |
+| 12 | User tests control forwarding | 🟢 Exists | same `test_confirm` |
+| 13 | Debug collection throughout | 🟢 Exists | `debug/log.ts`, `ipc.ts`, wire capture `lib.rs:196` |
+| 14 | Create settings from result | 🟢 Exists | `mapping.ts` → `apply.ts:52` (writes correct preset) |
+| 15 | **Copy the add-on** (default preset) | 🔴 Absent | Phase 1 |
+| 16 | Restart Kodi | 🟡 Partial | auto on Tier A (`lib.rs:406`); manual on Tier B |
+| 17 | Transform into process monitor | 🟡 Partial | dashboard exists; read-only; TV absent; not auto-started |
 
-Recently closed: **#51** mypy `--strict` rollout (gate 49/0), **#22** wizard launch bug.
-
-### Suggested ordering (operator's call)
-
-The type-hardening arc (ruff #38 → mypy #51) is **complete** and config
-ownership has moved to the configurator, so the add-on is at a **clean
-baseline**:
-
-1. **Operator close-out** — verify + close the 6 merged-awaiting-close issues
-   (Phase A/C steps in `docs/MANUAL_VERIFICATION_CHECKLIST.md`).
-2. **Phase A/C on-device verification** of the merged work (operator/hardware,
-   no agent code).
-3. **A net-new enhancement** when one is picked — no add-on work is blocked.
-
----
-
-## §3 Configurator (`area:configurator`)
-
-### Themes — recent + in flight
-
-| # / theme | Title | Status |
-|---|---|---|
-| [#68](https://github.com/skull-01/script.oppo203.iso.external/pull/68) | Wire the wizard to the add-on contract (7 slices) | MERGED `454e5ab` (+ #88 cleanup, #89 doc) |
-| #72–#87 | 16 `/code-review` bugs — ssh/probe/deploy hardening, config-write safety, IP-control test, persisted state, cleanups | Fixed across #68 + [#88](https://github.com/skull-01/script.oppo203.iso.external/pull/88) — **awaiting operator close**; Phase C on-device pending |
-| #52 | App icon + first MSI/NSIS bundle | MERGED `859238e` (PR-only theme) |
-| Chinoppo M9205 V1 split | Distinct `chinoppo_m9205_v1` / `M9205-V1` hardware model (cross-area) | **PR [#91](https://github.com/skull-01/script.oppo203.iso.external/pull/91) (draft)** — software-verified |
-| **First Windows binary** | Official versioned `configurator-v0.1.0` MSI/NSIS | **In progress** — build proven on current `main` (3.0 MB MSI + 2.0 MB NSIS, unsigned); recipe + version guard + checksums + draft GitHub pre-release; CI deferred. PR-only |
-
-### Suggested ordering (operator's call)
-
-1. **Ship the first Windows binary** — `configurator-v0.1.0` (build recipe +
-   version-consistency guard + `BUILD.md` → SHA256 checksums + release-evidence
-   → draft GitHub pre-release for the operator to publish). Unsigned 0.x;
-   `windows-latest` CI deferred. **In progress this session.**
-2. **On-hardware validation** of the three deploy paths (Tier A SSH+restart /
-   Tier B SMB / Tier C copy) against a real Kodi box / OPPO / TV — operator
-   action; the paths are software-verified only.
-3. **Operator close-out** of the 16 review bugs (#72–#87) after Phase C.
-4. **Grow the TV DB** at `docs/configurator/tv-db/tv-models.json` (small seed,
-   all `validated:false`; lineups carry the platform→backend mapping).
-5. **Real test ISO** — swap the placeholder once the asset exists.
+**Net:** the back half (settings, keymap, confirm, debug, dashboard) is built
+and correct; the front half (SSH-first re-sequence, *real* HDMI test, OPPO
+power-cycle/mount/play, test-file copy) plus the **add-on copy** is the new work.
 
 ---
 
-## §4 How to keep this file useful
+## §3 Locked decisions & the foundational dependency
 
-- Add a row when filing a new `ENH-` issue.
-- Strike a row when the issue closes.
-- Move ordering notes around as the operator's priorities shift.
-- Don't duplicate the issue body here — link to GitHub for the real text.
-- This file lives on `main`; feature branches should not edit it (causes
-  add/add merge conflicts per the session-continuity convention).
+### Decisions locked (2026-06-01)
+
+- **D-A · Default preset = `http_handoff_svm3`.** Kodi launches the external
+  player via `playercorefactory.xml`; the OPPO is started with the undocumented
+  HTTP commands (`/playnormalfile`, `oppo_control.py:432`); SVM3 confirms
+  playback. Downgrades to `http_handoff_legacy` if the SVM3 probe fails.
+- **D-B · Playback test = full automated copy of a real test ISO**, then
+  power-cycle + mount + play. (Forces Phase-4 sub-decisions, see §4.)
+- **D-C · Add-on packaging = one package + preset — NOT six builds.** Six
+  separate per-architecture add-ons were considered (2026-06-01) and rejected:
+  the six "versions" are the six `playback_architecture_preset` values of a
+  single package, resolved at runtime (`settings_reader.py:263-283`). Six builds
+  would force configurator-wide add-on-id parameterisation (`generate.ts:19`
+  threads everywhere) + 6× releases for zero runtime benefit. The configurator
+  copies one add-on and writes the chosen preset.
+
+### Open decisions
+
+- **D-1 · Which add-on build does the configurator bundle?**
+  **(A)** cut a Final `v2.9.14` from `main` and bundle it *(recommended — a
+  real, evidenced release for an install flow)*; **(B)** bundle the existing
+  `v2.9.14-experimental`; **(C)** build `main` fresh at configurator-build time
+  (unpinned). *Pending operator confirmation.*
+- **D-2 · Test-ISO source (Phase 4).** A real UHD ISO is multi-GB — **cannot be
+  bundled**. Download a master vs. user-supplies a master to copy from.
+- **D-3 · Add-on *enablement* after file-drop.** Restart-only (the in-flow test
+  catches a disabled add-on) vs. Kodi JSON-RPC `Addons.SetAddonEnabled`.
+
+### ⛓ Foundational dependency — OPPO NAS-path mapping
+
+Both D-A and D-B require the configurator to learn **the path the OPPO sees**
+for the media share. `http_handoff` plays via `/playnormalfile?path=<oppo-path>`
+and the code admits *"the wizard cannot know the player's NAS mount namespace,
+so the operator sets it"* (`mapping.ts:176-177`). Until captured, an
+`http_handoff_svm3` default is **written but inert**. → Captured early (Phase 1
+PR-1.3), in the "OPPO access" step.
+
+---
+
+## §4 Roadmap — two tracks, six phases
+
+Each phase ≈ one session (one theme, ≤ 4 PRs per AGENTS.md). The add-on track
+(🟦) interleaves with the configurator track (🟩). Phase order is the build
+order; the *user-facing* flow order is delivered by Phase 2.
+
+```
+🟦 add-on:    v2.9.13 ─▶ Ph0: build v2.9.14 (carries http_handoff/SVM3/preset)
+                                   │ bundled by ▼               ┌▶ Ph2 handshake ─▶ Ph5 rich status
+🟩 configurator: v0.5.0 ─▶ Ph1 install ─▶ Ph2 re-sequence ─▶ Ph3 HDMI test ─▶ Ph4 OPPO self-test ─▶ Ph5 monitor
+```
+
+### 🟦 Phase 0 — add-on release the configurator will bundle *(area:addon)*
+
+Per **D-1** (recommended **A**): promote `main` → **Final `v2.9.14`** via the
+`release` skill runbook (78-file bump, evidence, CI, tag, GitHub release). This
+is the add-on build carrying `http_handoff` / SVM3 / the preset system. No new
+add-on *code* — it ships existing `main`. *(If D-1 = B, Phase 0 is "adopt
+`v2.9.14-experimental`"; if C, Phase 0 folds into Phase 1 PR-1.1.)*
+
+### 🟩 Phase 1 — bundle + install the add-on, working `http_handoff_svm3` default
+
+**Theme:** configurator ships the add-on, installs it to Kodi, and configures a
+*functional* `http_handoff_svm3` default. **Frozen:** add-on runtime (consumed
+as a build artifact via `tools/package_installable_zip.py`); config-gen
+additive-only (pinned by `apply.test.ts` / `mapping.test.ts` / `generate.test.ts`
+/ `settings_xml.test.ts`).
+
+- **PR-1.1 — Bundle add-on** (~110): `package.json` `bundle:addon` runs
+  `package_installable_zip.py` → `src-tauri/resources/addon/…zip`;
+  `tauri.conf.json:31-40` `bundle.resources`; `lib.rs` `bundled_addon_info()`
+  (parse embedded `addon.xml`), register at `lib.rs:637-653`. *Tests:* Rust
+  version-parse on a fixture ZIP.
+- **PR-1.2 — Rust `install_addon`** (~200 + `zip` crate): Tier A pushes the ZIP
+  via `run_ssh_stdin` (`lib.rs:322-343`) + `python3 -m zipfile -e` into
+  `<addons>/` (backup via `backup_suffix` `lib.rs:72-78`, restart `lib.rs:406`);
+  Tier B extracts with the `zip` crate (pattern of `deploy_to_userdata`
+  `lib.rs:117-146`); Tier C drops the ZIP for Kodi "Install from zip". *Tests:*
+  Rust extraction + backup unit tests.
+- **PR-1.3 — Capture OPPO NAS path** (~120): add `oppoMediaRoot` / `oppoPathFrom`
+  / `oppoPathTo` to `state.ts:58-103` + `INITIAL_STATE`; capture screen near the
+  OPPO IP input (`step2.tsx:76-84`); emit `oppo_http_path_from/to` +
+  `oppo_http_disc_folder_root` in `mapping.ts:173-179`. *Tests:* `mapping.test.ts`
+  http_handoff → correct `oppo_http_*`.
+- **PR-1.4 — Wire install + default** (~140): `INITIAL_STATE.playbackArchitecture
+  = "http_handoff"`, `monitorMode = "svm3"` (`state.ts:124-125`);
+  `installAddonToKodi(state)` in `apply.ts` (tier dispatch mirroring
+  `applyToKodi` `:52-105`); run install **before** the playback test in
+  `test.tsx`. *Tests:* `apply.test.ts` per-tier install; `state.test.ts` default
+  preset = `http_handoff_svm3`.
+
+Dep: `1.1 → 1.2 → 1.4`; `1.3 → 1.4`. **Risk:** binary expand; Tier A needs
+`python3` on box; the default is only as good as PR-1.3's path; add-on
+*enabled* ≠ present (D-3).
+
+### 🟩 Phase 2 — re-sequence to the SSH-first flow + 🟦 add-on handshake
+
+**Theme:** deliver the user-facing order. **Names↔UI must stay in sync**
+(`steps.ts` is the source of truth, AGENTS.md:44-61).
+
+- **PR-2.1 — Persist creds + switcher IP** (~120): capture/persist SSH user+host
+  and the **TV/switcher IP** (today the TV IP is never stored,
+  `dashboard_targets.ts`); needed by the HDMI test (Ph3) and the monitor (Ph5).
+- **PR-2.2 — SSH-access-first + reorder** (~180): make SSH access the entry
+  gate; reorder `steps.ts` STEPS/ScreenId/SCREEN_TO_STEP to
+  *SSH → switcher choice+IP → HDMI setup → input capture → OPPO access (incl.
+  NAS path) → test*; rename files/ids/labels in lock-step.
+- **PR-2.3 — 🟦 add-on "configured-by-configurator" marker** *(area:addon →
+  new add-on build)* (~80): a marker so the add-on defers to configurator-owned
+  `playercorefactory.xml` and never re-runs first-run setup
+  (`installer.py:505-531`; the dialog is already suppressed by
+  `architecture_choice_made`, `mapping.ts:150` — this hardens it). *Tests:*
+  add-on `pytest` for the marker gate.
+- **PR-2.4 — De-stub honestly** (~60): replace the cosmetic `step5.tsx:167`
+  switch label and the `test.tsx` "Copied" message with honest "manual step"
+  copy until Ph3/Ph4 make them real.
+
+### 🟩 Phase 3 — real HDMI switching test
+
+**Theme:** turn the simulated switch into a real, verified action.
+
+- **PR-3.1 — Rust input-switch commands** (~200): per-backend HDMI input select
+  — TV (`adb` / `roku_ecp` / `sony_bravia` / `smartthings` / `lg_command` /
+  `samsung_command` / `custom_command`) and AVR (`denon_marantz` / `yamaha_yxc`
+  / `onkyo_eiscp` / `pioneer_eiscp` / `sony_audio_api`), mirroring the add-on's
+  drivers under `resources/lib/tv/` and `resources/lib/avr/`. *Tests:* Rust
+  command-builder unit tests (no I/O).
+- **PR-3.2 — Switch-and-verify** (~140): replace the manual confirm in the HDMI
+  step with an automated switch then a verifiable check where possible (e.g.
+  power/state read-back); honest manual fallback otherwise.
+- **PR-3.3 — Auto-find inputs** (~120): auto-detect the Kodi + OPPO HDMI input
+  where the backend allows (replaces the `step5.tsx` "find it for me" stub).
+
+**Risk:** most TV/AVR backends give no switch *confirmation* — verification may
+stay user-confirmed; label honestly.
+
+### 🟩 Phase 4 — OPPO automated self-test (full ISO copy + mount + play) — **D-B**
+
+**Theme:** the headline self-test. Depends on the OPPO NAS path (Ph1) + **D-2**.
+
+- **PR-4.1 — Rust OPPO play/power** (~180): add `#POF` power-off and the
+  http_handoff start sequence — `activate_http_api` (UDP broadcast),
+  `signin_http_api`, `play_media_http_api` (`/playnormalfile?path=`) — porting
+  the add-on's documented commands (`oppo_control.py:346-445`) into the Rust
+  backend. *Tests:* Rust request-builder unit tests.
+- **PR-4.2 — Test-ISO copy** (~160): per **D-2**, obtain a master test ISO and
+  copy it to the OPPO's share with **progress UI** (multi-GB; reuse the SMB/SSH
+  transport). *Decision-gated.*
+- **PR-4.3 — Live SVM3 during setup** (~140): run the live monitor
+  (`start_oppo_live_monitor` `lib.rs:555`) *during* the self-test; confirm
+  playback on `@UPL PLAY` + advancing `@UTC` (not a manual yes/no).
+- **PR-4.4 — Self-test orchestration** (~120): power-cycle → mount → play →
+  SVM3-confirm → user tests control forwarding (`test_confirm` mostly exists).
+
+**Risk (high):** multi-GB transfer time/reliability; the OPPO mount namespace
+(Ph1) must be exactly right; entirely hardware-gated.
+
+### 🟩 Phase 5 — process monitor + 🟦 richer add-on status
+
+**Theme:** the configurator "transforms into a process-monitoring tool."
+
+- **PR-5.1 — 🟦 add-on live status** *(area:addon → new add-on build)* (~120):
+  extend the add-on's status emission beyond the last-session
+  `oppo203iso-status.json` (`oppo_status.ts` fields) into finer live telemetry
+  for the monitor. *Tests:* add-on `pytest` for the status writer.
+- **PR-5.2 — Dashboard upgrade** (~160): add **TV liveness** (now that the TV IP
+  is persisted, Ph2), auto-start the live stream, consume the richer status
+  (`dashboard.tsx`, `dashboard_status.ts`, `dashboard_targets.ts`).
+- **PR-5.3 — Full chain view** (~140): unified live status + activity for every
+  node (Kodi / OPPO / TV / AVR) along the playback chain.
+
+---
+
+## §5 Rollup, risks & verification
+
+### 📊 Phase rollup
+
+| Phase | Track | ~PRs | Headline risk |
+|---|---|---|---|
+| 0 Add-on build | 🟦 | 1 (release) | Release mechanics only; no new code |
+| 1 Install + default | 🟩 | 4 | Binary expand; inert default until NAS path; enable≠present |
+| 2 Re-sequence + handshake | 🟩+🟦 | 4 | Names↔UI sync; cross-area add-on build |
+| 3 HDMI test | 🟩 | 3 | Backends rarely confirm a switch |
+| 4 OPPO self-test | 🟩 | 4 | Multi-GB copy + mount namespace; fully hardware-gated |
+| 5 Process monitor | 🟩+🟦 | 3 | Needs TV IP (Ph2) + add-on status (5.1) |
+
+### ⚠️ Standing risks
+
+- **Version-matching.** The configurator bundles **one** add-on build; that
+  build must contain every feature the configurator relies on (Ph1: preset;
+  Ph2: marker; Ph5: status). Ship the pair matched; bump the bundled add-on
+  whenever an add-on-side phase lands.
+- **Live-verify caveat.** No Kodi / OPPO / TV is reachable in-session. SSH push,
+  real HDMI switch, power-cycle, HTTP play, and multi-GB copy are **not**
+  verifiable here — gated by unit tests + render guards, then operator Phase
+  A/B/C in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.
+- **Honest signature.** Keep "software-verified · hardware validation not
+  claimed" (`test.tsx:636`) on every new automation step until a tester confirms.
+
+### Verification regime (per PR)
+
+- **Configurator TS:** `cd D:\Git\script.oppo203.iso.external\configurator; npx tsc --noEmit; npm run build; npx vitest run`
+- **Configurator Rust:** `cd D:\Git\script.oppo203.iso.external\configurator\src-tauri; cargo build; cargo test`
+- **Add-on (Ph0/2.3/5.1):** `cd D:\Git\script.oppo203.iso.external; pytest -n auto; ruff check .; ruff format --check .` + the **serial 99% coverage gate** (`coverage run -m pytest` then `coverage report`).
+- Then a **draft PR** (`claude/cfg-…-<8char>` / `claude/addon-…`), SHA-comment +
+  a Phase A/B/C row in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. **Only the
+  operator closes.**
+
+---
+
+## §6 Per-area open-issue status (may lag GitHub — see source of truth)
+
+### Add-on (`area:addon`) — at a clean baseline; post-2.9.13 work unreleased as Final
+
+Type-hardening arc complete (ruff
+[`#38`](https://github.com/skull-01/script.oppo203.iso.external/issues/38) →
+mypy [`#51`](https://github.com/skull-01/script.oppo203.iso.external/issues/51),
+gate 49/0). The merged-awaiting-close set (#41/#42/#43/#44/#57) still awaits
+operator close + Phase A/C. **New for this initiative:** Phase 0 (release
+`v2.9.14`), Phase 2.3 (configurator handshake), Phase 5.1 (live status).
+
+### Configurator (`area:configurator`) — at v0.5.0
+
+Wizard wiring ([`#68`](https://github.com/skull-01/script.oppo203.iso.external/pull/68))
++ the 16 `/code-review` fixes (#72–#87) are merged, awaiting Phase C. Windows
+binaries shipping on the `configurator-v0.x` line. **New for this initiative:**
+Phases 1–5 above.
+
+**Six-preset cross-area completeness guard (delivered 2026-06-01).** A
+`configurator/src/mapping.test.ts` *completeness* test asserts the routing × monitor
+matrix emits **exactly the six** canonical presets (pins `size == 6` on the configurator
+side, mirroring the add-on's `PLAYBACK_ARCHITECTURE_PRESETS` `len == 6` in
+`tests/test_architecture_presets.py`). It backs the **"six playback-architecture presets
+are a maintained matrix"** norm now in `AGENTS.md` + §4 of the handoff. *Optional future
+hardening:* a single shared preset source consumed by both sides + a Python parity test
+(the AVR/TV-DB-guard pattern) for fully-automated cross-language parity.
+
+---
+
+## §7 How to keep this file useful
+
+- Update §1/§2 dates + status when reality moves; refresh the §3 decisions as
+  the operator settles D-1 / D-2 / D-3.
+- Add a row when filing a new `ENH-` issue; strike it when the issue closes.
+- Replace placeholder `ENH-…` / `Phase N PR-x` IDs with real issue numbers once
+  filed.
+- Don't duplicate issue bodies here — link to GitHub for the real text.
+- Keep file:line anchors honest: re-confirm them at plan time (line numbers
+  drift after merges).
