@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Icon, type IconName } from "../icons";
 import { Chain } from "../shell/Chain";
-import { DiagLog } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { applyToKodi, type ApplyResult } from "../apply";
 import { isAvrChain, type ScreenId } from "../steps";
@@ -120,24 +119,20 @@ export function TestSetup({ go, state, set }: ScreenProps) {
                 </div>
                 {!copied ? (
                   <button className="btn primary" onClick={() => setCopied(true)}>
-                    <Icon name="download" size={13} /> Copy test disc
+                    <Icon name="download" size={13} /> How to add a test file
                   </button>
                 ) : (
-                  <DiagLog
-                    title="Copying test disc"
-                    checks={[
-                      { status: "pass", label: "OPPO-Installer-Test-2160p.iso", detail: "4.2 GB · copied OK" },
-                      { status: "pass", label: "Path eligibility tag", detail: "contains '2160p' · disc-style" },
-                      { status: "pass", label: "Reachable from Kodi box", detail: "confirmed via SFTP read" },
-                    ]}
-                    footer={
-                      <>
-                        Copied. <strong>Rescan your Kodi library</strong> so the test file
-                        appears, then play it from Kodi.
-                      </>
-                    }
-                    footerKind="success"
-                  />
+                  <div className="callout info">
+                    <span className="callout-icon">
+                      <Icon name="info" size={13} stroke={2.2} />
+                    </span>
+                    <div className="callout-body">
+                      Automated copy isn't wired up yet. Copy a tagged UHD test file (a
+                      name containing <code>2160p</code> or <code>UHD</code>) onto the
+                      share yourself, <strong>rescan your Kodi library</strong> so it
+                      appears, then play it from Kodi.
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

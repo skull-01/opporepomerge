@@ -164,8 +164,8 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
                   <Icon name="info" size={13} stroke={2.2} />
                 </span>
                 <div className="callout-body">
-                  Sent <code>switch-to HDMI{picked}</code> via{" "}
-                  <code>{state.tvBackend || "roku_ecp"}</code>. Do you see{" "}
+                  Switch your TV or receiver to <code>HDMI {picked}</code> with your
+                  remote — the configurator can't drive the switch yet. Do you see{" "}
                   {step === "oppo" ? "the OPPO" : "Kodi"} on screen?
                 </div>
               </div>
