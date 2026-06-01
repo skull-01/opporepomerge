@@ -1,10 +1,10 @@
-"""PR A1: four-option playback architecture preset mapping + migration.
+"""Six-option playback architecture preset mapping + migration.
 
 These pin the two new normalized axes (``playback_monitor_mode`` alongside the
 existing ``playback_architecture``) and the combined
 ``playback_architecture_preset`` so they cannot drift apart:
 
-* ``architecture_preset()`` maps a routing axis + monitor axis to one of the four
+* ``architecture_preset()`` maps a routing axis + monitor axis to one of the six
   preset ids, accepting both the stored ``external_player`` spelling and the
   ``playercorefactory`` preset spelling.
 * ``normalize_architecture()`` treats an explicit, valid preset as the source of
@@ -90,6 +90,11 @@ class ArchitecturePresetMapping(unittest.TestCase):
             sr.architecture_preset("  EXTERNAL_PLAYER ", " SVM3 "), "playercorefactory_svm3"
         )
 
+    def test_http_handoff_combos(self):
+        self.assertIn("http_handoff", sr.PLAYBACK_ROUTING_MODES)
+        self.assertEqual(sr.architecture_preset("http_handoff", "legacy"), "http_handoff_legacy")
+        self.assertEqual(sr.architecture_preset("http_handoff", "svm3"), "http_handoff_svm3")
+
 
 class NormalizeArchitecture(unittest.TestCase):
     def test_explicit_preset_is_source_of_truth(self):
@@ -168,12 +173,28 @@ class NormalizeArchitecture(unittest.TestCase):
         )
         self.assertEqual(norm["preset"], "service_interception_legacy")
 
+    def test_http_handoff_preset_is_source_of_truth(self):
+        norm = sr.normalize_architecture(
+            sr.Settings({"playback_architecture_preset": "http_handoff_svm3"})
+        )
+        self.assertEqual(norm["routing"], "http_handoff")
+        self.assertEqual(norm["monitor_mode"], "svm3")
+
+    def test_http_handoff_backfills_from_legacy_fields(self):
+        norm = sr.normalize_architecture(
+            sr.Settings(
+                {"playback_architecture": "http_handoff", "playback_monitor_mode": "legacy"}
+            )
+        )
+        self.assertEqual(norm["preset"], "http_handoff_legacy")
+        self.assertEqual(norm["routing"], "http_handoff")
+
 
 class PresetConsistencyGuard(unittest.TestCase):
     def test_every_preset_round_trips(self):
         # Pin preset <-> normalized: normalizing a settings object carrying only a
         # preset must yield routing/monitor that map back to the same preset.
-        self.assertEqual(len(sr.PLAYBACK_ARCHITECTURE_PRESETS), 4)
+        self.assertEqual(len(sr.PLAYBACK_ARCHITECTURE_PRESETS), 6)
         for preset in sr.PLAYBACK_ARCHITECTURE_PRESETS:
             norm = sr.normalize_architecture(sr.Settings({"playback_architecture_preset": preset}))
             self.assertEqual(norm["preset"], preset)
