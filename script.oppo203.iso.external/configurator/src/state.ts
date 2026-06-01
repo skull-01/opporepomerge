@@ -95,6 +95,12 @@ export type WizardState = {
   // SVM3 (verbose mode 3) capability as probed in the Step 2 player test: true/false once
   // probed, null before. Drives the recommended Playback-mode default (Step 3).
   svm3Supported: boolean | null;
+  // How the OPPO addresses the media share for http_handoff (/playnormalfile?path=...): the
+  // Kodi-visible prefix is rewritten oppoPathFrom -> oppoPathTo; oppoDiscFolderRoot hands the
+  // player the disc folder root rather than the full file path.
+  oppoPathFrom: string;
+  oppoPathTo: string;
+  oppoDiscFolderRoot: boolean;
 
   playerInput: InputAddress;
   kodiInput: InputAddress;
@@ -121,8 +127,8 @@ export const INITIAL_STATE: WizardState = {
   tier: null,
   kodiVerified: false,
   topology: null,
-  playbackArchitecture: "external_player",
-  monitorMode: "legacy",
+  playbackArchitecture: "http_handoff",
+  monitorMode: "svm3",
   kodiPlatform: null,
   pythonPath: "/usr/bin/python3",
   smbSharePath: "\\\\10.0.1.42\\Kodi",
@@ -151,6 +157,9 @@ export const INITIAL_STATE: WizardState = {
   playerIp: "10.0.1.77",
   playerVerified: false,
   svm3Supported: null,
+  oppoPathFrom: "",
+  oppoPathTo: "",
+  oppoDiscFolderRoot: true,
   playerInput: null,
   kodiInput: null,
   testMode: null,

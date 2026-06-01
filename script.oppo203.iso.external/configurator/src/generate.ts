@@ -54,6 +54,11 @@ export function userdataDirForPlatform(platform: KodiPlatform): string {
   return PATHS_BY_PLATFORM[platform].userdata;
 }
 
+/** The Kodi addons directory for a platform (where the add-on folder is installed). */
+export function addonsDirForPlatform(platform: KodiPlatform): string {
+  return PATHS_BY_PLATFORM[platform].addons;
+}
+
 function indent(text: string, prefix: string): string {
   return text
     .split("\n")

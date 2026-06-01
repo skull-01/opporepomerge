@@ -1,6 +1,6 @@
 [package]
 name = "oppokodiaddon-configurator"
-version = "0.5.0"
+version = "0.6.0"
 description = "Windows configurator for the script.oppo203.iso.external Kodi add-on"
 authors = ["Kodi OPPO 203 ISO External Player maintainers"]
 license = "MIT"
@@ -18,6 +18,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+zip = { version = "2", default-features = false, features = ["deflate"] }
 
 [features]
 custom-protocol = ["tauri/custom-protocol"]

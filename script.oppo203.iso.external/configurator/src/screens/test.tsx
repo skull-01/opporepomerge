@@ -3,7 +3,7 @@ import { Icon, type IconName } from "../icons";
 import { Chain } from "../shell/Chain";
 import { DiagLog } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
-import { applyToKodi, type ApplyResult } from "../apply";
+import { applyToKodi, installAddonToKodi, type ApplyResult } from "../apply";
 import { isAvrChain, type ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
@@ -527,16 +527,23 @@ export function TestSuccess({ go, state }: ScreenProps) {
 
   const apply = async () => {
     setApplying(true);
-    setResult(await applyToKodi(state));
+    const install = await installAddonToKodi(state);
+    if (!install.ok) {
+      setResult(install);
+      setApplying(false);
+      return;
+    }
+    const applied = await applyToKodi(state);
+    setResult({ ok: applied.ok, detail: `${install.detail} ${applied.detail}` });
     setApplying(false);
   };
 
   const applyLabel =
     state.tier === "A"
-      ? "Apply to Kodi (SSH + restart)"
+      ? "Install add-on + apply (SSH + restart)"
       : state.tier === "B"
-        ? "Apply to Kodi (SMB)"
-        : "Generate files to copy";
+        ? "Install add-on + apply (SMB)"
+        : "Bundle add-on + generate files";
 
   return (
     <div className="screen">
