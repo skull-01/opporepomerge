@@ -5,7 +5,13 @@ import { invoke } from "../ipc";
 import { parseOppoPowerReply } from "../probes";
 import { livenessTargets, type LivenessTarget } from "../dashboard_targets";
 import { canStartLiveStream, readOppoStatus, type StatusReadResult } from "../dashboard_status";
-import type { OppoSessionState, OppoSessionStatus } from "../oppo_status";
+import {
+  formatEpochAge,
+  isStatusFresh,
+  type OppoSessionPhase,
+  type OppoSessionState,
+  type OppoSessionStatus,
+} from "../oppo_status";
 import type { ScreenProps } from "./types";
 
 // How often the dashboard re-checks device liveness + session status while it is open.
@@ -47,6 +53,12 @@ function stateBadge(s: OppoSessionState): { label: string; color: string } {
   return { label: "ended", color: "#16A34A" };
 }
 
+const PHASE_LABEL: Record<OppoSessionPhase, string> = {
+  launching: "launching",
+  monitoring: "monitoring",
+  ended: "ended",
+};
+
 function baseName(path: string): string {
   return path.split(/[\\/]/).pop() || path;
 }
@@ -83,6 +95,11 @@ function SessionCard({ result }: { result: StatusReadResult | null }) {
   } else {
     const s: OppoSessionStatus = result.status;
     const badge = stateBadge(s.sessionState);
+    const startedAge = formatEpochAge(s.startedAt);
+    const updatedAge = formatEpochAge(s.updatedAt);
+    const fresh = isStatusFresh(s.updatedAt);
+    // Only call a still-"starting" session stale: an ended record is meant to stop refreshing.
+    const showStale = fresh === false && s.sessionState === "starting";
     body = (
       <div className="stack-sm">
         <div className="row" style={{ gap: 8, alignItems: "center" }}>
@@ -98,11 +115,28 @@ function SessionCard({ result }: { result: StatusReadResult | null }) {
           >
             {badge.label}
           </span>
+          {s.phase && (
+            <span className="muted" style={{ fontSize: 11, fontFamily: "var(--font-mono)" }}>
+              {PHASE_LABEL[s.phase]}
+            </span>
+          )}
           <span style={{ fontSize: 13 }}>{baseName(s.mediaFile) || "(no media)"}</span>
         </div>
         <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
           {s.architecturePreset} · {s.routingMode} · monitor {s.monitorMode}
         </span>
+        {(startedAge || updatedAge) && (
+          <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+            {startedAge ? `started ${startedAge}` : ""}
+            {startedAge && updatedAge ? " · " : ""}
+            {updatedAge ? `updated ${updatedAge}` : ""}
+            {showStale ? (
+              <span style={{ color: "#DC2626" }}> · stale (add-on may have exited)</span>
+            ) : (
+              ""
+            )}
+          </span>
+        )}
         <div className="row" style={{ gap: 16 }}>
           <ConfirmFlag on={s.confirmedPlayback} label="playback confirmed" />
           <ConfirmFlag on={s.confirmedProgress} label="progress confirmed" />
@@ -147,6 +181,10 @@ export function Dashboard({ go, state }: ScreenProps) {
   useEffect(() => {
     streamingRef.current = streaming;
   }, [streaming]);
+  // The live stream auto-starts once the first status read clears the dual-subscriber gate. These
+  // refs keep that to a single attempt and let a manual Stop stick (no immediate auto-restart).
+  const autoStartedRef = useRef(false);
+  const userStoppedRef = useRef(false);
 
   useEffect(() => {
     let alive = true;
@@ -169,6 +207,30 @@ export function Dashboard({ go, state }: ScreenProps) {
         void invoke("stop_oppo_live_monitor").catch(() => {});
         setStreaming(false);
         setStreamErr("Stopped: the add-on started a playback session.");
+      }
+      // Auto-start the live stream once the first read clears the dual-subscriber gate, so the
+      // dashboard begins streaming on open without a manual click. Only one attempt, and never
+      // after a manual Stop or while the add-on owns the session.
+      if (
+        !autoStartedRef.current &&
+        !userStoppedRef.current &&
+        !streamingRef.current &&
+        canStartLiveStream(sess.status).allowed
+      ) {
+        autoStartedRef.current = true;
+        streamingRef.current = true;
+        setStreamErr(null);
+        setFrames([]);
+        try {
+          await invoke("start_oppo_live_monitor", { host: state.playerIp, port: 23 });
+          if (!alive) return;
+          setStreaming(true);
+        } catch (e) {
+          if (!alive) return;
+          streamingRef.current = false;
+          setStreamErr(`Could not start: ${String(e)}`);
+          setStreaming(false);
+        }
       }
     };
     void runAll();
@@ -203,6 +265,8 @@ export function Dashboard({ go, state }: ScreenProps) {
       setStreamErr(gate.reason);
       return;
     }
+    // A manual Start clears the "user stopped" latch so the stream behaves normally again.
+    userStoppedRef.current = false;
     setStreamErr(null);
     setFrames([]);
     try {
@@ -215,6 +279,8 @@ export function Dashboard({ go, state }: ScreenProps) {
   };
 
   const stopStream = async () => {
+    // Remember the user stopped on purpose so the auto-start does not immediately reopen it.
+    userStoppedRef.current = true;
     try {
       await invoke("stop_oppo_live_monitor");
     } catch {
@@ -332,8 +398,9 @@ export function Dashboard({ go, state }: ScreenProps) {
         </div>
         <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
           Opens the configurator's own <code>#SVM 3</code> connection to the player and restores
-          the prior verbose mode on stop. Disabled while the add-on owns a session, so the two
-          never drive the player's device-global verbose mode at once.
+          the prior verbose mode on stop. Starts automatically when the dashboard opens; disabled
+          (and dropped) while the add-on owns a session, so the two never drive the player's
+          device-global verbose mode at once.
         </div>
       </div>
 
@@ -342,9 +409,10 @@ export function Dashboard({ go, state }: ScreenProps) {
           <Icon name="info" size={13} stroke={2.2} />
         </span>
         <div className="callout-body">
-          This is a network-reachability check, not a full health report — the TV isn't listed
-          because the wizard doesn't store a TV address. Software-verified: liveness, session
-          status, and the live stream depend on the real devices answering.
+          This is a network-reachability check, not a full health report — each device is listed
+          once the wizard has stored an address and a backend with a plain TCP control port (the
+          TV appears after Step 4 captures its IP on a Roku ECP / ADB / Sony backend). Software-verified:
+          liveness, session status, and the live stream depend on the real devices answering.
         </div>
       </div>
 
