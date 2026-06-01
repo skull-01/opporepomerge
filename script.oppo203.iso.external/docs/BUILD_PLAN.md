@@ -12,8 +12,10 @@ trigger and is allowed to lag the live state between refreshes. Phase/PR IDs
 below are **planning placeholders** (`ENH-…`) until the operator files the
 matching `area:configurator` / `area:addon` issues.
 
-**Last refreshed:** 2026-06-01 · **committed to `main`** together with the
-six-preset matrix norm (`AGENTS.md`) + the handoff §4 pointer.
+**Last refreshed:** 2026-06-02 · added **D-4** (NAS-path observe-and-verify
+capture + manual fallback, **SMB/NFS only**) and **Phase 1b**. Prior: 2026-06-01 · **committed to
+`main`** together with the six-preset matrix norm (`AGENTS.md`) + the handoff §4
+pointer.
 
 **This file lives on `main`; feature branches should not edit it** (causes
 add/add merge conflicts per the session-continuity convention).
@@ -143,6 +145,20 @@ power-cycle/mount/play, test-file copy) plus the **add-on copy** is the new work
   would force configurator-wide add-on-id parameterisation (`generate.ts:19`
   threads everywhere) + 6× releases for zero runtime benefit. The configurator
   copies one add-on and writes the chosen preset.
+- **D-4 · NAS-path capture = observe-and-verify (primary), manual entry
+  (fallback). (locked 2026-06-02)** The OPPO-visible path can't be guessed, so
+  the configurator *learns* it: the user plays a file in Kodi (configurator reads
+  the exact Kodi path over SSH via JSON-RPC `Player.GetItem{file}`), then plays
+  the **same** file on the OPPO (configurator auto-reads the path from the
+  undocumented HTTP `/getmovieplayinfo` + confirms via `#QFN` and SVM3
+  `@UPL PLAY`), diffs the two → `oppo_http_path_from/to`, and **proves** it by
+  firing `/playnormalfile` and watching SVM3. **Fallback** (if `/getmovieplayinfo`
+  lacks the path — hardware-TBD): the user types the OPPO-visible share root with
+  in-UI SMB/NFS syntax reminders (see the §3 foundational-dependency
+  table). The documented RS-232/IP protocol does **not** return the playing path
+  (only the truncated `#QFN` filename + the `#QDR` browse tree), so the HTTP API
+  or manual entry is unavoidable. Built as **Phase 1b** (§4); the manual fallback
+  is the small part already on the #170 branch.
 
 ### Open decisions
 
@@ -167,8 +183,44 @@ Both D-A and D-B require the configurator to learn **the path the OPPO sees**
 for the media share. `http_handoff` plays via `/playnormalfile?path=<oppo-path>`
 and the code admits *"the wizard cannot know the player's NAS mount namespace,
 so the operator sets it"* (`mapping.ts:176-177`). Until captured, an
-`http_handoff_svm3` default is **written but inert**. → Captured early (Phase 1
-PR-1.3), in the "OPPO access" step.
+`http_handoff_svm3` default is **written but inert**.
+
+**Resolved (D-4) — observe-and-verify capture, manual fallback.** The path is
+*learned*, not guessed:
+
+1. **Capture the Kodi path (auto).** The user plays a file in Kodi; the
+   configurator reads the exact path over the existing SSH channel via Kodi
+   JSON-RPC — `Player.GetActivePlayers` → `Player.GetItem{properties:["file"]}`
+   (fallbacks: raw JSON-RPC TCP `:9090`, or tail `~/.kodi/temp/kodi.log`).
+2. **Capture the OPPO path (auto, hardware-TBD).** The user plays the **same**
+   file on the OPPO; the configurator auto-reads the OPPO-visible path from the
+   undocumented HTTP `/getmovieplayinfo` (port 436, already fetched raw by
+   `oppo_control.probe_player_status`) and confirms identity via `#QFN`
+   (truncated filename) + liveness via SVM3 `@UPL PLAY`.
+3. **Derive + verify.** Diff Kodi-path vs OPPO-path → `oppo_http_path_from/to`;
+   fire `/playnormalfile` and use SVM3 `@UPL PLAY` + `#QFN` as the pass/fail
+   oracle, iterating until it plays.
+
+⚠️ The **documented** RS-232/IP protocol does *not* report the playing path —
+`#QFN` is a truncated filename (`OK Rocky Mou*.wav`) and `#QDR` only walks the
+browse tree (SMB/NFS/DLNA servers shown as *labels*, e.g. `S MyPC`). So
+auto-capture rides the **undocumented** HTTP API; if `/getmovieplayinfo` lacks
+the path, the flow falls back to **manual entry**.
+
+**Manual-entry share-syntax reminder** — the Kodi-visible `from` path the user
+copies (shown in the fallback field):
+
+| Share | Kodi URL form | Example |
+|---|---|---|
+| **SMB** (Windows / Samba) | `smb://[user[:pass]@]host/share/path/file` | `smb://192.168.1.10/Movies/Film.iso` |
+| **NFS** (Unix export) | `nfs://host/export/path/file` | `nfs://192.168.1.10/volume1/Movies/Film.iso` |
+
+The OPPO-visible `to` is the player's own mount label (e.g. the SMB server name
+`MyPC` as the OPPO shows it in its browser), **not** the IP — which is why it
+must be observed or entered, not derived from the Kodi URL. *Scope: SMB and NFS
+only* — these are the share types the OPPO's own browser natively lists
+(`S MyPC` / `N MyNFS`). WebDAV / FTP are out of scope: for `http_handoff` the
+**OPPO itself** must reach the share, and it can't necessarily mount those.
 
 ---
 
@@ -211,10 +263,12 @@ additive-only (pinned by `apply.test.ts` / `mapping.test.ts` / `generate.test.ts
   Tier B extracts with the `zip` crate (pattern of `deploy_to_userdata`
   `lib.rs:117-146`); Tier C drops the ZIP for Kodi "Install from zip". *Tests:*
   Rust extraction + backup unit tests.
-- **PR-1.3 — Capture OPPO NAS path** (~120): add `oppoMediaRoot` / `oppoPathFrom`
-  / `oppoPathTo` to `state.ts:58-103` + `INITIAL_STATE`; capture screen near the
-  OPPO IP input (`step2.tsx:76-84`); emit `oppo_http_path_from/to` +
-  `oppo_http_disc_folder_root` in `mapping.ts:173-179`. *Tests:* `mapping.test.ts`
+- **PR-1.3 — OPPO NAS-path manual entry (D-4 fallback)** (~120): the state
+  plumbing is **already on the #170 branch** (`oppoPathFrom`/`oppoPathTo` in
+  `state.ts` + `INITIAL_STATE`, emitted by `mapping.ts:180-181` when set). This PR
+  adds the **manual-entry field with the SMB/NFS share-syntax reminder**
+  (§3 table) near the OPPO step (`step2.tsx:76-84`) + `oppo_http_disc_folder_root`.
+  The **primary** auto-capture is **Phase 1b**. *Tests:* `mapping.test.ts`
   http_handoff → correct `oppo_http_*`.
 - **PR-1.4 — Wire install + default** (~140): `INITIAL_STATE.playbackArchitecture
   = "http_handoff"`, `monitorMode = "svm3"` (`state.ts:124-125`);
@@ -226,6 +280,37 @@ additive-only (pinned by `apply.test.ts` / `mapping.test.ts` / `generate.test.ts
 Dep: `1.1 → 1.2 → 1.4`; `1.3 → 1.4`. **Risk:** binary expand; Tier A needs
 `python3` on box; the default is only as good as PR-1.3's path; add-on
 *enabled* ≠ present (D-3).
+
+### 🟩 Phase 1b — NAS-path auto-capture (observe-and-verify; D-4 primary)
+
+**Theme:** *learn* the OPPO-visible path instead of asking for it, so the
+`http_handoff_svm3` default becomes **functional**, not just written. Reuses the
+SSH channel (`run_ssh_capture` `lib.rs:309`), `oppo_query` (`#QFN`/`#QPL`), and
+the SVM3 live monitor (`start_oppo_live_monitor` `lib.rs:555`); PR-1.3's manual
+field stays as the fallback. **Frozen:** the path-rewrite contract
+(`oppo_control._translate_media_path` `oppo_http_path_from/to`), pinned by
+`mapping.test.ts` + the add-on's `_translate_media_path` tests.
+
+- **PR-1b.1 — Kodi now-playing over SSH** (~120): Rust `kodi_now_playing` runs
+  Kodi JSON-RPC `Player.GetActivePlayers` → `Player.GetItem{properties:["file"]}`
+  via `run_ssh_capture` (fallback: tail `~/.kodi/temp/kodi.log`); returns the
+  exact Kodi path. *Tests:* Rust JSON-RPC + log-line parse (fixtures).
+- **PR-1b.2 — OPPO path auto-read + derive** (~140): extend `probe_player_status`
+  to parse the OPPO-visible path out of `/getmovieplayinfo`; a pure
+  `deriveRewrite(kodiPath, oppoPath)` → `oppo_http_path_from/to`; confirm file
+  identity via `#QFN`. *Tests:* `deriveRewrite` table (SMB/NFS prefixes) +
+  a playinfo-parse fixture. **Hardware-gated:** whether `/getmovieplayinfo`
+  carries the path is unverified — the operator probe decides; else manual.
+- **PR-1b.3 — Verify-by-playing loop** (~140): fire `/playnormalfile` from the
+  derived rewrite and gate on SVM3 `@UPL PLAY` + `#QFN` match as the pass/fail
+  oracle (reuse the live monitor); iterate, escalate to manual on failure.
+  *Tests:* loop state-machine units (mocked monitor).
+
+Dep: `1b.1 → 1b.2 → 1b.3`; needs Phase 1 (preset wired) + Phase 2's SSH-first
+creds. **Risk (high, hardware-gated):** auto-read only works if
+`/getmovieplayinfo` exposes the path; the `/playnormalfile` format is
+undocumented, so the verify loop is the real proof — none of it is in-session
+verifiable (operator Phase B/C).
 
 ### 🟩 Phase 2 — re-sequence to the SSH-first flow + 🟦 add-on handshake
 
@@ -312,7 +397,8 @@ stay user-confirmed; label honestly.
 | Phase | Track | ~PRs | Headline risk |
 |---|---|---|---|
 | 0 Add-on build | 🟦 | 1 (release) | Release mechanics only; no new code |
-| 1 Install + default | 🟩 | 4 | Binary expand; inert default until NAS path; enable≠present |
+| 1 Install + default | 🟩 | 4 | Binary expand; inert default until NAS path (Ph1b); enable≠present |
+| 1b NAS-path auto-capture | 🟩 | 3 | Auto-read only if `/getmovieplayinfo` carries the path; verify-by-playing is the proof; hardware-gated |
 | 2 Re-sequence + handshake | 🟩+🟦 | 4 | Names↔UI sync; cross-area add-on build |
 | 3 HDMI test | 🟩 | 3 | Backends rarely confirm a switch |
 | 4 OPPO self-test | 🟩 | 4 | Multi-GB copy + mount namespace; fully hardware-gated |
