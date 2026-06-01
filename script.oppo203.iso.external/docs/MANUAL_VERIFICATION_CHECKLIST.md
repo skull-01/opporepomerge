@@ -31,6 +31,13 @@ implementing SHA(s) on the issue and append a row here.
 
 ## Phase A — pre-merge
 
+### Configurator — Live Session Dashboard: device liveness (Theme 2 / PR D1)
+
+- **Open draft** on branch `claude/cfg-live-dashboard-shell-7c1a9f2e` (PR-only theme, no tracked issue; first of three stacked dashboard PRs D1→D2→D3). **Not merged.**
+- **What changed (software-verified only):** adds a new terminal **`dashboard`** screen reachable from the final "Setup verified" screen (a new **Live dashboard** button on `screens/test.tsx` `TestSuccess`). It polls device liveness every 6s, reusing the existing one-shot Tauri commands — `tcp_probe` for the Kodi box (SSH :22, or SMB :445 for tier B) and the AV receiver (AVR chain only; control port by backend: Denon/Marantz 23, Yamaha 80, Onkyo/Pioneer 60128), and `oppo_query #QPW` + `parseOppoPowerReply` for the player (reachability + power state). A new pure helper `dashboard_targets.ts` (`livenessTargets(state)`) derives which devices to probe from saved state; the **TV is intentionally omitted** (the wizard never persists a TV IP). Routing wired in `steps.ts` (`ScreenId` / `SCREEN_TO_STEP` / `SCREEN_TO_CHAIN`, mapped to the Test step) + `App.tsx`. **No Rust change, no new dependency, no add-on change, no new emitted settings** — read-only liveness. New `dashboard_targets.test.ts` (5 tests). Gate: `tsc --noEmit` + **163 vitest** + `vite build` green.
+- **Operator verifies (Phase A):** read `dashboard_targets.ts` + its 5 tests, `screens/dashboard.tsx`, and the `steps.ts` / `App.tsx` / `test.tsx` wiring; confirm it is additive (the wizard flow + emitted settings are untouched) and the dashboard is reachable only from `test_success` and returns there.
+- **Operator verifies (Phase C — built app + real devices):** launch the configurator, finish setup, open **Live dashboard**, and confirm each device's dot reflects reality — Kodi box reachable, the OPPO showing power on/off, and (AVR chain) the receiver reachable; power a device off and confirm the dot flips within ~6s. Liveness depends on the real devices answering. **Not hardware-validated.**
+
 ### Add-on + configurator — http_handoff routing: six-option playback (PRs #154/#155/#156/#157)
 
 - **Merged to `main`:** PR #154 `b630b85` (addon presets, reader-only) · #155 `87fbfc6` (addon launch branch) · #156 `4b4d950` (configurator routing pill) · #157 `37e50e9` (configurator JSON payload mode). PR-only theme; extends the four-option architecture to **six** by adding `http_handoff` as a third routing value.

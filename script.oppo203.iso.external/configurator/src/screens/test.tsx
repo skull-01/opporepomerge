@@ -621,6 +621,9 @@ export function TestSuccess({ go, state }: ScreenProps) {
           <button className="btn primary lg" onClick={apply} disabled={applying}>
             <Icon name="download" size={14} /> {applying ? "Applying…" : applyLabel}
           </button>
+          <button className="btn outline" onClick={() => go("dashboard")}>
+            <Icon name="network" size={14} /> Live dashboard
+          </button>
           <button className="btn outline" onClick={() => go("step0_gate")}>
             <Icon name="check" size={14} /> Done
           </button>
