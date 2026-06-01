@@ -1355,16 +1355,217 @@ fn avr_switch_sony_audio(
     device_response_ok(&resp)
 }
 
+// ============================================================
+// TV input switching (Phase 3.1) -- per-backend builders + fire
+// ============================================================
+//
+// Mirrors resources/lib/tv/. Sony Bravia switches directly over its REST API (X-Auth-PSK
+// setPlayContent). The command-based backends (adb / lg / samsung / custom) run on the Kodi box
+// over the existing SSH channel exactly as the add-on's tv_control does on-device. SmartThings
+// builds its cloud request for display/confirmation -- HTTPS firing is out of scope (no TLS crate).
+// Builders are unit-tested; the fire commands are best-effort + hardware-pending.
+
+const SONY_BRAVIA_PORT: u16 = 80;
+
+/// The Sony Bravia `setPlayContent` body selecting an HDMI port (`extInput:hdmi?port=N`).
+fn sony_bravia_set_input_body(port: u32) -> String {
+    serde_json::json!({
+        "method": "setPlayContent",
+        "version": "1.0",
+        "id": 1,
+        "params": [{"uri": format!("extInput:hdmi?port={port}")}]
+    })
+    .to_string()
+}
+
+/// Switch a Sony Bravia TV to an HDMI port over its REST API (POST /sony/avContent, X-Auth-PSK),
+/// mirroring _sony_set_hdmi in tv_control.py. Best-effort + hardware-pending.
+#[tauri::command]
+fn tv_switch_sony_bravia(
+    host: String,
+    psk: String,
+    port: u32,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    if psk.trim().is_empty() {
+        return Err("Sony Bravia PSK is required".to_string());
+    }
+    let body = sony_bravia_set_input_body(port);
+    let extra = format!("X-Auth-PSK: {}\r\n", psk.trim());
+    let request = json_post_request(&host, SONY_BRAVIA_PORT, "/sony/avContent", &body, &extra);
+    let resp = socket_exchange(
+        &host,
+        SONY_BRAVIA_PORT,
+        request.as_bytes(),
+        timeout_ms.unwrap_or(5000),
+    )?;
+    device_response_ok(&resp)
+}
+
+/// Substitute `{tv_ip}` into a user-configured TV command template (lg / samsung / custom),
+/// mirroring tv_control._run_external's `command.format(tv_ip=...)`.
+fn format_external_command(template: &str, tv_ip: &str) -> Result<String, String> {
+    let cmd = template.trim();
+    if cmd.is_empty() {
+        return Err("TV command is empty".to_string());
+    }
+    Ok(cmd.replace("{tv_ip}", tv_ip))
+}
+
+/// Build the on-box adb shell line that selects a TV input, mirroring tv_adb_control: connect, then
+/// `adb -s host:port shell <command>`. Run on the Kodi box over SSH, where adb lives.
+fn adb_switch_command_line(
+    adb_path: &str,
+    host: &str,
+    port: u16,
+    command: &str,
+) -> Result<String, String> {
+    let cmd = command.trim();
+    if cmd.is_empty() {
+        return Err("adb shell command is empty".to_string());
+    }
+    let adb = adb_path.trim();
+    let adb = if adb.is_empty() { "adb" } else { adb };
+    Ok(format!(
+        "{adb} connect {host}:{port} >/dev/null 2>&1; {adb} -s {host}:{port} shell {cmd}"
+    ))
+}
+
+/// Switch an LG / Samsung / custom TV input by running its configured command on the Kodi box over
+/// SSH (the add-on runs the same command on-device). Best-effort + hardware-pending.
+#[tauri::command]
+fn tv_switch_external(
+    ssh_host: String,
+    ssh_user: String,
+    template: String,
+    tv_ip: String,
+) -> Result<String, String> {
+    validate_ssh_target(&ssh_host, &ssh_user)?;
+    let command = format_external_command(&template, &tv_ip)?;
+    let out = run_ssh_capture(&format!("{ssh_user}@{ssh_host}"), &command)?;
+    Ok(first_line_or_sent(&out))
+}
+
+/// Switch a TV input via adb run on the Kodi box over SSH (adb connect + `adb shell <command>`).
+/// Best-effort + hardware-pending.
+#[tauri::command]
+fn tv_switch_adb(
+    ssh_host: String,
+    ssh_user: String,
+    adb_path: String,
+    tv_host: String,
+    tv_port: u16,
+    adb_command: String,
+) -> Result<String, String> {
+    validate_ssh_target(&ssh_host, &ssh_user)?;
+    validate_ssh_component("tv_host", &tv_host)?;
+    let command = adb_switch_command_line(&adb_path, &tv_host, tv_port, &adb_command)?;
+    let out = run_ssh_capture(&format!("{ssh_user}@{ssh_host}"), &command)?;
+    Ok(first_line_or_sent(&out))
+}
+
+/// The SmartThings cloud `commands` URL for a device id (`/devices/<id>/commands`).
+fn smartthings_command_url(device_id: &str) -> String {
+    format!(
+        "https://api.smartthings.com/v1/devices/{}/commands",
+        percent_encode(device_id)
+    )
+}
+
+/// The SmartThings `setInputSource` command body for a media input id, mirroring
+/// _build_command_payload in tv_smartthings_control.py.
+fn smartthings_set_input_body(input_id: &str) -> String {
+    serde_json::json!({
+        "commands": [{
+            "component": "main",
+            "capability": "mediaInputSource",
+            "command": "setInputSource",
+            "arguments": [input_id]
+        }]
+    })
+    .to_string()
+}
+
+#[derive(serde::Serialize)]
+struct SmartThingsRequest {
+    url: String,
+    body: String,
+}
+
+/// Build the SmartThings input-switch request (URL + JSON body) for the UI to display/confirm. The
+/// add-on fires this on-device over HTTPS with the user's bearer token; the configurator constructs
+/// it here (HTTPS firing is out of scope -- no TLS crate) so the operator can verify it.
+#[tauri::command]
+fn smartthings_switch_request(
+    device_id: String,
+    input_id: String,
+) -> Result<SmartThingsRequest, String> {
+    if device_id.trim().is_empty() {
+        return Err("SmartThings device id is required".to_string());
+    }
+    if input_id.trim().is_empty() {
+        return Err("SmartThings input id is required".to_string());
+    }
+    Ok(SmartThingsRequest {
+        url: smartthings_command_url(device_id.trim()),
+        body: smartthings_set_input_body(input_id.trim()),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
-        classify_frame, denon_input_command, device_response_ok, eiscp_frame, eiscp_input_payload,
-        extract_zip_into, first_line_or_sent, http_get_request, json_post_request,
-        kodi_enable_body, kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
+        adb_switch_command_line, classify_frame, denon_input_command, device_response_ok,
+        eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
+        format_external_command, http_get_request, json_post_request, kodi_enable_body,
+        kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
         oppo_play_request, oppo_signin_request, parse_addon_version, parse_kodi_active_player_id,
         parse_kodi_log_file, parse_kodi_player_file, parse_verbose_mode, percent_encode,
-        roku_keypress_request, sony_audio_set_input_payload, to_hex, yamaha_input_path,
+        roku_keypress_request, smartthings_command_url, smartthings_set_input_body,
+        sony_audio_set_input_payload, sony_bravia_set_input_body, to_hex, yamaha_input_path,
     };
+
+    #[test]
+    fn sony_bravia_body_selects_hdmi_port() {
+        let body = sony_bravia_set_input_body(2);
+        assert!(body.contains(r#""method":"setPlayContent""#));
+        assert!(body.contains(r#""uri":"extInput:hdmi?port=2""#));
+    }
+
+    #[test]
+    fn format_external_command_substitutes_tv_ip() {
+        assert_eq!(
+            format_external_command("curl http://{tv_ip}/x", "10.0.0.8").unwrap(),
+            "curl http://10.0.0.8/x"
+        );
+        assert!(format_external_command("   ", "10.0.0.8").is_err());
+    }
+
+    #[test]
+    fn adb_switch_command_line_connects_then_shells() {
+        let line = adb_switch_command_line("adb", "10.0.0.7", 5555, "input keyevent KEYCODE_HOME")
+            .unwrap();
+        assert!(line.contains("adb connect 10.0.0.7:5555"));
+        assert!(line.contains("adb -s 10.0.0.7:5555 shell input keyevent KEYCODE_HOME"));
+        assert!(adb_switch_command_line("adb", "10.0.0.7", 5555, "  ").is_err());
+        // empty adb path falls back to `adb`.
+        assert!(adb_switch_command_line("", "10.0.0.7", 5555, "x")
+            .unwrap()
+            .starts_with("adb connect"));
+    }
+
+    #[test]
+    fn smartthings_request_targets_device_commands() {
+        assert_eq!(
+            smartthings_command_url("dev-1"),
+            "https://api.smartthings.com/v1/devices/dev-1/commands"
+        );
+        let body = smartthings_set_input_body("HDMI1");
+        assert!(body.contains(r#""command":"setInputSource""#));
+        assert!(body.contains(r#""capability":"mediaInputSource""#));
+        assert!(body.contains(r#""HDMI1""#));
+    }
 
     #[test]
     fn denon_input_command_builds_si_and_upper_cases() {
@@ -1678,6 +1879,10 @@ pub fn run() {
             avr_switch_eiscp,
             avr_switch_yamaha,
             avr_switch_sony_audio,
+            tv_switch_sony_bravia,
+            tv_switch_external,
+            tv_switch_adb,
+            smartthings_switch_request,
             start_oppo_live_monitor,
             stop_oppo_live_monitor
         ])
