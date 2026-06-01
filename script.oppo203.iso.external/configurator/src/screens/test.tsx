@@ -351,9 +351,9 @@ export function TestConfirm({ go, state }: ScreenProps) {
     : allYes
       ? "See the summary"
       : answers.play === false
-        ? "Fix routing → Step 2"
+        ? "Fix routing → Step 3"
         : answers.switch === false
-          ? "Fix TV → Step 4"
+          ? "Fix TV → Step 5"
           : "Fix keymap → Step 1";
 
   return (
@@ -402,14 +402,14 @@ export function TestConfirm({ go, state }: ScreenProps) {
         <Question
           n="1"
           label="Did the test disc start playing on your player?"
-          owner="Step 2 · Player / playercorefactory routing"
+          owner="Step 3 · Player / playercorefactory routing"
           value={answers.play}
           onChange={(v) => setAnswers({ ...answers, play: v })}
         />
         <Question
           n="2"
           label="Did your TV switch to the player's input?"
-          owner="Step 4 · TV / Step 5 input capture"
+          owner="Step 5 · TV / Step 6 input capture"
           value={answers.switch}
           onChange={(v) => setAnswers({ ...answers, switch: v })}
         />
