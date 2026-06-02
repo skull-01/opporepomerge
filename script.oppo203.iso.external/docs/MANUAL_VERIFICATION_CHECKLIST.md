@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — L12: distinct Samsung TV switch defaults — #256
+
+- **Branch / PR:** `claude/l12-samsung-hdmi-defaults` → [PR #257](https://github.com/skull-01/script.oppo203.iso.external/pull/257) (merged to `main`, `feb7f53`). Issue [#256](https://github.com/skull-01/script.oppo203.iso.external/issues/256). 2026-06-02 full-audit remediation — the final finding.
+- **What changed (software-verified only):** `samsung_oppo_command`/`samsung_kodi_command` defaults were identical (`samsungctl … KEY_HDMI`, which *cycles* inputs, so switching back to Kodi sent the same keypress as switching to the OPPO). Now `KEY_HDMI1` (OPPO) / `KEY_HDMI2` (Kodi) — distinct discrete keys mirroring LG's `HDMI_1`/`HDMI_2` — kept in lock-step across `resources/settings.xml` + `settings_reader.DEFAULTS` and guarded by `test_samsung_switch_defaults_are_distinct`.
+- **Software gates (this machine):** `pytest -n auto` **1155/3**, mypy `--strict` **51/0**, ruff check + `ruff format --check` clean, serial coverage **99%** (gate exit 0).
+- **Operator verifies (Phase C — real hardware):** on a Samsung TV, confirm `KEY_HDMI1`/`KEY_HDMI2` select the OPPO and Kodi inputs respectively, or edit to your input layout. Older Samsung sets that only accept `KEY_HDMI` (cycle) need the commands edited. **Not hardware-validated.**
+
 ### Add-on — H2 follow-up: Pure-HTTP launch fails honestly — #254
 
 - **Branch / PR:** `claude/h2-pure-http-fail-honestly` → [PR #255](https://github.com/skull-01/script.oppo203.iso.external/pull/255) (merged to `main`, `1453a6f`). Issue [#254](https://github.com/skull-01/script.oppo203.iso.external/issues/254). 2026-06-02 full-audit remediation — the deferred High finding, now fixed.
