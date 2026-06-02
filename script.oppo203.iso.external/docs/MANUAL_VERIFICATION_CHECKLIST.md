@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator + add-on — shared playback-preset source (cross-language matrix guard; PR-only)
+
+- **Branch / PR:** `claude/shared-preset-source-7262b0b2` → draft PR (base `main`). PR-only theme (no tracked issue) — the optional hardening flagged in `docs/BUILD_PLAN.md` §6.
+- **What changed (software-verified only):** the six-option playback-preset matrix now has a single cross-language source of truth — `configurator/src/presets-db/playback-presets.json` (routing/monitor modes, the 6 presets in add-on order, `preset_by_axes`, `routing_aliases`). A new add-on guard `tests/test_playback_presets_consistency.py` pins the JSON to `settings_reader`'s `PLAYBACK_ROUTING_MODES` / `PLAYBACK_MONITOR_MODES` / `PLAYBACK_ARCHITECTURE_PRESETS` / `_PRESET_BY_AXES` / `_ROUTING_ALIASES`; a new `presetsdb.ts` loader + `presetsdb.test.ts` pin the TS side; and `mapping.test.ts`'s `CANONICAL_SIX` now **derives from the shared DB** (the manual mirror is gone). **No runtime change** — `settings_reader` keeps its tuples and `mapping.ts` its emission; the JSON is the asserted-equal source. Cross-language preset drift now fails a test instead of relying on the AGENTS.md norm + reviewer.
+- **Software gates (this machine):** add-on `pytest -n auto` **1053 passed / 3 skipped** (+7 parity guard), `ruff check .` clean (new guard `ruff format`-clean); configurator `tsc --noEmit` 0 + `vitest` **266** (+5 `presetsdb`) + `vite build`. mypy / serial-coverage unaffected (no `resources/` production code changed).
+- **Operator verifies (Phase A):** read `playback-presets.json` + `test_playback_presets_consistency.py` (the JSON equals the add-on tuples), `presetsdb.ts` + `presetsdb.test.ts`, and the `mapping.test.ts` `CANONICAL_SIX` now sourced from `PLAYBACK_PRESETS`. No hardware step — pure data + tests, so there is no Phase C.
+
 ### Configurator — Dashboard session-history card (issue #168; stacked on PR #201)
 
 - **Stacked draft:** appdata store #200 → snapshot diff #201 → this session-log PR (base = the #201 branch). Rebuilds the superseded draft #166 on the current dashboard; tracks ENH #168.
