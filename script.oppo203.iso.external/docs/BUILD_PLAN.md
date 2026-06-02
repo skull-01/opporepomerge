@@ -12,7 +12,7 @@ trigger and is allowed to lag the live state between refreshes. Phase/PR IDs
 below are **planning placeholders** (`ENH-…`) until the operator files the
 matching `area:configurator` / `area:addon` issues.
 
-**Last refreshed:** 2026-06-02 (latest) · **GUIDED-INSTALL INITIATIVE SOFTWARE-COMPLETE — all of
+**Last refreshed:** 2026-06-02 (EOD #10) · **▶ ACTIVE INITIATIVE QUEUED: Pure-HTTP/436 OPPO control (PRs 1–6)** — full plan in the **Active initiative** section just below; queued as the next theme (Session A = PR1+PR2). This session shipped add-on **v2.9.14** + configurator **v0.7.0** (both stable; configurator holds the repo "Latest" badge). _Prior:_ **GUIDED-INSTALL INITIATIVE SOFTWARE-COMPLETE — all of
 Phases 0–5 are built + merged to `main`; only operator Phase-C hardware validation + a configurator
 release remain.** This session also built the dashboard-memory follow-on as stacked PRs #200 → #201
 → #202 (issues #167/#168), and confirmed the DB backlog #103/#105 was already implemented on `main`
@@ -37,6 +37,92 @@ _Prior refresh:_ **backend layer for Phases 3/4/5 built + merged to `main`**
 
 **This file lives on `main`; feature branches should not edit it** (causes
 add/add merge conflicts per the session-continuity convention).
+
+---
+
+## ▶ Active initiative (queued 2026-06-02): Pure-HTTP/436 OPPO control — PRs 1–6
+
+> **Status: PLANNED — awaiting build (operator said Go-on-next-resume).** Adopts the
+> Xnoppo Elite V3 / `emby-chinoppo-bridge` (MIT) pure-HTTP/436 control model into **both**
+> the add-on and the configurator. Decision tree: `build/configurator_decision_tree.html`.
+> Reference: `Xnoppo_Elite_V3_OPPO_HTTP_Flows_Functions_Commands.md`.
+
+**Theme.** A literal **7th preset `http_handoff_http`** (launch + monitor + command + mount all
+over HTTP) as the **new default for all installs**; a new **`http` monitor** axis
+(`getglobalinfo`+`getplayingtime`) — the monitor transport (TCP vs HTTP) is the **Step-4 decision**
+and flows through to the post-install process monitor (two provisions); **`checkfolderhasBDMV`-first
+-with-fallback** BD navigation on **both** HTTP and TCP launch paths; **selectable confirm-gated HDMI
+switching** (`play_delay_hdmi`/`av_delay_hdmi`, ISO/BDMV ≥6s); **Refresh Rate** (5s) and **Auto-Healing**
+(ISO resend-once) options. **Frozen & guarded:** the 6 existing presets + their TV/AVR sequencing stay
+byte-identical unless a new (default-off) option is opted into — pinned by `test_architecture_presets.py`,
+`test_playback_session_modes.py`, `test_v2910_build18`, `mapping.test.ts`; OPPO TCP command map untouched.
+
+**PRs (area: 🟦 add-on · 🟩 configurator).**
+
+- **PR 1 — HTTP primitives (🟦 function-only, unwired) ~300 LOC · Low.** `oppo_control.py`:
+  `send_remote_key_http`, `get_global_info`/`global_info_is_playing`, `get_playing_time`,
+  `login_smb`/`login_nfs` + share-lists + `mount_smb`/`mount_nfs` (`lstrip("/")`, no-unmount-first),
+  `check_folder_has_bdmv`, `detect_nfs`. Tests: `test_oppo_http_pure.py` (mock `urlopen`; every failure
+  raises). No matrix/dispatch change.
+- **PR 2 — 7th preset + `http` monitor (🟦🟩 CROSS-AREA, one PR) ~240 LOC · High.** 🟦
+  `PLAYBACK_MONITOR_MODES += "http"` (`settings_reader.py:218`); `PLAYBACK_ARCHITECTURE_PRESETS +=
+  "http_handoff_http"` →7 (`:219`); single cell `("http_handoff","http")` (`:237`); clamp invalid
+  `(routing,"http")` (`:248/:263`); `OppoHttpPlaybackMonitor` (polls every `oppo_http_refresh_seconds`,
+  fallback-safe) + `http` branch in `_dispatch_monitor` (`playback_session.py:151`). 🟩 monitor enum
+  (`state.ts`), combined "Pure HTTP" pill (`step3.tsx`), `mapping.ts:220` yields `http_handoff_http`,
+  shared `playback-presets.json`/`presetsdb.ts` →7. Guards both sides (==6→==7 + clamp + emits-7).
+- **PR 3 — pure-HTTP orchestration: mount + HTTP command + ISO auto-heal + HTTP-path BDMV (🟦) ~260 LOC
+  · High (HW).** Wire into `fast_start_http`: wake (`sendremotekey PON`+UDP) → signin →
+  `getdevicelist`/`detect_nfs` → login → share-list → mount → disc-aware play (ISO `STP`+resend after
+  `oppo_http_iso_autoheal_after_seconds` when `oppo_http_iso_autoheal`; **BDMV → `check_folder_has_bdmv`
+  → fallback `playnormalfile`**; normal → `playnormalfile`) → confirm via `getglobalinfo`. Capability-gated
+  + fallback-safe.
+- **PR 4 — default flip (all installs) + process-monitor TCP/HTTP + docs (🟦🟩) ~160 LOC · High.** 🟩
+  Step-4 default = Pure HTTP; process monitor honors **TCP (QPL/#SVM3) OR HTTP (getglobalinfo)** per the
+  Step-4 choice, refresh `oppo_http_refresh_seconds`; refresh-rate UI. 🟦 `normalize_architecture` keeps
+  legacy derivation when no preset set. Docs: D-A default → `http_handoff_http`; AGENTS norm; checklist.
+- **PR 5 — selectable confirm-gated HDMI switching (🟦🟩 cross-cutting, gated) ~180 LOC · High.** 🟦 new
+  `hdmi_sequencing.py` (`compute_play_delay` → ISO/BDMV `max(play_delay_hdmi,6)`; ordering helper) gated
+  into the shared switch path (confirm source = active monitor; legacy = timed delay). **Default
+  `immediate` = frozen.** 🟩 `hdmi_switch_mode`/`play_delay_hdmi`/`av_delay_hdmi` + UI.
+- **PR 6 — TCP-path BDMV adoption (🟦🟩 frozen-routing, gated) ~140 LOC · High.** Extract PR3's disc-aware
+  play helper; wire `checkfolderhasBDMV`-first-fallback into the **TCP** launch path (`fast_start`,
+  `external_player.py:148`). Setting `oppo_bdmv_checkfolder` (default **on**, capability-gated +
+  fallback-safe to today's `_disc_folder_root`). 🟩 BDMV toggle. Tests pin the **off path = current frozen
+  behavior**.
+
+**Dependency chain.**
+```
+PR1 ─┬─> PR2 ───────────────> PR4
+     ├─> PR3 ──> PR6 ────────> PR4
+     └──────────────────────── PR5 (independent)
+```
+
+**New settings (all 🟩 configurator-owned; the build Go is the AGENTS sign-off for new persistent keys).**
+
+| Setting | Type | Default | Drives | PR |
+|---|---|---|---|---|
+| `playback_architecture_preset` (extended) | enum | derived | adds `http_handoff_http` (7th) | 2 |
+| `oppo_http_refresh_seconds` | int | 5 | monitor + process-monitor poll ("Refresh Rate") | 2/4 |
+| `oppo_http_iso_autoheal` | bool | true | ISO resend-once ("Auto-Healing") | 3 |
+| `oppo_http_iso_autoheal_after_seconds` | int | 20 | auto-heal threshold | 3 |
+| `oppo_bdmv_checkfolder` | bool | true | checkfolderhasBDMV-first (both paths) | 6 |
+| `hdmi_switch_mode` | enum | immediate | selectable confirm-gated HDMI switching | 5 |
+| `play_delay_hdmi` | int | 2 | pre-TV render delay (ISO/BDMV ≥6) | 5 |
+| `av_delay_hdmi` | int | 0 | TV→AVR stagger | 5 |
+
+**Risks.** Undocumented API as default-for-all → every HTTP step fallback-safe (PR3/PR6) is a merge-blocker
+(stock OPPO never bricks). PR5/PR6 touch frozen sequencing/routing → gated (HDMI default-off; BDMV
+fallback-safe default-on), both pin the unchanged path with regression tests. `legacy` monitor has no
+start-confirmation (#113) → `after_playback_confirm` degrades to a timed delay there. **Software-verified
+only** — HTTP/436 mount/monitor/command/BDMV is undocumented + firmware-dependent; PR3/PR5/PR6 real
+behavior is **Phase-C, not hardware-validated**.
+
+**Session split (one theme/session, ≤4 PRs).** Session A: PR1+PR2 (software-complete). Session B:
+PR3+PR6+PR4. Session C: PR5 (independent).
+
+---
+
 
 ---
 
