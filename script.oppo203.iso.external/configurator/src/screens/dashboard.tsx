@@ -13,6 +13,8 @@ import {
   type OppoSessionStatus,
 } from "../oppo_status";
 import { chainNodeViews, type ChainLiveness, type ChainNodeView } from "../dashboard_chain";
+import { captureSettingsSnapshot, type SnapshotResult } from "../dashboard_snapshot";
+import { diffIsEmpty, type SettingsDiff } from "../settings_diff";
 import type { ScreenProps } from "./types";
 
 // How often the dashboard re-checks device liveness + session status while it is open.
@@ -238,6 +240,104 @@ function ChainCard({ nodes }: { nodes: ChainNodeView[] }) {
   );
 }
 
+function fmtWhen(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
+}
+
+function DiffList({ diff }: { diff: SettingsDiff }) {
+  const mono = { fontSize: 12, fontFamily: "var(--font-mono)" } as const;
+  return (
+    <div className="stack-sm">
+      {diff.changed.map((c) => (
+        <div key={`c-${c.id}`} style={mono}>
+          <span style={{ color: "#2563EB" }}>~ {c.id}</span>
+          <span className="muted">: {c.from} → {c.to}</span>
+        </div>
+      ))}
+      {diff.added.map((a) => (
+        <div key={`a-${a.id}`} style={mono}>
+          <span style={{ color: "#16A34A" }}>+ {a.id}</span>
+          <span className="muted">: {a.value}</span>
+        </div>
+      ))}
+      {diff.removed.map((r) => (
+        <div key={`r-${r.id}`} style={mono}>
+          <span style={{ color: "#DC2626" }}>- {r.id}</span>
+          <span className="muted">: {r.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SettingsDiffCard({
+  result,
+  busy,
+  supported,
+  onSnapshot,
+}: {
+  result: SnapshotResult | null;
+  busy: boolean;
+  supported: boolean;
+  onSnapshot: () => void;
+}) {
+  let body: JSX.Element;
+  if (!supported) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        Manual mode - connect over SSH (tier A) or SMB (tier B) to snapshot the box's settings.
+      </span>
+    );
+  } else if (result == null) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        Capture the box's current add-on settings to compare against later.
+      </span>
+    );
+  } else if (!result.ok) {
+    body = <span className="muted" style={{ fontSize: 12 }}>{result.note}</span>;
+  } else if (result.baseline) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        Baseline captured ({result.count} settings). Snapshot again later to see what changed on
+        the box.
+      </span>
+    );
+  } else if (diffIsEmpty(result.diff)) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        No changes since the last snapshot ({fmtWhen(result.prevTakenAt)}).
+      </span>
+    );
+  } else {
+    body = (
+      <div className="stack-sm">
+        <span className="muted" style={{ fontSize: 11 }}>
+          since {fmtWhen(result.prevTakenAt)}
+        </span>
+        <DiffList diff={result.diff} />
+      </div>
+    );
+  }
+  return (
+    <div className="card">
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <h2 className="section-title">Configuration changes</h2>
+        <button className="btn outline" onClick={onSnapshot} disabled={busy || !supported}>
+          <Icon name="refresh" size={13} /> {busy ? "reading…" : "Snapshot now"}
+        </button>
+      </div>
+      <div className="divider" />
+      {body}
+      <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
+        Reads the box's <code>settings.xml</code> and compares it to your last snapshot. Secret
+        values (PSKs, tokens) are masked, so a secret's change shows only as its key.
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({ go, state }: ScreenProps) {
   const targets = livenessTargets(state);
   // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.
@@ -247,6 +347,19 @@ export function Dashboard({ go, state }: ScreenProps) {
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [nonce, setNonce] = useState(0);
+
+  const [snapshot, setSnapshot] = useState<SnapshotResult | null>(null);
+  const [snapshotBusy, setSnapshotBusy] = useState(false);
+  const snapshotSupported = state.tier === "A" || state.tier === "B";
+
+  const takeSnapshot = async () => {
+    setSnapshotBusy(true);
+    try {
+      setSnapshot(await captureSettingsSnapshot(state, new Date().toISOString()));
+    } finally {
+      setSnapshotBusy(false);
+    }
+  };
 
   const [streaming, setStreaming] = useState(false);
   const [frames, setFrames] = useState<LiveFrame[]>([]);
@@ -428,6 +541,13 @@ export function Dashboard({ go, state }: ScreenProps) {
       <SessionCard result={session} />
 
       <ChainCard nodes={chainViews} />
+
+      <SettingsDiffCard
+        result={snapshot}
+        busy={snapshotBusy}
+        supported={snapshotSupported}
+        onSnapshot={takeSnapshot}
+      />
 
       <div className="card">
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>

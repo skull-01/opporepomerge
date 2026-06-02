@@ -1,6 +1,11 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { ADDON_DATA_SETTINGS_REL, mergeSettingsXml, serializeSettingsXml } from "./settings_xml";
+import {
+  ADDON_DATA_SETTINGS_REL,
+  mergeSettingsXml,
+  parseSettingsXml,
+  serializeSettingsXml,
+} from "./settings_xml";
 
 describe("serializeSettingsXml", () => {
   it("emits Kodi v2 settings with sorted ids", () => {
@@ -48,5 +53,30 @@ describe("mergeSettingsXml", () => {
     expect(() => mergeSettingsXml("<advancedsettings/>", { oppo_ip: "x" })).toThrow(
       /refusing to overwrite/,
     );
+  });
+});
+
+describe("parseSettingsXml", () => {
+  it("parses a settings document into an id->value map", () => {
+    const obj = parseSettingsXml(
+      '<settings version="2"><setting id="oppo_ip">10.0.1.77</setting>' +
+        '<setting id="tv_backend">adb</setting></settings>',
+    );
+    expect(obj).toEqual({ oppo_ip: "10.0.1.77", tv_backend: "adb" });
+  });
+
+  it("returns {} for empty or whitespace input (no settings written yet)", () => {
+    expect(parseSettingsXml(null)).toEqual({});
+    expect(parseSettingsXml("")).toEqual({});
+    expect(parseSettingsXml("   ")).toEqual({});
+  });
+
+  it("round-trips with serializeSettingsXml", () => {
+    const settings = { oppo_ip: "10.0.1.77", tv_backend: "adb" };
+    expect(parseSettingsXml(serializeSettingsXml(settings))).toEqual(settings);
+  });
+
+  it("refuses (throws) for a malformed or non-settings document", () => {
+    expect(() => parseSettingsXml("<advancedsettings/>")).toThrow(/refusing to read/);
   });
 });
