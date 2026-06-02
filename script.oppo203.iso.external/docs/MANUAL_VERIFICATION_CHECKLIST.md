@@ -1068,6 +1068,10 @@ _(none queued)_
      model list changes per market (e.g. Hisense **US** = Android TV + Roku; **Asia** = VIDAA).
   2. Confirm each row shows platform · backend · fallback · regions · confidence + a tier chip.
   3. Confirm all rows are presented as candidate (unvalidated) mappings — no hardware claim.
+- **Re-confirmed on `main`@`3c0e1c8` (2026-06-02):** still green on current `main` — TV DB is now
+  **324 models** across all five brands (samsung 89 / lg 65 / tcl 64 / hisense 57 / sony 49),
+  `schema_version: 2`; `vitest` `tv_db_consistency` 8 + `tvdb` 16 pass; `step4.tsx:96,154,206`
+  region-first filter + v2 fields confirmed in code. Every issue scope bullet is satisfied — **ready to close.**
 
 ### ENH-#105 — canonical players DB (players.json) + configurator adoption
 
@@ -1088,6 +1092,10 @@ _(none queued)_
   2. Confirm every existing player still resolves to the same `oppo_hardware_model` value
      (the picker labels are unchanged; only the per-brand order is enum-ordered now).
   3. Add-on: nothing to verify on hardware (test-only); confirm `main` add-on still builds.
+- **Re-confirmed on `main`@`3c0e1c8` (2026-06-02):** still green on current `main` — `players.test.ts`
+  10 + `tests/test_players_db_consistency.py` **7/7** (pins the two copies identical, `enum_order` ↔
+  `settings_reader` ↔ `settings.xml`, full taxonomy/profile/alias coverage); `step2.tsx:70` surfaces
+  markets/wake/class/NAS. Every issue scope bullet is satisfied — **ready to close.**
 
 ### Configurator v0.4.0 + v0.5.0 — AVR (AV Receiver) Step 5
 
