@@ -31,6 +31,52 @@ fn save_wizard_state(app: tauri::AppHandle, state: Value) -> Result<(), String> 
     Ok(())
 }
 
+/// Resolve a caller-supplied relative path under the app data dir, rejecting anything that
+/// could escape it (absolute paths, or `..`/root components). The dashboard's own callers pass
+/// fixed names, but validating keeps a stray value from ever reading or writing outside appdata.
+fn safe_app_rel(rel: &str) -> Result<std::path::PathBuf, String> {
+    let p = std::path::Path::new(rel);
+    if p.is_absolute() {
+        return Err("path must be relative".into());
+    }
+    for comp in p.components() {
+        if !matches!(comp, std::path::Component::Normal(_)) {
+            return Err("path must not contain '..' or root components".into());
+        }
+    }
+    Ok(p.to_path_buf())
+}
+
+/// Read a JSON document the dashboard previously stored under the app data dir, or `None` when
+/// it has never been written. Mirrors `load_wizard_state` but for arbitrary dashboard files.
+#[tauri::command]
+fn read_app_json(app: tauri::AppHandle, rel: String) -> Result<Option<Value>, String> {
+    let rel = safe_app_rel(&rel)?;
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let path = dir.join(rel);
+    if !path.exists() {
+        return Ok(None);
+    }
+    let raw = fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let value: Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
+    Ok(Some(value))
+}
+
+/// Persist a JSON document under the app data dir (creating parent dirs), pretty-printed for a
+/// human-readable, diff-friendly file. Mirrors `save_wizard_state` but for arbitrary dashboard files.
+#[tauri::command]
+fn write_app_json(app: tauri::AppHandle, rel: String, value: Value) -> Result<(), String> {
+    let rel = safe_app_rel(&rel)?;
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let path = dir.join(rel);
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let pretty = serde_json::to_string_pretty(&value).map_err(|e| e.to_string())?;
+    fs::write(&path, pretty).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 /// Write the generated files (keyed by path relative to Kodi userdata/) into the app's
 /// data dir under `generated/`, mirroring the userdata layout. Returns the output dir.
 #[tauri::command]
@@ -1681,9 +1727,9 @@ mod tests {
         kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
         oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
-        parse_verbose_mode, percent_encode, roku_keypress_request, smartthings_command_url,
-        smartthings_set_input_body, sony_audio_set_input_payload, sony_bravia_set_input_body,
-        to_hex, validate_copy_paths, yamaha_input_path,
+        parse_verbose_mode, percent_encode, roku_keypress_request, safe_app_rel,
+        smartthings_command_url, smartthings_set_input_body, sony_audio_set_input_payload,
+        sony_bravia_set_input_body, to_hex, validate_copy_paths, yamaha_input_path,
     };
 
     #[test]
@@ -2039,6 +2085,25 @@ mod tests {
         assert!(req.contains("Host: 10.0.0.9:436\r\n"));
         assert!(req.ends_with("\r\n\r\n"));
     }
+
+    #[test]
+    fn safe_app_rel_accepts_nested_names() {
+        assert_eq!(
+            safe_app_rel("dashboard/session-log.json").unwrap(),
+            std::path::Path::new("dashboard/session-log.json")
+        );
+    }
+
+    #[test]
+    fn safe_app_rel_rejects_parent_traversal() {
+        assert!(safe_app_rel("dashboard/../../etc/passwd").is_err());
+        assert!(safe_app_rel("../state.json").is_err());
+    }
+
+    #[test]
+    fn safe_app_rel_rejects_absolute() {
+        assert!(safe_app_rel("/etc/passwd").is_err());
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -2048,6 +2113,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             load_wizard_state,
             save_wizard_state,
+            read_app_json,
+            write_app_json,
             generate_files,
             reveal_path,
             read_userdata_file,
