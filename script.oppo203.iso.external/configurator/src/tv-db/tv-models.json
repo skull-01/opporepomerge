@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "db_version": "2026.05.31",
+  "db_version": "2026.06.02",
   "scope": {
     "years": [
       2018,
@@ -17,7 +17,8 @@
       "US",
       "UK",
       "EU",
-      "Asia"
+      "Asia",
+      "CN"
     ],
     "granularity": "model_family_not_size_sku",
     "purpose": "PlayBridge TV control-path wizard filtering and backend recommendation."
@@ -363,9 +364,655 @@
         "Asia"
       ],
       "region_notes": "Lineup-level fallback for older TCL Android TV regional model families."
+    },
+    {
+      "id": "tcl-china-android",
+      "brand": "tcl",
+      "label": "TCL China (雷鸟系统 / Android)",
+      "platform": "Android (China) / 雷鸟系统",
+      "backend": "adb",
+      "tier": "probe",
+      "years": [
+        2020,
+        2025
+      ],
+      "validated": false,
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "notes": "China-domestic TCL and the FFALCON (雷鸟) sub-brand run Android-based 雷鸟系统; ADB over the network is a candidate where developer mode / network ADB is permitted, otherwise a custom command. Confirm per model.",
+      "regions": [
+        "CN"
+      ],
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic market lineup; control path is a low-confidence candidate pending hardware confirmation."
+    },
+    {
+      "id": "hisense-china-vidaa",
+      "brand": "hisense",
+      "label": "Hisense China (VIDAA / 聚好看)",
+      "platform": "VIDAA (China) / 聚好看",
+      "backend": "custom_command",
+      "tier": "fallback",
+      "years": [
+        2020,
+        2025
+      ],
+      "validated": false,
+      "fallback_backends": [
+        "adb"
+      ],
+      "notes": "China-domestic Hisense runs VIDAA / 聚好看 (Hi-Table); there is no first-class PlayBridge VIDAA backend, so use a custom command, with ADB as a candidate fallback on Android-capable sets. Confirm per model.",
+      "regions": [
+        "CN"
+      ],
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic market lineup; control path is a low-confidence candidate pending hardware confirmation."
     }
   ],
   "models": [
+    {
+      "id": "tcl-q10g-mini-led-cn-2022",
+      "brand": "tcl",
+      "name": "Q10G 量子点 Mini LED",
+      "year": 2022,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q10h-mini-led-cn-2023",
+      "brand": "tcl",
+      "name": "Q10H Mini LED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q9h-mini-led-cn-2023",
+      "brand": "tcl",
+      "name": "Q9H Mini LED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7g-mini-led-cn-2023",
+      "brand": "tcl",
+      "name": "T7G Mini LED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7h-mini-led-cn-2024",
+      "brand": "tcl",
+      "name": "T7H Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7k-mini-led-cn-2025",
+      "brand": "tcl",
+      "name": "T7K Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c645-qled-cn-2023",
+      "brand": "tcl",
+      "name": "C645 QLED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c655-qled-cn-2024",
+      "brand": "tcl",
+      "name": "C655 / C655 Pro QLED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c755-mini-led-cn-2024",
+      "brand": "tcl",
+      "name": "C755 Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c855-mini-led-cn-2024",
+      "brand": "tcl",
+      "name": "C855 Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android (China) / 雷鸟系统",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic TCL model family on Android-based 雷鸟系统; ADB is a candidate where network ADB is permitted, else a custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-ffalcon-he6-cn-2022",
+      "brand": "tcl",
+      "name": "雷鸟 鹤 6 (FFALCON He 6)",
+      "year": 2022,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "雷鸟系统 (FFALCON, Android)",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "FFALCON (雷鸟) is TCL's China online sub-brand on Android-based 雷鸟系统; ADB candidate where permitted, else custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-ffalcon-peng7-cn-2023",
+      "brand": "tcl",
+      "name": "雷鸟 鹏 7 (FFALCON Peng 7)",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "雷鸟系统 (FFALCON, Android)",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "FFALCON (雷鸟) is TCL's China online sub-brand on Android-based 雷鸟系统; ADB candidate where permitted, else custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-ffalcon-peng7-pro-cn-2024",
+      "brand": "tcl",
+      "name": "雷鸟 鹏 7 Pro / 鹏 7 24款 (FFALCON Peng 7 Pro)",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "雷鸟系统 (FFALCON, Android)",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "FFALCON (雷鸟) is TCL's China online sub-brand on Android-based 雷鸟系统; ADB candidate where permitted, else custom command. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7g-uled-cn-2021",
+      "brand": "hisense",
+      "name": "U7G ULED",
+      "year": 2021,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7h-uled-cn-2022",
+      "brand": "hisense",
+      "name": "U7H ULED",
+      "year": 2022,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7k-uled-cn-2023",
+      "brand": "hisense",
+      "name": "U7K ULED Mini LED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8k-uled-cn-2023",
+      "brand": "hisense",
+      "name": "U8K ULED Mini LED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8k-pro-uled-cn-2023",
+      "brand": "hisense",
+      "name": "U8K Pro ULED Mini LED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7n-uled-cn-2024",
+      "brand": "hisense",
+      "name": "U7N ULED Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8n-uled-cn-2024",
+      "brand": "hisense",
+      "name": "U8N ULED Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e8k-uled-cn-2023",
+      "brand": "hisense",
+      "name": "E8K ULED Mini LED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e8n-uled-cn-2024",
+      "brand": "hisense",
+      "name": "E8N ULED Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e5k-cn-2023",
+      "brand": "hisense",
+      "name": "E5K",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e7k-cn-2023",
+      "brand": "hisense",
+      "name": "E7K",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ux-uled-x-cn-2023",
+      "brand": "hisense",
+      "name": "UX ULED X 旗舰",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ax-oled-cn-2023",
+      "brand": "hisense",
+      "name": "Ax OLED",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA (China) / 聚好看",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
     {
       "id": "hisense-a6200-a6500-vidaa-2018",
       "brand": "hisense",
@@ -9427,7 +10074,8 @@
     "Schema v2 adds region metadata. Each model row includes regions/release_regions using allowed values US, UK, EU, Asia. Each lineup row also includes regions/release_regions as fallback for wizard filtering.",
     "Region mapping remains family-level and not exact per-size/per-retailer SKU. Use regional suffix/model-code verification during hardware validation.",
     "Expanded on 2026-05-31 from 2022-2025 to 2018-2025. Rows remain candidate model-family mappings, not hardware validation.",
-    "2018-2021 additions intentionally use model-family names and broad region buckets; exact regional suffixes/retailer SKUs must be confirmed during wizard search or user selection."
+    "2018-2021 additions intentionally use model-family names and broad region buckets; exact regional suffixes/retailer SKUs must be confirmed during wizard search or user selection.",
+    "Added on 2026-06-02: China-domestic TCL (incl. the FFALCON / 雷鸟 sub-brand on 雷鸟系统 / Android) and Hisense (VIDAA / 聚好看) model families under a new CN region. Control-path mappings are low-confidence candidates - China-market OS variants gate ADB differently and have no first-class VIDAA backend - and remain validated=false pending hardware confirmation."
   ],
   "region_schema": {
     "field": "regions",
@@ -9436,7 +10084,8 @@
       "US",
       "UK",
       "EU",
-      "Asia"
+      "Asia",
+      "CN"
     ],
     "meaning": "Release markets/regions where the TV model family is known or reasonably mapped as sold/released. This is a family-level market field, not a guarantee that every exact size/SKU is available in every listed region.",
     "usage": "Configurator should filter by region first, then brand/model family, then choose the model row primary_backend and fallback_backends. If the exact model is missing, use a lineup row whose regions include the selected region.",
