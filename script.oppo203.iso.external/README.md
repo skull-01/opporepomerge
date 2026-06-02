@@ -141,6 +141,7 @@ This project builds on the generosity and prior work of several people in the AV
 - **Moremodey1** (AVForums) — for the jailbreak.
 - **[tocinillo](https://www.avpasion.com/staff/tocinillo/)** (AV Pasión) — for his passion for AV; his YouTube video on the subject is a great primer.
 - **[Xnoppo by siberian-git](https://github.com/siberian-git/Xnoppo/tree/main)** — whose source I reviewed for ideas on the overall flow.
+- **[emby-chinoppo-bridge by ophielsamael](https://github.com/ophielsamael/emby-chinoppo-bridge)** — for the HTTP playback approach and BDMV detection.
 
 ---
 
