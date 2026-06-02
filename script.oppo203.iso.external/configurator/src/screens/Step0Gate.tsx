@@ -45,9 +45,9 @@ export function Step0Gate({ go }: ScreenProps) {
             I can already play ISOs on my player
             <Icon name="chevR" size={14} />
           </button>
-          <button className="btn ghost" onClick={() => go("step0_exit")}>
-            Not yet
-          </button>
+          {/* The "Not yet" entry to the OPPO NAS-access setup path (step0_exit) is hidden for now
+              -- that flow isn't supported yet. The screen + routing stay registered, so restoring
+              this button re-enables it. */}
         </div>
         <button
           className="btn ghost sm"
