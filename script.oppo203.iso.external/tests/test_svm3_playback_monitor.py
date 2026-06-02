@@ -248,6 +248,15 @@ def test_require_progress_false_confirms_on_play_alone():
     assert snap["confirmed"] is True
 
 
+def test_loading_is_keepalive_but_does_not_confirm_playback():
+    # L1: LOADING is the disc mounting -- keep-alive (non-terminal) but NOT confirmed playback.
+    assert svm3._upl_state_label("LOADING") == "LOADING"
+    mon, _sock = _monitor([])
+    assert mon._handle_upl("LOADING") is False  # non-terminal
+    assert mon.playback_state == "LOADING"
+    assert mon.confirmed_playback is False
+
+
 def test_pause_and_menu_are_not_terminal():
     items = [_line("@UPL PAUSE"), _line("@UPL MENU"), _line("@UPL DISC"), _line("@UPL STOP")]
     mon, _sock = _monitor(items)
@@ -331,6 +340,17 @@ def test_ring_buffer_caps_recent_events():
 
 def test_startup_timeout_when_no_events():
     mon, _sock = _monitor([], startup_timeout=30.0, session_timeout=1e9, monotonic=StepClock(20.0))
+    snap = mon.listen_until_done()
+    assert snap["stop_reason"] == "startup_timeout"
+    assert snap["confirmed_playback"] is False
+
+
+def test_startup_timeout_not_defeated_by_context_chatter():
+    # H4: @UVO resolution chatter must NOT reset the startup timeout (only @UPL/@UTC do).
+    items = [_line("@UVO 3840x2160"), TIMEOUT, TIMEOUT, TIMEOUT]
+    mon, _sock = _monitor(
+        items, startup_timeout=30.0, session_timeout=1e9, monotonic=StepClock(20.0)
+    )
     snap = mon.listen_until_done()
     assert snap["stop_reason"] == "startup_timeout"
     assert snap["confirmed_playback"] is False

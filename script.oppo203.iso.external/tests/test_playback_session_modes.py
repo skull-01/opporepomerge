@@ -137,6 +137,7 @@ def test_legacy_status_reports_no_confirmation(monkeypatch, tmp_path):
     assert status["launch_source"] == "service_interception"
     assert status["confirmed_playback"] is False
     assert status["session_state"] == "stopped"
+    assert "fell_back_to_legacy_hold" not in status  # legacy never sets the fall-back marker
 
 
 def test_status_carries_session_identity_and_phases(monkeypatch, tmp_path):
@@ -218,6 +219,20 @@ def test_svm3_connect_failure_falls_back_to_legacy_hold(monkeypatch, tmp_path):
     assert "hold" in calls  # fell back to the legacy hold
     # restore/close still ran is not asserted here (connect raised before enable);
     # the fallback path is what matters.
+
+
+def test_svm3_fallback_status_marks_fell_back(monkeypatch, tmp_path):
+    # L2: a svm3 session that drops to the legacy hold is marked, not silently "not confirmed".
+    monkeypatch.setattr(svm3mod, "OppoSvm3PlaybackMonitor", FailConnectMonitor)
+    _patch_ep(monkeypatch, [])
+    ps.run_playback_session(
+        _settings(tmp_path, playback_monitor_mode="svm3"), "/m.iso", "playercorefactory"
+    )
+    status = _read_status(tmp_path)
+    assert status["monitor_mode"] == "svm3"
+    assert status["fell_back_to_legacy_hold"] is True
+    assert status["stop_reason"] == "fell_back_to_legacy_hold"
+    assert status["confirmed_playback"] is False
 
 
 # -- http_handoff routing (run_playback_session launch branch) --------------

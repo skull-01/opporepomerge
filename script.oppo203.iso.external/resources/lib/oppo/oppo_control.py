@@ -67,6 +67,28 @@ def normalize_command(command: str) -> str:
     return command if command.endswith("\r") else command + "\r"
 
 
+def _recv_line(sock: socket.socket) -> str:
+    """Read one CR/LF-terminated response line, tolerating a reply split across recv() segments.
+
+    Returns the line without the terminator, or whatever has accumulated when the socket times
+    out or closes before a terminator arrives (matching the legacy single-recv behaviour, which
+    returned the partial/empty read). A single recv() that already holds the whole line behaves
+    identically to before.
+    """
+    buf = bytearray()
+    while True:
+        positions = [p for p in (buf.find(b"\r"), buf.find(b"\n")) if p >= 0]
+        if positions:
+            return bytes(buf[: min(positions)]).decode("ascii", errors="replace").strip()
+        try:
+            chunk = sock.recv(1024)
+        except socket.timeout:
+            return bytes(buf).decode("ascii", errors="replace").strip()
+        if not chunk:
+            return bytes(buf).decode("ascii", errors="replace").strip()
+        buf.extend(chunk)
+
+
 def send_commands(
     host: str,
     port: int | str,
@@ -82,10 +104,7 @@ def send_commands(
             if not command:
                 continue
             sock.sendall(command.encode("ascii", errors="ignore"))
-            try:
-                responses.append(sock.recv(4096).decode("ascii", errors="replace").strip())
-            except socket.timeout:
-                responses.append("")
+            responses.append(_recv_line(sock))
             time.sleep(float(delay))
     return responses
 
@@ -106,10 +125,7 @@ def query_command(host: str, port: int | str, command: str, timeout: float = 3.0
     with socket.create_connection((host, int(port)), timeout=float(timeout)) as sock:
         sock.settimeout(float(timeout))
         sock.sendall(cmd.encode("ascii", errors="ignore"))
-        try:
-            raw = sock.recv(4096).decode("ascii", errors="replace").strip()
-        except socket.timeout:
-            return ""
+        raw = _recv_line(sock)
 
     return _parse_response(raw)
 
@@ -807,12 +823,15 @@ def _resolve_hardware_wake_command(settings: Settings, command: str) -> str:
     if command.strip().upper() not in ("#PON", "#POW"):
         return command
     try:
-        from settings_reader import hardware_profile
+        try:
+            from ..kodi.settings_reader import hardware_profile
+        except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+            from settings_reader import hardware_profile  # type: ignore[no-redef]
 
         profile = hardware_profile(settings.get("oppo_hardware_model", "udp_203"))
         wake = profile.get("wake_command")
         is_clone = bool(profile.get("is_clone"))
-    except Exception:
+    except Exception:  # pragma: no cover - defensive: settings_reader/profile unavailable
         wake = None
         is_clone = False
     return wake if is_clone and isinstance(wake, str) and wake else command

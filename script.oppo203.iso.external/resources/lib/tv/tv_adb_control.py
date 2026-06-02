@@ -64,7 +64,14 @@ def switch_input(
     if injected is not None:
         runner = injected
 
-    if settings.get_bool("adb_connect_before_switch", True):
+    # Accept a plain dict (e.g. the diagnostics live-test path) as well as a Settings: resolve the
+    # flag with .get + a local truthy check instead of Settings.get_bool (which a dict lacks).
+    raw_connect = settings.get("adb_connect_before_switch", True)
+    if isinstance(raw_connect, bool):
+        do_connect = raw_connect
+    else:
+        do_connect = str(raw_connect).strip().lower() in ("1", "true", "yes", "on")
+    if do_connect:
         adb_connect(adb_path, tv_ip, tv_port, runner=runner)
 
     return adb_shell(adb_path, tv_ip, tv_port, shell_command, runner=runner)

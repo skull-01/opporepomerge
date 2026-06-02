@@ -28,7 +28,10 @@ from typing import Any
 # it. These mirror oppo_tcp_client's vocabulary; a disc menu is treated as an
 # active (navigable) session rather than a stop, which is finer than the legacy
 # coarse stop detector and matches the SVM3 build plan's parsing policy.
-_UPL_PLAY = {"PLAY", "FFWD", "FREV", "SFWD", "SREV", "LOADING"}
+_UPL_PLAY = {"PLAY", "FFWD", "FREV", "SFWD", "SREV"}
+# LOADING is a keep-alive transient (the disc is mounting) but is NOT confirmed playback --
+# only a real PLAY (or trick-play) state sets confirmed_playback.
+_UPL_LOADING = {"LOADING"}
 _UPL_PAUSE = {"PAUSE", "PAUS"}
 _UPL_MENU = {"MENU", "DISC", "DISC MENU"}
 _UPL_STOP = {
@@ -76,6 +79,8 @@ def _upl_state_label(value: str) -> str:
     """Normalize a raw @UPL value to a status-model state token."""
     if value in _UPL_PLAY:
         return "PLAY"
+    if value in _UPL_LOADING:
+        return "LOADING"
     if value in _UPL_PAUSE:
         return "PAUS"
     if value in _UPL_MENU:
@@ -222,7 +227,6 @@ class OppoSvm3PlaybackMonitor:
     def _handle_line(self, line: str) -> bool:
         """Update state from one push line. Returns True on a terminal stop."""
         self._events.append(line)
-        self.last_event_at = self._monotonic()
         if self._full_event_log:
             self._log(f"SVM3 raw: {line}")
 
@@ -235,8 +239,10 @@ class OppoSvm3PlaybackMonitor:
         code = parts[0].upper()
         rest = parts[1].strip() if len(parts) > 1 else ""
         if code == "UPL":
+            self.last_event_at = self._monotonic()
             return self._handle_upl(rest)
         if code == "UTC":
+            self.last_event_at = self._monotonic()
             self._handle_utc(rest)
         return False
 
@@ -281,6 +287,8 @@ class OppoSvm3PlaybackMonitor:
             if elapsed >= self._session_timeout:
                 self.stop_reason = self.stop_reason or "session_timeout"
                 break
+            # last_event_at is set only by @UPL/@UTC playback-status pushes (not by @UVO/@UAU
+            # resolution chatter), so a never-playing-but-chatty device still hits this timeout.
             if self.last_event_at is None and elapsed >= self._startup_timeout:
                 self.stop_reason = self.stop_reason or "startup_timeout"
                 break
