@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — Wave A1: AVR http_handoff eligibility, HTTP path translation, settle delay — #221 #222 #223 #224
+
+- **Branch / PR:** `claude/wave-a1-pure-http-correctness` → [PR #225](https://github.com/skull-01/script.oppo203.iso.external/pull/225) (merged to `main`, `50aa81e`). Issues [#221](https://github.com/skull-01/script.oppo203.iso.external/issues/221) / [#222](https://github.com/skull-01/script.oppo203.iso.external/issues/222) / [#223](https://github.com/skull-01/script.oppo203.iso.external/issues/223) / [#224](https://github.com/skull-01/script.oppo203.iso.external/issues/224). 2026-06-02 full-audit remediation, **Wave A1**.
+- **What changed (software-verified only):** **H1 (#221)** `avr_sequence.eligible_for_external_player_avr_sequence` now accepts `{external_player, http_handoff}` (was `external_player` only), so AVR power-on/input/restore run under the Pure-HTTP default; `service_interception` stays excluded. **M1 (#222)** new `oppo_control._apply_path_rewrite` does an anchored (prefix-only) `oppo_http_path_from→to` rewrite **inside** `resolve_disc_play_path`, before the disc-folder/`checkfolderhasBDMV` decision, so the probe + returned path are in the player's mount namespace (the two payload builders no longer double-translate). **M10 (#223)** `_settle_after_power_on` (setting `avr_power_on_settle_seconds`, default 1.5s) waits between a real AVR power-on and input-select. **L4 (#224)** dropped `\` from the URL-encode safe set so backslashes percent-encode.
+- **Software gates (this machine):** `pytest -n auto` **1139/3**, mypy `--strict` **51/0**, ruff check + `ruff format --check` clean, serial coverage **99%** (gate exit 0). Six prior presets unaffected (7-preset guards green).
+- **Operator verifies (Phase A):** confirm the default `external_player` AVR path is unchanged and only `service_interception` is excluded; confirm the anchored rewrite matches your `oppo_http_path_from/to` (a non-prefix `from` now no-ops instead of replacing mid-path).
+- **Operator verifies (Phase C — real hardware):** on a real receiver under a Pure-HTTP (`http_handoff`) install, confirm the AVR powers on + selects the player input + restores on exit, that the ~1.5s settle avoids a dropped input, and that a NAS BDMV folder with a configured path translation plays via the translated path. **Not hardware-validated.**
+
 ### Add-on + configurator — selectable confirm-gated HDMI switching (Xnoppo V3, PR5 of 6) — #217
 
 - **Branch / PR:** `claude/pr5-hdmi-sequencing-d8008ab6` → PR (base `main`). Issue [#217](https://github.com/skull-01/script.oppo203.iso.external/issues/217).
