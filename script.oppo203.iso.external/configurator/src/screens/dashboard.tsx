@@ -19,6 +19,7 @@ import { foldObservation, type SessionLogEntry } from "../session_log";
 import { readDashboardJson, writeDashboardJson } from "../dashboard_store";
 import type { ScreenProps } from "./types";
 import { ResetAllCard } from "./ResetAllCard";
+import { DiagnosticsCard } from "./DiagnosticsCard";
 
 // How often the dashboard re-checks device liveness + session status while it is open.
 const POLL_MS = 6000;
@@ -743,6 +744,8 @@ export function Dashboard({ go, state, set }: ScreenProps) {
           <Icon name="chevL" size={14} /> Back
         </button>
       </div>
+
+      <DiagnosticsCard state={state} sessionHistory={log} />
 
       <ResetAllCard go={go} state={state} set={set} />
     </div>
