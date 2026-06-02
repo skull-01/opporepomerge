@@ -108,8 +108,8 @@
         <setting id="sony_kodi_hdmi_port" type="integer" label="30213" default="2"/>
         <setting id="lg_oppo_command" type="string" label="30214" default="lgtv --ssl setInput HDMI_1"/>
         <setting id="lg_kodi_command" type="string" label="30215" default="lgtv --ssl setInput HDMI_2"/>
-        <setting id="samsung_oppo_command" type="string" label="30216" default="samsungctl --host {tv_ip} KEY_HDMI"/>
-        <setting id="samsung_kodi_command" type="string" label="30217" default="samsungctl --host {tv_ip} KEY_HDMI"/>
+        <setting id="samsung_oppo_command" type="string" label="30216" default="samsungctl --host {tv_ip} KEY_HDMI1"/>
+        <setting id="samsung_kodi_command" type="string" label="30217" default="samsungctl --host {tv_ip} KEY_HDMI2"/>
         <setting id="custom_oppo_command" type="string" label="30218" default=""/>
         <setting id="custom_kodi_command" type="string" label="30219" default=""/>
         <setting id="roku_ecp_port" type="integer" label="30224" default="8060" help="30225"/>

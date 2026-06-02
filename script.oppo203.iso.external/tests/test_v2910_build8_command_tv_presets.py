@@ -34,6 +34,22 @@ def test_command_tv_preset_ids_are_present_and_stable():
     assert set(REQUIRED_COMMAND_PRESETS).issubset(set(tv_presets.list_presets()))
 
 
+def test_samsung_switch_defaults_are_distinct():
+    # L12: the OPPO and Kodi switch commands must not be identical -- KEY_HDMI cycles inputs, so a
+    # shared default sends the same keypress both ways. Kept in lock-step between
+    # resources/settings.xml and settings_reader.DEFAULTS (mirroring LG's HDMI_1/HDMI_2).
+    from resources.lib.kodi.settings_reader import DEFAULTS
+
+    oppo = DEFAULTS["samsung_oppo_command"]
+    kodi = DEFAULTS["samsung_kodi_command"]
+    assert oppo != kodi
+    assert oppo.endswith("KEY_HDMI1")
+    assert kodi.endswith("KEY_HDMI2")
+    settings_xml = read_project_file(ROOT, "resources/settings.xml")
+    assert f'default="{oppo}"' in settings_xml
+    assert f'default="{kodi}"' in settings_xml
+
+
 def test_command_tv_presets_use_expected_existing_backends_only():
     for preset_id, backend in REQUIRED_COMMAND_PRESETS.items():
         preset = tv_presets.get_preset(preset_id)
