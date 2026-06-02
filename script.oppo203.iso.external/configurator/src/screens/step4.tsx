@@ -23,7 +23,7 @@ import type { ScreenId } from "../steps";
 import type { ScreenProps } from "./types";
 
 // ============================================================
-// STEP 3 — TV brand
+// STEP 5 —TV brand
 // ============================================================
 const TV_BRANDS = [
   { id: "sony",      name: "Sony",      ch: "SONY", color: "#0B0B0C", hint: "Bravia · Google TV" },
@@ -69,7 +69,7 @@ export function Step4Brand({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 3 — Model
+// STEP 5 —Model
 // ============================================================
 function tierChipKind(tier: string | null): string {
   if (tier === "preferred") return "success";
@@ -235,7 +235,7 @@ export function Step4Model({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 3 — Model not found
+// STEP 5 —Model not found
 // ============================================================
 export function Step4NotFound({ go, set }: ScreenProps) {
   return (
@@ -298,7 +298,7 @@ export function Step4NotFound({ go, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 3 — Probe
+// STEP 5 —Probe
 // ============================================================
 export function Step4Probe({ go, state, set }: ScreenProps) {
   const ip = state.tvIp || "10.0.1.51";
@@ -386,11 +386,13 @@ export function Step4Probe({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 3 — ADB allow-debugging heads up
+// STEP 5 —ADB allow-debugging heads up
 // ============================================================
 export function Step4AdbWarn(props: ScreenProps) {
   const { go, state } = props;
-  const isAdb = state.tvBackend === "adb" || (state.tvModel || "").includes("q");
+  // L7: drive the ADB warning off the chosen backend, not a substring of the model id (which
+  // over-matched any model containing "q").
+  const isAdb = state.tvBackend === "adb";
   if (!isAdb) {
     return <Step4Test {...props} />;
   }
@@ -445,7 +447,7 @@ export function Step4AdbWarn(props: ScreenProps) {
 }
 
 // ============================================================
-// STEP 3 — Control test
+// STEP 5 —Control test
 // ============================================================
 type TestPhase = "ready" | "sending" | "sent";
 
@@ -556,7 +558,7 @@ export function Step4Test({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 3 — Test failed
+// STEP 5 —Test failed
 // ============================================================
 export function Step4Fail({ go, set }: ScreenProps) {
   return (

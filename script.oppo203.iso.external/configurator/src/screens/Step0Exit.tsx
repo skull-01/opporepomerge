@@ -36,13 +36,13 @@ export function Step0Exit({ go }: ScreenProps) {
       </div>
       <div className="choice-grid">
         {OPTS.map((o, i) => (
-          <button key={i} className="choice-card">
+          <div key={i} className="choice-card">
             <div className="choice-card-title">
               <span>{o.title}</span>
               <span className="choice-card-tag">{o.tag}</span>
             </div>
             <div className="choice-card-desc">{o.desc}</div>
-          </button>
+          </div>
         ))}
       </div>
       <div className="callout info" style={{ marginTop: 18 }}>
@@ -55,9 +55,6 @@ export function Step0Exit({ go }: ScreenProps) {
         </div>
       </div>
       <div className="row" style={{ marginTop: 18, gap: 10 }}>
-        <button className="btn outline">
-          <Icon name="file" size={14} /> Open setup guide
-        </button>
         <button className="btn ghost" onClick={() => go("step0_gate")}>
           <Icon name="chevL" size={14} /> Back
         </button>

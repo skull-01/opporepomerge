@@ -41,8 +41,9 @@ export function Step3Mode({ go, state, set }: ScreenProps) {
             <div className="tile-title">Pure HTTP — recommended for new installs</div>
             <div className="tile-desc">
               The OPPO community HTTP API does it all: wake, mount the share, play, and confirm by
-              polling the player&apos;s own status. One transport end to end (sets the HTTP handoff
-              routing). Newest path; not yet hardware-validated.
+              polling the player&apos;s own status. One transport end to end — this also switches the
+              Kodi-box handoff to HTTP, replacing the routing picked there. Newest path; not yet
+              hardware-validated.
             </div>
           </div>
           <Icon name="chevR" size={16} />

@@ -213,7 +213,7 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     // Architecture is chosen on the Kodi-box screen and written explicitly.
     playback_architecture: state.playbackArchitecture,
     architecture_choice_made: "true",
-    // Monitor axis (Step 3) + the combined six-option preset, derived here so the triple is
+    // Monitor axis (Step 3) + the combined seven-option preset, derived here so the triple is
     // always internally consistent. The add-on treats playback_architecture_preset as the
     // source of truth and back-fills it from the legacy fields when absent (settings_reader).
     playback_monitor_mode: state.monitorMode,

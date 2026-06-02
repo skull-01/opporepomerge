@@ -58,7 +58,7 @@ function controlProbePort(addonBackend: string | null): number | null {
 }
 
 // ============================================================
-// STEP 5 — AV receiver (optional). The AVR DB is the TV DB's twin: candidate control-path
+// STEP 7 —AV receiver (optional). The AVR DB is the TV DB's twin: candidate control-path
 // mappings (validated:false) surfaced advisorily. The whole step is skippable — AV-receiver
 // automation is off by default in the add-on, so the chain works without one.
 // ============================================================
@@ -78,7 +78,7 @@ const AVR_BRANDS = [
 const AVR_YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018"];
 
 // ============================================================
-// STEP 5 — Ask: do you have a receiver at all?
+// STEP 7 —Ask: do you have a receiver at all?
 // ============================================================
 export function Step6Ask({ go, set }: ScreenProps) {
   return (
@@ -141,7 +141,7 @@ export function Step6Ask({ go, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 5 — Brand
+// STEP 7 —Brand
 // ============================================================
 export function Step6Brand({ go, state, set }: ScreenProps) {
   return (
@@ -175,7 +175,7 @@ export function Step6Brand({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 5 — Model
+// STEP 7 —Model
 // ============================================================
 export function Step6Model({ go, state, set }: ScreenProps) {
   const [db, setDb] = useState<AvrDb>(BUNDLED_AVR_DB);
@@ -335,7 +335,7 @@ export function Step6Model({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 5 — Control config (IP + player input). Shown once a real model is picked. This is what
+// STEP 7 —Control config (IP + player input). Shown once a real model is picked. This is what
 // flows into the add-on settings (avr_backend/avr_host/avr_player_input + avr_control_enabled);
 // the mapping in mapping.ts decides whether control is auto-enabled.
 // ============================================================
