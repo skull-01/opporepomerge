@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — Wave C1: settings.xml secret masking, token-owned live monitor, SSH/IO hardening — #239–#244
+
+- **Branch / PR:** `claude/wave-c1-secret-and-rust-safety` → [PR #245](https://github.com/skull-01/script.oppo203.iso.external/pull/245) (merged to `main`, `93d5151`). Issues [#239](https://github.com/skull-01/script.oppo203.iso.external/issues/239)–[#244](https://github.com/skull-01/script.oppo203.iso.external/issues/244). 2026-06-02 full-audit remediation, **Wave C1**.
+- **What changed (software-verified only):** **H3 (#239)** `debug/log.ts` `maskSettingsXmlSecrets()` content-scrubs secret `<setting id="...">` values inside the deploy settings.xml blob (the redactor keyed on field name, but the blob rides under a *filename* key). **M4 (#240)** `start_oppo_live_monitor` returns an owner token; `stop_oppo_live_monitor` takes `Option<u64>` and is a no-op unless the token matches the owner — each frontend subscriber (dashboard, SVM3 card, self-test) tracks its own token, so a sibling screen's unmount can't cancel another's stream. **L9 (#243)** the monitor lock recovers from poison. **M8 (#241)** SSH `ServerAliveInterval=5`/`ServerAliveCountMax=3` keepalive bounds a hung connection + a 64 KiB cap on `oppo_http_exchange`. **L6 (#242)** `deploy_to_userdata` + `deploy_ssh` roll the whole file set back on a mid-loop failure. **L3 (#244)** `reveal_path` validates an existing absolute path before spawning Explorer.
+- **Software gates (this machine):** `tsc --noEmit` clean, **296 vitest**, `npm run build` OK, `cargo test` **40/0**, `cargo fmt --check` clean.
+- **Operator verifies (Phase C):** (H3) open the debug panel (Ctrl+Shift+D), run an Apply, confirm the captured settings.xml shows `[redacted]` for `sony_psk` / `sony_avr_psk` / `smartthings_token`. (M4 — needs a real OPPO) with the dashboard streaming, open + close the SVM3 card / self-test and confirm the dashboard stream is **not** torn down, and that manual Stop still stops. (M8/L6/L3) an SSH deploy to an unreachable box is bounded (not hung); a partial-failure deploy rolls back.
+
 ### Add-on — Wave A3: configurator-owned settings declared, AVR-id guard, preset comments — #235 #236 #237
 
 - **Branch / PR:** `claude/wave-a3-schema-guards` → [PR #238](https://github.com/skull-01/script.oppo203.iso.external/pull/238) (merged to `main`, `29778cb`). Issues [#235](https://github.com/skull-01/script.oppo203.iso.external/issues/235) / [#236](https://github.com/skull-01/script.oppo203.iso.external/issues/236) / [#237](https://github.com/skull-01/script.oppo203.iso.external/issues/237). 2026-06-02 full-audit remediation, **Wave A3**.
