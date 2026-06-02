@@ -255,6 +255,102 @@ fn smb_test_write(userdata_path: String) -> Result<(), String> {
 }
 
 // ============================================================
+// Reset all configurations: remove the add-on + the deployed files from the box, per tier.
+// ============================================================
+//
+// The configurator deploys exactly four things to a Kodi box: the add-on folder under addons/,
+// and (under userdata/) playercorefactory.xml, keymaps/oppo203iso.xml, and the addon_data/<id>
+// directory (settings.xml + status JSON). Reset removes ONLY those fixed, code-constructed paths
+// -- never the userdata/addons root or any free-form path -- mirroring the deploy commands' two
+// transports (SSH for tier A, a filesystem path for tier B/SMB).
+
+const RESET_ADDON_ID: &str = "script.oppo203.iso.external";
+
+/// The four box paths the configurator owns, given the userdata and addons directories: the
+/// add-on folder, then the three userdata artifacts. Used by the tier B / local reset and the
+/// path-construction test; the SSH reset mirrors the same four paths as remote strings.
+fn box_reset_targets(userdata: &Path, addons: &Path) -> Vec<PathBuf> {
+    vec![
+        addons.join(RESET_ADDON_ID),
+        userdata.join("playercorefactory.xml"),
+        userdata.join("keymaps").join("oppo203iso.xml"),
+        userdata.join("addon_data").join(RESET_ADDON_ID),
+    ]
+}
+
+/// Remove each path that exists (dir or file), returning the ones actually removed. A missing
+/// path is skipped, so the operation is idempotent.
+fn remove_existing_paths(targets: &[PathBuf]) -> Result<Vec<String>, String> {
+    let mut removed = Vec::new();
+    for t in targets {
+        if t.is_dir() {
+            fs::remove_dir_all(t).map_err(|e| e.to_string())?;
+            removed.push(t.to_string_lossy().into_owned());
+        } else if t.exists() {
+            fs::remove_file(t).map_err(|e| e.to_string())?;
+            removed.push(t.to_string_lossy().into_owned());
+        }
+    }
+    Ok(removed)
+}
+
+/// Tier B / local: delete the add-on + deployed userdata files from a filesystem path (a local
+/// Kodi dir or an SMB UNC). Removes only the four owned paths; the userdata/addons roots survive.
+#[tauri::command]
+fn reset_box_userdata(userdata_path: String, addons_path: String) -> Result<Vec<String>, String> {
+    let targets = box_reset_targets(&PathBuf::from(&userdata_path), &PathBuf::from(&addons_path));
+    remove_existing_paths(&targets)
+}
+
+/// Tier A: delete the add-on + deployed userdata files over SSH, then a best-effort Kodi restart
+/// so the removed add-on drops out of the running instance. Returns the paths that existed and
+/// were removed. Non-interactive -- requires SSH key auth. Only the four owned paths are touched.
+#[tauri::command]
+fn reset_box_ssh(
+    host: String,
+    user: String,
+    userdata_path: String,
+    addons_path: String,
+    restart: bool,
+) -> Result<Vec<String>, String> {
+    validate_ssh_target(&host, &user)?;
+    let target = format!("{user}@{host}");
+    let ud = userdata_path.trim_end_matches('/');
+    let ad = addons_path.trim_end_matches('/');
+    let remotes = [
+        format!("{ad}/{RESET_ADDON_ID}"),
+        format!("{ud}/playercorefactory.xml"),
+        format!("{ud}/keymaps/oppo203iso.xml"),
+        format!("{ud}/addon_data/{RESET_ADDON_ID}"),
+    ];
+    let mut removed = Vec::new();
+    for r in &remotes {
+        let script =
+            format!("if [ -e '{r}' ]; then rm -rf '{r}' && printf 'REMOVED'; else printf 'ABSENT'; fi");
+        if run_ssh_capture(&target, &script)?.trim() == "REMOVED" {
+            removed.push(r.clone());
+        }
+    }
+    if restart {
+        let _ = run_ssh(&target, "systemctl restart kodi");
+    }
+    Ok(removed)
+}
+
+/// Reset the configurator itself to first-run: remove the persisted wizard session (state.json),
+/// the dashboard memory (dashboard/), and any locally-generated files (generated/) under the app
+/// data dir. The next launch starts at the first wizard screen.
+#[tauri::command]
+fn reset_app_data(app: tauri::AppHandle) -> Result<Vec<String>, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let targets: Vec<PathBuf> = ["state.json", "dashboard", "generated"]
+        .iter()
+        .map(|n| dir.join(n))
+        .collect();
+    remove_existing_paths(&targets)
+}
+
+// ============================================================
 // Test-ISO copy to the media share (Phase 4.2 self-test; D-2 = user supplies the ISO)
 // ============================================================
 //
@@ -1811,13 +1907,15 @@ fn smartthings_switch_request(
 #[cfg(test)]
 mod tests {
     use super::{
-        adb_switch_command_line, classify_frame, copy_progress_percent, denon_input_command,
+        adb_switch_command_line, box_reset_targets, classify_frame, copy_progress_percent,
+        denon_input_command,
         device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
         format_external_command, http_get_request, json_post_request, kodi_enable_body,
         kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
         oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
-        parse_verbose_mode, percent_encode, roku_keypress_request, safe_app_rel,
+        parse_verbose_mode, percent_encode, remove_existing_paths, roku_keypress_request,
+        safe_app_rel,
         smartthings_command_url, smartthings_set_input_body, sony_audio_set_input_payload,
         sony_bravia_set_input_body, to_hex, validate_copy_paths, yamaha_input_path,
     };
@@ -2194,6 +2292,50 @@ mod tests {
     fn safe_app_rel_rejects_absolute() {
         assert!(safe_app_rel("/etc/passwd").is_err());
     }
+
+    #[test]
+    fn box_reset_targets_are_the_four_owned_paths() {
+        let ud = std::path::Path::new("/storage/.kodi/userdata");
+        let ad = std::path::Path::new("/storage/.kodi/addons");
+        let t = box_reset_targets(ud, ad);
+        assert_eq!(t.len(), 4);
+        // the add-on folder under addons/, never the addons root itself
+        assert_eq!(t[0], ad.join("script.oppo203.iso.external"));
+        assert!(t.iter().any(|p| p.ends_with("playercorefactory.xml")));
+        assert!(t.iter().any(|p| p.ends_with("oppo203iso.xml")));
+        assert!(t.iter().any(|p| p.to_string_lossy().contains("addon_data")));
+        // neither the userdata nor the addons root is ever a delete target
+        assert!(!t.iter().any(|p| p == ud || p == ad));
+    }
+
+    #[test]
+    fn remove_existing_paths_removes_owned_and_spares_the_rest() {
+        let base = std::env::temp_dir().join(format!("oppocfg_reset_{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        let ud = base.join("userdata");
+        let ad = base.join("addons");
+        let addon_dir = ad.join("script.oppo203.iso.external");
+        std::fs::create_dir_all(addon_dir.join("resources")).unwrap();
+        std::fs::write(addon_dir.join("addon.xml"), "x").unwrap();
+        std::fs::create_dir_all(ud.join("keymaps")).unwrap();
+        std::fs::write(ud.join("playercorefactory.xml"), "x").unwrap();
+        std::fs::write(ud.join("keymaps").join("oppo203iso.xml"), "x").unwrap();
+        std::fs::create_dir_all(ud.join("addon_data").join("script.oppo203.iso.external")).unwrap();
+        // an unrelated userdata file must survive the reset
+        std::fs::write(ud.join("advancedsettings.xml"), "keep").unwrap();
+
+        let targets = box_reset_targets(&ud, &ad);
+        let removed = remove_existing_paths(&targets).unwrap();
+        assert_eq!(removed.len(), 4);
+        assert!(!addon_dir.exists());
+        assert!(!ud.join("playercorefactory.xml").exists());
+        assert!(!ud.join("addon_data").join("script.oppo203.iso.external").exists());
+        assert!(ud.join("advancedsettings.xml").exists()); // untouched
+        assert!(ud.exists() && ad.exists()); // roots survive
+        // idempotent: a second pass removes nothing
+        assert!(remove_existing_paths(&targets).unwrap().is_empty());
+        let _ = std::fs::remove_dir_all(&base);
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -2234,7 +2376,10 @@ pub fn run() {
             tv_switch_adb,
             smartthings_switch_request,
             start_oppo_live_monitor,
-            stop_oppo_live_monitor
+            stop_oppo_live_monitor,
+            reset_box_userdata,
+            reset_box_ssh,
+            reset_app_data
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

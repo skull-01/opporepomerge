@@ -18,6 +18,7 @@ import { diffIsEmpty, type SettingsDiff } from "../settings_diff";
 import { foldObservation, type SessionLogEntry } from "../session_log";
 import { readDashboardJson, writeDashboardJson } from "../dashboard_store";
 import type { ScreenProps } from "./types";
+import { ResetAllCard } from "./ResetAllCard";
 
 // How often the dashboard re-checks device liveness + session status while it is open.
 const POLL_MS = 6000;
@@ -417,7 +418,7 @@ function SessionHistoryCard({ entries }: { entries: SessionLogEntry[] }) {
   );
 }
 
-export function Dashboard({ go, state }: ScreenProps) {
+export function Dashboard({ go, state, set }: ScreenProps) {
   const targets = livenessTargets(state);
   // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.
   const targetsKey = targets.map((t) => `${t.id}:${t.host}:${t.port}:${t.kind}`).join("|");
@@ -742,6 +743,8 @@ export function Dashboard({ go, state }: ScreenProps) {
           <Icon name="chevL" size={14} /> Back
         </button>
       </div>
+
+      <ResetAllCard go={go} state={state} set={set} />
     </div>
   );
 }
