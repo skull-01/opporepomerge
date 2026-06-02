@@ -488,6 +488,19 @@ describe("wizardStateToAddonSettings — six-option playback preset", () => {
     expect(out.oppo_http_refresh_seconds).toBe("5");
   });
 
+  it("emits the HDMI switch timing (default immediate, frozen) and the delayed knobs", () => {
+    const def = wizardStateToAddonSettings(INITIAL_STATE);
+    expect(def.hdmi_switch_mode).toBe("immediate");
+    expect(def.play_delay_hdmi).toBe("2");
+    expect(def.av_delay_hdmi).toBe("0");
+    const delayed = wizardStateToAddonSettings(
+      makeState({ hdmiSwitchMode: "delayed", playDelayHdmi: "5", avDelayHdmi: "3" }),
+    );
+    expect(delayed.hdmi_switch_mode).toBe("delayed");
+    expect(delayed.play_delay_hdmi).toBe("5");
+    expect(delayed.av_delay_hdmi).toBe("3");
+  });
+
   it("emits playercorefactory_svm3 for external_player + svm3", () => {
     const out = wizardStateToAddonSettings(
       makeState({ playbackArchitecture: "external_player", monitorMode: "svm3" }),

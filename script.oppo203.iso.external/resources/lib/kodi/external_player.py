@@ -145,19 +145,60 @@ def _safe_tv_switch(settings: Settings, target: str) -> str | dict[str, object] 
         return None
 
 
+def _run_avr_pre(settings: Settings) -> None:
+    avr_result = pre_playback_sequence(settings)
+    if not avr_result.ok and not avr_result.skipped:
+        log(f"AVR pre-playback sequence warning (non-fatal): {avr_result.warnings}")
+
+
+def _sequence_switch_and_play(
+    settings: Settings, media_file: str, *, start_player: Callable[[], None]
+) -> None:
+    """Order the TV switch, AVR pre-sequence, and player start per ``hdmi_switch_mode``.
+
+    ``immediate`` (default) keeps today's frozen TV-first order (switch -> AVR pre -> start);
+    ``delayed`` starts the player first and waits for it to render (``compute_play_delay``, >= 6s
+    for ISO/BDMV) before switching the TV, then staggers any downstream AVR input change by
+    ``av_delay_hdmi``. Switch/AVR failures stay non-fatal in both modes."""
+    try:
+        from . import hdmi_sequencing as hs
+    except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+        import hdmi_sequencing as hs  # type: ignore[no-redef]
+
+    if hs.switch_mode(settings) == "immediate":
+        _safe_tv_switch(settings, "oppo")
+        _run_avr_pre(settings)
+        start_player()
+        return
+    _run_avr_pre(settings)
+    start_player()
+    delay = hs.compute_play_delay(media_file, settings.get("play_delay_hdmi", "2"))
+    if delay > 0:
+        log(
+            f"HDMI delayed-switch: waiting {delay}s for the player to render before switching the TV."
+        )
+        time.sleep(delay)
+    _safe_tv_switch(settings, "oppo")
+    stagger = hs.av_stagger(settings)
+    if stagger > 0:
+        time.sleep(stagger)
+
+
 def fast_start(
     settings: Settings, media_file: str, preflight_result: dict[str, object] | None = None
 ) -> None:
     # v2 MVP Slice 3: make startup order deterministic and safe.
-    # TV switching is attempted before OPPO/external playback handoff, but TV
-    # failures are non-fatal so they do not corrupt playback or cleanup.
+    # TV switching is attempted before OPPO/external playback handoff (immediate mode, the
+    # default), but TV failures are non-fatal so they do not corrupt playback or cleanup.
     if settings.get_bool("fast_changeover", True):
         log("Fast changeover requested; v2 MVP uses safe TV-first startup order.")
-    _safe_tv_switch(settings, "oppo")
-    avr_result = pre_playback_sequence(settings)
-    if not avr_result.ok and not avr_result.skipped:
-        log(f"AVR pre-playback sequence warning (non-fatal): {avr_result.warnings}")
-    start_oppo_after_optional_delay(settings, media_file, preflight_result)
+    _sequence_switch_and_play(
+        settings,
+        media_file,
+        start_player=lambda: start_oppo_after_optional_delay(
+            settings, media_file, preflight_result
+        ),
+    )
 
 
 def _oppo_control_module() -> Any:
@@ -285,16 +326,14 @@ def _start_oppo_http(settings: Settings, media_file: str) -> None:
 
 
 def fast_start_http(settings: Settings, media_file: str) -> None:
-    """HTTP-handoff launch: TV switch + AVR pre-sequence, then the community OPPO
-    HTTP file launch instead of the TCP/disc start. The monitor axis (legacy/svm3)
-    confirms playback afterwards, exactly as for the other routings."""
+    """HTTP-handoff launch: TV switch + AVR pre-sequence ordered by ``hdmi_switch_mode``, then
+    the community OPPO HTTP file launch instead of the TCP/disc start. The monitor axis
+    (legacy/svm3/http) confirms playback afterwards, exactly as for the other routings."""
     if settings.get_bool("fast_changeover", True):
         log("Fast changeover requested; v2 MVP uses safe TV-first startup order.")
-    _safe_tv_switch(settings, "oppo")
-    avr_result = pre_playback_sequence(settings)
-    if not avr_result.ok and not avr_result.skipped:
-        log(f"AVR pre-playback sequence warning (non-fatal): {avr_result.warnings}")
-    _start_oppo_http(settings, media_file)
+    _sequence_switch_and_play(
+        settings, media_file, start_player=lambda: _start_oppo_http(settings, media_file)
+    )
 
 
 def fast_return(settings: Settings) -> None:

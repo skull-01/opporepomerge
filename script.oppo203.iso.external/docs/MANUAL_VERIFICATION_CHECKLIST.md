@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on + configurator — selectable confirm-gated HDMI switching (Xnoppo V3, PR5 of 6) — #217
+
+- **Branch / PR:** `claude/pr5-hdmi-sequencing-d8008ab6` → PR (base `main`). Issue [#217](https://github.com/skull-01/script.oppo203.iso.external/issues/217).
+- **What changed (software-verified only):** new `resources/lib/kodi/hdmi_sequencing.py` (pure policy: `switch_mode`/`compute_play_delay`/`av_stagger`) gated into the shared TV-switch path via `external_player._sequence_switch_and_play` (both `fast_start` and `fast_start_http`). `hdmi_switch_mode = immediate` (**default, frozen** — TV-first order, pinned byte-identical by `test_build18_external_player_order_keeps_tv_first_then_avr_then_oppo`); `delayed` starts the player first, waits `play_delay_hdmi` (≥6s for ISO/BDMV) before switching the TV, then staggers by `av_delay_hdmi`. New settings `hdmi_switch_mode`/`play_delay_hdmi`/`av_delay_hdmi` emitted by the configurator. New `tests/test_hdmi_sequencing.py` + ordering tests.
+- **Software gates (this machine):** `pytest -n auto` **1132/3**, mypy `--strict` **51/0**, ruff + `ruff format --check` clean, serial coverage **99%** (gate exit 0); configurator `tsc --noEmit` 0 + **294 vitest** + `vite build`.
+- **Operator verifies (Phase A):** confirm the default `immediate` path is byte-identical to today (the build18 order guard) and the `delayed` mode reorders to player-first + the disc 6s floor.
+- **Operator verifies (Phase C — real hardware):** on a real TV/AVR, confirm `delayed` switches the TV only after the player is rendering (no black-screen flash) and the disc floor / AVR stagger feel right — **not hardware-validated**.
+
 ### Configurator — default flip to Pure HTTP + process-monitor transport + docs (Xnoppo V3, PR4 of 6) — #215
 
 - **Branch / PR:** `claude/pr4-default-flip-bc26c98d` → PR (base `main`). Issue [#215](https://github.com/skull-01/script.oppo203.iso.external/issues/215).
