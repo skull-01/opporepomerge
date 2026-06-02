@@ -1,7 +1,7 @@
 # Xnoppo V3 Adoption and Decision-Tree Enhancements
 
 **Initiative:** Pure-HTTP/436 OPPO control — PRs 1–6 (cross-area: 🟦 add-on · 🟩 configurator)
-**Status:** PLANNED → BUILDING (operator authorized full autonomous build, 2026-06-02)
+**Status:** ✅ **SHIPPED 2026-06-02** — all 6 PRs merged to `main`; released as add-on **v2.9.15** + configurator **v0.8.0** (configurator holds the repo "Latest"). PR1 #208 · PR2 #210 · PR3 #212 · PR6 #214 · PR4 #216 · PR5 #218; ENH #207/#209/#211/#213/#215/#217 (open for operator close). Phase-C hardware validation is the only remaining work.
 **Grounded against:** `main`@`c200349` (2026-06-02)
 **Companion artifacts:** `docs/BUILD_PLAN.md` (Active-initiative summary), `build/configurator_decision_tree.html` (decision tree), `Xnoppo_Elite_V3_OPPO_HTTP_Flows_Functions_Commands.md` (protocol reference)
 **Provenance:** adopts the Xnoppo Elite V3 / `emby-chinoppo-bridge` (MIT) pure-HTTP/436 control model.
