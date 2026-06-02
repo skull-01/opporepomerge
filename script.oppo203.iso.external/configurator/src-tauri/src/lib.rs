@@ -421,6 +421,35 @@ fn reset_app_data(app: tauri::AppHandle) -> Result<Vec<String>, String> {
     remove_existing_paths(&targets)
 }
 
+#[derive(serde::Serialize)]
+struct DiagnosticsEnv {
+    os: String,
+    arch: String,
+    configurator_version: String,
+}
+
+/// Host OS/arch + the configurator's own version, for the diagnostics-export header. No secrets.
+#[tauri::command]
+fn diagnostics_env() -> DiagnosticsEnv {
+    DiagnosticsEnv {
+        os: std::env::consts::OS.to_string(),
+        arch: std::env::consts::ARCH.to_string(),
+        configurator_version: env!("CARGO_PKG_VERSION").to_string(),
+    }
+}
+
+/// Persist the (already-redacted) diagnostics JSON the frontend built to a fixed file under the
+/// app-data dir, returning its absolute path so the user can attach it to a bug report. Overwrites
+/// the previous export. Redaction is the frontend's job; this only writes bytes.
+#[tauri::command]
+fn write_diagnostics(app: tauri::AppHandle, contents: String) -> Result<String, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join("oppo203-configurator-diagnostics.json");
+    fs::write(&path, contents).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 // ============================================================
 // Test-ISO copy to the media share (Phase 4.2 self-test; D-2 = user supplies the ISO)
 // ============================================================
@@ -2461,7 +2490,9 @@ pub fn run() {
             stop_oppo_live_monitor,
             reset_box_userdata,
             reset_box_ssh,
-            reset_app_data
+            reset_app_data,
+            diagnostics_env,
+            write_diagnostics
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
