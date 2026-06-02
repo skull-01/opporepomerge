@@ -177,6 +177,11 @@ export function Step4Model({ go, state, set }: ScreenProps) {
           </div>
         </div>
 
+        <p className="muted" style={{ fontSize: 11.5, margin: "4px 2px 8px", lineHeight: 1.4 }}>
+          TVs are listed by <strong>model family</strong> — every screen size in a family shares the
+          same control setup, so pick the family that matches your model name. Your exact size is
+          covered even when it isn't spelled out below.
+        </p>
         <div className="model-list">
           {filtered.length === 0 && (
             <div className="model-row" style={{ justifyContent: "center", color: "var(--muted)" }}>
@@ -214,6 +219,9 @@ export function Step4Model({ go, state, set }: ScreenProps) {
                     {m.regions.join(" · ")}
                     {m.mapping_confidence && <> · {m.mapping_confidence} confidence</>}
                   </div>
+                  {m.sizes && m.sizes.length > 0 && (
+                    <div className="model-row-meta">Sizes: {m.sizes.map((s) => `${s}″`).join(" · ")}</div>
+                  )}
                 </div>
                 <span className={`chip ${tierChipKind(tier)}`}>
                   <span className="chip-dot" />

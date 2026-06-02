@@ -33,6 +33,11 @@ export type TvDbModel = {
   name: string;
   year: number;
   size: string;
+  // Optional explicit screen sizes (inches, bare numbers) sold in this family, shown in the
+  // wizard purely for user reassurance that their exact set is covered. The control path is
+  // size-independent, so this never affects backend selection; `size` ("various") is the legacy
+  // single-value field. Absent on most rows (sizes aren't in the research data).
+  sizes?: string[];
   lineup: string;
   regions: TvRegion[];
   platform?: string;

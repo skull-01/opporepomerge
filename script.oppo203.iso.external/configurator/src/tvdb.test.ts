@@ -147,3 +147,22 @@ describe("CN region (China-domestic models)", () => {
     expect(hisense.every((m) => m.regions.includes("CN"))).toBe(true);
   });
 });
+
+describe("model sizes (reassurance field)", () => {
+  it("any model that declares sizes has a non-empty array of non-empty strings", () => {
+    for (const m of BUNDLED_TV_DB.models) {
+      if (m.sizes === undefined) continue;
+      expect(Array.isArray(m.sizes), `model ${m.id}`).toBe(true);
+      expect(m.sizes.length, `model ${m.id}`).toBeGreaterThan(0);
+      expect(
+        m.sizes.every((s) => typeof s === "string" && s.length > 0),
+        `model ${m.id}`,
+      ).toBe(true);
+    }
+  });
+
+  it("the Hisense E8N Pro family lists its screen sizes", () => {
+    const e = BUNDLED_TV_DB.models.find((m) => m.id === "hisense-e8n-pro-uled-x-cn-2024");
+    expect(e?.sizes).toEqual(["65", "75", "85", "100"]);
+  });
+});
