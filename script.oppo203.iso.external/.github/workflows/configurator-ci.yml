@@ -45,6 +45,11 @@ jobs:
           cache: "npm"
           cache-dependency-path: configurator/package-lock.json
 
+      - name: Set up Python (for the add-on bundle step)
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
       - name: Install Rust (stable)
         uses: dtolnay/rust-toolchain@stable
 
@@ -61,6 +66,9 @@ jobs:
 
       - name: Unit tests (vitest)
         run: npm test
+
+      - name: Bundle the add-on (tauri build.rs requires the resource zip)
+        run: npm run bundle:addon
 
       - name: Rust tests (cargo test)
         run: cargo test --manifest-path src-tauri/Cargo.toml
