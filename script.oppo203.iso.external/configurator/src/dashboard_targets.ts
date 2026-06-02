@@ -3,11 +3,14 @@ import { isAvrChain } from "./steps";
 
 /**
  * How the dashboard checks one device for liveness:
- *   "tcp"  - a plain TCP connect (tcp_probe): reachable if the port accepts a connection.
- *   "oppo" - an OPPO #QPW query (oppo_query): reachable if the player replies, and the reply
- *            also yields a power state to show.
+ *   "tcp"      - a plain TCP connect (tcp_probe): reachable if the port accepts a connection.
+ *   "oppo"     - an OPPO #QPW query (oppo_query): reachable if the player replies, and the reply
+ *                also yields a power state to show.
+ *   "oppo-http" - an OPPO HTTP/436 request (oppo_playback_info): reachable if the player answers
+ *                over HTTP. Chosen for a Pure-HTTP (http monitor) install so the dashboard's
+ *                process monitor uses the same transport the add-on does (Step-4 decision).
  */
-export type LivenessKind = "tcp" | "oppo";
+export type LivenessKind = "tcp" | "oppo" | "oppo-http";
 
 export type LivenessTarget = {
   id: "kodi" | "player" | "tv" | "avr";
@@ -77,7 +80,8 @@ export function livenessTargets(state: WizardState): LivenessTarget[] {
       label: "Player",
       host: state.playerIp,
       port: 23,
-      kind: "oppo",
+      // Pure-HTTP installs probe the player over HTTP/436, matching the add-on's http monitor.
+      kind: state.monitorMode === "http" ? "oppo-http" : "oppo",
     },
   ];
   const tvPort = tvControlPort(state.tvBackend);

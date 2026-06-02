@@ -124,6 +124,9 @@ export type WizardState = {
   // handing over the folder root (else send the original marker). Advanced; defaults on and is
   // fallback-safe in the add-on -- like oppoDiscFolderRoot, no dedicated UI control.
   oppoBdmvCheckfolder: boolean;
+  // Poll interval (seconds) for the http monitor (/getglobalinfo) and the dashboard's HTTP
+  // liveness probe ("Refresh Rate"). Emitted as oppo_http_refresh_seconds for http_handoff.
+  oppoHttpRefreshSeconds: string;
 
   playerInput: InputAddress;
   kodiInput: InputAddress;
@@ -151,7 +154,9 @@ export const INITIAL_STATE: WizardState = {
   kodiVerified: false,
   topology: null,
   playbackArchitecture: "http_handoff",
-  monitorMode: "svm3",
+  // Default install preset = Pure HTTP (http_handoff_http) per docs/BUILD_PLAN.md D-A. The
+  // Step-4 pill or the Step-3 player test can still drop to svm3/legacy.
+  monitorMode: "http",
   kodiPlatform: null,
   pythonPath: "/usr/bin/python3",
   smbSharePath: "\\\\10.0.1.42\\Kodi",
@@ -192,6 +197,7 @@ export const INITIAL_STATE: WizardState = {
   oppoPathTo: "",
   oppoDiscFolderRoot: true,
   oppoBdmvCheckfolder: true,
+  oppoHttpRefreshSeconds: "5",
   playerInput: null,
   kodiInput: null,
   testMode: null,

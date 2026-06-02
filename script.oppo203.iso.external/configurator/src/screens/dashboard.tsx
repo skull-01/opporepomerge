@@ -79,6 +79,11 @@ async function probeTarget(t: LivenessTarget): Promise<LiveStatus> {
       const power = parseOppoPowerReply(raw);
       return { reachable: true, detail: power === "unknown" ? "reachable" : `power ${power}` };
     }
+    if (t.kind === "oppo-http") {
+      // Pure-HTTP install: reachable if the player answers an HTTP/436 request (getmovieplayinfo).
+      await invoke<string>("oppo_playback_info", { host: t.host });
+      return { reachable: true, detail: "HTTP reachable" };
+    }
     const open = await invoke<boolean>("tcp_probe", { host: t.host, port: t.port });
     return { reachable: open, detail: open ? `:${t.port} open` : `:${t.port} no answer` };
   } catch {

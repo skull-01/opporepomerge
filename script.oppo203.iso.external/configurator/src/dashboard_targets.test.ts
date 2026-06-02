@@ -8,10 +8,22 @@ function make(patch: Partial<WizardState>): WizardState {
 
 describe("livenessTargets", () => {
   it("checks the Kodi box and the player, and omits the TV until an IP is captured", () => {
-    const targets = livenessTargets(make({ topology: "kodi_tv_player" }));
+    const targets = livenessTargets(make({ topology: "kodi_tv_player", monitorMode: "svm3" }));
     expect(targets.map((t) => t.id)).toEqual(["kodi", "player"]);
     const player = targets.find((t) => t.id === "player");
     expect(player).toMatchObject({ host: INITIAL_STATE.playerIp, port: 23, kind: "oppo" });
+  });
+
+  it("probes the player over HTTP for a Pure-HTTP install (http monitor), else TCP control", () => {
+    expect(livenessTargets(make({ monitorMode: "http" })).find((t) => t.id === "player")?.kind).toBe(
+      "oppo-http",
+    );
+    expect(livenessTargets(make({ monitorMode: "svm3" })).find((t) => t.id === "player")?.kind).toBe(
+      "oppo",
+    );
+    expect(
+      livenessTargets(make({ monitorMode: "legacy" })).find((t) => t.id === "player")?.kind,
+    ).toBe("oppo");
   });
 
   it("adds the TV when a backend with a TCP port and an IP are set, else omits it", () => {

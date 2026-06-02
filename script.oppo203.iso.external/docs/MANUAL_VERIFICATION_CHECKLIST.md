@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — default flip to Pure HTTP + process-monitor transport + docs (Xnoppo V3, PR4 of 6) — #215
+
+- **Branch / PR:** `claude/pr4-default-flip-bc26c98d` → PR (base `main`). Issue [#215](https://github.com/skull-01/script.oppo203.iso.external/issues/215).
+- **What changed (software-verified only):** new installs now **default to Pure HTTP** (`INITIAL_STATE.monitorMode = "http"` → preset `http_handoff_http`); the Step-3 player test records SVM3 support without overriding an explicit `http` choice; Step-4 copy updated (Pure HTTP = recommended). New **Refresh Rate** setting `oppoHttpRefreshSeconds` (default 5) emitted as `oppo_http_refresh_seconds`. The dashboard **process-monitor transport** follows the Step-4 choice: a Pure-HTTP install probes the player over HTTP/436 (`oppo_playback_info`) instead of TCP `#QPW` (new `oppo-http` liveness kind). **No add-on code change** — `normalize_architecture` already derives legacy for pre-preset (existing) installs, so existing installs are unaffected; only new installs get the http preset. Docs: `BUILD_PLAN.md` D-A → `http_handoff_http`, `AGENTS.md` norm updated to the seven-preset asymmetric matrix.
+- **Software gates (this machine):** configurator `tsc --noEmit` 0 + **293 vitest** + `vite build`; **browser-verified** (vite dev server): a fresh wizard's Step-4 shows **Pure HTTP selected by default** with "recommended for new installs", SVM3 reads "TCP verbose-mode confirmation", and the callout says "Pure HTTP is the default". **Add-on `resources/` untouched → suite stays 1124/3.**
+- **Operator verifies (Phase A):** confirm the default flip is what you want (new installs → undocumented HTTP path); confirm existing installs (with a stored preset / pre-preset legacy) are unchanged.
+- **Operator verifies (Phase C — real hardware):** on a fresh install against a real OPPO, confirm Pure HTTP plays + the dashboard's HTTP liveness probe reflects reachability — **not hardware-validated**.
+
 ### Add-on + configurator — checkfolderhasBDMV-first disc nav (Xnoppo V3, PR6 of 6) — #213
 
 - **Branch / PR:** `claude/pr6-tcp-bdmv-3db2d167` → PR (base `main`). Issue [#213](https://github.com/skull-01/script.oppo203.iso.external/issues/213).

@@ -244,6 +244,8 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     out.oppo_http_disc_folder_root = state.oppoDiscFolderRoot ? "true" : "false";
     // checkfolderhasBDMV-first disc nav (add-on gates it on player HTTP capability + fallback-safe).
     out.oppo_bdmv_checkfolder = state.oppoBdmvCheckfolder ? "true" : "false";
+    // "Refresh Rate" for the http monitor + process monitor poll.
+    if (state.oppoHttpRefreshSeconds) out.oppo_http_refresh_seconds = state.oppoHttpRefreshSeconds;
     if (state.oppoPathFrom) out.oppo_http_path_from = state.oppoPathFrom;
     if (state.oppoPathTo) out.oppo_http_path_to = state.oppoPathTo;
   }
