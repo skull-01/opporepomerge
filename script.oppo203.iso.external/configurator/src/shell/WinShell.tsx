@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { Icon } from "../icons";
+import { t } from "../i18n";
 
 type Props = {
   title?: string;
   children: ReactNode;
 };
 
-export function WinShell({ title = "OppoKodiAddon Configurator", children }: Props) {
+export function WinShell({ title = t("app.title"), children }: Props) {
   return (
     <div className="win">
       <div className="titlebar" data-tauri-drag-region="">
@@ -20,7 +21,7 @@ export function WinShell({ title = "OppoKodiAddon Configurator", children }: Pro
           <button
             className="titlebar-btn"
             tabIndex={-1}
-            aria-label="Minimize"
+            aria-label={t("window.minimize")}
             onClick={() => {
               void getCurrentWindow().minimize();
             }}
@@ -30,7 +31,7 @@ export function WinShell({ title = "OppoKodiAddon Configurator", children }: Pro
           <button
             className="titlebar-btn"
             tabIndex={-1}
-            aria-label="Maximize"
+            aria-label={t("window.maximize")}
             onClick={() => {
               void getCurrentWindow().toggleMaximize();
             }}
@@ -40,7 +41,7 @@ export function WinShell({ title = "OppoKodiAddon Configurator", children }: Pro
           <button
             className="titlebar-btn close"
             tabIndex={-1}
-            aria-label="Close"
+            aria-label={t("window.close")}
             onClick={() => {
               void getCurrentWindow().close();
             }}
