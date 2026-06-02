@@ -590,11 +590,13 @@ def http_info_indicates_playing(info: object) -> bool:
                 continue
             if str(val).strip().upper() in HTTP_PLAY_STATUSES:
                 return True
-            # Numeric 0 or 56 (int or str) = playing
+            # Numeric 0 or 56 (int or str) = playing. int() of a non-finite float (inf/nan from a
+            # malformed payload) raises OverflowError/ValueError, not just Type/ValueError -- catch
+            # it so a junk response can never crash the predicate (cf. the i18n.L(inf) fix in v1.1.9).
             try:
                 if int(val) in (0, 56):
                     return True
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 pass
     return False
 
