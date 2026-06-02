@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — TV DB: +110 TCL/Hisense rows (2018–2026), 9 updated — PR #258
+
+- **Branch / PR:** `claude/tv-db-tcl-hisense-2026` → [PR #258](https://github.com/skull-01/script.oppo203.iso.external/pull/258) (merged to `main`, `3507196`). Data addition from two model-research datasets; no `type:bug` filed (not a bug — file an `ENH-` if you want it tracked).
+- **What changed (software-verified only):** 110 new TCL/Hisense model rows + 9 existing rows updated in place, transformed into the `lineups`+`models` schema (backend/region/lineup mapped; regions folded to US/UK/EU/Asia/CN; all `validated:false`, confidence low CN / medium global). No new lineups; every model references an existing lineup. Both bundled + docs copies byte-identical; total models 350→460.
+- **Software gates (this machine):** `tsc --noEmit` 0, **297 vitest** (incl. the `tv_db_consistency` two-copy guard), `vite build` OK.
+- **Operator verifies (Phase C):** in the wizard's TV step, confirm the new TCL/Hisense families surface under the right brand/region filter with a sane recommended backend (ADB for Android/Google TV, `custom_command` for VIDAA, `roku_ecp` for Roku). The 9 in-place updates (e.g. `U7A/U8A`→`U7A`+ new `U8A`; `T7K` kept separate by year) and the candidate backend/region mappings are **not hardware-validated** — fact-check before promoting any row to `validated:true`.
+
 ### Add-on — L12: distinct Samsung TV switch defaults — #256
 
 - **Branch / PR:** `claude/l12-samsung-hdmi-defaults` → [PR #257](https://github.com/skull-01/script.oppo203.iso.external/pull/257) (merged to `main`, `feb7f53`). Issue [#256](https://github.com/skull-01/script.oppo203.iso.external/issues/256). 2026-06-02 full-audit remediation — the final finding.
