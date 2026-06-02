@@ -832,48 +832,48 @@
     {
       "id": "hisense-u7n-uled-cn-2024",
       "brand": "hisense",
-      "name": "U7N ULED Mini LED",
+      "name": "U7N Mini LED",
       "year": 2024,
       "size": "various",
       "lineup": "hisense-china-vidaa",
       "regions": [
         "CN"
       ],
-      "platform": "VIDAA (China) / 聚好看",
+      "platform": "VIDAA",
       "primary_backend": "custom_command",
       "fallback_backends": [
         "adb"
       ],
       "mapping_confidence": "low",
       "validated": false,
-      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "CN"
       ],
-      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "hisense-u8n-uled-cn-2024",
       "brand": "hisense",
-      "name": "U8N ULED Mini LED",
+      "name": "U8N",
       "year": 2024,
       "size": "various",
       "lineup": "hisense-china-vidaa",
       "regions": [
         "CN"
       ],
-      "platform": "VIDAA (China) / 聚好看",
+      "platform": "VIDAA",
       "primary_backend": "custom_command",
       "fallback_backends": [
         "adb"
       ],
       "mapping_confidence": "low",
       "validated": false,
-      "notes": "China-domestic Hisense model family on VIDAA / 聚好看; no first-class VIDAA backend, so a custom command is primary with ADB as a candidate fallback. Candidate mapping, not hardware-validated.",
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "CN"
       ],
-      "region_notes": "China-domestic release; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "hisense-e8k-uled-cn-2023",
@@ -1041,25 +1041,25 @@
     {
       "id": "hisense-h8e-h9e-plus-android-tv-2018",
       "brand": "hisense",
-      "name": "H8E/H9E Plus Android TV",
+      "name": "H8E",
       "year": 2018,
       "size": "various",
       "lineup": "hisense-googletv",
       "regions": [
         "US"
       ],
-      "platform": "Android TV",
-      "primary_backend": "adb",
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
       "fallback_backends": [
-        "custom_command"
+        "adb"
       ],
-      "mapping_confidence": "medium",
+      "mapping_confidence": "low",
       "validated": false,
-      "notes": "Hisense North America family mapping; Android TV uses ADB, Roku TV uses Roku ECP.",
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "US"
       ],
-      "region_notes": "Family-level release-region mapping for PlayBridge wizard filtering; exact regional model suffixes and sizes must be confirmed per country."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "hisense-r6-roku-tv-2018",
@@ -1087,27 +1087,31 @@
     {
       "id": "hisense-u7a-u8a-uled-vidaa-2018",
       "brand": "hisense",
-      "name": "U7A/U8A ULED VIDAA",
+      "name": "U7A",
       "year": 2018,
       "size": "various",
       "lineup": "hisense-vidaa",
       "regions": [
         "UK",
         "EU",
-        "Asia"
+        "Asia",
+        "CN"
       ],
       "platform": "VIDAA",
       "primary_backend": "custom_command",
-      "fallback_backends": [],
-      "mapping_confidence": "medium",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
       "validated": false,
-      "notes": "Hisense UK/EU/Asia family mapping; VIDAA has no first-class PlayBridge backend yet, so use custom command/future VIDAA backend.",
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "UK",
         "EU",
-        "Asia"
+        "Asia",
+        "CN"
       ],
-      "region_notes": "Family-level release-region mapping for PlayBridge wizard filtering; exact regional model suffixes and sizes must be confirmed per country."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "hisense-b7100-b7500-vidaa-2019",
@@ -1279,27 +1283,31 @@
     {
       "id": "hisense-u7qf-u8qf-uled-vidaa-2020",
       "brand": "hisense",
-      "name": "U7QF/U8QF ULED VIDAA",
+      "name": "U7QF",
       "year": 2020,
       "size": "various",
       "lineup": "hisense-vidaa",
       "regions": [
         "UK",
         "EU",
-        "Asia"
+        "Asia",
+        "CN"
       ],
-      "platform": "VIDAA",
-      "primary_backend": "custom_command",
-      "fallback_backends": [],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
       "mapping_confidence": "medium",
       "validated": false,
-      "notes": "Hisense UK/EU/Asia family mapping; VIDAA has no first-class PlayBridge backend yet, so use custom command/future VIDAA backend.",
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "UK",
         "EU",
-        "Asia"
+        "Asia",
+        "CN"
       ],
-      "region_notes": "Family-level release-region mapping for PlayBridge wizard filtering; exact regional model suffixes and sizes must be confirmed per country."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "hisense-a6g-a7g-vidaa-2021",
@@ -1494,7 +1502,7 @@
     {
       "id": "hisense-u7h-uled-google-tv-2022",
       "brand": "hisense",
-      "name": "U7H ULED Google TV",
+      "name": "U7H",
       "year": 2022,
       "size": "various",
       "lineup": "hisense-googletv",
@@ -1506,13 +1514,13 @@
       "fallback_backends": [
         "custom_command"
       ],
-      "mapping_confidence": "high",
+      "mapping_confidence": "medium",
       "validated": false,
-      "notes": "Hisense OS differs strongly by region: Google TV common in North America, VIDAA in UK/EU/Asia.",
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "US"
       ],
-      "region_notes": "US-market model family mapping; not assumed released under the same OS/model code in UK/EU/Asia."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "hisense-u7h-u8h-vidaa-2022",
@@ -1542,7 +1550,7 @@
     {
       "id": "hisense-u8h-uled-google-tv-2022",
       "brand": "hisense",
-      "name": "U8H ULED Google TV",
+      "name": "U8H",
       "year": 2022,
       "size": "various",
       "lineup": "hisense-googletv",
@@ -1554,13 +1562,13 @@
       "fallback_backends": [
         "custom_command"
       ],
-      "mapping_confidence": "high",
+      "mapping_confidence": "medium",
       "validated": false,
-      "notes": "Hisense OS differs strongly by region: Google TV common in North America, VIDAA in UK/EU/Asia.",
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "US"
       ],
-      "region_notes": "US-market model family mapping; not assumed released under the same OS/model code in UK/EU/Asia."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "hisense-a4nr-roku-tv-2023",
@@ -7812,14 +7820,15 @@
     {
       "id": "tcl-c6-android-tv-2018",
       "brand": "tcl",
-      "name": "C6 Android TV",
+      "name": "C6",
       "year": 2018,
       "size": "various",
       "lineup": "tcl-android-tv",
       "regions": [
         "UK",
         "EU",
-        "Asia"
+        "Asia",
+        "CN"
       ],
       "platform": "Android TV",
       "primary_backend": "adb",
@@ -7828,13 +7837,14 @@
       ],
       "mapping_confidence": "medium",
       "validated": false,
-      "notes": "TCL EU/Asia family mapping; Android TV/Google TV naming varies by market and model suffix.",
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
       "release_regions": [
         "UK",
         "EU",
-        "Asia"
+        "Asia",
+        "CN"
       ],
-      "region_notes": "Family-level release-region mapping for PlayBridge wizard filtering; exact regional model suffixes and sizes must be confirmed per country."
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     },
     {
       "id": "tcl-dp600-p6-android-tv-2018",
@@ -10060,6 +10070,2799 @@
         "Asia"
       ],
       "region_notes": "Hisense flagship OS varies by region; confirm VIDAA vs Google TV before relying on the backend."
+    },
+    {
+      "id": "tcl-x11h-cn-2024",
+      "brand": "tcl",
+      "name": "X11H Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q10k-cn-2024",
+      "brand": "tcl",
+      "name": "Q10K Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q10k-pro-cn-2024",
+      "brand": "tcl",
+      "name": "Q10K Pro Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7k-cn-2024",
+      "brand": "tcl",
+      "name": "T7K Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c12h-cn-2024",
+      "brand": "tcl",
+      "name": "C12H Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t6l-cn-2024",
+      "brand": "tcl",
+      "name": "T6L Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-p11h-cn-2024",
+      "brand": "tcl",
+      "name": "P11H",
+      "year": 2024,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q10l-cn-2025",
+      "brand": "tcl",
+      "name": "Q10L Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q10l-pro-cn-2025",
+      "brand": "tcl",
+      "name": "Q10L Pro Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7l-cn-2025",
+      "brand": "tcl",
+      "name": "T7L Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7l-pro-cn-2025",
+      "brand": "tcl",
+      "name": "T7L Pro Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q9l-cn-2025",
+      "brand": "tcl",
+      "name": "Q9L Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q9l-pro-cn-2025",
+      "brand": "tcl",
+      "name": "Q9L Pro Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x11l-cn-2025",
+      "brand": "tcl",
+      "name": "X11L Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q10m-cn-2025",
+      "brand": "tcl",
+      "name": "Q10M RGB Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q10m-ultra-cn-2025",
+      "brand": "tcl",
+      "name": "Q10M Ultra RGB Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q9m-cn-2025",
+      "brand": "tcl",
+      "name": "Q9M RGB Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q9m-pro-cn-2026",
+      "brand": "tcl",
+      "name": "Q9M Pro Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7m-pro-cn-2026",
+      "brand": "tcl",
+      "name": "T7M Pro Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t7m-ultra-cn-2026",
+      "brand": "tcl",
+      "name": "T7M Ultra Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x11l-cn-2026",
+      "brand": "tcl",
+      "name": "X11L Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-max163m-pro-cn-2026",
+      "brand": "tcl",
+      "name": "Max163M Pro Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-110ux-cn-2024",
+      "brand": "hisense",
+      "name": "110UX Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-98ux-cn-2024",
+      "brand": "hisense",
+      "name": "98UX Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8n-pro-cn-2024",
+      "brand": "hisense",
+      "name": "U8N Pro Mini LED",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e5n-cn-2024",
+      "brand": "hisense",
+      "name": "E5N",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e7n-cn-2024",
+      "brand": "hisense",
+      "name": "E7N",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e8n-ultra-cn-2024",
+      "brand": "hisense",
+      "name": "E8N Ultra",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7s-pro-cn-2025",
+      "brand": "hisense",
+      "name": "U7S Pro RGB Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e8s-pro-cn-2025",
+      "brand": "hisense",
+      "name": "E8S Pro RGB Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e7q-cn-2025",
+      "brand": "hisense",
+      "name": "E7Q Mini LED",
+      "year": 2025,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-a7q-cn-2025",
+      "brand": "hisense",
+      "name": "A7Q",
+      "year": 2025,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ux2026-cn-2026",
+      "brand": "hisense",
+      "name": "UX2026 RGB Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e5s-pro-cn-2026",
+      "brand": "hisense",
+      "name": "E5S Pro RGB Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e5s-cn-2026",
+      "brand": "hisense",
+      "name": "E5S Mini LED",
+      "year": 2026,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x6-intl-2018",
+      "brand": "tcl",
+      "name": "X6",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x5-intl-2018",
+      "brand": "tcl",
+      "name": "X5",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x8-intl-2018",
+      "brand": "tcl",
+      "name": "X8 QLED",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-xess-floating-window-cn-2018",
+      "brand": "tcl",
+      "name": "XESS Floating Window",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c7-intl-2018",
+      "brand": "tcl",
+      "name": "C7",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-p6-intl-2018",
+      "brand": "tcl",
+      "name": "P6",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-p5-intl-2018",
+      "brand": "tcl",
+      "name": "P5",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c5-intl-2018",
+      "brand": "tcl",
+      "name": "C5",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "Asia",
+        "CN"
+      ],
+      "platform": "Other",
+      "primary_backend": "custom_command",
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c2-intl-2018",
+      "brand": "tcl",
+      "name": "C2",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-r615-r617-intl-2018",
+      "brand": "tcl",
+      "name": "R615 / R617",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-roku",
+      "regions": [
+        "US"
+      ],
+      "platform": "Roku TV",
+      "primary_backend": "roku_ecp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-s515-s517-intl-2018",
+      "brand": "tcl",
+      "name": "S515 / S517",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-roku",
+      "regions": [
+        "US"
+      ],
+      "platform": "Roku TV",
+      "primary_backend": "roku_ecp",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c76-intl-2018",
+      "brand": "tcl",
+      "name": "C76 QLED",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "EU"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "EU"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-55t3m-cn-2018",
+      "brand": "tcl",
+      "name": "55T3M",
+      "year": 2018,
+      "size": "various",
+      "lineup": "tcl-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x10-intl-2019",
+      "brand": "tcl",
+      "name": "X10 QLED",
+      "year": 2019,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c10-intl-2019",
+      "brand": "tcl",
+      "name": "C10 QLED",
+      "year": 2019,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x9-intl-2019",
+      "brand": "tcl",
+      "name": "X9 QLED",
+      "year": 2019,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-100x6c-intl-2019",
+      "brand": "tcl",
+      "name": "100X6C",
+      "year": 2019,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-p8-intl-2019",
+      "brand": "tcl",
+      "name": "P8",
+      "year": 2019,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c3-intl-2019",
+      "brand": "tcl",
+      "name": "C3",
+      "year": 2019,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c66-intl-2019",
+      "brand": "tcl",
+      "name": "C66",
+      "year": 2019,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c8-intl-2020",
+      "brand": "tcl",
+      "name": "C8 QLED",
+      "year": 2020,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-p9-intl-2020",
+      "brand": "tcl",
+      "name": "P9",
+      "year": 2020,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-v8-intl-2020",
+      "brand": "tcl",
+      "name": "V8",
+      "year": 2020,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c68-intl-2020",
+      "brand": "tcl",
+      "name": "C68",
+      "year": 2020,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t8e-pro-intl-2021",
+      "brand": "tcl",
+      "name": "T8E-Pro",
+      "year": 2021,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-t9e-intl-2021",
+      "brand": "tcl",
+      "name": "T9E",
+      "year": 2021,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-q8e-intl-2021",
+      "brand": "tcl",
+      "name": "Q8E",
+      "year": 2021,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x925-pro-intl-2021",
+      "brand": "tcl",
+      "name": "X925 Pro Mini LED",
+      "year": 2021,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-x92-intl-2021",
+      "brand": "tcl",
+      "name": "X92 Mini LED",
+      "year": 2021,
+      "size": "various",
+      "lineup": "tcl-android-tv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c82-intl-2021",
+      "brand": "tcl",
+      "name": "C82",
+      "year": 2021,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-c72-intl-2021",
+      "brand": "tcl",
+      "name": "C72+",
+      "year": 2021,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-ux-intl-2022",
+      "brand": "tcl",
+      "name": "UX RGB Mini LED",
+      "year": 2022,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-u8h-intl-2022",
+      "brand": "tcl",
+      "name": "U8H",
+      "year": 2022,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-e8h-intl-2022",
+      "brand": "tcl",
+      "name": "E8H",
+      "year": 2022,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-u7h-intl-2022",
+      "brand": "tcl",
+      "name": "U7H",
+      "year": 2022,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-u8-intl-2023",
+      "brand": "tcl",
+      "name": "U8",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-e8-intl-2023",
+      "brand": "tcl",
+      "name": "E8",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "tcl-u7-intl-2023",
+      "brand": "tcl",
+      "name": "U7",
+      "year": 2023,
+      "size": "various",
+      "lineup": "tcl-googletv",
+      "regions": [
+        "US"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-hz75u9a-intl-2018",
+      "brand": "hisense",
+      "name": "HZ75U9A",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8a-intl-2018",
+      "brand": "hisense",
+      "name": "U8A",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u9e-cn-2018",
+      "brand": "hisense",
+      "name": "U9E",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8e-cn-2018",
+      "brand": "hisense",
+      "name": "U8E",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7e-cn-2018",
+      "brand": "hisense",
+      "name": "U7E",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-l5-intl-2018",
+      "brand": "hisense",
+      "name": "L5 Laser TV",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-l7-intl-2018",
+      "brand": "hisense",
+      "name": "L7 Laser TV",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-h9e-intl-2018",
+      "brand": "hisense",
+      "name": "H9E",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "US"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-h6e-intl-2018",
+      "brand": "hisense",
+      "name": "H6E",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-vidaa",
+      "regions": [
+        "US"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ec880-cn-2018",
+      "brand": "hisense",
+      "name": "EC880 ULED",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ec720-cn-2018",
+      "brand": "hisense",
+      "name": "EC720",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-n3000u-cn-2018",
+      "brand": "hisense",
+      "name": "N3000U",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e6t-cn-2018",
+      "brand": "hisense",
+      "name": "E6T",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ec500u-cn-2018",
+      "brand": "hisense",
+      "name": "EC500U",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ec320a-cn-2018",
+      "brand": "hisense",
+      "name": "EC320A",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-88-laser-tv-cn-2018",
+      "brand": "hisense",
+      "name": "88 Laser TV Laser TV",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-laser-cinema-cn-2018",
+      "brand": "hisense",
+      "name": "Laser Cinema Laser TV",
+      "year": 2018,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8e-cn-2019",
+      "brand": "hisense",
+      "name": "U8E",
+      "year": 2019,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7e-cn-2019",
+      "brand": "hisense",
+      "name": "U7E",
+      "year": 2019,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-a8-intl-2019",
+      "brand": "hisense",
+      "name": "A8 OLED",
+      "year": 2019,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-s7-cn-2019",
+      "brand": "hisense",
+      "name": "S7",
+      "year": 2019,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-50v1a-cn-2019",
+      "brand": "hisense",
+      "name": "50V1A",
+      "year": 2019,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-75l9s-cn-2019",
+      "brand": "hisense",
+      "name": "75L9S",
+      "year": 2019,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u9-intl-2020",
+      "brand": "hisense",
+      "name": "U9",
+      "year": 2020,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8qf-intl-2020",
+      "brand": "hisense",
+      "name": "U8QF",
+      "year": 2020,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-a7-cn-2020",
+      "brand": "hisense",
+      "name": "A7",
+      "year": 2020,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-a7f-cn-2020",
+      "brand": "hisense",
+      "name": "A7F",
+      "year": 2020,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-x-cn-2020",
+      "brand": "hisense",
+      "name": "X",
+      "year": 2020,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-88l5v-cn-2020",
+      "brand": "hisense",
+      "name": "88L5V Laser TV",
+      "year": 2020,
+      "size": "various",
+      "lineup": "hisense-china-vidaa",
+      "regions": [
+        "CN"
+      ],
+      "platform": "VIDAA",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7g-pro-intl-2021",
+      "brand": "hisense",
+      "name": "U7G-PRO",
+      "year": 2021,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e7g-pro-intl-2021",
+      "brand": "hisense",
+      "name": "E7G-PRO",
+      "year": 2021,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e5g-intl-2021",
+      "brand": "hisense",
+      "name": "E5G",
+      "year": 2021,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Android TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (high source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-ux-intl-2022",
+      "brand": "hisense",
+      "name": "UX RGB Mini LED",
+      "year": 2022,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US",
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e8h-intl-2022",
+      "brand": "hisense",
+      "name": "E8H",
+      "year": 2022,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u8-intl-2023",
+      "brand": "hisense",
+      "name": "U8",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e8-intl-2023",
+      "brand": "hisense",
+      "name": "E8",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "UK",
+        "EU",
+        "Asia",
+        "CN"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-u7-intl-2023",
+      "brand": "hisense",
+      "name": "U7",
+      "year": 2023,
+      "size": "various",
+      "lineup": "hisense-googletv",
+      "regions": [
+        "US"
+      ],
+      "platform": "Google TV",
+      "primary_backend": "adb",
+      "fallback_backends": [
+        "custom_command"
+      ],
+      "mapping_confidence": "medium",
+      "validated": false,
+      "notes": "Imported 2026-06-02 from model research (medium source confidence). Candidate control mapping, not hardware-validated.",
+      "release_regions": [
+        "US"
+      ],
+      "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
     }
   ],
   "fact_check_notes": [
