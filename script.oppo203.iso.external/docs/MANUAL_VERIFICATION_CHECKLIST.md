@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on + configurator — checkfolderhasBDMV-first disc nav (Xnoppo V3, PR6 of 6) — #213
+
+- **Branch / PR:** `claude/pr6-tcp-bdmv-3db2d167` → PR (base `main`). Issue [#213](https://github.com/skull-01/script.oppo203.iso.external/issues/213).
+- **What changed (software-verified only):** new `oppo_control.resolve_disc_play_path(settings, media_file)` is the shared disc-folder resolver used by `_translate_media_path` + `_build_json_payload` (so it covers the http_handoff routing AND the TCP `http_api`/`tcp_then_http` modes). **Off path is byte-identical to today's `_disc_folder_root`**; when `oppo_bdmv_checkfolder` is on AND `supports_http(model)`, a BDMV marker is confirmed via `/checkfolderhasBDMV` before the folder root is used — no-BDMV → original marker; toggle-off / not-capable / unreachable all fall back to the folder root. PR3's redundant logging probe in `_http_play_disc_aware` is consolidated here. Configurator: `oppoBdmvCheckfolder` state (default on) emitted as `oppo_bdmv_checkfolder` for http_handoff (mirrors `oppo_http_disc_folder_root`, no dedicated UI). New `tests/test_oppo_bdmv_checkfolder.py` + `mapping.test.ts` pin.
+- **Software gates (this machine):** `pytest -n auto` **1124/3**, mypy `--strict` **51/0**, ruff + `ruff format --check` clean, serial coverage **99%** (gate exit 0); configurator `tsc --noEmit` 0 + **292 vitest** + `vite build`.
+- **Operator verifies (Phase A):** read `resolve_disc_play_path` — confirm every fallback branch returns the folder root (frozen) and only a capable+reachable+no-BDMV verdict returns the original marker. Confirm `oppo_http_disc_folder_root`/`oppo_bdmv_checkfolder` off paths are unchanged.
+- **Operator verifies (Phase C — real hardware):** on a real OPPO with a BDMV disc, confirm `/checkfolderhasBDMV` returns the expected verdict and the resulting play path is correct — **not hardware-validated**.
+
 ### Add-on — pure-HTTP launch orchestration: mount + ISO auto-heal + BDMV probe (Xnoppo V3, PR3 of 6) — #211
 
 - **Branch / PR:** `claude/pr3-http-orchestration-169e6c9a` → PR (base `main`). Issue [#211](https://github.com/skull-01/script.oppo203.iso.external/issues/211).

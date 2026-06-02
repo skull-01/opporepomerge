@@ -242,6 +242,8 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     // player's NAS mount namespace, so the operator sets it. Candidate; hardware-pending.
     out.oppo_http_payload_mode = "json_payload";
     out.oppo_http_disc_folder_root = state.oppoDiscFolderRoot ? "true" : "false";
+    // checkfolderhasBDMV-first disc nav (add-on gates it on player HTTP capability + fallback-safe).
+    out.oppo_bdmv_checkfolder = state.oppoBdmvCheckfolder ? "true" : "false";
     if (state.oppoPathFrom) out.oppo_http_path_from = state.oppoPathFrom;
     if (state.oppoPathTo) out.oppo_http_path_to = state.oppoPathTo;
   }

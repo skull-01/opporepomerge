@@ -587,6 +587,22 @@ describe("wizardStateToAddonSettings — six-option playback preset", () => {
     expect(out.oppo_http_disc_folder_root).toBeUndefined();
   });
 
+  it("emits oppo_bdmv_checkfolder for http_handoff (default on) and omits it elsewhere", () => {
+    expect(
+      wizardStateToAddonSettings(makeState({ playbackArchitecture: "http_handoff" }))
+        .oppo_bdmv_checkfolder,
+    ).toBe("true");
+    expect(
+      wizardStateToAddonSettings(
+        makeState({ playbackArchitecture: "http_handoff", oppoBdmvCheckfolder: false }),
+      ).oppo_bdmv_checkfolder,
+    ).toBe("false");
+    expect(
+      wizardStateToAddonSettings(makeState({ playbackArchitecture: "service_interception" }))
+        .oppo_bdmv_checkfolder,
+    ).toBeUndefined();
+  });
+
   it("emits json_payload mode only for the http_handoff routing", () => {
     const http = wizardStateToAddonSettings(makeState({ playbackArchitecture: "http_handoff" }));
     expect(http.oppo_http_payload_mode).toBe("json_payload");

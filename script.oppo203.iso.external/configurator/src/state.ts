@@ -120,6 +120,10 @@ export type WizardState = {
   oppoPathFrom: string;
   oppoPathTo: string;
   oppoDiscFolderRoot: boolean;
+  // When the player exposes the HTTP API, confirm a BDMV folder via /checkfolderhasBDMV before
+  // handing over the folder root (else send the original marker). Advanced; defaults on and is
+  // fallback-safe in the add-on -- like oppoDiscFolderRoot, no dedicated UI control.
+  oppoBdmvCheckfolder: boolean;
 
   playerInput: InputAddress;
   kodiInput: InputAddress;
@@ -187,6 +191,7 @@ export const INITIAL_STATE: WizardState = {
   oppoPathFrom: "",
   oppoPathTo: "",
   oppoDiscFolderRoot: true,
+  oppoBdmvCheckfolder: true,
   playerInput: null,
   kodiInput: null,
   testMode: null,

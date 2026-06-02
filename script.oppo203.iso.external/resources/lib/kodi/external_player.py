@@ -216,22 +216,14 @@ def _http_ensure_share_mounted(oc: Any, settings: Settings, media_file: str) -> 
 
 
 def _http_play_disc_aware(oc: Any, settings: Settings, media_file: str) -> str:
-    """Hand the player the right path for the media's disc type. A BDMV folder gets a best-effort
-    checkfolderhasBDMV probe (logged); an ISO gets a one-shot auto-heal. The play itself stays
-    the proven play_media_http_api, so the disc-awareness only adds a probe + the ISO resend."""
+    """Play the media and, for an ISO, run a one-shot auto-heal. The play itself
+    (``play_media_http_api``) resolves the disc folder + the BDMV ``checkfolderhasBDMV`` decision
+    via ``oppo_control.resolve_disc_play_path``, so the only extra behaviour here is the ISO
+    resend."""
     try:
         from . import disc_classification as dc
     except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
         import disc_classification as dc  # type: ignore[no-redef]
-
-    if dc.is_bdmv_navigation_path(media_file):
-        _http_best_effort(
-            lambda: log(
-                f"OPPO BDMV folder check: has_bdmv={oc.check_folder_has_bdmv(settings, media_file)}"
-            ),
-            "checkfolderhasBDMV",
-        )
-        return cast("str", oc.play_media_http_api(settings, media_file))
 
     reply = cast("str", oc.play_media_http_api(settings, media_file))
     if dc.extension(media_file) == ".iso" and settings.get_bool("oppo_http_iso_autoheal", True):
