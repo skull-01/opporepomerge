@@ -359,12 +359,47 @@ def signin_http_api(settings: Settings) -> str:
     return _http_get(settings, "/signin", query=query)
 
 
+def _supports_http_api(settings: Settings) -> bool:
+    """Capability gate: does the configured player model expose the HTTP/436 API?"""
+    try:
+        from .hardware_presets import supports_http
+    except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+        from hardware_presets import supports_http  # type: ignore[no-redef]
+    return bool(supports_http(settings.get("oppo_hardware_model", "")))
+
+
+def resolve_disc_play_path(settings: Settings, media_file: str) -> str:
+    """Resolve the path handed to the player for a disc-style source.
+
+    Default behaviour is unchanged: when ``oppo_http_disc_folder_root`` is on a disc marker
+    (BDMV / VIDEO_TS / ...) collapses to its folder root. When ``oppo_bdmv_checkfolder`` is on
+    AND the player exposes the HTTP API, a **BDMV** marker is additionally confirmed via
+    ``/checkfolderhasBDMV`` before the folder is used; if the player reports no BDMV there, the
+    original marker path is handed over instead. Any uncertainty -- toggle off, player not
+    capable, or the probe unreachable -- falls back to today's folder-root behaviour, so this is
+    safe on stock/older players and the off path is byte-identical to the frozen behaviour.
+    """
+    if not settings.get_bool("oppo_http_disc_folder_root", True):
+        return media_file
+    folder = _disc_folder_root(media_file)
+    if folder == media_file:
+        return media_file
+    if "/bdmv/" not in media_file.replace("\\", "/").lower():
+        return folder  # non-BDMV disc folder (VIDEO_TS/VCD/...) -- unchanged
+    if not settings.get_bool("oppo_bdmv_checkfolder", True):
+        return folder
+    if not _supports_http_api(settings):
+        return folder
+    try:
+        if check_folder_has_bdmv(settings, folder):
+            return folder
+    except OppoError:
+        return folder
+    return media_file  # player explicitly reports no BDMV -> hand over the original marker
+
+
 def _translate_media_path(settings: Settings, media_file: str) -> str:
-    translated = (
-        _disc_folder_root(media_file)
-        if settings.get_bool("oppo_http_disc_folder_root", True)
-        else media_file
-    )
+    translated = resolve_disc_play_path(settings, media_file)
     source = settings.get("oppo_http_path_from", "")
     target = settings.get("oppo_http_path_to", "")
     if source:
@@ -405,11 +440,7 @@ def _build_json_payload(settings: Settings, media_file: str) -> dict[str, object
       playMode        - always 0
     """
     # Build the translated path without URL encoding (the whole payload gets encoded)
-    translated = (
-        _disc_folder_root(media_file)
-        if settings.get_bool("oppo_http_disc_folder_root", True)
-        else media_file
-    )
+    translated = resolve_disc_play_path(settings, media_file)
     source = settings.get("oppo_http_path_from", "")
     target = settings.get("oppo_http_path_to", "")
     if source:

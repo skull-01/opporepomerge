@@ -167,13 +167,15 @@ def test_iso_autoheal_skips_when_unconfirmable(monkeypatch):
     assert "key:STP" not in ctl.calls
 
 
-def test_bdmv_path_probes_checkfolder(monkeypatch):
+def test_bdmv_path_plays_once_without_autoheal(monkeypatch):
     ctl = Ctl()
     _install_oc(monkeypatch, ctl)
     ep._start_oppo_http(_settings(), "smb://10.0.1.10/share/Movie/BDMV/index.bdmv")
-    assert "check_bdmv" in ctl.calls
-    assert ctl.calls.count("play") == 1  # BDMV path: no ISO auto-heal
+    assert ctl.calls.count("play") == 1  # BDMV is not an ISO -> no auto-heal/STP
     assert "key:STP" not in ctl.calls
+    # the BDMV checkfolderhasBDMV decision now lives in the play path (resolve_disc_play_path),
+    # not the orchestrator; play_media_http_api is mocked here so the probe is not invoked.
+    assert "check_bdmv" not in ctl.calls
 
 
 def test_normal_path_no_bdmv_no_autoheal(monkeypatch):
