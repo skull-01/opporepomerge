@@ -38,3 +38,11 @@ configurator/node_modules/
 configurator/dist/
 configurator/src-tauri/target/
 configurator/src-tauri/gen/schemas/
+
+# Local agent/preview scratch (the tracked .claude/commands + skills stay committed)
+.claude/launch.json
+.claude/worktrees/
+
+# Generated source-reconstruction snapshots (not part of the runtime tree)
+/ADDON_RESOURCES_RECONSTRUCTION.md
+/CONFIGURATOR_SRC_RECONSTRUCTION.md

@@ -105,7 +105,7 @@ python tools/test_layout.py --check
 python tools/i18n_extract.py --check
 pytest -q tests/test_v2910_final_release.py
 pytest -q tests/test_v2910*.py
-python tools/audit_release.py --expected-version 2.9.10
+python tools/audit_release.py --expected-version 2.9.15
 ```
 
 For full verification, run the complete pytest/unittest/coverage gates and package audit described in the release evidence and GitHub-readiness handoff files.
