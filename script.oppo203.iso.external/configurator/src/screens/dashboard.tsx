@@ -15,10 +15,16 @@ import {
 import { chainNodeViews, type ChainLiveness, type ChainNodeView } from "../dashboard_chain";
 import { captureSettingsSnapshot, type SnapshotResult } from "../dashboard_snapshot";
 import { diffIsEmpty, type SettingsDiff } from "../settings_diff";
+import { foldObservation, type SessionLogEntry } from "../session_log";
+import { readDashboardJson, writeDashboardJson } from "../dashboard_store";
 import type { ScreenProps } from "./types";
 
 // How often the dashboard re-checks device liveness + session status while it is open.
 const POLL_MS = 6000;
+// Dashboard appdata file (under the dashboard/ prefix) holding the observed-session history.
+const SESSION_LOG_FILE = "session-log.json";
+// Most-recent history entries rendered in the card; older ones are retained but collapsed.
+const HISTORY_SHOWN = 10;
 
 type LiveStatus = {
   // null while the first probe is still in flight; true/false once known.
@@ -338,6 +344,74 @@ function SettingsDiffCard({
   );
 }
 
+function SessionHistoryCard({ entries }: { entries: SessionLogEntry[] }) {
+  const shown = entries.slice(-HISTORY_SHOWN).reverse();
+  const hidden = entries.length - shown.length;
+  return (
+    <div className="card">
+      <h2 className="section-title">Session history</h2>
+      <div className="divider" />
+      {entries.length === 0 ? (
+        <span className="muted" style={{ fontSize: 12 }}>
+          No sessions recorded yet. Sessions the dashboard observes while open are logged here.
+        </span>
+      ) : (
+        <div className="stack-sm">
+          {shown.map((e, i) => {
+            const badge = stateBadge(e.sessionState);
+            return (
+              <div
+                key={`${e.firstSeenAt}-${i}`}
+                className="stack-sm"
+                style={{
+                  paddingBottom: 6,
+                  borderBottom: i < shown.length - 1 ? "1px solid var(--hairline, #00000014)" : "none",
+                }}
+              >
+                <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: badge.color,
+                      border: `1px solid ${badge.color}`,
+                      borderRadius: 6,
+                      padding: "1px 7px",
+                    }}
+                  >
+                    {badge.label}
+                  </span>
+                  <span style={{ fontSize: 13 }}>{baseName(e.mediaFile) || "(no media)"}</span>
+                  <span
+                    className="muted"
+                    style={{ fontSize: 11, marginLeft: "auto", fontFamily: "var(--font-mono)" }}
+                  >
+                    {fmtWhen(e.observedAt)}
+                  </span>
+                </div>
+                <div className="row" style={{ gap: 16, alignItems: "center" }}>
+                  <ConfirmFlag on={e.confirmedPlayback} label="playback" />
+                  <ConfirmFlag on={e.confirmedProgress} label="progress" />
+                  {e.stopReason && (
+                    <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+                      {e.stopReason}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {hidden > 0 && (
+            <span className="muted" style={{ fontSize: 11 }}>
+              +{hidden} earlier session{hidden === 1 ? "" : "s"} kept
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Dashboard({ go, state }: ScreenProps) {
   const targets = livenessTargets(state);
   // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.
@@ -360,6 +434,23 @@ export function Dashboard({ go, state }: ScreenProps) {
       setSnapshotBusy(false);
     }
   };
+
+  // Observed-session history: kept in a ref (read by the poller without re-subscribing) mirrored
+  // into state for rendering. Loaded once from appdata; persisted only when the fold changes it.
+  const [log, setLog] = useState<SessionLogEntry[]>([]);
+  const logRef = useRef<SessionLogEntry[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void readDashboardJson<SessionLogEntry[]>(SESSION_LOG_FILE).then((stored) => {
+      if (alive && Array.isArray(stored)) {
+        logRef.current = stored;
+        setLog(stored);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const [streaming, setStreaming] = useState(false);
   const [frames, setFrames] = useState<LiveFrame[]>([]);
@@ -385,6 +476,16 @@ export function Dashboard({ go, state }: ScreenProps) {
       if (!alive) return;
       setStatuses(Object.fromEntries(entries));
       setSession(sess);
+      // Fold the just-read session into the local history; persist only on a real change so the
+      // idle 6s polls that re-read an unchanged status file do not churn the appdata file.
+      if (sess.status) {
+        const next = foldObservation(logRef.current, sess.status, new Date().toISOString());
+        if (next !== logRef.current) {
+          logRef.current = next;
+          setLog(next);
+          void writeDashboardJson(SESSION_LOG_FILE, next).catch(() => {});
+        }
+      }
       setLastChecked(new Date().toLocaleTimeString());
       setChecking(false);
       // Safety: if the add-on starts a session while we're streaming, drop our verbose
@@ -539,6 +640,8 @@ export function Dashboard({ go, state }: ScreenProps) {
       </div>
 
       <SessionCard result={session} />
+
+      <SessionHistoryCard entries={log} />
 
       <ChainCard nodes={chainViews} />
 

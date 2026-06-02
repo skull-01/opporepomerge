@@ -43,6 +43,15 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — Dashboard session-history card (issue #168; stacked on PR #201)
+
+- **Stacked draft:** appdata store #200 → snapshot diff #201 → this session-log PR (base = the #201 branch). Rebuilds the superseded draft #166 on the current dashboard; tracks ENH #168.
+- **What changed (software-verified only):** the Live dashboard gains a **Session history** card. Because the add-on overwrites its single `oppo203iso-status.json` per run, each 6s poll folds the freshly-read status into a local history (new pure `session_log.ts` `foldObservation`), persisted under appdata via PR #200's store, so past sessions survive reopening the dashboard. `foldObservation` updates the newest entry in place as a session advances `starting → stopped` (and on a heartbeat that only refreshes `updatedAt`/`phase`), opens a new entry on a signature change, caps to the newest 50, and returns the same array reference when unchanged (no persist on idle polls). **No add-on change; no Rust change; no new dependency.**
+- **Exact dedup now (the 5.1 unlock):** `sessionSignature` prefers the add-on's `session_id` (shipped in add-on PR #183 / Phase 5.1, surfaced by `parseOppoStatus`) for an **exact** match, so two identical back-to-back sessions are told apart. Older records with no id fall back to the descriptor heuristic (the documented limitation #168 noted).
+- **Software gates (this machine):** `tsc --noEmit` 0 · `vitest` **283** (+10 session_log) · `vite build` exit 0 · dev-server boot smoke test (app mounts, zero console errors). The live render with real sessions is Phase C.
+- **Operator verifies (Phase A):** read `session_log.ts` + its 10 tests (in-place advance start→stop; same-ref-on-no-change; new entry on id-less replay / signature change; cap eviction; `session_id` exact dedup → distinct ids give distinct entries; heartbeat fold on the same id), and the `SessionHistoryCard` + the in-poll fold/persist in `screens/dashboard.tsx` (persist fires only on a real change).
+- **Operator verifies (Phase C — built app + real box):** with a tier A/B deployment, play several sessions through the add-on with the dashboard open; confirm each appears in Session history with the right state / flags, that a start→stop updates one entry (not two), that a fresh session (new `session_id`) adds a new entry, then close + reopen the dashboard and confirm the history persisted (`…\dashboard\session-log.json`). **Not hardware-validated.**
+
 ### Configurator — Dashboard settings-snapshot diff card (issue #167; stacked on PR #200)
 
 - **Stacked draft:** appdata-store PR #200 → this snapshot-diff PR (base = the #200 branch). Rebuilds the superseded draft #165 on the current (Phase 5.2/5.3) dashboard; tracks ENH #167.
