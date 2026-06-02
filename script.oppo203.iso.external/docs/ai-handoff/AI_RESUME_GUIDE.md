@@ -16,8 +16,11 @@
 - **What this is:** a Kodi (Python) add-on, `script.oppo203.iso.external`, that hands off
   4K/UHD disc-style playback from Kodi to an OPPO UDP-203/205 (or compatible clone) over
   IP control, plus a first-run setup wizard. Repo: **`skull-01/script.oppo203.iso.external`**.
-- **Latest release:** **v2.9.13** (tag-driven; on GitHub Releases). Next release will be
-  **v2.9.14**, currently staged on branch **`wip/wizard-ux`** (not yet version-bumped).
+- **Latest release:** **v2.9.14** (tag `v2.9.14`, PR #205 → `a6fdcef`; built/published by
+  `package.yml`) — six-option playback architecture (SVM3 + http_handoff), the `#SVM 3`
+  verbose-mode monitor, richer `oppo203iso-status.json` session status, and robustness
+  hardening. The companion **`configurator-v0.7.0`** (cut the same day, 2026-06-02) holds the
+  repo "Latest" badge and bundles this add-on. See [[configurator-release-is-manual]].
 - **Releases are tag-driven:** push a `v*` tag → `.github/workflows/package.yml` builds the
   installable ZIP + SHA256 and creates the GitHub Release. There is a canonical runbook:
   the **`/release`** slash command (`.claude/commands/release.md`).
@@ -48,7 +51,7 @@
 | Repo | `github.com/skull-01/script.oppo203.iso.external` |
 | Language | Python 3 (Kodi runtime; `requires-python >=3.9`) |
 | Default branch | `main` |
-| Latest release | `v2.9.13` |
+| Latest release | `v2.9.14` (configurator companion `configurator-v0.7.0`) |
 | Provider | "Perplexity Computer" (per addon.xml) |
 | License | MIT |
 
@@ -500,6 +503,15 @@ real on-device bug fixes staged for v2.9.14. Each step's rationale:
     the maintainer's device), `chinoppo_m9200`, `cineultra_v203/v204`, `ipuk_uhd8592`,
     `giec_bdp_g5300`, with a regression guard (§7.2).
 
+13. **Post-v2.9.13 playback architecture (shipped in v2.9.14).** The six-option playback
+    matrix — 3 routing modes (`playercorefactory`, `service_interception`, `http_handoff`) ×
+    2 monitor modes (`legacy`, `svm3`) sharing one dispatch in `run_playback_session` — plus
+    the SVM3 `#SVM 3` verbose-mode monitor (`@UPL`/`@UTC` confirmation), richer
+    `oppo203iso-status.json` session status, and robustness hardening (`tcp_qpl_poll`
+    default, bounded holds, sentinel self-heal). Released as **v2.9.14** (2026-06-02). The
+    Windows configurator grew in parallel into a guided installer + live dashboard
+    (configurator-v0.7.0, which holds the repo "Latest" badge).
+
 ---
 
 ## 9. Current state & next steps
@@ -510,6 +522,17 @@ real on-device bug fixes staged for v2.9.14. Each step's rationale:
 > lives in [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md): §3a tracks addon WIP, §3b
 > tracks configurator WIP, and §1 defines the `resume` command. Sections 1–8 / 10 of this
 > guide remain addon-only; this §9 below is the addon-area snapshot.
+
+> **2026-06-02 update — v2.9.14 is RELEASED (and so is configurator-v0.7.0).** Add-on
+> **v2.9.14 Final** shipped (tag `v2.9.14`, PR #205 → `a6fdcef`), but its theme is NOT the
+> `wip/wizard-ux` plan described below — that work was superseded. The shipped v2.9.14
+> captures the **six-option playback architecture** (SVM3 + http_handoff), the `#SVM 3`
+> verbose-mode monitor, richer `oppo203iso-status.json` session status, and robustness
+> hardening (gate: pytest 1053/3, coverage 99%, mypy --strict 54/0, audit 589/589). It was
+> cut alongside **configurator-v0.7.0**, which holds the repo "Latest" badge and bundles
+> this add-on ([[configurator-release-is-manual]]). For the live current state of BOTH
+> areas, read the spine [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §3a/§3b — the
+> `wip/wizard-ux` snapshot below is historical.
 
 **Branch `wip/wizard-ux`** (off `main`; the v2.9.14 candidate — NOT yet version-bumped)
 contains, as separate commits:
