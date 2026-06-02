@@ -13,10 +13,18 @@ import {
   type OppoSessionStatus,
 } from "../oppo_status";
 import { chainNodeViews, type ChainLiveness, type ChainNodeView } from "../dashboard_chain";
+import { captureSettingsSnapshot, type SnapshotResult } from "../dashboard_snapshot";
+import { diffIsEmpty, type SettingsDiff } from "../settings_diff";
+import { foldObservation, type SessionLogEntry } from "../session_log";
+import { readDashboardJson, writeDashboardJson } from "../dashboard_store";
 import type { ScreenProps } from "./types";
 
 // How often the dashboard re-checks device liveness + session status while it is open.
 const POLL_MS = 6000;
+// Dashboard appdata file (under the dashboard/ prefix) holding the observed-session history.
+const SESSION_LOG_FILE = "session-log.json";
+// Most-recent history entries rendered in the card; older ones are retained but collapsed.
+const HISTORY_SHOWN = 10;
 
 type LiveStatus = {
   // null while the first probe is still in flight; true/false once known.
@@ -238,6 +246,172 @@ function ChainCard({ nodes }: { nodes: ChainNodeView[] }) {
   );
 }
 
+function fmtWhen(iso: string): string {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
+}
+
+function DiffList({ diff }: { diff: SettingsDiff }) {
+  const mono = { fontSize: 12, fontFamily: "var(--font-mono)" } as const;
+  return (
+    <div className="stack-sm">
+      {diff.changed.map((c) => (
+        <div key={`c-${c.id}`} style={mono}>
+          <span style={{ color: "#2563EB" }}>~ {c.id}</span>
+          <span className="muted">: {c.from} → {c.to}</span>
+        </div>
+      ))}
+      {diff.added.map((a) => (
+        <div key={`a-${a.id}`} style={mono}>
+          <span style={{ color: "#16A34A" }}>+ {a.id}</span>
+          <span className="muted">: {a.value}</span>
+        </div>
+      ))}
+      {diff.removed.map((r) => (
+        <div key={`r-${r.id}`} style={mono}>
+          <span style={{ color: "#DC2626" }}>- {r.id}</span>
+          <span className="muted">: {r.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SettingsDiffCard({
+  result,
+  busy,
+  supported,
+  onSnapshot,
+}: {
+  result: SnapshotResult | null;
+  busy: boolean;
+  supported: boolean;
+  onSnapshot: () => void;
+}) {
+  let body: JSX.Element;
+  if (!supported) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        Manual mode - connect over SSH (tier A) or SMB (tier B) to snapshot the box's settings.
+      </span>
+    );
+  } else if (result == null) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        Capture the box's current add-on settings to compare against later.
+      </span>
+    );
+  } else if (!result.ok) {
+    body = <span className="muted" style={{ fontSize: 12 }}>{result.note}</span>;
+  } else if (result.baseline) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        Baseline captured ({result.count} settings). Snapshot again later to see what changed on
+        the box.
+      </span>
+    );
+  } else if (diffIsEmpty(result.diff)) {
+    body = (
+      <span className="muted" style={{ fontSize: 12 }}>
+        No changes since the last snapshot ({fmtWhen(result.prevTakenAt)}).
+      </span>
+    );
+  } else {
+    body = (
+      <div className="stack-sm">
+        <span className="muted" style={{ fontSize: 11 }}>
+          since {fmtWhen(result.prevTakenAt)}
+        </span>
+        <DiffList diff={result.diff} />
+      </div>
+    );
+  }
+  return (
+    <div className="card">
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <h2 className="section-title">Configuration changes</h2>
+        <button className="btn outline" onClick={onSnapshot} disabled={busy || !supported}>
+          <Icon name="refresh" size={13} /> {busy ? "reading…" : "Snapshot now"}
+        </button>
+      </div>
+      <div className="divider" />
+      {body}
+      <div className="muted" style={{ fontSize: 11, marginTop: 10 }}>
+        Reads the box's <code>settings.xml</code> and compares it to your last snapshot. Secret
+        values (PSKs, tokens) are masked, so a secret's change shows only as its key.
+      </div>
+    </div>
+  );
+}
+
+function SessionHistoryCard({ entries }: { entries: SessionLogEntry[] }) {
+  const shown = entries.slice(-HISTORY_SHOWN).reverse();
+  const hidden = entries.length - shown.length;
+  return (
+    <div className="card">
+      <h2 className="section-title">Session history</h2>
+      <div className="divider" />
+      {entries.length === 0 ? (
+        <span className="muted" style={{ fontSize: 12 }}>
+          No sessions recorded yet. Sessions the dashboard observes while open are logged here.
+        </span>
+      ) : (
+        <div className="stack-sm">
+          {shown.map((e, i) => {
+            const badge = stateBadge(e.sessionState);
+            return (
+              <div
+                key={`${e.firstSeenAt}-${i}`}
+                className="stack-sm"
+                style={{
+                  paddingBottom: 6,
+                  borderBottom: i < shown.length - 1 ? "1px solid var(--hairline, #00000014)" : "none",
+                }}
+              >
+                <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      color: badge.color,
+                      border: `1px solid ${badge.color}`,
+                      borderRadius: 6,
+                      padding: "1px 7px",
+                    }}
+                  >
+                    {badge.label}
+                  </span>
+                  <span style={{ fontSize: 13 }}>{baseName(e.mediaFile) || "(no media)"}</span>
+                  <span
+                    className="muted"
+                    style={{ fontSize: 11, marginLeft: "auto", fontFamily: "var(--font-mono)" }}
+                  >
+                    {fmtWhen(e.observedAt)}
+                  </span>
+                </div>
+                <div className="row" style={{ gap: 16, alignItems: "center" }}>
+                  <ConfirmFlag on={e.confirmedPlayback} label="playback" />
+                  <ConfirmFlag on={e.confirmedProgress} label="progress" />
+                  {e.stopReason && (
+                    <span className="muted" style={{ fontSize: 11.5, fontFamily: "var(--font-mono)" }}>
+                      {e.stopReason}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          {hidden > 0 && (
+            <span className="muted" style={{ fontSize: 11 }}>
+              +{hidden} earlier session{hidden === 1 ? "" : "s"} kept
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Dashboard({ go, state }: ScreenProps) {
   const targets = livenessTargets(state);
   // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.
@@ -247,6 +421,36 @@ export function Dashboard({ go, state }: ScreenProps) {
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [nonce, setNonce] = useState(0);
+
+  const [snapshot, setSnapshot] = useState<SnapshotResult | null>(null);
+  const [snapshotBusy, setSnapshotBusy] = useState(false);
+  const snapshotSupported = state.tier === "A" || state.tier === "B";
+
+  const takeSnapshot = async () => {
+    setSnapshotBusy(true);
+    try {
+      setSnapshot(await captureSettingsSnapshot(state, new Date().toISOString()));
+    } finally {
+      setSnapshotBusy(false);
+    }
+  };
+
+  // Observed-session history: kept in a ref (read by the poller without re-subscribing) mirrored
+  // into state for rendering. Loaded once from appdata; persisted only when the fold changes it.
+  const [log, setLog] = useState<SessionLogEntry[]>([]);
+  const logRef = useRef<SessionLogEntry[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void readDashboardJson<SessionLogEntry[]>(SESSION_LOG_FILE).then((stored) => {
+      if (alive && Array.isArray(stored)) {
+        logRef.current = stored;
+        setLog(stored);
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const [streaming, setStreaming] = useState(false);
   const [frames, setFrames] = useState<LiveFrame[]>([]);
@@ -272,6 +476,16 @@ export function Dashboard({ go, state }: ScreenProps) {
       if (!alive) return;
       setStatuses(Object.fromEntries(entries));
       setSession(sess);
+      // Fold the just-read session into the local history; persist only on a real change so the
+      // idle 6s polls that re-read an unchanged status file do not churn the appdata file.
+      if (sess.status) {
+        const next = foldObservation(logRef.current, sess.status, new Date().toISOString());
+        if (next !== logRef.current) {
+          logRef.current = next;
+          setLog(next);
+          void writeDashboardJson(SESSION_LOG_FILE, next).catch(() => {});
+        }
+      }
       setLastChecked(new Date().toLocaleTimeString());
       setChecking(false);
       // Safety: if the add-on starts a session while we're streaming, drop our verbose
@@ -427,7 +641,16 @@ export function Dashboard({ go, state }: ScreenProps) {
 
       <SessionCard result={session} />
 
+      <SessionHistoryCard entries={log} />
+
       <ChainCard nodes={chainViews} />
+
+      <SettingsDiffCard
+        result={snapshot}
+        busy={snapshotBusy}
+        supported={snapshotSupported}
+        onSnapshot={takeSnapshot}
+      />
 
       <div className="card">
         <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>

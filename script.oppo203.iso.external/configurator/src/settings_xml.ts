@@ -33,6 +33,17 @@ export function serializeSettingsXml(settings: AddonSettings): string {
 }
 
 /**
+ * Parse a Kodi settings.xml document into a flat id->value map. REFUSES (throws) on a malformed
+ * document or a non-<settings> root rather than returning a misleading partial object - the same
+ * guard mergeSettingsXml uses before it will overwrite a file. Returns {} for empty/whitespace
+ * input (no settings written yet), which callers read as "no prior values".
+ */
+export function parseSettingsXml(xml: string | null): AddonSettings {
+  if (!xml || xml.trim() === "") return {};
+  return readSettingsDoc(xml, "read it");
+}
+
+/**
  * Merge our settings into an existing Kodi settings.xml, PRESERVING any settings the
  * configurator does not own, so applying never silently resets the user's other add-on
  * settings. Our values win for the ids we manage. Returns a fresh file when none exists, and
@@ -43,20 +54,30 @@ export function mergeSettingsXml(existing: string | null, ours: AddonSettings): 
   if (!existing || existing.trim() === "") {
     return serializeSettingsXml(ours);
   }
-  const doc = new DOMParser().parseFromString(existing, "application/xml");
+  const merged = readSettingsDoc(existing, "overwrite");
+  Object.assign(merged, ours);
+  return serializeSettingsXml(merged);
+}
+
+/**
+ * Shared DOM parse + <settings> validation + id->value extraction. `refusalVerb` tailors the
+ * error to the caller ("overwrite" for the merge writer, "read it" for the snapshot reader) so
+ * each surfaces an accurate refusal instead of clobbering or trusting a bad file.
+ */
+function readSettingsDoc(xml: string, refusalVerb: string): AddonSettings {
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
   const root = doc.documentElement;
   const malformed = doc.getElementsByTagName("parsererror").length > 0;
   if (malformed || !root || root.nodeName !== "settings") {
     throw new Error(
-      "existing settings.xml is malformed or not a <settings> document; refusing to overwrite. " +
+      `settings.xml is malformed or not a <settings> document; refusing to ${refusalVerb}. ` +
         "Fix or move the file first.",
     );
   }
-  const merged: AddonSettings = {};
+  const out: AddonSettings = {};
   for (const el of Array.from(root.getElementsByTagName("setting"))) {
     const id = el.getAttribute("id");
-    if (id) merged[id] = el.textContent ?? "";
+    if (id) out[id] = el.textContent ?? "";
   }
-  Object.assign(merged, ours);
-  return serializeSettingsXml(merged);
+  return out;
 }

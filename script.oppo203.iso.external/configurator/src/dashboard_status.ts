@@ -18,7 +18,7 @@ export type StatusReadPlan =
       args: Record<string, unknown>;
     };
 
-export function statusReadPlan(state: WizardState): StatusReadPlan {
+export function fileReadPlan(state: WizardState, rel: string): StatusReadPlan {
   if (state.tier === "A") {
     return {
       supported: true,
@@ -27,7 +27,7 @@ export function statusReadPlan(state: WizardState): StatusReadPlan {
         host: state.kodiIp,
         user: state.sshUser,
         userdataPath: userdataDirForPlatform(state.kodiPlatform ?? "coreelec"),
-        rel: ADDON_DATA_STATUS_REL,
+        rel,
       },
     };
   }
@@ -35,13 +35,18 @@ export function statusReadPlan(state: WizardState): StatusReadPlan {
     return {
       supported: true,
       command: "read_userdata_file",
-      args: { userdataPath: smbUserdataPath(state.smbSharePath), rel: ADDON_DATA_STATUS_REL },
+      args: { userdataPath: smbUserdataPath(state.smbSharePath), rel },
     };
   }
   return {
     supported: false,
-    note: "Manual mode - no live link to the box. Use SSH (tier A) or SMB (tier B) to read session status.",
+    note: "Manual mode - no live link to the box. Use SSH (tier A) or SMB (tier B) to read the add-on's files.",
   };
+}
+
+/** The read plan for the add-on's session status file (oppo203iso-status.json). */
+export function statusReadPlan(state: WizardState): StatusReadPlan {
+  return fileReadPlan(state, ADDON_DATA_STATUS_REL);
 }
 
 /**
