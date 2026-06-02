@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — pure-HTTP launch orchestration: mount + ISO auto-heal + BDMV probe (Xnoppo V3, PR3 of 6) — #211
+
+- **Branch / PR:** `claude/pr3-http-orchestration-169e6c9a` → PR (base `main`). Issue [#211](https://github.com/skull-01/script.oppo203.iso.external/issues/211).
+- **What changed (software-verified only):** `external_player._start_oppo_http` (the http_handoff launch) goes from `activate→signin→play` to the full Xnoppo flow — wake (`send_remote_key_http("PON")`), signin, **best-effort mount** (parse `smb://`/`nfs://` from the media path → `detect_nfs`-routed `login_*`+`mount_*`; skipped for non-network paths), **disc-aware play** (BDMV path → `checkfolderhasBDMV` probe logged; **ISO → one-shot auto-heal**: resend once if not confirmed playing after `oppo_http_iso_autoheal_after_seconds`=20 when `oppo_http_iso_autoheal`=on), then a `getglobalinfo` confirm. **Every step beyond activate→signin→play is best-effort + non-fatal**, so the path degrades to today's behaviour. New `tests/test_oppo_http_orchestration.py` (13 tests); `_patch_http` extended for the new primitives. No configurator change.
+- **Software gates (this machine):** `pytest -n auto` **1113/3**, mypy `--strict` **51/0**, ruff + `ruff format --check` clean, serial coverage **99%** (gate exit 0; caught + fixed a serial-only monkeypatch-target flake by patching the exact `_oppo_control_module()` object).
+- **Operator verifies (Phase A):** read the orchestration in `_start_oppo_http` + helpers; confirm every enrichment step is wrapped non-fatal and the play itself is unchanged (`play_media_http_api`).
+- **Operator verifies (Phase C — real hardware):** on a real OPPO/NAS with the Pure-HTTP preset, confirm the share mounts, an ISO that drops re-heals, and `getglobalinfo` confirms — **not hardware-validated** (community-reverse-engineered endpoints; adjust strings if firmware differs).
+
 ### Add-on + configurator — 7th preset http_handoff_http + HTTP monitor (Xnoppo V3 adoption, PR2 of 6) — #209
 
 - **Branch / PR:** `claude/pr2-http-preset-8ebbb6d2` → PR (base `main`). Issue [#209](https://github.com/skull-01/script.oppo203.iso.external/issues/209).
