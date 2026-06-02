@@ -491,6 +491,20 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
+**As of 2026-06-03 (EOD #14 — 7-theme infra/hardening batch + configurator v0.8.6 cut by the NEW CI release automation).**
+**Clean stopping point — 0 open PRs; `main`@`2eaf1a7` is configurator v0.8.6 (the docs-wrap commit follows); the configurator gate now runs in GitHub Actions.**
+Operator: "do all of this automatically" — seven themes, each delivered as its own CI-gated PR:
+- **[#271](https://github.com/skull-01/script.oppo203.iso.external/pull/271)** repo hygiene — `.gitignore` the local scratch (reconstruction MDs, `.claude/launch.json`/`worktrees`); fixed the stale `audit_release --expected-version 2.9.10`→`2.9.15` in README + CONTRIBUTING; `git prune`.
+- **[#272](https://github.com/skull-01/script.oppo203.iso.external/pull/272)** the configurator's **first CI** — `.github/workflows/configurator-ci.yml`: windows-latest gate (`npm ci` → `tsc -b` + `vite build` → vitest → bundle add-on → `cargo test`) on every configurator-touching PR; a `configurator-v*` tag builds MSI/NSIS + publishes the release as Latest. The first run caught a real gap (tauri `build.rs` needs the bundled add-on zip) before it could bite a release.
+- **[#273](https://github.com/skull-01/script.oppo203.iso.external/pull/273)** dashboard **diagnostics export** — pure `diagnostics.ts` + `DiagnosticsCard` + Rust `diagnostics_env`/`write_diagnostics`; sanitized JSON (secrets redacted via the shared redactor) saved to app-data + copy-to-clipboard.
+- **[#274](https://github.com/skull-01/script.oppo203.iso.external/pull/274)** installer **single prompt** — the PREINSTALL hook is scoped to the parallel-MSI case Tauri's reinstall page misses, so a normal NSIS upgrade shows one prompt, not two (a full template override needs Tauri's versioned handlebars template — not safely authorable offline).
+- **[#276](https://github.com/skull-01/script.oppo203.iso.external/pull/276)** add-on **property tests** (`tests/test_property_http_hdmi.py`, Hypothesis-or-fallback) — caught + fixed a real `OverflowError` on `int(float('inf'))` in `http_info_indicates_playing` (issue **[#275](https://github.com/skull-01/script.oppo203.iso.external/issues/275)**, SHA-commented + OPEN).
+- **[#277](https://github.com/skull-01/script.oppo203.iso.external/pull/277)** **i18n scaffold** — `i18n.ts` (`t()` + typed English catalog + `setLocale`); migrated `WinShell` as the first consumer. English-only; remaining screens migrate incrementally against the pattern.
+- **[#278](https://github.com/skull-01/script.oppo203.iso.external/pull/278)** bump → tag **`configurator-v0.8.6`**, built + published as Latest by the new CI release job (bundles add-on v2.9.15).
+Gates green throughout — configurator: `tsc -b` / vitest / `cargo test` on windows CI; add-on (#276): pytest **1158/3**, **serial coverage 99%**, mypy `--strict` 51/0, ruff clean. **Phase C (operator, real Windows host):** diagnostics export, installer single-prompt, and installing v0.8.6 — see the EOD #14 batch entry in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. **Resume (configurator):** continue incremental i18n migration of the remaining screens against the `t()` pattern, or a fresh theme. **Releases are now `git tag configurator-v*` → CI publishes** (the manual `npm run dist` of [[configurator-release-is-manual]] still works as a fallback). Memory updated: [[configurator-release-is-manual]] now notes the CI path.
+
+---
+
 **As of 2026-06-03 (EOD #13 — #263 Reset-all reachability SHIPPED; cut configurator v0.8.4, holds "Latest").**
 **Clean stopping point — no configurator work in flight; `main`@`f437567`; 0 open PRs; gate green (tsc 0 · 304 vitest · vite build · tauri release build).**
 Operator picked `resume` → Configurator → **#263** (the queued theme), then **"go"** twice (build, then ship). Fixed the bug that **Reset all configurations** rendered only on the Live dashboard — reachable only via `go("dashboard")` from the final test screen, after a completed setup — so a fresh/broken install (exactly when you'd reset) couldn't find it:
