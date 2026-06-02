@@ -8,10 +8,10 @@ expected audit version, and Python version source aligned.
 from __future__ import annotations
 
 ADDON_ID = "script.oppo203.iso.external"
-ADDON_VERSION = "2.9.13"
-BUILD_ID = "v2.9.13 Final"
-BUILD_NUMBER = 22
-RELEASE_LINE = "v2.9.13 testing strategy refresh, ruff format, and faster parallel test tooling"
+ADDON_VERSION = "2.9.14"
+BUILD_ID = "v2.9.14 Final"
+BUILD_NUMBER = 23
+RELEASE_LINE = "v2.9.14 six-option playback architecture (SVM3 + http_handoff), richer session status, and robustness hardening"
 
 
 def addon_version() -> str:
