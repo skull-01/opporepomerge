@@ -32,9 +32,9 @@ def test_audit_check_value_object_and_legacy_dict_api_are_both_available():
     assert check.as_dict() == {"name": "sample", "status": "ok", "detail": "detail"}
     assert audit.AuditCheck.from_mapping(check.as_dict()) == check
 
-    legacy = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.14")
+    legacy = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.15")
     typed = audit.collect_audit_checks(
-        audit.project_root(audit.Path(ROOT)), expected_version="2.9.14"
+        audit.project_root(audit.Path(ROOT)), expected_version="2.9.15"
     )
     assert legacy
     assert typed
@@ -74,7 +74,7 @@ def test_audit_cli_text_output_still_works():
             "--root",
             str(ROOT),
             "--expected-version",
-            "2.9.14",
+            "2.9.15",
         ],
         check=False,
         text=True,
@@ -91,7 +91,7 @@ def test_audit_cli_json_output_still_works():
     audit = _load_audit()
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        rc = audit.main(["--root", str(ROOT), "--expected-version", "2.9.14", "--json"])
+        rc = audit.main(["--root", str(ROOT), "--expected-version", "2.9.15", "--json"])
     assert rc == 0
     payload = json.loads(buf.getvalue())
     assert payload["ok"] is True
@@ -100,7 +100,7 @@ def test_audit_cli_json_output_still_works():
 
 def test_release_audit_requires_build11_manifest_and_evidence():
     audit = _load_audit()
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.14")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.15")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -114,8 +114,8 @@ def test_addon_metadata_and_version_source_identify_build11():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.14 Final"
-    assert version.BUILD_NUMBER == 23
+    assert version.BUILD_ID == "v2.9.15 Final"
+    assert version.BUILD_NUMBER == 24
     assert "Version 2.9.1 Build 11" in addon_text
     assert "typed audit checks" in addon_text
     assert "JSON reporter" in addon_text

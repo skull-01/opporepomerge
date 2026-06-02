@@ -72,8 +72,8 @@ def test_oppo_remote_fallback_uses_shared_logging_helper(capsys):
 def test_addon_metadata_and_version_source_identify_build11():
     from resources.lib import version
 
-    assert version.BUILD_ID == "v2.9.14 Final"
-    assert version.BUILD_NUMBER == 23
+    assert version.BUILD_ID == "v2.9.15 Final"
+    assert version.BUILD_NUMBER == 24
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.1 Build 11" in addon_text
     assert "diagnostic logging fallback refactor" in addon_text
@@ -87,7 +87,7 @@ def test_release_audit_requires_build11_manifest_and_evidence():
     assert spec.loader is not None
     spec.loader.exec_module(audit)
 
-    results = audit.run_audit(ROOT, expected_version="2.9.14")
+    results = audit.run_audit(ROOT, expected_version="2.9.15")
     names = {item["name"] for item in results}
     assert "file:release-evidence/v2.9.1-build11/MANIFEST.txt" in names
     assert "file:BUILD_NOTES_v2.9.1_BUILD13.md" in names

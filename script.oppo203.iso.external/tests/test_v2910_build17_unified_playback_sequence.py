@@ -42,8 +42,8 @@ def _settings(**overrides):
 
 
 def test_build18_metadata_identity_and_summary_flags():
-    assert version.BUILD_ID == "v2.9.14 Final"
-    assert version.BUILD_NUMBER == 23
+    assert version.BUILD_ID == "v2.9.15 Final"
+    assert version.BUILD_NUMBER == 24
     assert avr_sequence.sequencing_metadata()["playback_sequencing_hooked"] is True
     assert avr_control.avr_settings_summary(_settings())["playback_sequencing_hooked"] is True
     assert avr_diagnostics.wizard_capabilities()["playback_sequencing_hooked"] is True

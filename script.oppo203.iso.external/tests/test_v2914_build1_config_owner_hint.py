@@ -1,4 +1,4 @@
-"""v2.9.14 Build 1 — configurator-owns-config in-add-on guidance hint and overwrite warning.
+"""v2.9.15 Build 1 — configurator-owns-config in-add-on guidance hint and overwrite warning.
 
 Covers the addon-side parts of ENH-#41 Parts B and C:
 - Static lsep label at the top of <category id="connection"> in settings.xml.

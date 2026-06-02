@@ -28,15 +28,13 @@ def _settings(**overrides):
 
 
 def test_final_active_identity_and_release_candidate_docs():
-    assert version.ADDON_VERSION == "2.9.14"
-    assert version.BUILD_ID == "v2.9.14 Final"
-    assert version.BUILD_NUMBER == 23
+    assert version.ADDON_VERSION == "2.9.15"
+    assert version.BUILD_ID == "v2.9.15 Final"
+    assert version.BUILD_NUMBER == 24
 
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert (
-        "Version 2.9.14 Final: Six-option playback architecture (SVM3 + http_handoff), richer session status, and robustness hardening (software-verified; hardware validation not claimed)."
-        in addon
-    )
+    assert "Version 2.9.15 Final: Pure-HTTP/436 control (Xnoppo V3)" in addon
+    assert "a 7th playback preset (http_handoff_http)" in addon
     assert "Version 2.9.10 Build 17 safely hooks optional TV and AVR" in addon
     assert "real hardware validation was not performed or claimed" in addon.lower()
 
@@ -93,8 +91,8 @@ def test_build18_preserves_build17_sequencing_contract_noop_and_restore_guards()
 
 def test_final_docs_sources_and_package_suffix_are_current():
     docs = (ROOT / "docs" / "sources.yaml").read_text(encoding="utf-8")
-    assert "build_number: 23" in docs
-    assert "build_id: v2.9.14 Final" in docs
+    assert "build_number: 24" in docs
+    assert "build_id: v2.9.15 Final" in docs
     assert "package_suffix: final" in docs
 
     package_script = (ROOT / "scripts" / "package_release.sh").read_text(encoding="utf-8")

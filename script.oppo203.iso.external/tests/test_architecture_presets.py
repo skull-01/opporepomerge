@@ -1,10 +1,10 @@
-"""Six-option playback architecture preset mapping + migration.
+"""Seven-option playback architecture preset mapping + migration.
 
 These pin the two new normalized axes (``playback_monitor_mode`` alongside the
 existing ``playback_architecture``) and the combined
 ``playback_architecture_preset`` so they cannot drift apart:
 
-* ``architecture_preset()`` maps a routing axis + monitor axis to one of the six
+* ``architecture_preset()`` maps a routing axis + monitor axis to one of the seven
   preset ids, accepting both the stored ``external_player`` spelling and the
   ``playercorefactory`` preset spelling.
 * ``normalize_architecture()`` treats an explicit, valid preset as the source of

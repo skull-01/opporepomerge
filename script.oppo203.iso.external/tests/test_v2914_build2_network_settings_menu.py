@@ -1,4 +1,4 @@
-"""v2.9.14 Build 2 — in-add-on network settings menu (ENH-#42, IP editor part).
+"""v2.9.15 Build 2 — in-add-on network settings menu (ENH-#42, IP editor part).
 
 Covers the addon-side network/IP viewer-editor added to installer.main():
 - New "Network settings (TV / OPPO / AVR / Kodi)" menu entry + dispatch.
