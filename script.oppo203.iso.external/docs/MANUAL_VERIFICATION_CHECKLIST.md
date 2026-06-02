@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — Reset-all reachable from app header + Step 0 — #263
+
+- **Branch / PR:** `claude/cfg-reset-all-reachable-21230273` → [PR #264](https://github.com/skull-01/script.oppo203.iso.external/pull/264) (draft). Issue [#263](https://github.com/skull-01/script.oppo203.iso.external/issues/263) (`type:bug`, UX/discoverability). Implementing SHA `285b5e3`.
+- **What changed (software-verified only):** the Reset-all action previously rendered only on the Live dashboard (reachable only via `go("dashboard")` from the final test screen, after a completed setup), so a fresh/broken install could not find it. Added a `reset_all` utility screen (`configurator/src/screens/ResetAll.tsx`) that reuses `ResetAllCard` **unchanged**, surfaced from two persistent entry points: a "Reset all…" button in the app header (`App.tsx`, visible on every screen, hidden only on the reset screen itself) and a "Reset all configurations…" link on the Step 0 gate (`Step0Gate.tsx`). `steps.ts` adds `reset_all` to the `ScreenId` union + both exhaustive maps (`SCREEN_TO_STEP`→`step0`, `SCREEN_TO_CHAIN`→`media`). The dashboard card and the reset action (`reset.ts`, the Rust `reset_box_*`/`reset_app_data` commands) are untouched.
+- **Software gates (this machine):** `tsc --noEmit` 0, **304 vitest** (301 prior + 3 new in `steps.test.ts` pinning the `reset_all` map wiring), `npm run build` clean. Browser-verified (vite dev): the header entry appears on Step 0 + a mid-wizard step (Step 1) and is hidden on the reset screen; both entry points navigate to the reset screen; the reused danger card reveals its confirm gate ("Yes — delete everything…" / "Cancel"); "← Back" returns to Step 0; no console errors.
+- **Operator verifies (Phase C — real Windows host / Kodi box):** from a **fresh install** (no completed setup), confirm the "Reset all…" header button and the Step 0 "Reset all configurations…" link are both visible and open the reset screen; then run the actual reset and confirm it deletes the add-on + every configurator-deployed file from the box (per deployed tier) and returns the configurator to first-run. The on-box deletion path is unchanged from v0.8.2 and is **not hardware-validated** here. Ships in configurator **v0.8.4**.
+
 ### Configurator — TV DB: +110 TCL/Hisense rows (2018–2026), 9 updated — PR #258
 
 - **Branch / PR:** `claude/tv-db-tcl-hisense-2026` → [PR #258](https://github.com/skull-01/script.oppo203.iso.external/pull/258) (merged to `main`, `3507196`). Data addition from two model-research datasets; no `type:bug` filed (not a bug — file an `ENH-` if you want it tracked).
