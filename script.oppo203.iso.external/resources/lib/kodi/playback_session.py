@@ -96,6 +96,7 @@ def _status(
         status["oppo_playback_state"] = snapshot.get("oppo_playback_state")
         status["utc_tick_count"] = snapshot.get("utc_tick_count")
         status["stop_reason"] = snapshot.get("stop_reason")
+        status["fell_back_to_legacy_hold"] = bool(snapshot.get("fell_back_to_legacy_hold"))
     return status
 
 
@@ -178,6 +179,14 @@ def _dispatch_monitor(settings: Settings, ep: Any, arch: dict[str, str]) -> dict
         if snapshot is not None:
             return snapshot
     ep.hold_playback(settings)
+    if mode in ("svm3", "http"):
+        # The legacy hold ran, but the chosen monitor never confirmed -- mark it so the status
+        # distinguishes "monitor ran, not confirmed" from "fell back before the monitor ran".
+        return {
+            "monitor_mode": mode,
+            "fell_back_to_legacy_hold": True,
+            "stop_reason": "fell_back_to_legacy_hold",
+        }
     return None
 
 

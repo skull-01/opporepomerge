@@ -173,22 +173,19 @@ class TestFinal99CoveragePaths(unittest.TestCase):
             )
         )
 
-        original = sys.modules.get("settings_reader")
-        sys.modules["settings_reader"] = types.SimpleNamespace(
-            hardware_profile=lambda model: (_ for _ in ()).throw(RuntimeError("boom"))
+        # success: a real clone profile rewrites #PON to the clone wake action; stock keeps it
+        self.assertEqual(
+            oc._resolve_hardware_wake_command(
+                FakeSettings({"oppo_hardware_model": "chinoppo_m9702"}), "#PON"
+            ),
+            "#EJT",
         )
-        try:
-            self.assertEqual(
-                oc._resolve_hardware_wake_command(
-                    FakeSettings({"oppo_hardware_model": "M9702"}), "#PON"
-                ),
-                "#PON",
-            )
-        finally:
-            if original is not None:
-                sys.modules["settings_reader"] = original
-            else:
-                sys.modules.pop("settings_reader", None)
+        self.assertEqual(
+            oc._resolve_hardware_wake_command(
+                FakeSettings({"oppo_hardware_model": "udp_203"}), "#PON"
+            ),
+            "#PON",
+        )
 
         with mock.patch.object(
             oc, "_http_get", return_value='{"audio_list":{"a":{"index":1,"name":"Main"}}}'

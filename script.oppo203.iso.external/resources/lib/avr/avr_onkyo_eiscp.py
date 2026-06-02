@@ -134,6 +134,33 @@ def _backend_for(experimental_pioneer: bool) -> str:
     return AVR_BACKEND_PIONEER_EISCP if experimental_pioneer else AVR_BACKEND_ONKYO_EISCP
 
 
+def _recv_eiscp_frame(sock: SocketLike, cap: int = 4096) -> bytes:
+    """Read a full eISCP frame, tolerating a reply split across recv() segments.
+
+    Reads the 16-byte header to learn the declared data size, then reads until the whole frame
+    (or ``cap`` bytes, or a short read) is available. ``parse_eiscp_response`` validates the
+    result, so a partial/empty read still surfaces as a malformed-response result rather than a
+    silently-truncated reply.
+    """
+    buf = bytearray()
+    while len(buf) < EISCP_HEADER_SIZE:
+        chunk = sock.recv(1024)
+        if not chunk:
+            return bytes(buf)
+        buf.extend(chunk)
+        if len(buf) >= cap:  # pragma: no cover - defensive runaway guard
+            return bytes(buf)
+    total = EISCP_HEADER_SIZE + struct.unpack(">I", bytes(buf[8:12]))[0]
+    while len(buf) < total:
+        chunk = sock.recv(1024)
+        if not chunk:
+            break
+        buf.extend(chunk)
+        if len(buf) >= cap:  # pragma: no cover - defensive runaway guard
+            break
+    return bytes(buf)
+
+
 def send_eiscp_command(
     host: object,
     command_payload: object,
@@ -185,7 +212,7 @@ def send_eiscp_command(
         response_text = ""
         if read_response:
             try:
-                response_text = parse_eiscp_response(sock.recv(1024))
+                response_text = parse_eiscp_response(_recv_eiscp_frame(sock))
             except socket.timeout:
                 return AvrResult(
                     ok=True,

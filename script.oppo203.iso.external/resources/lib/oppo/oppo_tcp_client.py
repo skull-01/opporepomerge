@@ -93,6 +93,10 @@ class OppoTcpClient:
         self._error: Exception | None = None
         self._sock: socket.socket | None = None
         self._thread: threading.Thread | None = None
+        # Distinguishes how the last wait_for_stop() ended: "stopped" (real stop push),
+        # "timeout", "disconnected", or "connect_failed" -- callers can react differently
+        # (e.g. extend the hold on a clean timeout vs. bail on a dropped connection).
+        self.last_stop_outcome: str | None = None
 
     def _connect_and_read(self) -> None:
         """Background thread: connect, set verbose mode, read push lines."""
@@ -183,15 +187,19 @@ class OppoTcpClient:
         self._connected.wait(timeout=15.0)
 
         if self._error is not None:
+            self.last_stop_outcome = "connect_failed"
             return False
 
         deadline = time.time() + float(timeout)
         while time.time() < deadline:
             if self._stop_event_seen:
+                self.last_stop_outcome = "stopped"
                 return True
             if self._error is not None or self._connection_closed.is_set():
+                self.last_stop_outcome = "disconnected"
                 return False
             time.sleep(0.02)
+        self.last_stop_outcome = "timeout"
         return False
 
     def wait_for_stop_persistent(

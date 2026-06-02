@@ -47,6 +47,23 @@ def test_build14_eiscp_frame_construction_and_parsing_are_valid():
     assert avr_onkyo_eiscp.parse_eiscp_response(frame) == "!1PWR01"
 
 
+def test_recv_eiscp_frame_handles_split_and_short_reads():
+    # M2: a reply split across recv() segments must be reassembled; a short read returns what
+    # arrived (parse_eiscp_response then surfaces it as malformed rather than a truncated reply).
+    frame = avr_onkyo_eiscp.build_eiscp_frame("!1PWR01")
+
+    class _ChunkSock:
+        def __init__(self, chunks):
+            self._chunks = list(chunks)
+
+        def recv(self, _n):
+            return self._chunks.pop(0) if self._chunks else b""
+
+    assert avr_onkyo_eiscp._recv_eiscp_frame(_ChunkSock([frame[:9], frame[9:]])) == frame
+    assert avr_onkyo_eiscp._recv_eiscp_frame(_ChunkSock([b"ISCP", b""])) == b"ISCP"
+    assert avr_onkyo_eiscp._recv_eiscp_frame(_ChunkSock([frame[:16], b""])) == frame[:16]
+
+
 def test_build14_eiscp_payloads_and_input_validation():
     assert avr_onkyo_eiscp.build_power_on_payload() == "!1PWR01"
     assert avr_onkyo_eiscp.build_input_select_payload("10") == "!1SLI10"

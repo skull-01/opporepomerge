@@ -228,12 +228,15 @@ def resolve_power_on_token(token: object, hardware_model: object) -> object:
     if token.strip().upper() not in ("#PON", "#POW"):
         return token
     try:
-        from settings_reader import hardware_profile
+        try:
+            from ..kodi.settings_reader import hardware_profile
+        except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+            from settings_reader import hardware_profile  # type: ignore[no-redef]
 
         profile = hardware_profile(hardware_model)
         wake = profile.get("wake_command")
         is_clone = bool(profile.get("is_clone"))
-    except Exception:
+    except Exception:  # pragma: no cover - defensive: settings_reader/profile unavailable
         wake = None
         is_clone = False
     # Stock OPPO keeps the exact requested power command. Only Chinoppo-style

@@ -10,6 +10,7 @@ rendering, and the installer.run_player_status_probe menu wiring + dispatch.
 import contextlib
 import importlib
 import os
+import socket
 import sys
 import unittest
 
@@ -28,6 +29,35 @@ def _fake_send(responses):
         return list(responses)
 
     return send
+
+
+class TRecvLine(unittest.TestCase):
+    """M2: _recv_line reassembles a reply split across recv() segments."""
+
+    class _Sock:
+        def __init__(self, chunks):
+            self._chunks = list(chunks)
+
+        def recv(self, _n):
+            if not self._chunks:
+                raise socket.timeout()
+            return self._chunks.pop(0)
+
+    def test_reassembles_split_response(self):
+        sock = self._Sock([b"@QP", b"W OK ON\r"])
+        self.assertEqual(oppo_control._recv_line(sock), "@QPW OK ON")
+
+    def test_returns_first_line_only(self):
+        sock = self._Sock([b"@A OK\r@B OK\r"])
+        self.assertEqual(oppo_control._recv_line(sock), "@A OK")
+
+    def test_timeout_returns_accumulated(self):
+        sock = self._Sock([b"partial"])  # next recv() raises socket.timeout
+        self.assertEqual(oppo_control._recv_line(sock), "partial")
+
+    def test_close_returns_accumulated(self):
+        sock = self._Sock([b""])  # immediate close
+        self.assertEqual(oppo_control._recv_line(sock), "")
 
 
 class TProbeClassification(unittest.TestCase):

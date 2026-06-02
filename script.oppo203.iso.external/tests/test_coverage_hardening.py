@@ -188,7 +188,7 @@ class TOppoControlCoverageHardening(unittest.TestCase):
         )
 
     def test_tcp_send_and_query_helpers_use_fake_socket(self):
-        sock = FakeTcpSocket([b"@PON OK", b"TIMEOUT", b"@QPW OK ON"])
+        sock = FakeTcpSocket([b"@PON OK\r", b"TIMEOUT"])
         calls = []
 
         def fake_create(addr, timeout):
@@ -203,7 +203,7 @@ class TOppoControlCoverageHardening(unittest.TestCase):
                 self.oc.send_commands("host", "23", ["#PON", "", "#PLA"], timeout="2", delay="0"),
                 ["@PON OK", ""],
             )
-        sock2 = FakeTcpSocket([b"@QPW OK ON"])
+        sock2 = FakeTcpSocket([b"@QPW OK ON\r"])
         with mock.patch.object(self.oc.socket, "create_connection", return_value=sock2):
             self.assertEqual(self.oc.query_power_status("host", 23), "ON")
         sock3 = FakeTcpSocket(["TIMEOUT"])
@@ -1735,16 +1735,10 @@ class TCoverageGateFourthPassGradual99(unittest.TestCase):
             remote.send_remote_key("bad")
             remote.send_remote_key("missing")
         self.assertIn(["#SRC 6"], calls)
-        # Cover hardware profile import-failure fallback in the resolver.
-        original = sys.modules.get("settings_reader")
-        sys.modules["settings_reader"] = None
-        try:
-            self.assertEqual(remote.resolve_power_on_token("#PON", "chinoppo_m9702"), "#PON")
-        finally:
-            if original is not None:
-                sys.modules["settings_reader"] = original
-            else:
-                sys.modules.pop("settings_reader", None)
+        # The clone wake resolver rewrites #PON/#POW to the clone wake action; stock keeps it.
+        self.assertEqual(remote.resolve_power_on_token("#PON", "chinoppo_m9702"), "#EJT")
+        self.assertEqual(remote.resolve_power_on_token("#POW", "chinoppo_m9702"), "#EJT")
+        self.assertEqual(remote.resolve_power_on_token("#PON", "udp_203"), "#PON")
 
     def test_small_manager_logger_and_playercore_edges(self):
         import logging_v116

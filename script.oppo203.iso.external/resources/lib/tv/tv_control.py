@@ -36,7 +36,11 @@ def _run_external(command: str | None, settings: dict[str, Any], timeout: int = 
     if not command:
         raise TVControlError("External TV command is empty.")
 
-    formatted = command.format(tv_ip=settings.get("tv_ip", ""))
+    try:
+        formatted = command.format(tv_ip=settings.get("tv_ip", ""))
+    except (KeyError, IndexError, ValueError):
+        # A template with stray/extra braces ({tv_port}, JSON, ...) must not crash the switch.
+        formatted = command.replace("{tv_ip}", str(settings.get("tv_ip", "")))
     proc = subprocess.run(
         shlex.split(formatted),
         capture_output=True,
