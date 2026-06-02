@@ -39,6 +39,7 @@ import { Step5Intro, Step5Ask, Step5Fallback, Step5Done } from "./screens/step5"
 import { Step6Ask, Step6Brand, Step6Model } from "./screens/step6";
 import { TestSetup, TestConfirm, TestSuccess } from "./screens/test";
 import { Dashboard } from "./screens/dashboard";
+import { ResetAllScreen } from "./screens/ResetAll";
 import type { ScreenProps } from "./screens/types";
 
 // Picking the progress variant in production — change here, not at runtime.
@@ -75,6 +76,7 @@ const SCREEN_RENDERERS: Record<ScreenId, (props: ScreenProps) => JSX.Element> = 
   test_confirm: TestConfirm,
   test_success: TestSuccess,
   dashboard: Dashboard,
+  reset_all: ResetAllScreen,
 };
 
 export default function App() {
@@ -137,6 +139,13 @@ export default function App() {
   return (
     <WinShell title="OppoKodiAddon Configurator · setup wizard">
       <div className="app-header">
+        {screen !== "reset_all" && (
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+            <button className="btn ghost sm" onClick={() => go("reset_all")}>
+              Reset all…
+            </button>
+          </div>
+        )}
         {!useSidebar && PROGRESS_VARIANT === "stepper" && (
           <Progress variant="stepper" current={stepId} onJump={onJumpStep} />
         )}

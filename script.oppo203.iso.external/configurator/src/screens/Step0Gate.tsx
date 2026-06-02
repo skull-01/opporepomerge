@@ -49,6 +49,13 @@ export function Step0Gate({ go }: ScreenProps) {
             Not yet
           </button>
         </div>
+        <button
+          className="btn ghost sm"
+          style={{ marginTop: 14 }}
+          onClick={() => go("reset_all")}
+        >
+          Reset all configurations…
+        </button>
       </div>
     </div>
   );
