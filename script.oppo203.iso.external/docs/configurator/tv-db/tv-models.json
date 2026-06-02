@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "db_version": "2026.06.03",
+  "db_version": "2026.06.04",
   "scope": {
     "years": [
       2018,
@@ -12894,6 +12894,12 @@
       "name": "E8N Pro (ULED X Mini LED)",
       "year": 2024,
       "size": "various",
+      "sizes": [
+        "65",
+        "75",
+        "85",
+        "100"
+      ],
       "lineup": "hisense-china-android",
       "regions": [
         "CN"
