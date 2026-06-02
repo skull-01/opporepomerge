@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — Wave C2: wizard step-number banners, controlled inputs, dead UI, naming — #246–#252
+
+- **Branch / PR:** `claude/wave-c2-wizard-flow-naming` → [PR #253](https://github.com/skull-01/script.oppo203.iso.external/pull/253) (merged to `main`, `0276e2a`). Issues [#246](https://github.com/skull-01/script.oppo203.iso.external/issues/246)–[#252](https://github.com/skull-01/script.oppo203.iso.external/issues/252). 2026-06-02 full-audit remediation, **Wave C2**.
+- **What changed (software-verified only):** **M6 (#246)** the section banners in `step2`/`step4`/`step5`/`step6.tsx` now match the `STEPS` numbers (3/5/6/7) and the dashboard "after Step 4" string is now Step 5. **M7 (#247)** the Player IP input is controlled (bound to `state.playerIp`) so it no longer desyncs from persisted state. **L5 (#248)** `deriveRewrite` normalizes `\`→`/` for segment matching (a Windows/UNC OPPO mount path yields a rewrite). **L7 (#249)** the ADB warning keys on `state.tvBackend == "adb"`. **L8 (#250)** Step0Exit's cards are non-interactive and the dead "Open setup guide" button is removed. **L14 (#251)** the decorative password field is removed (Tier-A states "SSH key (non-interactive)"). **L16 (#252)** the Pure-HTTP tile copy calls out that it switches the Kodi-box handoff to HTTP, replacing the routing picked there.
+- **Software gates (this machine):** `tsc --noEmit` clean, **297 vitest**, `npm run build` OK.
+- **Operator verifies (Phase C — no hardware):** open the wizard and confirm the Progress stepper numbers match the screen banners/headings; resume with a saved Player IP and confirm Step 3 shows it; confirm the Step0Exit page has no dead buttons; confirm Tier A shows "SSH key (non-interactive)" with no password field.
+
 ### Configurator — Wave C1: settings.xml secret masking, token-owned live monitor, SSH/IO hardening — #239–#244
 
 - **Branch / PR:** `claude/wave-c1-secret-and-rust-safety` → [PR #245](https://github.com/skull-01/script.oppo203.iso.external/pull/245) (merged to `main`, `93d5151`). Issues [#239](https://github.com/skull-01/script.oppo203.iso.external/issues/239)–[#244](https://github.com/skull-01/script.oppo203.iso.external/issues/244). 2026-06-02 full-audit remediation, **Wave C1**.
