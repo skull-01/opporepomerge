@@ -7,6 +7,7 @@ import {
   modelsForRegion,
   parseTvDb,
   resolveBackend,
+  TV_REGIONS,
   type TvDbModel,
 } from "./tvdb";
 
@@ -129,5 +130,20 @@ describe("isNewer", () => {
   it("never treats an unparseable version as newer", () => {
     const base = { ...BUNDLED_TV_DB, db_version: "2026.05.30" };
     expect(isNewer(base, { ...base, db_version: "garbage" })).toBe(false);
+  });
+});
+
+describe("CN region (China-domestic models)", () => {
+  it("TV_REGIONS includes CN", () => {
+    expect(TV_REGIONS).toContain("CN");
+  });
+
+  it("returns China TCL and Hisense families for the CN region", () => {
+    const tcl = modelsForRegion(modelsForBrand(BUNDLED_TV_DB, "tcl"), "CN");
+    const hisense = modelsForRegion(modelsForBrand(BUNDLED_TV_DB, "hisense"), "CN");
+    expect(tcl.length).toBeGreaterThan(0);
+    expect(hisense.length).toBeGreaterThan(0);
+    expect(tcl.every((m) => m.regions.includes("CN"))).toBe(true);
+    expect(hisense.every((m) => m.regions.includes("CN"))).toBe(true);
   });
 });

@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — TV DB China models (CN region) + tv_ip comment fix (PR-only)
+
+- **Branch / PR:** `claude/cfg-tvdb-china-695795c6` → draft PR (base `main`). PR-only theme (no tracked issue).
+- **What changed (software-verified only):** (1) **TV DB expanded 324 → 350 model families** with **26 China-domestic** TCL + Hisense families under a **new `CN` region**: 2 new lineups (`tcl-china-android` = Android/雷鸟系统 → `adb`; `hisense-china-vidaa` = VIDAA/聚好看 → `custom_command`), 13 TCL rows (incl. the FFALCON/雷鸟 sub-brand) + 13 Hisense rows (U7/U8/E ULED families). `tvdb.ts` `TvRegion` + `TV_REGIONS` gain `"CN"`; the Step-5 region picker auto-renders the new pill. `scope.regions` + `region_schema.allowed_values` gain `CN`; `db_version` → `2026.06.02`. **All rows `validated:false`, `mapping_confidence:"low"`** — China-market OS variants gate ADB differently and have no first-class VIDAA backend, so the control paths are research candidates, not validated. Both `tv-models.json` copies kept byte-identical (`tv_db_consistency.test.ts`). (2) Fixed a stale comment in `mapping.ts wizardStateToAddonSettings` that said `tv_ip` is "not yet captured" — it IS emitted (since #198/#199).
+- **Software gates (this machine):** `tsc --noEmit` 0 · `vitest` **263** (+2 CN region tests; `tv_db_consistency` byte-identical green) · `vite build`. **Browser-verified** (vite dev server): the Step-5 TV picker shows a **CN** region pill; selecting it lists all 13 China TCL families (incl. 雷鸟 鹏 7 Pro) with `Android (China) / 雷鸟系统 · adb · CN · low confidence`. No add-on change.
+- **Operator verifies (Phase A):** confirm the 26 rows are reasonable China model families and the brand/OS/backend mapping (Android→adb, VIDAA→custom_command) is sane; confirm all are `validated:false`.
+- **Operator verifies (Phase C — real hardware):** on a real China-domestic TCL (雷鸟系统) or Hisense (VIDAA/聚好看) set, confirm whether ADB-over-network (TCL) or a custom command (Hisense VIDAA) actually switches the HDMI input — these are **low-confidence candidates, not hardware-validated**.
+
 ### Configurator + add-on — shared playback-preset source (cross-language matrix guard; PR-only)
 
 - **Branch / PR:** `claude/shared-preset-source-7262b0b2` → draft PR (base `main`). PR-only theme (no tracked issue) — the optional hardening flagged in `docs/BUILD_PLAN.md` §6.

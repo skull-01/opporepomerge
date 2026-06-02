@@ -7,7 +7,7 @@ import bundled from "./tv-db/tv-models.json";
 
 export type TvDbTier = "preferred" | "fallback" | "probe";
 
-export type TvRegion = "US" | "UK" | "EU" | "Asia";
+export type TvRegion = "US" | "UK" | "EU" | "Asia" | "CN";
 
 export type TvMappingConfidence = "high" | "medium" | "low";
 
@@ -90,7 +90,7 @@ export function modelsForBrand(db: TvDb, brand: string): TvDbModel[] {
   return db.models.filter((m) => m.brand === brand);
 }
 
-export const TV_REGIONS: readonly TvRegion[] = ["US", "UK", "EU", "Asia"];
+export const TV_REGIONS: readonly TvRegion[] = ["US", "UK", "EU", "Asia", "CN"];
 
 /** Models released/mapped to a given region; a null region passes everything through. */
 export function modelsForRegion(models: TvDbModel[], region: TvRegion | null): TvDbModel[] {
