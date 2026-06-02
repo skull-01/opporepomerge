@@ -41,6 +41,15 @@ const MAX_STRING = 2000;
 // never reaches the panel or a copy/paste of it.
 const SENSITIVE_KEY = /psk|token|password|secret|credential/i;
 
+/**
+ * Whether a key or setting-id name may carry a secret (Sony PSK, SmartThings token, password,
+ * NAS credential). The single home for that policy - shared by the debug redactor below and the
+ * dashboard settings-snapshot diff, so a secret value never reaches the UI or the snapshot on disk.
+ */
+export function isSensitiveKey(name: string): boolean {
+  return SENSITIVE_KEY.test(name);
+}
+
 let entries: DebugEntry[] = [];
 let seq = 0;
 let currentStep: StepId | null = null;
@@ -52,7 +61,7 @@ const listeners = new Set<() => void>();
  * by depth so an unexpected cycle cannot run away.
  */
 export function redact(value: unknown, keyHint = "", depth = 0): unknown {
-  if (SENSITIVE_KEY.test(keyHint)) return "[redacted]";
+  if (isSensitiveKey(keyHint)) return "[redacted]";
   if (depth > 8) return "[…]";
   if (typeof value === "string") {
     return value.length > MAX_STRING

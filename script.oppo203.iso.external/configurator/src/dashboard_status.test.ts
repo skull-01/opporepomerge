@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { INITIAL_STATE, type WizardState } from "./state";
-import { canStartLiveStream, statusReadPlan } from "./dashboard_status";
+import { canStartLiveStream, fileReadPlan, statusReadPlan } from "./dashboard_status";
 import { ADDON_DATA_STATUS_REL, parseOppoStatus } from "./oppo_status";
+import { ADDON_DATA_SETTINGS_REL } from "./settings_xml";
 
 function make(patch: Partial<WizardState>): WizardState {
   return { ...INITIAL_STATE, ...patch };
@@ -35,6 +36,35 @@ describe("statusReadPlan", () => {
       if (plan.supported) return;
       expect(plan.note).toMatch(/manual mode/i);
     }
+  });
+});
+
+describe("fileReadPlan (shared tier routing)", () => {
+  it("routes an arbitrary rel over SSH for tier A", () => {
+    const plan = fileReadPlan(
+      make({ tier: "A", kodiIp: "10.0.1.42", sshUser: "root" }),
+      ADDON_DATA_SETTINGS_REL,
+    );
+    expect(plan.supported).toBe(true);
+    if (!plan.supported) return;
+    expect(plan.command).toBe("read_ssh_file");
+    expect(plan.args.rel).toBe(ADDON_DATA_SETTINGS_REL);
+  });
+
+  it("routes an arbitrary rel from the SMB share for tier B", () => {
+    const plan = fileReadPlan(
+      make({ tier: "B", smbSharePath: "\\\\10.0.1.42\\Kodi" }),
+      ADDON_DATA_SETTINGS_REL,
+    );
+    expect(plan.supported).toBe(true);
+    if (!plan.supported) return;
+    expect(plan.command).toBe("read_userdata_file");
+    expect(plan.args.rel).toBe(ADDON_DATA_SETTINGS_REL);
+  });
+
+  it("is unsupported in manual mode (tier C)", () => {
+    const plan = fileReadPlan(make({ tier: "C" }), ADDON_DATA_SETTINGS_REL);
+    expect(plan.supported).toBe(false);
   });
 });
 
