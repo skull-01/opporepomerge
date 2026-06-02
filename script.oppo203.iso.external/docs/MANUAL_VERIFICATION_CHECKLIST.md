@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — H2 follow-up: Pure-HTTP launch fails honestly — #254
+
+- **Branch / PR:** `claude/h2-pure-http-fail-honestly` → [PR #255](https://github.com/skull-01/script.oppo203.iso.external/pull/255) (merged to `main`, `1453a6f`). Issue [#254](https://github.com/skull-01/script.oppo203.iso.external/issues/254). 2026-06-02 full-audit remediation — the deferred High finding, now fixed.
+- **What changed (software-verified only):** `external_player._start_oppo_http` no longer wraps the sequence in a blanket `try/except`; the required `activate -> signin -> play` core propagates (the wake/mount/auto-heal/confirm steps stay best-effort), so `run_playback_session` records `rc=1` / `session_state=failed` instead of silent success on the default `http_handoff` routing. Two tests flipped to assert propagation; the mount/confirm non-fatal tests are unchanged.
+- **Software gates (this machine):** `pytest -n auto` **1154/3**, mypy `--strict` **51/0**, ruff check + `ruff format --check` clean, serial coverage **99%** (gate exit 0).
+- **Operator verifies (Phase C — real hardware):** force a Pure-HTTP launch failure (e.g. an unreachable player IP) and confirm the status JSON / dashboard reports the session as **failed**, not stopped/success.
+
 ### Configurator — Wave C2: wizard step-number banners, controlled inputs, dead UI, naming — #246–#252
 
 - **Branch / PR:** `claude/wave-c2-wizard-flow-naming` → [PR #253](https://github.com/skull-01/script.oppo203.iso.external/pull/253) (merged to `main`, `0276e2a`). Issues [#246](https://github.com/skull-01/script.oppo203.iso.external/issues/246)–[#252](https://github.com/skull-01/script.oppo203.iso.external/issues/252). 2026-06-02 full-audit remediation, **Wave C2**.
