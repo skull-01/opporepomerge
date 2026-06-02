@@ -29,6 +29,7 @@ import external_player as ep  # bare name -> same module object as resources.lib
 
 from resources.lib.kodi import playback_session as ps  # registers the alias finder
 from resources.lib.kodi import settings_reader as sr
+from resources.lib.oppo import playback_monitor_http as httpmod
 from resources.lib.oppo import playback_monitor_svm3 as svm3mod
 
 
@@ -252,6 +253,66 @@ def test_http_handoff_svm3_launches_http_then_svm3_monitor(monkeypatch, tmp_path
     assert status["monitor_mode"] == "svm3"
     assert ("fast_start_http", "/mnt/nfs1/m.iso") in calls
     assert "hold" not in calls  # svm3 monitor, not the legacy hold
+
+
+# -- http monitor (run_playback_session dispatch branch) --------------------
+
+
+class FakeHttpMonitor:
+    last: "FakeHttpMonitor"
+
+    def __init__(self, settings, **kwargs):
+        self.settings = settings
+        self.kwargs = kwargs
+        FakeHttpMonitor.last = self
+
+    def run(self):
+        return {
+            "monitor_mode": "http",
+            "confirmed_playback": True,
+            "confirmed_progress": True,
+            "confirmed": True,
+            "oppo_playback_state": "STOP",
+            "stop_reason": "oppo_idle",
+        }
+
+
+class UnreachableHttpMonitor(FakeHttpMonitor):
+    def run(self):
+        return None
+
+
+def test_http_monitor_runs_and_skips_legacy_hold(monkeypatch, tmp_path):
+    monkeypatch.setattr(httpmod, "OppoHttpPlaybackMonitor", FakeHttpMonitor)
+    calls = []
+    _patch_ep(monkeypatch, calls)
+    monkeypatch.setattr(ep, "fast_start_http", lambda s, f: calls.append(("fast_start_http", f)))
+    rc = ps.run_playback_session(
+        _settings(tmp_path, playback_architecture_preset="http_handoff_http"),
+        "/mnt/nfs1/m.iso",
+        "playercorefactory",
+    )
+    assert rc == 0
+    assert "hold" not in calls  # the http monitor ran, not the legacy hold
+    status = _read_status(tmp_path)
+    assert status["routing_mode"] == "http_handoff"
+    assert status["monitor_mode"] == "http"
+    assert status["confirmed_playback"] is True
+    assert ("fast_start_http", "/mnt/nfs1/m.iso") in calls
+
+
+def test_http_monitor_unreachable_falls_back_to_legacy_hold(monkeypatch, tmp_path):
+    monkeypatch.setattr(httpmod, "OppoHttpPlaybackMonitor", UnreachableHttpMonitor)
+    calls = []
+    _patch_ep(monkeypatch, calls)
+    monkeypatch.setattr(ep, "fast_start_http", lambda s, f: calls.append(("fast_start_http", f)))
+    rc = ps.run_playback_session(
+        _settings(tmp_path, playback_architecture_preset="http_handoff_http"),
+        "/m.iso",
+        "playercorefactory",
+    )
+    assert rc == 0
+    assert "hold" in calls  # unreachable -> fell back to the legacy hold
 
 
 # -- external_player.fast_start_http / _start_oppo_http (the real launch) ----

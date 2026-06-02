@@ -32,7 +32,7 @@ class ArchitecturePresetDefaults(unittest.TestCase):
         self.assertEqual(sr.DEFAULTS["playback_monitor_mode"], "legacy")
 
     def test_monitor_mode_enum_values(self):
-        self.assertEqual(sr.ENUM_VALUES["playback_monitor_mode"], ["legacy", "svm3"])
+        self.assertEqual(sr.ENUM_VALUES["playback_monitor_mode"], ["legacy", "svm3", "http"])
         self.assertEqual(tuple(sr.ENUM_VALUES["playback_monitor_mode"]), sr.PLAYBACK_MONITOR_MODES)
 
     def test_preset_has_no_default_so_absence_means_derive(self):
@@ -94,6 +94,24 @@ class ArchitecturePresetMapping(unittest.TestCase):
         self.assertIn("http_handoff", sr.PLAYBACK_ROUTING_MODES)
         self.assertEqual(sr.architecture_preset("http_handoff", "legacy"), "http_handoff_legacy")
         self.assertEqual(sr.architecture_preset("http_handoff", "svm3"), "http_handoff_svm3")
+
+    def test_http_monitor_is_a_mode_and_yields_the_seventh_preset(self):
+        self.assertIn("http", sr.PLAYBACK_MONITOR_MODES)
+        self.assertEqual(sr.architecture_preset("http_handoff", "http"), "http_handoff_http")
+        self.assertEqual(sr.architecture_preset("  HTTP_HANDOFF ", " HTTP "), "http_handoff_http")
+
+    def test_http_monitor_clamps_to_legacy_for_non_http_handoff_routings(self):
+        # The http monitor is an asymmetric cell -- only http_handoff has it. Any other routing
+        # paired with "http" clamps to that routing's legacy preset (and never KeyErrors).
+        self.assertEqual(
+            sr.architecture_preset("playercorefactory", "http"), "playercorefactory_legacy"
+        )
+        self.assertEqual(
+            sr.architecture_preset("service_interception", "http"), "service_interception_legacy"
+        )
+        self.assertEqual(
+            sr.architecture_preset("external_player", "http"), "playercorefactory_legacy"
+        )
 
 
 class NormalizeArchitecture(unittest.TestCase):
@@ -189,12 +207,31 @@ class NormalizeArchitecture(unittest.TestCase):
         self.assertEqual(norm["preset"], "http_handoff_legacy")
         self.assertEqual(norm["routing"], "http_handoff")
 
+    def test_http_handoff_http_preset_is_source_of_truth(self):
+        norm = sr.normalize_architecture(
+            sr.Settings({"playback_architecture_preset": "http_handoff_http"})
+        )
+        self.assertEqual(norm["routing"], "http_handoff")
+        self.assertEqual(norm["monitor_mode"], "http")
+        self.assertEqual(norm["preset"], "http_handoff_http")
+
+    def test_http_monitor_backfill_on_non_http_routing_clamps_to_legacy(self):
+        # An install with playback_monitor_mode=http but a non-http_handoff routing must not
+        # produce an invalid (routing, "http") preset -- it backfills to that routing's legacy.
+        norm = sr.normalize_architecture(
+            sr.Settings(
+                {"playback_architecture": "service_interception", "playback_monitor_mode": "http"}
+            )
+        )
+        self.assertEqual(norm["preset"], "service_interception_legacy")
+        self.assertEqual(norm["monitor_mode"], "legacy")
+
 
 class PresetConsistencyGuard(unittest.TestCase):
     def test_every_preset_round_trips(self):
         # Pin preset <-> normalized: normalizing a settings object carrying only a
         # preset must yield routing/monitor that map back to the same preset.
-        self.assertEqual(len(sr.PLAYBACK_ARCHITECTURE_PRESETS), 6)
+        self.assertEqual(len(sr.PLAYBACK_ARCHITECTURE_PRESETS), 7)
         for preset in sr.PLAYBACK_ARCHITECTURE_PRESETS:
             norm = sr.normalize_architecture(sr.Settings({"playback_architecture_preset": preset}))
             self.assertEqual(norm["preset"], preset)

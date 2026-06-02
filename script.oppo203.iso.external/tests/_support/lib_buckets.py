@@ -12,7 +12,7 @@ every legacy name so both are purged/restored together.
 _BUCKETS = {
     "tv": "tv_adb_control tv_roku_ecp_control tv_smartthings_control tv_backends tv_control tv_diagnostics tv_presets",
     "avr": "avr_control avr_denon_marantz avr_onkyo_eiscp avr_presets avr_sequence avr_sony_audio avr_types avr_yamaha avr_diagnostics",
-    "oppo": "oppo_control oppo_remote oppo_tcp_client command_map constants discovery reconnect_backoff hardware_capabilities hardware_presets hardware_profiles hardware_validation_readiness path_mapper nas_playback_adapter autoscript_helper",
+    "oppo": "oppo_control oppo_remote oppo_tcp_client playback_monitor_svm3 playback_monitor_http command_map constants discovery reconnect_backoff hardware_capabilities hardware_presets hardware_profiles hardware_validation_readiness path_mapper nas_playback_adapter autoscript_helper",
     "kodi": "installer intercept disc_classification settings_reader settings_schema keymap_skin playercorefactory_merge i18n diagnostic_logging diagnostic_summary logging_v116 diagnostics arch_benchmark external_player version",
 }
 _CANONICAL = {

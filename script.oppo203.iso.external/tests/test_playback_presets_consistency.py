@@ -34,7 +34,7 @@ def test_monitor_modes_match_settings_reader():
 
 def test_presets_match_settings_reader_in_order():
     assert tuple(DB["presets"]) == sr.PLAYBACK_ARCHITECTURE_PRESETS
-    assert len(DB["presets"]) == 6
+    assert len(DB["presets"]) == 7
 
 
 def test_preset_by_axes_matches_settings_reader():
@@ -47,9 +47,13 @@ def test_routing_aliases_match_settings_reader():
     assert db_aliases == sr._ROUTING_ALIASES
 
 
-def test_matrix_is_the_full_cross_product():
+def test_matrix_is_the_asymmetric_cross_product():
+    # legacy + svm3 apply to every routing; the http monitor is an asymmetric cell that exists
+    # only for the http_handoff routing (the 7th preset, http_handoff_http). Mirrors the add-on's
+    # settings_reader._PRESET_BY_AXES, which clamps any other (routing, "http") pair to legacy.
     pairs = {(e["routing"], e["monitor"]) for e in DB["preset_by_axes"]}
-    expected = {(r, m) for r in DB["routing_modes"] for m in DB["monitor_modes"]}
+    base = {(r, m) for r in DB["routing_modes"] for m in ("legacy", "svm3")}
+    expected = base | {("http_handoff", "http")}
     assert pairs == expected
     assert {e["preset"] for e in DB["preset_by_axes"]} == set(DB["presets"])
 

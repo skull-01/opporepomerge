@@ -38,13 +38,17 @@ export type InputAddress = number | "cec" | string | null;
 export type PlaybackArchitecture = "external_player" | "service_interception" | "http_handoff";
 
 /**
- * How the add-on confirms OPPO playback (Step 3 "Playback mode"):
+ * How the add-on confirms OPPO playback (Step 4 "Playback mode"):
  *   legacy - the existing hold_mode dispatcher (fixed timeout / file / QPL poll / verbose push).
  *   svm3   - OPPO verbose mode 3: the add-on listens for UPL/UTC status + time-code updates and
  *            treats playback as confirmed only when the OPPO itself reports it.
- * Orthogonal to playbackArchitecture (the routing axis); together they form the four-option preset.
+ *   http   - pure-HTTP/436: the add-on polls /getglobalinfo + /getplayingtime. This monitor is
+ *            only valid with the http_handoff routing (the "Pure HTTP" pill sets both axes), so
+ *            the only http preset is http_handoff_http.
+ * Orthogonal to playbackArchitecture (the routing axis) for legacy/svm3; together they form the
+ * preset matrix (6 base presets + the asymmetric http_handoff_http cell).
  */
-export type MonitorMode = "legacy" | "svm3";
+export type MonitorMode = "legacy" | "svm3" | "http";
 
 /**
  * The physical playback chain being configured, chosen up front (Step 0) so the rest of
