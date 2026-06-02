@@ -3,7 +3,7 @@
 # Runs the same release checks used by the handoff build process.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EXPECTED_VERSION="${EXPECTED_VERSION:-2.9.13}"
+EXPECTED_VERSION="${EXPECTED_VERSION:-2.9.14}"
 cd "$ROOT"
 python3 -m py_compile service.py default.py resources/lib/kodi/intercept.py resources/lib/kodi/version.py resources/lib/kodi/disc_classification.py resources/lib/oppo/command_map.py resources/lib/kodi/settings_schema.py tools/i18n_extract.py tools/make_pot.py
 python3 tools/sync_version.py --root "$ROOT" --check --expected-version "$EXPECTED_VERSION"

@@ -79,14 +79,14 @@ def test_package_release_script_creates_runtime_zip_dev_source_and_checksum(tmp_
         ["bash", str(ROOT / "scripts" / "package_release.sh")],
         check=False,
         cwd=str(ROOT),
-        env={**os.environ, "OUT_DIR": str(out), "VERSION": "2.9.13", "BUILD_SUFFIX": "build6-test"},
+        env={**os.environ, "OUT_DIR": str(out), "VERSION": "2.9.14", "BUILD_SUFFIX": "build6-test"},
         text=True,
         capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    runtime_zip = out / "script.oppo203.iso.external-2.9.13-build6-test.zip"
-    dev_zip = out / "script.oppo203.iso.external-2.9.13-build6-test-dev-source.zip"
-    checksum = out / "script.oppo203.iso.external-2.9.13-build6-test.sha256"
+    runtime_zip = out / "script.oppo203.iso.external-2.9.14-build6-test.zip"
+    dev_zip = out / "script.oppo203.iso.external-2.9.14-build6-test-dev-source.zip"
+    checksum = out / "script.oppo203.iso.external-2.9.14-build6-test.sha256"
     assert runtime_zip.exists()
     assert dev_zip.exists()
     assert checksum.exists()
@@ -101,7 +101,7 @@ def test_package_release_script_creates_runtime_zip_dev_source_and_checksum(tmp_
 
 def test_release_audit_requires_build6_manifest_and_evidence():
     audit = _load_audit()
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.14")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -125,8 +125,8 @@ def test_addon_metadata_and_version_source_identify_build6():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.13 Final"
-    assert version.BUILD_NUMBER == 22
+    assert version.BUILD_ID == "v2.9.14 Final"
+    assert version.BUILD_NUMBER == 23
     assert "Version 2.9.1 Build 11" in addon_text
     assert "scripts/verify.sh" in addon_text
     assert "scripts/package_release.sh" in addon_text

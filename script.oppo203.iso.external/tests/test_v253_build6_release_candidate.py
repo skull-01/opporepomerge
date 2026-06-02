@@ -23,7 +23,7 @@ def _read(name: str) -> str:
 
 def test_build6_addon_metadata_declares_freeze_without_hardware_claim():
     addon = _read("addon.xml")
-    assert 'version="2.9.13"' in addon
+    assert 'version="2.9.14"' in addon
     assert "Version 2.5.3 Build 6" in addon
     assert "pre-hardware release-candidate packaging freeze" in addon
     assert "Hardware validation is intentionally not claimed" in addon
@@ -55,7 +55,7 @@ def test_build6_release_audit_requires_build6_evidence():
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.13")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.14")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -95,4 +95,4 @@ def test_build6_runtime_zip_excludes_prehardware_and_build_evidence(tmp_path):
     with zipfile.ZipFile(out) as zf:
         addon_text = zf.read("script.oppo203.iso.external/addon.xml").decode("utf-8")
     assert "Build 6" in addon_text
-    assert 'version="2.9.13"' in addon_text
+    assert 'version="2.9.14"' in addon_text

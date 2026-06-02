@@ -2856,7 +2856,7 @@ class TV2Build1(unittest.TestCase):
         import xml.etree.ElementTree as ET
 
         tree = ET.parse(os.path.join(ROOT, "addon.xml"))
-        self.assertEqual(tree.getroot().attrib.get("version"), "2.9.13")
+        self.assertEqual(tree.getroot().attrib.get("version"), "2.9.14")
 
     def test_default_command_map_is_canonical_76_key_map(self):
         import json
@@ -3211,7 +3211,7 @@ class TBuild5ReleaseAuditArtifacts(unittest.TestCase):
         return read_project_file(self.root, rel)
 
     def test_addon_version_is_current_hardening_build(self):
-        self.assertIn('version="2.9.13"', self._read("addon.xml"))
+        self.assertIn('version="2.9.14"', self._read("addon.xml"))
 
     def test_build5_notes_and_manifest_exist(self):
         notes = self._read("BUILD_NOTES_v2.0.0_BUILD5.md")
@@ -3233,7 +3233,7 @@ class TBuild5ReleaseAuditArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3253,7 +3253,7 @@ class TBuild5ReleaseAuditArtifacts(unittest.TestCase):
                 "--root",
                 self.root,
                 "--expected-version",
-                "2.9.13",
+                "2.9.14",
                 "--json",
             ],
             text=True,
@@ -3325,7 +3325,7 @@ class TFinalV200ReleaseArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_final", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3365,7 +3365,7 @@ class TBuild6BuildIdArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_build6", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3385,7 +3385,7 @@ class TFinalV200PackageFromBuild6(unittest.TestCase):
         return read_project_file(self.root, rel)
 
     def test_addon_identity_is_v210_build1_not_old_build_id(self):
-        self.assertIn('version="2.9.13"', self._read("addon.xml"))
+        self.assertIn('version="2.9.14"', self._read("addon.xml"))
         self.assertNotIn('version="2.0.0.6"', self._read("addon.xml"))
 
     def test_final_release_docs_record_build6_baseline_and_hardware_deferral(self):
@@ -3405,7 +3405,7 @@ class TFinalV200PackageFromBuild6(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_final_build6", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
 
@@ -3442,7 +3442,7 @@ class TV210Build1CoverageGateArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v210_build1", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3485,7 +3485,7 @@ class TV210Build2CoverageGateArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v210_build2", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3528,7 +3528,7 @@ class TV210Build3CoverageGateArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v210_build3", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3571,7 +3571,7 @@ class TV210Build5CoverageGateArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v210_build5", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3614,7 +3614,7 @@ class TV210Build6CoverageGateArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v210_build6", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3658,7 +3658,7 @@ class TV210Build7RawCoverageArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v210_build7", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3701,7 +3701,7 @@ class TV210Build8RawCoverageArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v210_build8", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3744,7 +3744,7 @@ class TV220Build4PersistenceArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v220_build4", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3787,7 +3787,7 @@ class TV220Build5WizardUISurfacingArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v220_build5", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3830,7 +3830,7 @@ class TV220Build6ActiveWizardWarningArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v220_build6", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3873,7 +3873,7 @@ class TV220Build7ServiceWatcherEdgeArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v220_build7", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
@@ -3919,7 +3919,7 @@ class TV220Build8MergeParityAuditArtifacts(unittest.TestCase):
         spec = importlib.util.spec_from_file_location("audit_release_v220_build8_all", path)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.13")
+        results = mod.run_audit(mod.project_root(mod.Path(self.root)), expected_version="2.9.14")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}

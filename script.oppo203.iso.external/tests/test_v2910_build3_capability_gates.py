@@ -123,13 +123,13 @@ def test_build3_readiness_report_exposes_player_gate_without_claiming_validation
 
 def test_build3_version_docs_and_audit_evidence_identity():
     version = _load("version_build3", "resources/lib/kodi/version.py")
-    assert version.BUILD_ID == "v2.9.13 Final"
-    assert version.BUILD_NUMBER == 22
+    assert version.BUILD_ID == "v2.9.14 Final"
+    assert version.BUILD_NUMBER == 23
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 3" in addon
     assert "Version 2.9.10 Build 2" in addon
     audit = _load("audit_release_build3", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.13")
+    results = audit.run_audit(ROOT, expected_version="2.9.14")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
