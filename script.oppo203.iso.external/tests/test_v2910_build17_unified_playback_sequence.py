@@ -34,6 +34,7 @@ def _settings(**overrides):
         "avr_host": "192.168.1.81",
         "avr_player_input": "BD",
         "avr_power_on_enabled": "true",
+        "avr_power_on_settle_seconds": "0",
         "avr_restore_enabled": "true",
         "avr_restore_input": "TV",
     }
@@ -80,6 +81,62 @@ def test_build18_pre_sequence_powers_on_and_selects_player_input_when_enabled():
     assert result.ok is True
     assert result.actions == ("power_on", "select_input")
     assert controller.calls == [("power_on", None), ("select_input", None)]
+
+
+def test_avr_sequence_eligible_for_http_handoff():
+    # H1: the http_handoff routing runs through the external-player wrapper (fast_start_http),
+    # so AVR sequencing must be eligible -- it was silently skipped because the gate only
+    # accepted "external_player".
+    assert (
+        avr_sequence.eligible_for_external_player_avr_sequence(
+            {"playback_architecture": "http_handoff"}
+        )
+        is True
+    )
+    controller = FakeAvrController()
+    result = avr_sequence.pre_playback_sequence(
+        _settings(playback_architecture="http_handoff"), controller=controller
+    )
+    assert result.ok is True
+    assert result.skipped is False
+    assert result.actions == ("power_on", "select_input")
+    restore = avr_sequence.post_playback_sequence(
+        _settings(playback_architecture="http_handoff"), controller=controller
+    )
+    assert restore.ok is True
+    assert restore.actions == ("restore_input",)
+
+
+def test_avr_sequence_settle_helper_reads_setting(monkeypatch):
+    # M10: settle delay between AVR power-on and input-select.
+    sleeps: list[float] = []
+    monkeypatch.setattr(avr_sequence.time, "sleep", lambda s: sleeps.append(s))
+    avr_sequence._settle_after_power_on({})  # default 1.5 s
+    assert sleeps == [1.5]
+    sleeps.clear()
+    avr_sequence._settle_after_power_on({"avr_power_on_settle_seconds": "2.5"})
+    assert sleeps == [2.5]
+    sleeps.clear()
+    avr_sequence._settle_after_power_on({"avr_power_on_settle_seconds": "0"})
+    assert sleeps == []  # disabled
+    avr_sequence._settle_after_power_on({"avr_power_on_settle_seconds": "bad"})
+    assert sleeps == [1.5]  # invalid -> default
+
+
+def test_avr_pre_sequence_settle_only_after_power_on(monkeypatch):
+    sleeps: list[float] = []
+    monkeypatch.setattr(avr_sequence.time, "sleep", lambda s: sleeps.append(s))
+    controller = FakeAvrController()
+    avr_sequence.pre_playback_sequence(
+        _settings(avr_power_on_settle_seconds="1.5"), controller=controller
+    )
+    assert sleeps == [1.5]
+    sleeps.clear()
+    avr_sequence.pre_playback_sequence(
+        _settings(avr_power_on_enabled="false", avr_power_on_settle_seconds="1.5"),
+        controller=controller,
+    )
+    assert sleeps == []  # no power-on -> no settle
 
 
 def test_build18_avr_failure_is_nonfatal_and_does_not_raise():
