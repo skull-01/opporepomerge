@@ -1,0 +1,132 @@
+name: Configurator CI
+
+# Gate the Tauri 2 + React/TS configurator the way the add-on's ci.yml gates the Python
+# package. The local gate (tsc -b / vitest / cargo test) previously ran only on developer
+# machines; this runs it on every configurator-touching PR, and on a `configurator-v*` tag
+# it builds the MSI/NSIS installers and publishes the GitHub release as Latest.
+#
+# Note: `tags` is intentionally NOT combined with `paths` under one `push` trigger — GitHub
+# filters tag pushes out when a paths filter is present, which would skip releases.
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - "configurator/**"
+      - ".github/workflows/configurator-ci.yml"
+  push:
+    tags:
+      - "configurator-v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Gate (tsc + vitest + cargo test) / windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: configurator
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: configurator/package-lock.json
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo / target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: configurator/src-tauri
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Typecheck + build (tsc -b + vite build)
+        run: npm run build
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Rust tests (cargo test)
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+  release:
+    name: Build installers + publish release
+    needs: gate
+    if: startsWith(github.ref, 'refs/tags/configurator-v')
+    runs-on: windows-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: configurator
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: configurator/package-lock.json
+
+      - name: Set up Python (for bundle:addon)
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo / target
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: configurator/src-tauri
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build installers (npm run dist)
+        run: npm run dist
+
+      - name: Collect artifacts + SHA-256
+        shell: pwsh
+        run: |
+          $bundle = "src-tauri/target/release/bundle"
+          $out = Join-Path $env:RUNNER_TEMP "release-artifacts"
+          New-Item -ItemType Directory -Force -Path $out | Out-Null
+          Get-ChildItem -Path "$bundle/msi", "$bundle/nsis" -Recurse -Include *.msi, *-setup.exe |
+            ForEach-Object { Copy-Item $_.FullName -Destination $out }
+          Get-ChildItem $out | ForEach-Object {
+            $h = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$h  $($_.Name)" | Out-File -Append -Encoding ascii (Join-Path $out "SHA256SUMS.txt")
+          }
+          Get-Content (Join-Path $out "SHA256SUMS.txt")
+          "ARTIFACT_DIR=$out" | Out-File -Append -Encoding ascii $env:GITHUB_ENV
+
+      - name: Publish GitHub release (Latest)
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $files = (Get-ChildItem "$env:ARTIFACT_DIR/*").FullName
+          $ghArgs = @($tag, "--latest", "--title", "Configurator $tag", "--generate-notes") + $files
+          gh release create @ghArgs
