@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "db_version": "2026.06.02",
+  "db_version": "2026.06.03",
   "scope": {
     "years": [
       2018,
@@ -405,6 +405,30 @@
         "adb"
       ],
       "notes": "China-domestic Hisense runs VIDAA / 聚好看 (Hi-Table); there is no first-class PlayBridge VIDAA backend, so use a custom command, with ADB as a candidate fallback on Android-capable sets. Confirm per model.",
+      "regions": [
+        "CN"
+      ],
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic market lineup; control path is a low-confidence candidate pending hardware confirmation."
+    },
+    {
+      "id": "hisense-china-android",
+      "brand": "hisense",
+      "label": "Hisense China (Android / JUUI)",
+      "platform": "Android-based China TV OS (JUUI)",
+      "backend": "custom_command",
+      "tier": "probe",
+      "years": [
+        2023,
+        2026
+      ],
+      "validated": false,
+      "fallback_backends": [
+        "adb"
+      ],
+      "notes": "China-domestic Hisense models on an Android-based China UI (JUUI), distinct from international VIDAA / Google TV. No first-class PlayBridge backend; HDMI-CEC is the recommended on-device control but is not a PlayBridge backend, so a custom command is primary with ADB as a candidate/experimental fallback. Candidate mapping, not hardware-validated.",
       "regions": [
         "CN"
       ],
@@ -12863,6 +12887,29 @@
         "US"
       ],
       "region_notes": "Imported model row; exact size/SKU suffixes confirmed per model during wizard search or hardware validation."
+    },
+    {
+      "id": "hisense-e8n-pro-uled-x-cn-2024",
+      "brand": "hisense",
+      "name": "E8N Pro (ULED X Mini LED)",
+      "year": 2024,
+      "size": "various",
+      "lineup": "hisense-china-android",
+      "regions": [
+        "CN"
+      ],
+      "platform": "Android-based China TV OS (JUUI)",
+      "primary_backend": "custom_command",
+      "fallback_backends": [
+        "adb"
+      ],
+      "mapping_confidence": "low",
+      "validated": false,
+      "notes": "China-market Hisense E8N Pro (65/75/85/100-inch; ULED X Mini LED, 144Hz native; includes the Black Myth: Wukong co-branded variant). Android-based China UI (JUUI), NOT Google TV or international VIDAA. On-device, HDMI-CEC is the recommended control and ADB is a candidate/experimental path where network ADB is permitted; PlayBridge has no CEC backend, so a custom command is the primary path with ADB as fallback. Candidate mapping from an operator-supplied spec, not hardware-validated.",
+      "release_regions": [
+        "CN"
+      ],
+      "region_notes": "China-domestic release; size SKUs 65E8N Pro / 75E8N Pro / 85E8N Pro / 100E8N Pro confirmed per model during wizard search."
     }
   ],
   "fact_check_notes": [
@@ -12878,7 +12925,8 @@
     "Region mapping remains family-level and not exact per-size/per-retailer SKU. Use regional suffix/model-code verification during hardware validation.",
     "Expanded on 2026-05-31 from 2022-2025 to 2018-2025. Rows remain candidate model-family mappings, not hardware validation.",
     "2018-2021 additions intentionally use model-family names and broad region buckets; exact regional suffixes/retailer SKUs must be confirmed during wizard search or user selection.",
-    "Added on 2026-06-02: China-domestic TCL (incl. the FFALCON / 雷鸟 sub-brand on 雷鸟系统 / Android) and Hisense (VIDAA / 聚好看) model families under a new CN region. Control-path mappings are low-confidence candidates - China-market OS variants gate ADB differently and have no first-class VIDAA backend - and remain validated=false pending hardware confirmation."
+    "Added on 2026-06-02: China-domestic TCL (incl. the FFALCON / 雷鸟 sub-brand on 雷鸟系统 / Android) and Hisense (VIDAA / 聚好看) model families under a new CN region. Control-path mappings are low-confidence candidates - China-market OS variants gate ADB differently and have no first-class VIDAA backend - and remain validated=false pending hardware confirmation.",
+    "Added on 2026-06-03: Hisense E8N Pro (CN, 2024; ULED X Mini LED, incl. the Black Myth: Wukong co-branded variant) from an operator-supplied spec, under a new hisense-china-android lineup (Android-based China UI / JUUI, distinct from VIDAA/Google TV). HDMI-CEC is the on-device recommended control but is not a PlayBridge backend, so the row maps to custom_command primary + adb experimental fallback. validated=false, low confidence, pending hardware confirmation."
   ],
   "region_schema": {
     "field": "regions",
