@@ -368,6 +368,19 @@ def _supports_http_api(settings: Settings) -> bool:
     return bool(supports_http(settings.get("oppo_hardware_model", "")))
 
 
+def _apply_path_rewrite(settings: Settings, media_file: str) -> str:
+    """Rewrite the Kodi-visible mount prefix to the player-visible one, anchored at the start.
+
+    ``oppo_http_path_from``/``oppo_http_path_to`` describe a mount-prefix substitution; anchoring
+    at the start avoids corrupting a path when the ``from`` fragment also appears mid-path.
+    """
+    source = str(settings.get("oppo_http_path_from", ""))
+    target = str(settings.get("oppo_http_path_to", ""))
+    if source and media_file.startswith(source):
+        return target + media_file[len(source) :]
+    return media_file
+
+
 def resolve_disc_play_path(settings: Settings, media_file: str) -> str:
     """Resolve the path handed to the player for a disc-style source.
 
@@ -378,7 +391,12 @@ def resolve_disc_play_path(settings: Settings, media_file: str) -> str:
     original marker path is handed over instead. Any uncertainty -- toggle off, player not
     capable, or the probe unreachable -- falls back to today's folder-root behaviour, so this is
     safe on stock/older players and the off path is byte-identical to the frozen behaviour.
+
+    The Kodi->player mount-prefix rewrite (``oppo_http_path_from``/``oppo_http_path_to``) is
+    applied FIRST so the ``/checkfolderhasBDMV`` probe and the returned path are both expressed in
+    the player's own namespace.
     """
+    media_file = _apply_path_rewrite(settings, media_file)
     if not settings.get_bool("oppo_http_disc_folder_root", True):
         return media_file
     folder = _disc_folder_root(media_file)
@@ -399,13 +417,10 @@ def resolve_disc_play_path(settings: Settings, media_file: str) -> str:
 
 
 def _translate_media_path(settings: Settings, media_file: str) -> str:
+    # resolve_disc_play_path applies the mount-prefix rewrite + disc-folder/BDMV resolution.
     translated = resolve_disc_play_path(settings, media_file)
-    source = settings.get("oppo_http_path_from", "")
-    target = settings.get("oppo_http_path_to", "")
-    if source:
-        translated = translated.replace(source, target, 1)
     if settings.get_bool("oppo_http_urlencode_path", True):
-        return urllib.parse.quote(translated, safe="/:\\")
+        return urllib.parse.quote(translated, safe="/:")
     return translated
 
 
@@ -439,12 +454,9 @@ def _build_json_payload(settings: Settings, media_file: str) -> dict[str, object
       extraNetPath    - empty string
       playMode        - always 0
     """
-    # Build the translated path without URL encoding (the whole payload gets encoded)
+    # resolve_disc_play_path applies the mount-prefix rewrite + disc-folder/BDMV resolution; the
+    # whole JSON payload gets URL-encoded by the caller.
     translated = resolve_disc_play_path(settings, media_file)
-    source = settings.get("oppo_http_path_from", "")
-    target = settings.get("oppo_http_path_to", "")
-    if source:
-        translated = translated.replace(source, target, 1)
 
     app_device_type = int(settings.get("oppo_http_app_device_type", "2"))
     media_type = int(settings.get("oppo_http_media_type", "1"))

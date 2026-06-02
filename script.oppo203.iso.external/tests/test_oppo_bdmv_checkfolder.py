@@ -122,3 +122,56 @@ def test_supports_http_api_reads_model_capability():
     assert oc._supports_http_api(FakeSettings({"oppo_hardware_model": "udp_203"})) is True
     assert oc._supports_http_api(FakeSettings({"oppo_hardware_model": "chinoppo_m9205"})) is False
     assert oc._supports_http_api(FakeSettings({})) is False
+
+
+def test_bdmv_probe_uses_translated_player_path(monkeypatch):
+    # M1: the mount-prefix rewrite is applied BEFORE the /checkfolderhasBDMV probe and the
+    # returned path, so both are expressed in the player's namespace (not the Kodi-side path).
+    probed = []
+    monkeypatch.setattr(oc, "check_folder_has_bdmv", lambda s, f: probed.append(f) or True)
+    monkeypatch.setattr(oc, "_supports_http_api", lambda s: True)
+    s = FakeSettings(
+        {
+            "oppo_bdmv_checkfolder": "true",
+            "oppo_http_path_from": "/nas/",
+            "oppo_http_path_to": "/mnt/usb/",
+        }
+    )
+    assert oc.resolve_disc_play_path(s, BDMV) == "/mnt/usb/Movie"
+    assert probed == ["/mnt/usb/Movie"]  # probed the translated folder, not /nas/Movie
+
+
+def test_path_rewrite_is_anchored_to_prefix():
+    # M1: a "from" fragment that appears mid-path (not as a prefix) must NOT be rewritten.
+    s = FakeSettings(
+        {
+            "oppo_http_urlencode_path": "false",
+            "oppo_http_path_from": "Movie",
+            "oppo_http_path_to": "X",
+        }
+    )
+    assert oc._translate_media_path(s, "/nas/Movie/film.mkv") == "/nas/Movie/film.mkv"
+
+
+def test_path_rewrite_prefix_match_translates():
+    s = FakeSettings(
+        {
+            "oppo_http_urlencode_path": "false",
+            "oppo_http_path_from": "/nas/",
+            "oppo_http_path_to": "/mnt/usb/",
+        }
+    )
+    assert oc._translate_media_path(s, "/nas/Movie/film.mkv") == "/mnt/usb/Movie/film.mkv"
+
+
+def test_urlencode_encodes_backslash():
+    # L4: backslashes must be percent-encoded -- they were left raw in the URL query before.
+    s = FakeSettings(
+        {
+            "oppo_http_path_from": "/nas/",
+            "oppo_http_path_to": "\\\\server\\share\\",
+        }
+    )
+    out = oc._translate_media_path(s, "/nas/film.mkv")
+    assert "%5C" in out
+    assert "\\" not in out

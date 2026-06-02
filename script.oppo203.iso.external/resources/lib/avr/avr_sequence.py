@@ -8,6 +8,7 @@ NAS/AutoScript behavior, or TV switching semantics.
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -70,19 +71,37 @@ def _truthy(value: object, default: bool = False) -> bool:
     return text in {"1", "true", "yes", "on"}
 
 
-def eligible_for_external_player_avr_sequence(settings: dict[str, object] | object | None) -> bool:
-    """Return True only for the OPPO/external-player handoff posture.
+def _settle_after_power_on(data: dict[str, object]) -> None:
+    """Pause between AVR power-on and input-select.
 
-    The external-player wrapper is already the handoff boundary, but checking the
-    architecture setting gives tests and diagnostics an explicit guard and keeps
-    service-interception-only configurations from invoking AVR sequencing if the
-    wrapper is called directly.
+    Many receivers ignore an input command issued in the first 1-3 s after a cold power-on,
+    leaving the wrong input selected. Only called when a power-on was actually issued; a value
+    of 0 disables the wait. Default 1.5 s.
+    """
+    raw = data.get("avr_power_on_settle_seconds", "1.5")
+    try:
+        seconds = float(str(raw).strip() or "1.5")
+    except (TypeError, ValueError):
+        seconds = 1.5
+    if seconds > 0:
+        time.sleep(seconds)
+
+
+_AVR_ELIGIBLE_ROUTINGS = frozenset({"external_player", "http_handoff"})
+
+
+def eligible_for_external_player_avr_sequence(settings: dict[str, object] | object | None) -> bool:
+    """Return True for the OPPO handoff postures that run through the external-player wrapper.
+
+    Both the ``external_player`` (playercorefactory) routing and the ``http_handoff`` routing
+    invoke the wrapper (``fast_start`` / ``fast_start_http``), so AVR sequencing is eligible for
+    both. ``service_interception`` is excluded: its handoff does not flow through the wrapper, so
+    AVR sequencing must not run even if the wrapper is called directly. An empty/default value is
+    treated as ``external_player`` and stays eligible.
     """
     data = _settings_dict(settings)
-    return (
-        str(data.get("playback_architecture", "external_player") or "").strip().lower()
-        == "external_player"
-    )
+    routing = str(data.get("playback_architecture", "external_player") or "").strip().lower()
+    return routing in _AVR_ELIGIBLE_ROUTINGS
 
 
 def _result_from_exception(phase: str, exc: Exception, actions: list[str]) -> AvrSequenceResult:
@@ -137,6 +156,7 @@ def pre_playback_sequence(
         if _truthy(data.get("avr_power_on_enabled", "false"), False):
             _call_controller(active_controller, "power_on")
             actions.append("power_on")
+            _settle_after_power_on(data)
         _call_controller(active_controller, "select_input")
         actions.append("select_input")
         return AvrSequenceResult(True, "pre", skipped=False, actions=tuple(actions))
@@ -192,7 +212,8 @@ def post_playback_sequence(
 def sequencing_metadata() -> dict[str, object]:
     return {
         "playback_sequencing_hooked": True,
-        "avr_sequence_external_player_only": True,
+        "avr_sequence_external_player_only": False,
+        "avr_sequence_routings": ("external_player", "http_handoff"),
         "avr_disabled_path_noop": True,
         "avr_failures_block_playback": False,
         "tv_failures_block_playback": False,
