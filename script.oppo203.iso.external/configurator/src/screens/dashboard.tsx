@@ -729,7 +729,7 @@ export function Dashboard({ go, state }: ScreenProps) {
         <div className="callout-body">
           This is a network-reachability check, not a full health report — each device is listed
           once the wizard has stored an address and a backend with a plain TCP control port (the
-          TV appears after Step 4 captures its IP on a Roku ECP / ADB / Sony backend). Software-verified:
+          TV appears after Step 5 captures its IP on a Roku ECP / ADB / Sony backend). Software-verified:
           liveness, session status, and the live stream depend on the real devices answering.
         </div>
       </div>

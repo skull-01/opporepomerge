@@ -16,8 +16,11 @@ export function deriveRewrite(kodiPath: string, oppoPath: string): PathRewrite |
   const a = kodiPath.trim();
   const b = oppoPath.trim();
   if (!a || !b) return null;
-  const aSeg = a.split("/");
-  const bSeg = b.split("/");
+  // L5: compare on "/" boundaries but tolerate a "\"-separated OPPO mount path (Windows/UNC
+  // style) so a backslash path still matches instead of silently returning null. The from/to
+  // slices come from the originals below, so the prefixes keep their real separators.
+  const aSeg = a.replace(/\\/g, "/").split("/");
+  const bSeg = b.replace(/\\/g, "/").split("/");
   let n = 0;
   while (
     n < aSeg.length &&

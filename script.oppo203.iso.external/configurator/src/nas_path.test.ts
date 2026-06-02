@@ -34,6 +34,13 @@ describe("deriveRewrite", () => {
       to: "Disc/",
     });
   });
+
+  it("L5: tolerates a backslash-separated OPPO mount path (Windows/UNC)", () => {
+    expect(deriveRewrite("smb://10.0.1.10/Movies/Film.iso", "MyPC\\Movies\\Film.iso")).toEqual({
+      from: "smb://10.0.1.10/",
+      to: "MyPC\\",
+    });
+  });
 });
 
 describe("parseOppoPlayingPath", () => {

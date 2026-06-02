@@ -11,7 +11,7 @@ import { BUNDLED_PLAYERS_DB, playerModelByHw } from "../playersdb";
 import type { ScreenProps } from "./types";
 
 // ============================================================
-// STEP 2 — Player brand + model + IP
+// STEP 3 —Player brand + model + IP
 // ============================================================
 export function Step2Brand({ go, state, set }: ScreenProps) {
   const selected = PLAYER_BRANDS.find((b) => b.id === state.playerBrand);
@@ -78,7 +78,7 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
               <label className="field-label">Player IP</label>
               <input
                 className="input"
-                defaultValue="10.0.1.77"
+                value={state.playerIp}
                 onChange={(e) => set({ playerIp: e.target.value })}
               />
               <div className="field-hint">Port 23 — IP control. Reserve it on DHCP.</div>
@@ -134,7 +134,7 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 2 — Wake & confirm test
+// STEP 3 —Wake & confirm test
 // ============================================================
 type WakePhase = "ready" | "running" | "pass" | "fail";
 type Svm3Phase = "idle" | "running" | "supported" | "unsupported";
@@ -353,7 +353,7 @@ export function Step2Test({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 2 — Test failed
+// STEP 3 —Test failed
 // ============================================================
 export function Step2Fail({ go }: ScreenProps) {
   return (

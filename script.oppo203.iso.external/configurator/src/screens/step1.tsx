@@ -204,15 +204,10 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
             <div className="field">
               <label className="field-label">Authentication</label>
               <div className="row" style={{ gap: 8 }}>
-                <button className="filter-pill selected">Password</button>
-                <button className="filter-pill">SSH key</button>
+                <button className="filter-pill selected">SSH key (non-interactive)</button>
               </div>
-            </div>
-            <div className="field">
-              <label className="field-label">Password</label>
-              <input className="input" type="password" defaultValue="••••••••" />
               <div className="field-hint">
-                CoreELEC default is <span className="kbd">coreelec</span>.
+                Key-based auth only — the configurator does not store a password.
               </div>
             </div>
             <button className="btn primary" onClick={testConnection} disabled={testing}>

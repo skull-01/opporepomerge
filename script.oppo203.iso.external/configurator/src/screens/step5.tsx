@@ -15,7 +15,7 @@ import { isAvrChain, step5NextScreen } from "../steps";
 import type { ScreenProps } from "./types";
 
 // ============================================================
-// STEP 4 — Input capture intro
+// STEP 6 —Input capture intro
 // ============================================================
 export function Step5Intro({ go, state }: ScreenProps) {
   return (
@@ -88,7 +88,7 @@ export function Step5Intro({ go, state }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 4 — Ask-first
+// STEP 6 —Ask-first
 // ============================================================
 type SmartThingsReply = { url: string; body: string };
 
@@ -412,7 +412,7 @@ export function Step5Ask({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 4 — Auto-find inputs (driven sweep where the backend allows, manual otherwise)
+// STEP 6 —Auto-find inputs (driven sweep where the backend allows, manual otherwise)
 // ============================================================
 type Reachability = { tvOpen: boolean | null; oppoPower: "on" | "off" | "unknown" | null };
 
@@ -614,7 +614,7 @@ export function Step5Fallback({ go, state, set }: ScreenProps) {
 }
 
 // ============================================================
-// STEP 4 — Done
+// STEP 6 —Done
 // ============================================================
 function describeInput(input: InputAddress, fallback: string) {
   if (input == null) return fallback;
