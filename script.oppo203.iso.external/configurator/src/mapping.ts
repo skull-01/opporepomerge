@@ -196,9 +196,9 @@ function avrSettings(state: WizardState): AddonSettings {
  * Only deterministic, configurator-owned values currently held in the state are emitted.
  * Excluded by design: tier (a deploy mechanism, not a setting), the `*Verified` flags and
  * `testMode` (UI-only), and `kodi_host` — the Kodi box address has no add-on setting and is
- * held configurator-side (CONFIGURATOR_HANDOFF.md §7 Q3). `tv_ip` and the SSH/SMB credentials
- * are not yet captured in the wizard state; they join this map when those inputs become
- * controlled in a later slice.
+ * held configurator-side (CONFIGURATOR_HANDOFF.md §7 Q3). The SSH/SMB credentials live in the
+ * wizard state but are a deploy mechanism, not an add-on setting, so they are never emitted
+ * here. `tv_ip` IS emitted — when a TV backend and its IP are both set (see below).
  */
 export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
   // Routing axis in the preset vocabulary; the stored playback_architecture's "external_player"
