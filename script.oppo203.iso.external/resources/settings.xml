@@ -173,6 +173,17 @@
         <setting id="qpl_poll_idle_confirmations" type="integer" label="30317" default="2"/>
         <setting id="verbose_push_timeout_minutes" type="integer" label="30320" default="240" help="30321"/>
         <setting id="switch_back_on_exit" type="bool" label="30306" default="true"/>
+        <!-- Configurator-owned playback architecture / HDMI timing (audit M3): hidden so a Kodi
+             settings save preserves the configurator's values instead of dropping them. -->
+        <setting id="playback_architecture" type="string" label="30000" default="external_player" visible="false"/>
+        <setting id="architecture_choice_made" type="string" label="30000" default="false" visible="false"/>
+        <setting id="playback_monitor_mode" type="string" label="30000" default="legacy" visible="false"/>
+        <setting id="playback_architecture_preset" type="string" label="30000" default="" visible="false"/>
+        <setting id="hdmi_switch_mode" type="string" label="30000" default="immediate" visible="false"/>
+        <setting id="play_delay_hdmi" type="string" label="30000" default="2" visible="false"/>
+        <setting id="av_delay_hdmi" type="string" label="30000" default="0" visible="false"/>
+        <setting id="oppo_http_refresh_seconds" type="string" label="30000" default="5" visible="false"/>
+        <setting id="oppo_bdmv_checkfolder" type="string" label="30000" default="true" visible="false"/>
     </category>
     <category id="diagnostics" label="32104">  <!-- Diagnostics and experimental -->
         <setting id="oppo_experimental_filelist_enabled" type="bool" label="30501" default="false" help="30502"/>

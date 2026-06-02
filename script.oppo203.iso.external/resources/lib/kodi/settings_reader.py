@@ -139,6 +139,13 @@ DEFAULTS = {
     "playback_architecture": "external_player",
     "architecture_choice_made": "false",
     "playback_monitor_mode": "legacy",
+    # Audit M3: configurator-owned HDMI/HTTP timing keys. playback_architecture_preset is
+    # deliberately NOT in DEFAULTS -- its empty value drives the normalize_architecture back-fill.
+    "hdmi_switch_mode": "immediate",
+    "play_delay_hdmi": "2",
+    "av_delay_hdmi": "0",
+    "oppo_http_refresh_seconds": "5",
+    "oppo_bdmv_checkfolder": "true",
     "tv_adb_preset": "",
     "qpl_poll_interval": "3",
     "qpl_poll_timeout_minutes": "240",
@@ -180,6 +187,7 @@ ENUM_VALUES = {
     "oppo_http_payload_mode": ["raw_path", "json_payload"],
     "playback_architecture": ["external_player", "service_interception", "http_handoff"],
     "playback_monitor_mode": ["legacy", "svm3", "http"],
+    "hdmi_switch_mode": ["immediate", "delayed"],
     "oppo_hardware_model": [
         "udp_203",
         "udp_205",
@@ -205,9 +213,10 @@ ENUM_VALUES = {
 
 # Playback architecture. Two independent axes -- routing (how Kodi hands a disc to
 # the controller: playercorefactory, service interception, or http_handoff) and
-# monitor (how playback is confirmed: legacy vs svm3) -- are also exposed as one
-# combined playback_architecture_preset that the configurator writes. Three routing
-# values x two monitor values give the six supported presets.
+# monitor (how playback is confirmed: legacy, svm3, or http) -- are also exposed as one
+# combined playback_architecture_preset that the configurator writes. Three routing values x
+# two monitor values give six base presets, plus the asymmetric seventh http_handoff_http
+# (the http monitor exists only for the http_handoff routing).
 # normalize_architecture() treats an explicit, valid preset as the source of
 # truth; when it is absent it derives the preset from the legacy
 # playback_architecture + playback_monitor_mode. The preset has no DEFAULTS entry

@@ -1041,7 +1041,8 @@ class TSettingsLayout(unittest.TestCase):
         # lsep added a passive label row at the top of Connection (97 -> 98).
         # ENH-#42 added the hidden addon_language preference slot (98 -> 99).
         ids = [s.get("id") for s in self.tree.iter("setting")]
-        self.assertEqual(len(ids), 99)
+        # Audit M3 added 9 hidden configurator-owned architecture/HDMI/HTTP keys (99 -> 108).
+        self.assertEqual(len(ids), 108)
 
     def test_category_labels_use_new_ids(self):
         cat_label_ids = {c.get("id"): c.get("label") for c in self.tree.findall("category")}
@@ -2938,8 +2939,14 @@ class TV2Build1(unittest.TestCase):
         tree = ET.parse(os.path.join(ROOT, "resources", "settings.xml"))
         ids = {node.attrib.get("id") for node in tree.getroot().iter("setting")}
         self.assertIn("oppo_hardware_model", ids)
-        self.assertNotIn("playback_architecture", ids)
-        self.assertNotIn("architecture_choice_made", ids)
+        # Audit M3: the configurator-owned architecture keys are now declared (so a Kodi settings
+        # save preserves them) but kept hidden (visible="false"), not user-editable architecture UI.
+        visible_by_id = {
+            node.attrib.get("id"): node.attrib.get("visible")
+            for node in tree.getroot().iter("setting")
+        }
+        self.assertEqual(visible_by_id.get("playback_architecture"), "false")
+        self.assertEqual(visible_by_id.get("architecture_choice_made"), "false")
 
 
 class TV2Build2MVPCompliance(unittest.TestCase):

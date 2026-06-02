@@ -1,4 +1,4 @@
-"""Shared playback-session engine for the six-option playback architecture.
+"""Shared playback-session engine for the seven-option playback architecture.
 
 Both entry points run the *same* sequence:
 
