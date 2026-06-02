@@ -4,16 +4,20 @@ import type { MonitorMode } from "../state";
 import type { ScreenProps } from "./types";
 
 // ============================================================
-// STEP 3 — Playback mode. The MONITOR axis of the four-option architecture: how the add-on
-// confirms OPPO playback, independent of the routing axis (playercorefactory vs service
-// interception) chosen on the Kodi-box step. The pick is written as `playback_monitor_mode`
-// and folded into the combined `playback_architecture_preset` by mapping.ts. SVM3 is the
-// recommended path for new installs / validation but is NOT yet hardware-validated, so it is
-// labelled accordingly — never as proven. The player test (Step 2) reports whether the player
-// actually accepts SVM3.
+// STEP 4 — Playback mode. The MONITOR axis: how the add-on confirms OPPO playback. Three
+// choices — Pure HTTP (the http monitor; also sets the http_handoff routing, yielding the
+// http_handoff_http preset), SVM3 (verbose mode 3 over TCP), or Legacy (the existing hold).
+// The pick is written as `playback_monitor_mode` and folded into the combined
+// `playback_architecture_preset` by mapping.ts. None of the OPPO-confirming paths are yet
+// hardware-validated, so they are labelled accordingly — never as proven. The player test
+// (Step 3) reports whether the player accepts SVM3.
 // ============================================================
 export function Step3Mode({ go, state, set }: ScreenProps) {
   const pick = (monitorMode: MonitorMode) => set({ monitorMode });
+  // "Pure HTTP" is the http monitor, valid only with the http_handoff routing (the 7th preset,
+  // http_handoff_http). Picking it sets BOTH axes so mapping.ts emits a consistent preset
+  // regardless of the routing chosen on the Kodi-box step.
+  const pickHttp = () => set({ monitorMode: "http", playbackArchitecture: "http_handoff" });
   return (
     <div className="screen">
       <div className="screen-header">
@@ -25,7 +29,24 @@ export function Step3Mode({ go, state, set }: ScreenProps) {
           stops. This is separate from how Kodi hands off (chosen on the Kodi-box step).
         </p>
       </div>
-      <div className="grid-2">
+      <div className="grid-3">
+        <button
+          className={`tile ${state.monitorMode === "http" ? "selected" : ""}`.trim()}
+          onClick={pickHttp}
+        >
+          <div className="tile-icon">
+            <Icon name="network" size={20} />
+          </div>
+          <div className="tile-body">
+            <div className="tile-title">Pure HTTP — launch &amp; monitor over HTTP/436</div>
+            <div className="tile-desc">
+              The OPPO community HTTP API does it all: wake, mount the share, play, and confirm by
+              polling the player&apos;s own status. One transport end to end (sets the HTTP handoff
+              routing). Newest path; not yet hardware-validated.
+            </div>
+          </div>
+          <Icon name="chevR" size={16} />
+        </button>
         <button
           className={`tile ${state.monitorMode === "svm3" ? "selected" : ""}`.trim()}
           onClick={() => pick("svm3")}

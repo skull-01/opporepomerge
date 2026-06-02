@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on + configurator — 7th preset http_handoff_http + HTTP monitor (Xnoppo V3 adoption, PR2 of 6) — #209
+
+- **Branch / PR:** `claude/pr2-http-preset-8ebbb6d2` → PR (base `main`). Issue [#209](https://github.com/skull-01/script.oppo203.iso.external/issues/209).
+- **What changed (software-verified only):** the playback-preset matrix goes 6 → **7** with the asymmetric cell `http_handoff_http` (the `http` monitor exists only for the `http_handoff` routing). Add-on: `settings_reader` gains the `http` monitor mode + the 7th preset + a clamp (`architecture_preset`/`normalize_architecture` route any other `(routing,"http")` to that routing's legacy preset); new `playback_monitor_http.py` (`OppoHttpPlaybackMonitor` polls `/getglobalinfo`+`/getplayingtime`, fallback-safe) wired into `_dispatch_monitor`. Configurator: `MonitorMode |= "http"`, a **"Pure HTTP"** pill on Step 4 sets both axes, shared `playback-presets.json` + `presetsdb.ts` → 7. Cross-area matrix pinned by `test_playback_presets_consistency.py` / `test_architecture_presets.py` / `mapping.test.ts` / `presetsdb.test.ts` (all updated for the asymmetric 7th). **Default unchanged** (still `http_handoff_svm3`; PR4 flips it).
+- **Software gates (this machine):** `pytest -n auto` **1100/3**, mypy `--strict` **51/0**, ruff + `ruff format --check` clean, serial coverage **99%** (gate exit 0); configurator `tsc --noEmit` 0 + **291 vitest** + `vite build`. **Browser-verified** (vite dev server): the Step-4 Playback-mode screen shows the new **Pure HTTP** tile alongside SVM3/Legacy, and clicking it selects it (the others deselect).
+- **Operator verifies (Phase A):** read the clamp in `architecture_preset`/`normalize_architecture`, the new monitor module, and the Pure HTTP pill (sets both `monitorMode` + `playbackArchitecture`). Confirm the 3-place matrix (Python registries + JSON + presetsdb) agrees.
+- **Operator verifies (Phase C — real hardware):** with the Pure HTTP preset selected, confirm on a real OPPO that `/getglobalinfo` reports playback and `/getplayingtime` advances so the monitor confirms — **not hardware-validated** (community-reverse-engineered API).
+
 ### Add-on — pure-HTTP/436 OPPO primitives (Xnoppo V3 adoption, PR1 of 6) — #207
 
 - **Branch / PR:** `claude/http-primitives-b58647f2` → PR (base `main`). Issue [#207](https://github.com/skull-01/script.oppo203.iso.external/issues/207).

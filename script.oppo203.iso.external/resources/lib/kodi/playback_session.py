@@ -148,10 +148,33 @@ def _run_svm3_monitor(settings: Settings, ep: Any) -> dict[str, Any] | None:
     return snapshot
 
 
+def _run_http_monitor(settings: Settings, ep: Any) -> dict[str, Any] | None:
+    """Run the HTTP polling monitor. Return its snapshot, or None if the player is unreachable.
+
+    A None return is the caller's signal to fall back to the legacy hold, mirroring the SVM3
+    connect-failure path.
+    """
+    try:
+        from ..oppo.playback_monitor_http import OppoHttpPlaybackMonitor
+    except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+        from playback_monitor_http import OppoHttpPlaybackMonitor  # type: ignore[no-redef]
+
+    monitor = OppoHttpPlaybackMonitor(settings, logger=ep.log)
+    snapshot = monitor.run()
+    if snapshot is None:
+        ep.log("HTTP monitor could not reach the player; falling back to legacy hold.")
+    return snapshot
+
+
 def _dispatch_monitor(settings: Settings, ep: Any, arch: dict[str, str]) -> dict[str, Any] | None:
-    """Run the configured monitor. Returns the SVM3 snapshot, or None for legacy."""
-    if arch["monitor_mode"] == "svm3":
+    """Run the configured monitor. Returns the monitor snapshot, or None for the legacy hold."""
+    mode = arch["monitor_mode"]
+    if mode == "svm3":
         snapshot = _run_svm3_monitor(settings, ep)
+        if snapshot is not None:
+            return snapshot
+    elif mode == "http":
+        snapshot = _run_http_monitor(settings, ep)
         if snapshot is not None:
             return snapshot
     ep.hold_playback(settings)

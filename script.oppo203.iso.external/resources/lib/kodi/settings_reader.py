@@ -179,7 +179,7 @@ ENUM_VALUES = {
     "oppo_verbose_mode": ["0", "2", "3"],
     "oppo_http_payload_mode": ["raw_path", "json_payload"],
     "playback_architecture": ["external_player", "service_interception", "http_handoff"],
-    "playback_monitor_mode": ["legacy", "svm3"],
+    "playback_monitor_mode": ["legacy", "svm3", "http"],
     "oppo_hardware_model": [
         "udp_203",
         "udp_205",
@@ -215,7 +215,7 @@ ENUM_VALUES = {
 # "absent" must mean "derive from the legacy fields" and existing users keep their
 # current behavior.
 PLAYBACK_ROUTING_MODES = ("playercorefactory", "service_interception", "http_handoff")
-PLAYBACK_MONITOR_MODES = ("legacy", "svm3")
+PLAYBACK_MONITOR_MODES = ("legacy", "svm3", "http")
 PLAYBACK_ARCHITECTURE_PRESETS = (
     "playercorefactory_legacy",
     "service_interception_legacy",
@@ -223,6 +223,7 @@ PLAYBACK_ARCHITECTURE_PRESETS = (
     "service_interception_svm3",
     "http_handoff_legacy",
     "http_handoff_svm3",
+    "http_handoff_http",
 )
 
 # The stored playback_architecture enum predates the four-option model and names
@@ -241,6 +242,10 @@ _PRESET_BY_AXES = {
     ("service_interception", "svm3"): "service_interception_svm3",
     ("http_handoff", "legacy"): "http_handoff_legacy",
     ("http_handoff", "svm3"): "http_handoff_svm3",
+    # The 7th preset is an asymmetric cell: the http monitor exists only for the
+    # http_handoff routing (pure-HTTP launch + HTTP-polled confirmation), not a full
+    # column. architecture_preset() clamps any other (routing, "http") pair to legacy.
+    ("http_handoff", "http"): "http_handoff_http",
 }
 _AXES_BY_PRESET = {preset: axes for axes, preset in _PRESET_BY_AXES.items()}
 
@@ -256,6 +261,10 @@ def architecture_preset(architecture: str, monitor_mode: str) -> str:
     routing = _ROUTING_ALIASES.get(str(architecture).strip().lower(), "playercorefactory")
     monitor = str(monitor_mode).strip().lower()
     if monitor not in PLAYBACK_MONITOR_MODES:
+        monitor = "legacy"
+    # The http monitor is only valid for the http_handoff routing (the 7th preset is a
+    # single asymmetric cell, not a full column); clamp any other (routing, "http") pair.
+    if (routing, monitor) not in _PRESET_BY_AXES:
         monitor = "legacy"
     return _PRESET_BY_AXES[(routing, monitor)]
 
@@ -279,7 +288,9 @@ def normalize_architecture(settings: Settings) -> dict[str, str]:
             monitor = "legacy"
         architecture = settings.get("playback_architecture", "external_player")
         preset = architecture_preset(architecture, monitor)
-        routing = _AXES_BY_PRESET[preset][0]
+        # Re-derive both axes from the resolved preset so the returned triple stays internally
+        # consistent even when architecture_preset clamped an invalid (routing, "http") pair.
+        routing, monitor = _AXES_BY_PRESET[preset]
     return {"preset": preset, "routing": routing, "monitor_mode": monitor}
 
 

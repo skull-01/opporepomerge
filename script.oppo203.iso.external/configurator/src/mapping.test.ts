@@ -524,19 +524,28 @@ describe("wizardStateToAddonSettings — six-option playback preset", () => {
     expect(out.playback_architecture_preset).toBe("http_handoff_legacy");
   });
 
+  it("emits http_handoff_http for http_handoff + http (the Pure HTTP pill)", () => {
+    const out = wizardStateToAddonSettings(
+      makeState({ playbackArchitecture: "http_handoff", monitorMode: "http" }),
+    );
+    expect(out.playback_monitor_mode).toBe("http");
+    expect(out.playback_architecture).toBe("http_handoff");
+    expect(out.playback_architecture_preset).toBe("http_handoff_http");
+  });
+
   // Completeness guard for the six-preset matrix. CANONICAL_SIX is now sourced from the shared
   // playback-presets.json (presetsdb.ts), which tests/test_playback_presets_consistency.py pins to
   // the add-on's PLAYBACK_ARCHITECTURE_PRESETS. So a new or removed routing/monitor combo must
   // change the shared DB + both sides at once per the "six playback-architecture presets are a
   // maintained matrix" norm in AGENTS.md - drift now fails a test instead of relying on review.
-  it("emits exactly the six canonical presets across the routing/monitor matrix", () => {
+  it("emits exactly the seven canonical presets across the asymmetric routing/monitor matrix", () => {
     const ROUTINGS: WizardState["playbackArchitecture"][] = [
       "external_player",
       "service_interception",
       "http_handoff",
     ];
     const MONITORS: WizardState["monitorMode"][] = ["legacy", "svm3"];
-    const CANONICAL_SIX = PLAYBACK_PRESETS;
+    const CANONICAL = PLAYBACK_PRESETS;
     const emitted = new Set<string>();
     for (const playbackArchitecture of ROUTINGS) {
       for (const monitorMode of MONITORS) {
@@ -546,8 +555,14 @@ describe("wizardStateToAddonSettings — six-option playback preset", () => {
         );
       }
     }
-    expect(emitted.size).toBe(6);
-    expect([...emitted].sort()).toEqual([...CANONICAL_SIX].sort());
+    // the asymmetric 7th cell: the http monitor only pairs with the http_handoff routing.
+    emitted.add(
+      wizardStateToAddonSettings(
+        makeState({ playbackArchitecture: "http_handoff", monitorMode: "http" }),
+      ).playback_architecture_preset,
+    );
+    expect(emitted.size).toBe(7);
+    expect([...emitted].sort()).toEqual([...CANONICAL].sort());
   });
 
   it("emits the OPPO http path translation for http_handoff when captured", () => {
