@@ -1,0 +1,3 @@
+# Pre-Hardware Audit Report — v2.9.15 Final
+
+The release is ready for user-owned hardware validation after software verification. The six-option playback-architecture matrix, the SVM3 verbose-mode monitor, the richer session status, and the robustness changes all pass their software gates (full pytest 1053/3, 99% coverage, `mypy --strict` 54/0, ruff clean, release audit PASS), but their real-device behavior on an OPPO/Kodi/NAS chain is pending a tester report. Support-matrix wording separates software support from real hardware-validated support. Hardware validation is not performed and not claimed.
