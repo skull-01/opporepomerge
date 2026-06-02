@@ -236,7 +236,9 @@ power-cycle/mount/play, test-file copy) plus the **add-on copy** is the new work
 
 ### Decisions locked (2026-06-01)
 
-- **D-A · Default preset = `http_handoff_svm3`.** Kodi launches the external
+- **D-A · Default preset = `http_handoff_http`** (flipped from `http_handoff_svm3` by the
+  Xnoppo V3 PR4 on 2026-06-02 — see the **Active initiative** section above; the rationale
+  below describes the prior `http_handoff_svm3` default). Kodi launches the external
   player via `playercorefactory.xml`; the OPPO is started with the undocumented
   HTTP commands (`/playnormalfile`, `oppo_control.py:432`); SVM3 confirms
   playback. Downgrades to `http_handoff_legacy` if the SVM3 probe fails.

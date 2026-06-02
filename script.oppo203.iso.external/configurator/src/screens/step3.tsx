@@ -38,7 +38,7 @@ export function Step3Mode({ go, state, set }: ScreenProps) {
             <Icon name="network" size={20} />
           </div>
           <div className="tile-body">
-            <div className="tile-title">Pure HTTP — launch &amp; monitor over HTTP/436</div>
+            <div className="tile-title">Pure HTTP — recommended for new installs</div>
             <div className="tile-desc">
               The OPPO community HTTP API does it all: wake, mount the share, play, and confirm by
               polling the player&apos;s own status. One transport end to end (sets the HTTP handoff
@@ -55,7 +55,7 @@ export function Step3Mode({ go, state, set }: ScreenProps) {
             <Icon name="play" size={20} />
           </div>
           <div className="tile-body">
-            <div className="tile-title">SVM3 monitor — recommended for new installs</div>
+            <div className="tile-title">SVM3 monitor — TCP verbose-mode confirmation</div>
             <div className="tile-desc">
               Uses OPPO&apos;s verbose mode 3: the add-on watches the player&apos;s UPL/UTC
               status and time-code updates, and only treats playback as confirmed when the
@@ -96,7 +96,7 @@ export function Step3Mode({ go, state, set }: ScreenProps) {
           <Icon name="info" size={13} stroke={2.2} />
         </span>
         <div className="callout-body">
-          SVM3 is <strong>recommended for validation / new installs</strong> but not yet
+          <strong>Pure HTTP</strong> is the default for new installs but not yet
           hardware-validated. Not sure? <strong>Legacy</strong> keeps today&apos;s behaviour and
           you can switch later.
         </div>

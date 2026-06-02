@@ -172,10 +172,16 @@ export function Step2Test({ go, state, set }: ScreenProps) {
           command: `#SVM ${previousMode}`,
         });
       }
-      set({ svm3Supported: ok, monitorMode: ok ? "svm3" : "legacy" });
+      // Record the probe result, but don't override an explicit Pure HTTP (http) choice -- the
+      // default preset is Pure HTTP, and the player test only recommends svm3-vs-legacy.
+      set(
+        state.monitorMode === "http"
+          ? { svm3Supported: ok }
+          : { svm3Supported: ok, monitorMode: ok ? "svm3" : "legacy" },
+      );
       setSvm3Phase(ok ? "supported" : "unsupported");
     } catch {
-      set({ svm3Supported: false, monitorMode: "legacy" });
+      set(state.monitorMode === "http" ? { svm3Supported: false } : { svm3Supported: false, monitorMode: "legacy" });
       setSvm3Phase("unsupported");
     }
   };

@@ -480,11 +480,12 @@ describe("avrAddonBackend", () => {
 });
 
 describe("wizardStateToAddonSettings — six-option playback preset", () => {
-  it("defaults to the http_handoff svm3 preset", () => {
+  it("defaults to the http_handoff http preset (Pure HTTP) with the refresh rate", () => {
     const out = wizardStateToAddonSettings(INITIAL_STATE);
-    expect(out.playback_monitor_mode).toBe("svm3");
+    expect(out.playback_monitor_mode).toBe("http");
     expect(out.playback_architecture).toBe("http_handoff");
-    expect(out.playback_architecture_preset).toBe("http_handoff_svm3");
+    expect(out.playback_architecture_preset).toBe("http_handoff_http");
+    expect(out.oppo_http_refresh_seconds).toBe("5");
   });
 
   it("emits playercorefactory_svm3 for external_player + svm3", () => {
