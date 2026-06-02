@@ -43,7 +43,8 @@ export type ScreenId =
   | "test_setup"
   | "test_confirm"
   | "test_success"
-  | "dashboard";
+  | "dashboard"
+  | "reset_all";
 
 export type ChainTarget =
   | "media"
@@ -111,6 +112,8 @@ export const SCREEN_TO_STEP: Record<ScreenId, StepId> = {
   test_confirm: "test",
   test_success: "test",
   dashboard: "test",
+  // Utility screen, not a numbered wizard step; rides step-0's stepper group.
+  reset_all: "step0",
 };
 
 export const SCREEN_TO_CHAIN: Record<ScreenId, ChainTarget> = {
@@ -143,6 +146,7 @@ export const SCREEN_TO_CHAIN: Record<ScreenId, ChainTarget> = {
   test_confirm: "all",
   test_success: "all",
   dashboard: "all",
+  reset_all: "media",
 };
 
 export function firstScreenOfStep(stepId: StepId): ScreenId {
