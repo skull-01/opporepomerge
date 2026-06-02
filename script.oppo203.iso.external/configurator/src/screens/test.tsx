@@ -453,6 +453,7 @@ function Svm3ConfirmCard({ playerIp, svm3 }: { playerIp: string; svm3: boolean }
   const [verdict, setVerdict] = useState<Svm3Confirm>(INITIAL_SVM3_CONFIRM);
   const [err, setErr] = useState<string | null>(null);
   const verdictRef = useRef<Svm3Confirm>(INITIAL_SVM3_CONFIRM);
+  const tokenRef = useRef<number | null>(null); // M4: the live-monitor token this card owns
 
   useEffect(() => {
     let alive = true;
@@ -469,8 +470,8 @@ function Svm3ConfirmCard({ playerIp, svm3 }: { playerIp: string; svm3: boolean }
     return () => {
       alive = false;
       if (unlisten) unlisten();
-      // Always release the player's verbose mode when leaving the screen.
-      void invoke("stop_oppo_live_monitor").catch(() => {});
+      // Always release the player's verbose mode when leaving the screen (only if we own it).
+      void invoke("stop_oppo_live_monitor", { token: tokenRef.current }).catch(() => {});
     };
   }, []);
 
@@ -480,7 +481,10 @@ function Svm3ConfirmCard({ playerIp, svm3 }: { playerIp: string; svm3: boolean }
     verdictRef.current = INITIAL_SVM3_CONFIRM;
     setVerdict(INITIAL_SVM3_CONFIRM);
     try {
-      await invoke("start_oppo_live_monitor", { host: playerIp, port: 23 });
+      tokenRef.current = await invoke<number>("start_oppo_live_monitor", {
+        host: playerIp,
+        port: 23,
+      });
       setStreaming(true);
     } catch (e) {
       setErr(`Could not start: ${String(e)}`);
@@ -490,7 +494,8 @@ function Svm3ConfirmCard({ playerIp, svm3 }: { playerIp: string; svm3: boolean }
 
   const stop = async () => {
     try {
-      await invoke("stop_oppo_live_monitor");
+      await invoke("stop_oppo_live_monitor", { token: tokenRef.current });
+      tokenRef.current = null;
     } catch {
       // best-effort
     }
@@ -614,11 +619,12 @@ async function confirmPlaybackViaSvm3(
   let verdict: Svm3Confirm = INITIAL_SVM3_CONFIRM;
   let unlisten: (() => void) | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let token: number | null = null; // M4: the live-monitor token this confirm run owns
   const settle = async (result: boolean): Promise<boolean> => {
     if (timer) clearTimeout(timer);
     if (unlisten) unlisten();
     try {
-      await invoke("stop_oppo_live_monitor");
+      await invoke("stop_oppo_live_monitor", { token });
     } catch {
       // best-effort
     }
@@ -633,7 +639,7 @@ async function confirmPlaybackViaSvm3(
       unlisten = u;
       timer = setTimeout(() => void settle(false).then(resolve), CONFIRM_TIMEOUT_MS);
       try {
-        await invoke("start_oppo_live_monitor", { host: playerIp, port: 23 });
+        token = await invoke<number>("start_oppo_live_monitor", { host: playerIp, port: 23 });
       } catch (err) {
         onFrame({ seq: -1, kind: "error", raw: `monitor failed: ${String(err)}` }, verdict);
         void settle(false).then(resolve);

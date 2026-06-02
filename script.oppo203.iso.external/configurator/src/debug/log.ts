@@ -50,6 +50,21 @@ export function isSensitiveKey(name: string): boolean {
   return SENSITIVE_KEY.test(name);
 }
 
+/**
+ * Mask the values of secret-bearing `<setting id="...">value</setting>` elements inside a
+ * serialized settings.xml blob (the deploy payload), using the shared `isSensitiveKey` policy.
+ * The redactor below keys on the field NAME, but a settings.xml blob rides under a *filename*
+ * key (`addon_data/.../settings.xml`), so its secret values (sony_psk, sony_avr_psk,
+ * smartthings_token) would otherwise pass through to the debug panel; this scrubs the content.
+ * A string with no matching `<setting>` element is returned unchanged.
+ */
+export function maskSettingsXmlSecrets(value: string): string {
+  return value.replace(/(<setting\b[^>]*>)([^<]*)(<\/setting>)/g, (match, open, _inner, close) => {
+    const id = /\bid="([^"]+)"/.exec(open);
+    return id && isSensitiveKey(id[1]) ? `${open}[redacted]${close}` : match;
+  });
+}
+
 let entries: DebugEntry[] = [];
 let seq = 0;
 let currentStep: StepId | null = null;
@@ -64,9 +79,10 @@ export function redact(value: unknown, keyHint = "", depth = 0): unknown {
   if (isSensitiveKey(keyHint)) return "[redacted]";
   if (depth > 8) return "[…]";
   if (typeof value === "string") {
-    return value.length > MAX_STRING
-      ? `${value.slice(0, MAX_STRING)}…[+${value.length - MAX_STRING} chars]`
-      : value;
+    const masked = maskSettingsXmlSecrets(value);
+    return masked.length > MAX_STRING
+      ? `${masked.slice(0, MAX_STRING)}…[+${masked.length - MAX_STRING} chars]`
+      : masked;
   }
   if (Array.isArray(value)) return value.map((v) => redact(v, "", depth + 1));
   if (value && typeof value === "object") {
