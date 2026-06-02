@@ -2,7 +2,7 @@
 
 A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Kodi to an external OPPO UDP-203/UDP-205-compatible player workflow while preserving normal Kodi playback for media that should stay internal.
 
-> **Current status:** v2.9.10 Final is a software-verified release. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
+> **Current status:** add-on **v2.9.15 Final** plus the Windows **configurator v0.8.5** (the repository's [Latest release](https://github.com/skull-01/script.oppo203.iso.external/releases/latest), which bundles the add-on) are software-verified releases. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
 
 ## What this add-on does
 
@@ -25,12 +25,17 @@ A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Ko
 | Item | Value |
 |---|---|
 | Add-on ID | `script.oppo203.iso.external` |
-| Add-on version | `2.9.10` |
-| Build identity | `v2.9.10 Final` |
-| Runtime package | `script.oppo203.iso.external-2.9.10.zip` |
-| GitHub readiness line | `github-g2` |
-| Runtime behavior changed in G2 | `false` |
+| Add-on version | `2.9.15` |
+| Build identity | `v2.9.15 Final` |
+| Runtime package | `script.oppo203.iso.external-2.9.15.zip` |
+| Windows configurator | `v0.8.5` — the repo's **Latest** release; bundles this add-on and sets it up |
+| Runtime behavior changed | `true` |
 | Hardware validation claimed | `false` |
+
+Most users install via the **Windows configurator** (the repo's Latest release), which writes
+`playercorefactory.xml` + the remote-bridge keymap into Kodi, seeds the add-on settings, and can
+reset everything later. The add-on runtime ZIP above is bundled inside it; see
+[`configurator/`](configurator/) to build or run it from source.
 
 ## Supported playback concept
 
