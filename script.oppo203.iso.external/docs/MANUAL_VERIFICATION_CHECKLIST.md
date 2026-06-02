@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — Wave A3: configurator-owned settings declared, AVR-id guard, preset comments — #235 #236 #237
+
+- **Branch / PR:** `claude/wave-a3-schema-guards` → [PR #238](https://github.com/skull-01/script.oppo203.iso.external/pull/238) (merged to `main`, `29778cb`). Issues [#235](https://github.com/skull-01/script.oppo203.iso.external/issues/235) / [#236](https://github.com/skull-01/script.oppo203.iso.external/issues/236) / [#237](https://github.com/skull-01/script.oppo203.iso.external/issues/237). 2026-06-02 full-audit remediation, **Wave A3**.
+- **What changed (software-verified only):** **M3 (#235)** the 9 configurator-emitted architecture/HDMI/HTTP keys are declared as hidden (`visible="false"`) settings in `resources/settings.xml` (count 99→108) so a Kodi settings-GUI save preserves them instead of regenerating settings.xml and dropping them; the 5 timing keys are added to `DEFAULTS` (+ `hdmi_switch_mode` to `ENUM_VALUES`); `playback_architecture_preset` deliberately stays out of `DEFAULTS` so its empty value keeps driving the `normalize_architecture` back-fill. **L11 (#236)** a new guard pins the two `avr-models.json` copies identical and asserts every declared backend (except the intentional no-native `custom_command`) maps via `normalize_avr_backend` to a known `avr_backend` enum. **L15 (#237)** "six"→"seven" preset comments in `settings_reader.py` + `playback_session.py`.
+- **Software gates (this machine):** `pytest -n auto` **1153/3**, mypy `--strict` **51/0**, ruff check + `ruff format --check` clean, serial coverage **99%** (gate exit 0).
+- **Operator verifies (Phase C — no hardware):** open the add-on's Settings in Kodi and **Save**, then confirm the configurator-written `playback_architecture` / `playback_architecture_preset` / HDMI-timing values in `addon_data/script.oppo203.iso.external/settings.xml` are **preserved** (not reverted to defaults).
+
 ### Add-on — Wave A2: SVM3 monitor truth, OPPO/eISCP read robustness, clone wake, TV switch — #226–#233
 
 - **Branch / PR:** `claude/wave-a2-monitor-transport` → [PR #234](https://github.com/skull-01/script.oppo203.iso.external/pull/234) (merged to `main`, `374b4ff`). Issues [#226](https://github.com/skull-01/script.oppo203.iso.external/issues/226)–[#233](https://github.com/skull-01/script.oppo203.iso.external/issues/233). 2026-06-02 full-audit remediation, **Wave A2**.
