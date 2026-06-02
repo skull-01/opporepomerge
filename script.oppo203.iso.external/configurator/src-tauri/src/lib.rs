@@ -294,12 +294,68 @@ fn remove_existing_paths(targets: &[PathBuf]) -> Result<Vec<String>, String> {
     Ok(removed)
 }
 
+/// One step of a reset, streamed to the UI as a `reset-progress` event so the user sees what the
+/// action is doing instead of a frozen "Resetting…". `status` is one of running/done/failed.
+#[derive(serde::Serialize, Clone)]
+struct ResetProgress {
+    step: String,
+    label: String,
+    status: String,
+    detail: Option<String>,
+}
+
+fn emit_reset(app: &tauri::AppHandle, step: &str, label: &str, status: &str, detail: Option<String>) {
+    let _ = app.emit(
+        "reset-progress",
+        ResetProgress {
+            step: step.to_string(),
+            label: label.to_string(),
+            status: status.to_string(),
+            detail,
+        },
+    );
+}
+
+/// Host of a Windows UNC path (`\\host\share\...`), for a fast reachability pre-probe. None for a
+/// local/drive path — those have no network device to be unreachable, so they can't hang on it.
+fn unc_host(path: &str) -> Option<String> {
+    let rest = path.strip_prefix(r"\\").or_else(|| path.strip_prefix("//"))?;
+    let host = rest.split(['\\', '/']).next().unwrap_or("");
+    if host.is_empty() {
+        None
+    } else {
+        Some(host.to_string())
+    }
+}
+
 /// Tier B / local: delete the add-on + deployed userdata files from a filesystem path (a local
 /// Kodi dir or an SMB UNC). Removes only the four owned paths; the userdata/addons roots survive.
+/// A dead SMB share would otherwise block each fs op on the UNC for tens of seconds, so an SMB
+/// target is reachability-probed (port 445) first and fails fast; local/drive paths skip the probe.
 #[tauri::command]
-fn reset_box_userdata(userdata_path: String, addons_path: String) -> Result<Vec<String>, String> {
+fn reset_box_userdata(
+    app: tauri::AppHandle,
+    userdata_path: String,
+    addons_path: String,
+) -> Result<Vec<String>, String> {
+    if let Some(host) = unc_host(&userdata_path) {
+        emit_reset(&app, "box", "Checking the Kodi share is reachable…", "running", None);
+        if let Err(e) = connect_timeout(&host, 445, 2500) {
+            emit_reset(&app, "box", "Kodi share is unreachable", "failed", Some(e.clone()));
+            return Err(format!(
+                "Kodi share \\\\{host} is unreachable (SMB port 445 — powered off or on another network): {e}"
+            ));
+        }
+    }
     let targets = box_reset_targets(&PathBuf::from(&userdata_path), &PathBuf::from(&addons_path));
-    remove_existing_paths(&targets)
+    let mut removed = Vec::new();
+    for t in &targets {
+        let name = t.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+        emit_reset(&app, "box", &format!("Removing {name}…"), "running", None);
+        removed.extend(remove_existing_paths(std::slice::from_ref(t))?);
+    }
+    emit_reset(&app, "box", "Removed the add-on and config from the Kodi share", "done", None);
+    Ok(removed)
 }
 
 /// Tier A: delete the add-on + deployed userdata files over SSH, then a best-effort Kodi restart
@@ -307,6 +363,7 @@ fn reset_box_userdata(userdata_path: String, addons_path: String) -> Result<Vec<
 /// were removed. Non-interactive -- requires SSH key auth. Only the four owned paths are touched.
 #[tauri::command]
 fn reset_box_ssh(
+    app: tauri::AppHandle,
     host: String,
     user: String,
     userdata_path: String,
@@ -314,6 +371,16 @@ fn reset_box_ssh(
     restart: bool,
 ) -> Result<Vec<String>, String> {
     validate_ssh_target(&host, &user)?;
+    // Fast reachability pre-probe: an unreachable box would otherwise grind through five sequential
+    // ssh ConnectTimeout=8 calls (~40s) with the UI frozen. Bail in ~2.5s with a clear message so
+    // the caller can skip the box and still reset local state.
+    emit_reset(&app, "box", "Checking the Kodi box is reachable…", "running", None);
+    if let Err(e) = connect_timeout(&host, 22, 2500) {
+        emit_reset(&app, "box", "Kodi box is unreachable", "failed", Some(e.clone()));
+        return Err(format!(
+            "Kodi box {host}:22 is unreachable over SSH (powered off or on another network): {e}"
+        ));
+    }
     let target = format!("{user}@{host}");
     let ud = userdata_path.trim_end_matches('/');
     let ad = addons_path.trim_end_matches('/');
@@ -325,6 +392,8 @@ fn reset_box_ssh(
     ];
     let mut removed = Vec::new();
     for r in &remotes {
+        let name = r.rsplit('/').next().unwrap_or(r.as_str());
+        emit_reset(&app, "box", &format!("Removing {name}…"), "running", None);
         let script =
             format!("if [ -e '{r}' ]; then rm -rf '{r}' && printf 'REMOVED'; else printf 'ABSENT'; fi");
         if run_ssh_capture(&target, &script)?.trim() == "REMOVED" {
@@ -332,8 +401,10 @@ fn reset_box_ssh(
         }
     }
     if restart {
+        emit_reset(&app, "box", "Restarting Kodi…", "running", None);
         let _ = run_ssh(&target, "systemctl restart kodi");
     }
+    emit_reset(&app, "box", "Removed the add-on and config from the Kodi box", "done", None);
     Ok(removed)
 }
 
@@ -1917,7 +1988,7 @@ mod tests {
         parse_verbose_mode, percent_encode, remove_existing_paths, roku_keypress_request,
         safe_app_rel,
         smartthings_command_url, smartthings_set_input_body, sony_audio_set_input_payload,
-        sony_bravia_set_input_body, to_hex, validate_copy_paths, yamaha_input_path,
+        sony_bravia_set_input_body, to_hex, unc_host, validate_copy_paths, yamaha_input_path,
     };
 
     #[test]
@@ -2306,6 +2377,17 @@ mod tests {
         assert!(t.iter().any(|p| p.to_string_lossy().contains("addon_data")));
         // neither the userdata nor the addons root is ever a delete target
         assert!(!t.iter().any(|p| p == ud || p == ad));
+    }
+
+    #[test]
+    fn unc_host_extracts_share_host_and_skips_local_paths() {
+        assert_eq!(unc_host(r"\\10.0.1.42\Kodi\userdata").as_deref(), Some("10.0.1.42"));
+        assert_eq!(unc_host(r"\\NAS\Kodi").as_deref(), Some("NAS"));
+        assert_eq!(unc_host("//10.0.1.42/Kodi/userdata").as_deref(), Some("10.0.1.42"));
+        // local / drive paths have no network host -> no probe
+        assert_eq!(unc_host(r"C:\Users\me\.kodi\userdata"), None);
+        assert_eq!(unc_host("/storage/.kodi/userdata"), None);
+        assert_eq!(unc_host(r"\\"), None);
     }
 
     #[test]
