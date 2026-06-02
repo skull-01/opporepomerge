@@ -87,6 +87,7 @@ _BUCKET = {
     "preset_manager": "kodi",
     "external_player": "kodi",
     "playback_session": "kodi",
+    "hdmi_sequencing": "kodi",
     "version": "kodi",
 }
 

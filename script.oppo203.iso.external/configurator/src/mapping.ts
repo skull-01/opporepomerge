@@ -231,6 +231,11 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
         : "false",
   };
 
+  // HDMI switch timing (applies to every routing's TV switch). immediate is the frozen default.
+  out.hdmi_switch_mode = state.hdmiSwitchMode;
+  if (state.playDelayHdmi) out.play_delay_hdmi = state.playDelayHdmi;
+  if (state.avDelayHdmi) out.av_delay_hdmi = state.avDelayHdmi;
+
   const hardwareModel = playerHardwareModel(state);
   if (hardwareModel) out.oppo_hardware_model = hardwareModel;
   if (state.playerIp) out.oppo_ip = state.playerIp;

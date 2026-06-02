@@ -397,6 +397,74 @@ def test_fast_start_http_logs_avr_warning_nonfatal(monkeypatch):
     assert any("AVR pre-playback sequence warning" in m for m in logs)
 
 
+# -- hdmi_switch_mode ordering (PR5) ----------------------------------------
+
+
+def test_hdmi_immediate_mode_keeps_tv_first_then_avr_then_play(monkeypatch):
+    order = []
+    monkeypatch.setattr(ep, "log", lambda m: None)
+    monkeypatch.setattr(ep, "_safe_tv_switch", lambda s, t: order.append(("tv", t)))
+    monkeypatch.setattr(ep, "pre_playback_sequence", lambda s: order.append("avr") or _AvrResult())
+    monkeypatch.setattr(
+        ep,
+        "start_oppo_after_optional_delay",
+        lambda s, f, preflight_result=None: order.append("play"),
+    )
+    ep.fast_start(sr.Settings({}), "/media/film.iso")  # default mode = immediate (frozen order)
+    assert order == [("tv", "oppo"), "avr", "play"]
+
+
+def test_hdmi_delayed_mode_plays_first_then_switches_tv_with_disc_floor(monkeypatch):
+    order = []
+    slept = []
+    monkeypatch.setattr(ep, "log", lambda m: None)
+    monkeypatch.setattr(ep, "_safe_tv_switch", lambda s, t: order.append(("tv", t)))
+    monkeypatch.setattr(ep, "pre_playback_sequence", lambda s: order.append("avr") or _AvrResult())
+    monkeypatch.setattr(
+        ep,
+        "start_oppo_after_optional_delay",
+        lambda s, f, preflight_result=None: order.append("play"),
+    )
+    monkeypatch.setattr(ep.time, "sleep", lambda n: slept.append(n))
+    ep.fast_start(
+        sr.Settings({"hdmi_switch_mode": "delayed", "play_delay_hdmi": "3", "av_delay_hdmi": "2"}),
+        "/media/film.iso",
+    )
+    assert order == ["avr", "play", ("tv", "oppo")]  # player first, then the TV switch
+    assert slept == [6, 2]  # ISO floors the play delay at 6; then the 2s AVR stagger
+
+
+def test_hdmi_delayed_mode_zero_delays_skip_sleeps(monkeypatch):
+    order = []
+    slept = []
+    monkeypatch.setattr(ep, "log", lambda m: None)
+    monkeypatch.setattr(ep, "_safe_tv_switch", lambda s, t: order.append(("tv", t)))
+    monkeypatch.setattr(ep, "pre_playback_sequence", lambda s: _AvrResult())
+    monkeypatch.setattr(
+        ep,
+        "start_oppo_after_optional_delay",
+        lambda s, f, preflight_result=None: order.append("play"),
+    )
+    monkeypatch.setattr(ep.time, "sleep", lambda n: slept.append(n))
+    ep.fast_start(
+        sr.Settings({"hdmi_switch_mode": "delayed", "play_delay_hdmi": "0", "av_delay_hdmi": "0"}),
+        "/media/film.mkv",
+    )
+    assert order == ["play", ("tv", "oppo")]
+    assert slept == []  # zero delays -> no sleeps
+
+
+def test_hdmi_delayed_mode_applies_to_http_launch(monkeypatch):
+    order = []
+    monkeypatch.setattr(ep, "log", lambda m: None)
+    monkeypatch.setattr(ep, "_safe_tv_switch", lambda s, t: order.append(("tv", t)))
+    monkeypatch.setattr(ep, "pre_playback_sequence", lambda s: order.append("avr") or _AvrResult())
+    monkeypatch.setattr(ep, "_start_oppo_http", lambda s, f: order.append("http"))
+    monkeypatch.setattr(ep.time, "sleep", lambda n: None)
+    ep.fast_start_http(sr.Settings({"hdmi_switch_mode": "delayed"}), "/m/film.mkv")
+    assert order == ["avr", "http", ("tv", "oppo")]
+
+
 # -- status writer edges ----------------------------------------------------
 
 

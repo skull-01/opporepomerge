@@ -127,6 +127,12 @@ export type WizardState = {
   // Poll interval (seconds) for the http monitor (/getglobalinfo) and the dashboard's HTTP
   // liveness probe ("Refresh Rate"). Emitted as oppo_http_refresh_seconds for http_handoff.
   oppoHttpRefreshSeconds: string;
+  // Selectable HDMI switch timing (PR5). immediate = today's TV-first order (frozen); delayed =
+  // start the player, wait playDelayHdmi (floored at 6s for ISO/BDMV), then switch the TV,
+  // staggered afterwards by avDelayHdmi. Advanced; defaults to the frozen behaviour.
+  hdmiSwitchMode: "immediate" | "delayed";
+  playDelayHdmi: string;
+  avDelayHdmi: string;
 
   playerInput: InputAddress;
   kodiInput: InputAddress;
@@ -198,6 +204,9 @@ export const INITIAL_STATE: WizardState = {
   oppoDiscFolderRoot: true,
   oppoBdmvCheckfolder: true,
   oppoHttpRefreshSeconds: "5",
+  hdmiSwitchMode: "immediate",
+  playDelayHdmi: "2",
+  avDelayHdmi: "0",
   playerInput: null,
   kodiInput: null,
   testMode: null,
