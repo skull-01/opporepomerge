@@ -12,7 +12,17 @@ trigger and is allowed to lag the live state between refreshes. Phase/PR IDs
 below are **planning placeholders** (`ENH-…`) until the operator files the
 matching `area:configurator` / `area:addon` issues.
 
-**Last refreshed:** 2026-06-02 (later) · **backend layer for Phases 3/4/5 built + merged to `main`**
+**Last refreshed:** 2026-06-02 (latest) · **GUIDED-INSTALL INITIATIVE SOFTWARE-COMPLETE — all of
+Phases 0–5 are built + merged to `main`; only operator Phase-C hardware validation + a configurator
+release remain.** This session also built the dashboard-memory follow-on as stacked PRs #200 → #201
+→ #202 (issues #167/#168), and confirmed the DB backlog #103/#105 was already implemented on `main`
+(verify + close). **Live open backlog:** addon **#44** (tester solicitation); configurator
+**#103/#105/#167/#168** (all implemented — ready for operator close); 0 unclassified.
+**Phase → delivery map:** Ph0 → dissolved into decision **D-1=C** (the configurator bundles `main`
+fresh at build time; no separate add-on release) · Ph1 install #170 · Ph1b NAS-path capture #174 ·
+Ph2 SSH-first re-sequence #171 · Ph3 HDMI switch #172/#177/#179/#184/#188 · Ph4 OPPO self-test
+#181/#185/#187/#190 · Ph5 monitor + richer status #183/#186/#189 + dashboard memory #200–#202.
+_Prior refresh:_ **backend layer for Phases 3/4/5 built + merged to `main`**
 (operator: "build all of Phases 3/4/5, merge as I go, finer PRs"). Foundation #174/#175 merged; then
 **Phase 3.1** AVR switch ([#177](https://github.com/skull-01/script.oppo203.iso.external/pull/177), issue #176) + TV switch
 ([#179](https://github.com/skull-01/script.oppo203.iso.external/pull/179), issue #178); **Phase 4.1** `oppo_power`
@@ -237,6 +247,12 @@ only* — these are the share types the OPPO's own browser natively lists
 ---
 
 ## §4 Roadmap — two tracks, six phases
+
+> **✅ DELIVERED (2026-06-02).** Every phase below is built + merged to `main` — see the
+> **Phase → delivery map** in the header for the PR refs. This section is retained as the original
+> roadmap and design record; the only outstanding work is **operator Phase-C hardware validation**
+> of the whole flow (`docs/MANUAL_VERIFICATION_CHECKLIST.md`) and an optional **configurator
+> release** bundling `main` fresh (D-1=C).
 
 Each phase ≈ one session (one theme, ≤ 4 PRs per AGENTS.md). The add-on track
 (🟦) interleaves with the configurator track (🟩). Phase order is the build
