@@ -549,6 +549,187 @@ def _info_containers(info: dict[str, Any]) -> Iterator[dict[str, Any]]:
             yield nested
 
 
+# ---------------------------------------------------------------------------
+# Pure-HTTP/436 primitives (Xnoppo Elite V3 / emby-chinoppo-bridge model).
+#
+# Community-reverse-engineered endpoints on the OPPO HTTP API (port 436), adopted
+# from the MIT-licensed Xnoppo Elite V3 / emby-chinoppo-bridge control model. These
+# are function-only here: nothing in this module calls them yet -- the HTTP launch
+# orchestration wires them in a later change. Every transport failure raises
+# OppoError so the caller can degrade to a TCP/legacy fallback. The exact endpoint
+# paths and query-param names are the Phase-C-validated surface; this is not an
+# official OPPO protocol claim and the real-hardware behaviour is not verified in
+# software.
+# ---------------------------------------------------------------------------
+
+
+def _http_get_json(
+    settings: Settings, endpoint: str, query: str | None = None, timeout: float | None = None
+) -> dict[str, Any]:
+    """GET a JSON endpoint; return the decoded dict, or ``{"raw": body}`` when the
+    body is not valid JSON. Network / HTTP>=400 failures raise OppoError via _http_get."""
+    body = _http_get(settings, endpoint, query=query, timeout=timeout)
+    try:
+        return cast("dict[str, Any]", json.loads(body))
+    except ValueError:
+        return {"raw": body}
+
+
+def send_remote_key_http(settings: Settings, key: str) -> str:
+    """Send a single OPPO remote key over HTTP (``/sendremotekey?key=<code>``).
+
+    Used to wake the player (``PON``) and drive simple navigation as part of the
+    pure-HTTP launch. Returns the raw response body; raises OppoError on failure."""
+    code = str(key).strip()
+    if not code:
+        raise OppoError("send_remote_key_http requires a non-empty key")
+    return _http_get(settings, "/sendremotekey", query="key=" + urllib.parse.quote(code, safe=""))
+
+
+def get_global_info(settings: Settings) -> dict[str, Any]:
+    """Return the OPPO ``/getglobalinfo`` response as a dict (player-wide state)."""
+    return _http_get_json(settings, "/getglobalinfo")
+
+
+def global_info_is_playing(info: object) -> bool:
+    """Return True when a ``/getglobalinfo`` payload indicates active playback.
+
+    Honours an explicit ``is_playing`` flag (bool, or 1/"true"/"playing") in the
+    top-level or nested result/playinfo dicts, then falls back to the shared
+    movie-play-status heuristic so loading/trick-play states still count as playing."""
+    if isinstance(info, dict):
+        for container in _info_containers(info):
+            flag = container.get("is_playing")
+            if isinstance(flag, bool):
+                if flag:
+                    return True
+            elif flag is not None and str(flag).strip().lower() in ("1", "true", "yes", "playing"):
+                return True
+    return http_info_indicates_playing(info)
+
+
+def get_playing_time(settings: Settings) -> dict[str, Any]:
+    """Return the OPPO ``/getplayingtime`` response as a dict (elapsed/total)."""
+    return _http_get_json(settings, "/getplayingtime")
+
+
+def get_device_list(settings: Settings) -> dict[str, Any]:
+    """Return the OPPO ``/getdevicelist`` response (USB + network devices/shares)."""
+    return _http_get_json(settings, "/getdevicelist")
+
+
+def detect_nfs(settings: Settings) -> bool:
+    """Best-effort: report whether the player advertises NFS mounting.
+
+    Reads ``/getdevicelist`` and looks for an NFS-typed device entry or an ``nfs``
+    capability flag. Returns False (never raises) when the device list cannot be
+    read, so the caller can fall back to SMB."""
+    try:
+        info = get_device_list(settings)
+    except OppoError:
+        return False
+    if not isinstance(info, dict):
+        return False
+    for container in _info_containers(info):
+        if str(container.get("nfs", "")).strip().lower() in ("1", "true", "yes"):
+            return True
+        devices = container.get("devices") or container.get("devicelist")
+        if isinstance(devices, list):
+            for dev in devices:
+                if isinstance(dev, dict) and "nfs" in str(dev.get("type", "")).lower():
+                    return True
+    return False
+
+
+def login_smb(
+    settings: Settings, server: str, user: str = "", password: str = ""
+) -> dict[str, Any]:
+    """Authenticate to an SMB server (``/login_smb``). Returns the response dict."""
+    query = urllib.parse.urlencode({"ip": server, "user": user, "password": password})
+    return _http_get_json(settings, "/login_smb", query=query)
+
+
+def login_nfs(settings: Settings, server: str) -> dict[str, Any]:
+    """Register an NFS server (``/login_nfs``). Returns the response dict."""
+    query = urllib.parse.urlencode({"ip": server})
+    return _http_get_json(settings, "/login_nfs", query=query)
+
+
+def _share_names(info: object) -> list[str]:
+    """Extract a flat list of share names from a ``*sharelist`` response dict."""
+    names: list[str] = []
+    if not isinstance(info, dict):
+        return names
+    for container in _info_containers(info):
+        shares = container.get("shares") or container.get("sharelist") or container.get("list")
+        if isinstance(shares, list):
+            for item in shares:
+                if isinstance(item, str):
+                    names.append(item)
+                elif isinstance(item, dict):
+                    name = item.get("name") or item.get("share")
+                    if isinstance(name, str):
+                        names.append(name)
+    return names
+
+
+def list_smb_shares(
+    settings: Settings, server: str, user: str = "", password: str = ""
+) -> list[str]:
+    """List SMB shares exported by ``server`` (``/getsmbsharelist``)."""
+    query = urllib.parse.urlencode({"ip": server, "user": user, "password": password})
+    return _share_names(_http_get_json(settings, "/getsmbsharelist", query=query))
+
+
+def list_nfs_shares(settings: Settings, server: str) -> list[str]:
+    """List NFS exports offered by ``server`` (``/getnfssharelist``)."""
+    query = urllib.parse.urlencode({"ip": server})
+    return _share_names(_http_get_json(settings, "/getnfssharelist", query=query))
+
+
+def mount_smb(
+    settings: Settings, server: str, share: str, user: str = "", password: str = ""
+) -> dict[str, Any]:
+    """Mount an SMB share (``/mount_smb``). The leading slash is stripped from the
+    share path and no unmount is issued first (Xnoppo mounts idempotently)."""
+    path = str(share).lstrip("/")
+    query = urllib.parse.urlencode(
+        {"ip": server, "share": path, "user": user, "password": password}
+    )
+    return _http_get_json(settings, "/mount_smb", query=query)
+
+
+def mount_nfs(settings: Settings, server: str, export: str) -> dict[str, Any]:
+    """Mount an NFS export (``/mount_nfs``). The leading slash is stripped and no
+    unmount is issued first."""
+    path = str(export).lstrip("/")
+    query = urllib.parse.urlencode({"ip": server, "export": path})
+    return _http_get_json(settings, "/mount_nfs", query=query)
+
+
+def check_folder_has_bdmv(settings: Settings, folder: str) -> bool:
+    """Ask the player whether ``folder`` contains a BDMV structure
+    (``/checkfolderhasBDMV?path=...``); return the boolean verdict.
+
+    Raises OppoError on a transport failure so the caller can fall back to a plain
+    ``playnormalfile`` rather than silently mis-routing a disc."""
+    query = "path=" + urllib.parse.quote(str(folder), safe="/:\\")
+    info = _http_get_json(settings, "/checkfolderhasBDMV", query=query)
+    if isinstance(info, dict):
+        for container in _info_containers(info):
+            for key in ("has_bdmv", "hasBDMV", "result", "bdmv"):
+                val = container.get(key)
+                if isinstance(val, bool):
+                    return val
+                if val is not None:
+                    token = str(val).strip().lower()
+                    if token in ("1", "true", "yes"):
+                        return True
+                    if token in ("0", "false", "no", ""):
+                        return False
+    return False
+
+
 def _filter_commands_for_mode(
     settings: Settings,
     key: str,
