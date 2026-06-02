@@ -326,23 +326,28 @@ class _AvrResult:
 
 
 def _patch_http(monkeypatch, *, play=None):
-    # _start_oppo_http imports oppo_control lazily; depending on suite import order the
-    # bare and package module names can be distinct objects, so patch every one present.
-    import importlib
-
+    # Patch the exact oppo_control module object _start_oppo_http resolves via
+    # _oppo_control_module(); under a serial run the ENH-#43 stub-context tests purge + re-import
+    # oppo_control, so patching it by name (importlib) can miss the live object.
     play_fn = play or (lambda s, f: "@OK")
-    seen: set[int] = set()
-    for name in ("resources.lib.oppo.oppo_control", "oppo_control"):
-        try:
-            mod = importlib.import_module(name)
-        except Exception:
-            continue
-        if id(mod) in seen:
-            continue
-        seen.add(id(mod))
-        monkeypatch.setattr(mod, "activate_http_api", lambda s: True, raising=False)
-        monkeypatch.setattr(mod, "signin_http_api", lambda s: "", raising=False)
-        monkeypatch.setattr(mod, "play_media_http_api", play_fn, raising=False)
+    oc = ep._oppo_control_module()
+    monkeypatch.setattr(oc, "activate_http_api", lambda s: True, raising=False)
+    monkeypatch.setattr(oc, "signin_http_api", lambda s: "", raising=False)
+    monkeypatch.setattr(oc, "play_media_http_api", play_fn, raising=False)
+    # PR3 orchestration primitives: safe no-ops + a "playing" confirm so the wake, mount,
+    # BDMV-probe, auto-heal, and confirm steps never reach a real device in these tests.
+    monkeypatch.setattr(oc, "send_remote_key_http", lambda s, k: "OK", raising=False)
+    monkeypatch.setattr(oc, "get_global_info", lambda s: {"is_playing": True}, raising=False)
+    monkeypatch.setattr(oc, "global_info_is_playing", lambda i: True, raising=False)
+    monkeypatch.setattr(oc, "detect_nfs", lambda s: False, raising=False)
+    monkeypatch.setattr(oc, "login_smb", lambda s, *a, **k: {}, raising=False)
+    monkeypatch.setattr(oc, "login_nfs", lambda s, *a, **k: {}, raising=False)
+    monkeypatch.setattr(oc, "mount_smb", lambda s, *a, **k: {}, raising=False)
+    monkeypatch.setattr(oc, "mount_nfs", lambda s, *a, **k: {}, raising=False)
+    monkeypatch.setattr(oc, "check_folder_has_bdmv", lambda s, f: False, raising=False)
+    # The one-shot ISO auto-heal sleeps before its confirm; keep tests instant. Tests that assert
+    # on sleeps re-patch ep.time.sleep AFTER calling _patch_http.
+    monkeypatch.setattr(ep.time, "sleep", lambda *_a: None, raising=False)
 
 
 def test_fast_start_http_runs_tv_avr_then_http_launch(monkeypatch):
@@ -370,9 +375,13 @@ def test_start_oppo_http_failure_is_nonfatal(monkeypatch):
 def test_start_oppo_http_honors_startup_delay(monkeypatch):
     slept = []
     monkeypatch.setattr(ep, "log", lambda m: None)
-    monkeypatch.setattr(ep.time, "sleep", lambda n: slept.append(n))
     _patch_http(monkeypatch)
-    ep._start_oppo_http(sr.Settings({"startup_delay": "1"}), "/m.iso")
+    # re-patch sleep AFTER _patch_http (which no-ops it) so we record only the startup delay;
+    # the ISO auto-heal is disabled here so it does not add a second sleep.
+    monkeypatch.setattr(ep.time, "sleep", lambda n: slept.append(n))
+    ep._start_oppo_http(
+        sr.Settings({"startup_delay": "1", "oppo_http_iso_autoheal": "false"}), "/m.iso"
+    )
     assert slept == [1]
 
 

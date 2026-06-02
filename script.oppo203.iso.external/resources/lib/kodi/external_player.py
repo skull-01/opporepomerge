@@ -160,35 +160,134 @@ def fast_start(
     start_oppo_after_optional_delay(settings, media_file, preflight_result)
 
 
-def _start_oppo_http(settings: Settings, media_file: str) -> None:
-    """Launch the file over the OPPO community HTTP API, reusing oppo_control.
-
-    Activation / signin / launch failures are non-fatal: logged with context so the
-    session still reaches cleanup + the monitor (which simply will not confirm)
-    rather than crashing Kodi. The HTTP API is community-reverse-engineered -- this
-    is not an official OPPO protocol claim.
-    """
+def _oppo_control_module() -> Any:
+    """Return the oppo_control module (package import with a bare-name fallback)."""
     try:
-        from ..oppo.oppo_control import (
-            activate_http_api,
-            play_media_http_api,
-            signin_http_api,
-        )
+        from ..oppo import oppo_control as oc
     except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
-        from oppo_control import (  # type: ignore[no-redef]
-            activate_http_api,
-            play_media_http_api,
-            signin_http_api,
+        import oppo_control as oc  # type: ignore[no-redef]
+    return oc
+
+
+def _http_best_effort(action: Callable[[], Any], label: str) -> None:
+    """Run one best-effort HTTP orchestration step; log and swallow transport failures so the
+    overall launch never crashes on an enrichment step the player may not support."""
+    try:
+        action()
+    except (RuntimeError, OSError) as exc:
+        log(f"OPPO HTTP {label} step skipped (non-fatal): {exc}")
+
+
+def _parse_network_share(media_file: str) -> tuple[str, str, str] | None:
+    """Return (scheme, server, share) for an ``smb://server/share/...`` or ``nfs://`` media URL,
+    or None when the path is not a network URL the player would need to mount."""
+    text = str(media_file).replace("\\", "/")
+    for scheme in ("smb", "nfs"):
+        prefix = f"{scheme}://"
+        if text.lower().startswith(prefix):
+            parts = text[len(prefix) :].split("/", 2)
+            if len(parts) >= 2 and parts[0] and parts[1]:
+                return scheme, parts[0], parts[1]
+    return None
+
+
+def _http_ensure_share_mounted(oc: Any, settings: Settings, media_file: str) -> None:
+    """Best-effort: ensure the media's network share is mounted on the player before play.
+
+    Server/share are parsed from the media path; non-network paths are skipped. Every step is
+    non-fatal -- a player with the share already mounted (the wizard's prerequisite) is
+    unaffected, and a player that does not expose the mount endpoints degrades silently."""
+    parsed = _parse_network_share(media_file)
+    if parsed is None:
+        return
+    scheme, server, share = parsed
+    user = settings.get("oppo_http_nas_user", "")
+    password = settings.get("oppo_http_nas_password", "")
+
+    def mount() -> None:
+        if scheme == "nfs" or oc.detect_nfs(settings):
+            oc.login_nfs(settings, server)
+            oc.mount_nfs(settings, server, share)
+        else:
+            oc.login_smb(settings, server, user, password)
+            oc.mount_smb(settings, server, share, user, password)
+
+    _http_best_effort(mount, f"mount {scheme}://{server}/{share}")
+
+
+def _http_play_disc_aware(oc: Any, settings: Settings, media_file: str) -> str:
+    """Hand the player the right path for the media's disc type. A BDMV folder gets a best-effort
+    checkfolderhasBDMV probe (logged); an ISO gets a one-shot auto-heal. The play itself stays
+    the proven play_media_http_api, so the disc-awareness only adds a probe + the ISO resend."""
+    try:
+        from . import disc_classification as dc
+    except ImportError:  # pragma: no cover - bare-name fallback (run as __main__)
+        import disc_classification as dc  # type: ignore[no-redef]
+
+    if dc.is_bdmv_navigation_path(media_file):
+        _http_best_effort(
+            lambda: log(
+                f"OPPO BDMV folder check: has_bdmv={oc.check_folder_has_bdmv(settings, media_file)}"
+            ),
+            "checkfolderhasBDMV",
         )
+        return cast("str", oc.play_media_http_api(settings, media_file))
+
+    reply = cast("str", oc.play_media_http_api(settings, media_file))
+    if dc.extension(media_file) == ".iso" and settings.get_bool("oppo_http_iso_autoheal", True):
+        _http_autoheal_iso(oc, settings, media_file)
+    return reply
+
+
+def _http_autoheal_iso(oc: Any, settings: Settings, media_file: str) -> None:
+    """One-shot ISO auto-heal: if the player is not confirmed playing after the configured grace
+    period, resend the ISO once (stop, then play). Some players drop the first ISO mount. The
+    whole step is non-fatal and skipped when the player cannot be queried."""
+    delay = max(1, int(settings.get("oppo_http_iso_autoheal_after_seconds", "20")))
+    time.sleep(delay)
+    try:
+        if oc.global_info_is_playing(oc.get_global_info(settings)):
+            return
+    except (RuntimeError, OSError):
+        return  # cannot confirm -> do not poke a possibly-healthy session
+    log("OPPO ISO not confirmed playing after grace period; auto-healing (resend once).")
+    _http_best_effort(lambda: oc.send_remote_key_http(settings, "STP"), "iso-autoheal-stop")
+    _http_best_effort(lambda: oc.play_media_http_api(settings, media_file), "iso-autoheal-replay")
+
+
+def _http_log_confirmation(oc: Any, settings: Settings) -> None:
+    """Best-effort: log whether getglobalinfo reports playback after the launch."""
+
+    def check() -> None:
+        playing = oc.global_info_is_playing(oc.get_global_info(settings))
+        log(f"OPPO HTTP confirm: getglobalinfo playing={playing}")
+
+    _http_best_effort(check, "getglobalinfo confirm")
+
+
+def _start_oppo_http(settings: Settings, media_file: str) -> None:
+    """Pure-HTTP launch orchestration (Xnoppo V3): wake -> signin -> best-effort mount ->
+    disc-aware play (+ one-shot ISO auto-heal) -> confirm.
+
+    Only ``activate -> signin -> play`` is required; every other step (the PON wake, the share
+    mount, the BDMV probe, the auto-heal, the getglobalinfo confirm) is best-effort and non-fatal,
+    so a player that does not speak the newer endpoints degrades to exactly today's http_handoff
+    behaviour. The HTTP API is community-reverse-engineered -- not an official OPPO protocol claim,
+    and not hardware-validated.
+    """
+    oc = _oppo_control_module()
     startup_delay = int(settings.get("startup_delay", "0"))
     if startup_delay > 0:
         log(f"Waiting {startup_delay} second(s) before HTTP handoff.")
         time.sleep(startup_delay)
     try:
-        activate_http_api(settings)
-        signin_http_api(settings)
-        reply = play_media_http_api(settings, media_file)
+        oc.activate_http_api(settings)
+        _http_best_effort(lambda: oc.send_remote_key_http(settings, "PON"), "wake")
+        oc.signin_http_api(settings)
+        _http_ensure_share_mounted(oc, settings, media_file)
+        reply = _http_play_disc_aware(oc, settings, media_file)
         log(f"OPPO HTTP handoff launched: {reply!r}")
+        _http_log_confirmation(oc, settings)
     except Exception as exc:
         log(f"OPPO HTTP handoff failed (non-fatal): {exc}")
 
