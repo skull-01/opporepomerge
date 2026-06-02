@@ -468,6 +468,9 @@ export function Dashboard({ go, state }: ScreenProps) {
   // refs keep that to a single attempt and let a manual Stop stick (no immediate auto-restart).
   const autoStartedRef = useRef(false);
   const userStoppedRef = useRef(false);
+  // M4: the live-monitor token this screen owns; passed to stop so a sibling screen's unmount
+  // cannot cancel our stream (a null token makes stop a no-op on the Rust side).
+  const streamTokenRef = useRef<number | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -497,7 +500,8 @@ export function Dashboard({ go, state }: ScreenProps) {
       // connection so the two don't fight over the player's device-global verbose mode.
       if (streamingRef.current && sess.status?.sessionState === "starting") {
         streamingRef.current = false;
-        void invoke("stop_oppo_live_monitor").catch(() => {});
+        void invoke("stop_oppo_live_monitor", { token: streamTokenRef.current }).catch(() => {});
+        streamTokenRef.current = null;
         setStreaming(false);
         setStreamErr("Stopped: the add-on started a playback session.");
       }
@@ -515,7 +519,10 @@ export function Dashboard({ go, state }: ScreenProps) {
         setStreamErr(null);
         setFrames([]);
         try {
-          await invoke("start_oppo_live_monitor", { host: state.playerIp, port: 23 });
+          streamTokenRef.current = await invoke<number>("start_oppo_live_monitor", {
+            host: state.playerIp,
+            port: 23,
+          });
           if (!alive) return;
           setStreaming(true);
         } catch (e) {
@@ -547,7 +554,7 @@ export function Dashboard({ go, state }: ScreenProps) {
     return () => {
       alive = false;
       if (unlisten) unlisten();
-      void invoke("stop_oppo_live_monitor").catch(() => {});
+      void invoke("stop_oppo_live_monitor", { token: streamTokenRef.current }).catch(() => {});
     };
   }, []);
 
@@ -566,7 +573,10 @@ export function Dashboard({ go, state }: ScreenProps) {
     setStreamErr(null);
     setFrames([]);
     try {
-      await invoke("start_oppo_live_monitor", { host: state.playerIp, port: 23 });
+      streamTokenRef.current = await invoke<number>("start_oppo_live_monitor", {
+        host: state.playerIp,
+        port: 23,
+      });
       setStreaming(true);
     } catch (e) {
       setStreamErr(`Could not start: ${String(e)}`);
@@ -578,7 +588,8 @@ export function Dashboard({ go, state }: ScreenProps) {
     // Remember the user stopped on purpose so the auto-start does not immediately reopen it.
     userStoppedRef.current = true;
     try {
-      await invoke("stop_oppo_live_monitor");
+      await invoke("stop_oppo_live_monitor", { token: streamTokenRef.current });
+      streamTokenRef.current = null;
     } catch {
       // best-effort
     }

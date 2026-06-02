@@ -54,6 +54,29 @@ describe("redact", () => {
     expect(redact(true)).toBe(true);
     expect(redact(null)).toBe(null);
   });
+
+  it("masks secrets inside a settings.xml deploy blob (key is a filename, not a sensitive name)", () => {
+    const xml =
+      '<settings version="2">' +
+      '<setting id="oppo_ip">10.0.1.5</setting>' +
+      '<setting id="sony_psk">SECRETPSK</setting>' +
+      '<setting id="sony_avr_psk">AVRSECRET</setting>' +
+      '<setting id="smartthings_token">TOKEN123</setting>' +
+      "</settings>";
+    const out = redact({
+      files: { "addon_data/script.oppo203.iso.external/settings.xml": xml },
+    }) as { files: Record<string, string> };
+    const blob = out.files["addon_data/script.oppo203.iso.external/settings.xml"];
+    expect(blob).not.toContain("SECRETPSK");
+    expect(blob).not.toContain("AVRSECRET");
+    expect(blob).not.toContain("TOKEN123");
+    expect(blob).toContain('<setting id="sony_psk">[redacted]</setting>');
+    expect(blob).toContain('<setting id="oppo_ip">10.0.1.5</setting>'); // non-secret preserved
+  });
+
+  it("leaves a non-settings string unchanged", () => {
+    expect(redact("just a normal log line")).toBe("just a normal log line");
+  });
 });
 
 describe("record + getEntries", () => {

@@ -101,6 +101,14 @@ fn generate_files(
 fn reveal_path(path: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
+        // Only reveal a real, existing absolute path -- never hand Explorer an arbitrary string
+        // (it can interpret URLs / shell targets). Reject relative / non-existent inputs.
+        let p = std::path::Path::new(&path);
+        if !p.is_absolute() || !p.exists() {
+            return Err(format!(
+                "reveal_path requires an existing absolute path: {path}"
+            ));
+        }
         std::process::Command::new("explorer")
             .arg(&path)
             .spawn()
@@ -174,29 +182,65 @@ fn deploy_to_userdata(
     files: BTreeMap<String, String>,
 ) -> Result<DeployReport, String> {
     let base = std::path::PathBuf::from(&userdata_path);
-    let mut written = Vec::new();
-    let mut backed_up = Vec::new();
+    // (target, Option<bak>) for each file already swapped in, so a later failure can roll the
+    // whole set back instead of leaving a half-applied config (e.g. new settings.xml + old keymap).
+    let mut applied: Vec<(std::path::PathBuf, Option<String>)> = Vec::new();
     for (rel, contents) in &files {
         let target = base.join(rel);
-        if let Some(parent) = target.parent() {
-            fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+        if let Err(e) = deploy_one_file(&target, contents, &mut applied) {
+            rollback_deploy(&applied);
+            return Err(e);
         }
-        if target.exists() {
-            let bak = format!("{}.{}.bak", target.to_string_lossy(), backup_suffix());
-            fs::copy(&target, &bak).map_err(|e| e.to_string())?;
-            backed_up.push(bak);
-        }
-        // Write to a sibling temp file then swap it in, so an interrupted write can't leave a
-        // truncated target (the .bak above covers the brief replace window).
-        let tmp = std::path::PathBuf::from(format!("{}.oppocfg-tmp", target.to_string_lossy()));
-        fs::write(&tmp, contents).map_err(|e| e.to_string())?;
-        if target.exists() {
-            fs::remove_file(&target).map_err(|e| e.to_string())?;
-        }
-        fs::rename(&tmp, &target).map_err(|e| e.to_string())?;
-        written.push(target.to_string_lossy().into_owned());
     }
-    Ok(DeployReport { written, backed_up })
+    Ok(DeployReport {
+        written: applied
+            .iter()
+            .map(|(t, _)| t.to_string_lossy().into_owned())
+            .collect(),
+        backed_up: applied.iter().filter_map(|(_, b)| b.clone()).collect(),
+    })
+}
+
+/// Write one file into place (backup, then temp-write + swap so an interrupted write can't leave
+/// a truncated target) and record it in `applied` for a possible rollback.
+fn deploy_one_file(
+    target: &std::path::Path,
+    contents: &str,
+    applied: &mut Vec<(std::path::PathBuf, Option<String>)>,
+) -> Result<(), String> {
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    let bak = if target.exists() {
+        let bak = format!("{}.{}.bak", target.to_string_lossy(), backup_suffix());
+        fs::copy(target, &bak).map_err(|e| e.to_string())?;
+        Some(bak)
+    } else {
+        None
+    };
+    let tmp = std::path::PathBuf::from(format!("{}.oppocfg-tmp", target.to_string_lossy()));
+    fs::write(&tmp, contents).map_err(|e| e.to_string())?;
+    if target.exists() {
+        fs::remove_file(target).map_err(|e| e.to_string())?;
+    }
+    fs::rename(&tmp, target).map_err(|e| e.to_string())?;
+    applied.push((target.to_path_buf(), bak));
+    Ok(())
+}
+
+/// Best-effort rollback: restore each already-applied target from its `.bak`, or remove a
+/// newly-created file that had no prior version. Reverse order so the set undoes cleanly.
+fn rollback_deploy(applied: &[(std::path::PathBuf, Option<String>)]) {
+    for (target, bak) in applied.iter().rev() {
+        match bak {
+            Some(b) => {
+                let _ = fs::copy(b, target);
+            }
+            None => {
+                let _ = fs::remove_file(target);
+            }
+        }
+    }
 }
 
 /// Verify a Kodi userdata directory is writable by creating and removing a temp file.
@@ -508,6 +552,11 @@ fn ssh_base_args(target: &str) -> Vec<String> {
         "StrictHostKeyChecking=accept-new".into(),
         "-o".into(),
         "ConnectTimeout=8".into(),
+        // Bound a hung connection (box unreachable mid-command) at ~15s instead of forever.
+        "-o".into(),
+        "ServerAliveInterval=5".into(),
+        "-o".into(),
+        "ServerAliveCountMax=3".into(),
         target.to_string(),
     ]
 }
@@ -604,27 +653,51 @@ fn deploy_ssh(
     validate_ssh_target(&host, &user)?;
     let target = format!("{user}@{host}");
     let base = userdata_path.trim_end_matches('/');
-    let mut written = Vec::new();
-    let mut backed_up = Vec::new();
+    // (remote, Option<bak>) for each file already written, so a later failure rolls the whole set
+    // back (restore from .bak / remove new files) instead of leaving a half-applied remote config.
+    let mut applied: Vec<(String, Option<String>)> = Vec::new();
     for (rel, contents) in &files {
         let remote = format!("{base}/{rel}");
         let parent = remote.rsplit_once('/').map(|(p, _)| p).unwrap_or(".");
         let bak = format!("{remote}.{}.bak", backup_suffix());
         // Back up an existing file before overwriting; '&&' chaining ABORTS the write if the
-        // backup fails, and the echoed marker lets us report the real .bak path.
+        // backup fails, and the echoed marker lets us report (and roll back to) the real .bak path.
         let script = format!(
             "mkdir -p '{parent}' && if [ -f '{remote}' ]; then cp -p '{remote}' '{bak}' && printf 'BAK:%s\\n' '{bak}'; fi && cat > '{remote}'"
         );
-        let stdout = run_ssh_stdin(&target, &script, contents.as_bytes())?;
-        written.push(remote);
-        if let Some(line) = stdout.lines().find(|l| l.starts_with("BAK:")) {
-            backed_up.push(line.trim_start_matches("BAK:").to_string());
+        match run_ssh_stdin(&target, &script, contents.as_bytes()) {
+            Ok(stdout) => {
+                let bak_path = stdout
+                    .lines()
+                    .find(|l| l.starts_with("BAK:"))
+                    .map(|l| l.trim_start_matches("BAK:").to_string());
+                applied.push((remote, bak_path));
+            }
+            Err(e) => {
+                rollback_deploy_ssh(&target, &applied);
+                return Err(e);
+            }
         }
     }
     if restart {
         run_ssh(&target, "systemctl restart kodi")?;
     }
-    Ok(DeployReport { written, backed_up })
+    Ok(DeployReport {
+        written: applied.iter().map(|(r, _)| r.clone()).collect(),
+        backed_up: applied.iter().filter_map(|(_, b)| b.clone()).collect(),
+    })
+}
+
+/// Best-effort remote rollback: restore each already-written file from its `.bak`, or remove a
+/// newly-created file that had no prior version. Reverse order so the set undoes cleanly.
+fn rollback_deploy_ssh(target: &str, applied: &[(String, Option<String>)]) {
+    for (remote, bak) in applied.iter().rev() {
+        let script = match bak {
+            Some(b) => format!("cp -p '{b}' '{remote}'"),
+            None => format!("rm -f '{remote}'"),
+        };
+        let _ = run_ssh(target, &script);
+    }
 }
 
 // ============================================================
@@ -784,9 +857,10 @@ fn oppo_http_exchange(host: &str, request: &str, timeout_ms: u64) -> Result<Stri
     stream
         .write_all(request.as_bytes())
         .map_err(|e| e.to_string())?;
-    let mut resp = String::new();
-    let _ = stream.read_to_string(&mut resp);
-    Ok(resp)
+    // Cap the read so a chatty/hostile peer on :436 cannot grow this unboundedly.
+    let mut resp = Vec::new();
+    let _ = (&mut stream).take(65536).read_to_end(&mut resp);
+    Ok(String::from_utf8_lossy(&resp).into_owned())
 }
 
 /// Fire a network-file play on the OPPO over the undocumented HTTP app API
@@ -1062,12 +1136,13 @@ struct LiveFrame {
 }
 
 struct LiveHandle {
+    token: u64,
     stop: Arc<AtomicBool>,
     join: Option<std::thread::JoinHandle<()>>,
 }
 
 #[derive(Default)]
-struct LiveMonitor(Mutex<Option<LiveHandle>>);
+struct LiveMonitor(Mutex<Option<LiveHandle>>, std::sync::atomic::AtomicU64);
 
 /// Classify an OPPO verbose push line by its leading code, for frontend coloring.
 fn classify_frame(line: &str) -> &'static str {
@@ -1203,9 +1278,10 @@ fn start_oppo_live_monitor(
     monitor: tauri::State<'_, LiveMonitor>,
     host: String,
     port: Option<u16>,
-) -> Result<(), String> {
+) -> Result<u64, String> {
     let port = port.unwrap_or(23);
-    let mut guard = monitor.0.lock().map_err(|e| e.to_string())?;
+    // Recover from a poisoned lock (a one-off panic must not wedge the monitor permanently).
+    let mut guard = monitor.0.lock().unwrap_or_else(|p| p.into_inner());
     if guard.is_some() {
         return Err("live monitor already running".into());
     }
@@ -1223,17 +1299,31 @@ fn start_oppo_live_monitor(
     let stop = Arc::new(AtomicBool::new(false));
     let stop_thread = stop.clone();
     let join = std::thread::spawn(move || run_live_loop(app, stream, prior, stop_thread));
+    // Owner token: only the subscriber that started the stream (matching token) may stop it.
+    let token = monitor.1.fetch_add(1, Ordering::SeqCst) + 1;
     *guard = Some(LiveHandle {
+        token,
         stop,
         join: Some(join),
     });
-    Ok(())
+    Ok(token)
 }
 
 /// Stop the live monitor (signals the thread, waits for it to restore verbose mode + close).
 #[tauri::command]
-fn stop_oppo_live_monitor(monitor: tauri::State<'_, LiveMonitor>) -> Result<(), String> {
-    let handle = monitor.0.lock().map_err(|e| e.to_string())?.take();
+fn stop_oppo_live_monitor(
+    monitor: tauri::State<'_, LiveMonitor>,
+    token: Option<u64>,
+) -> Result<(), String> {
+    let mut guard = monitor.0.lock().unwrap_or_else(|p| p.into_inner());
+    // Only the owner (matching token) may stop the stream, so a sibling screen's unmount cannot
+    // cancel another subscriber's live stream. A None / non-matching token is a no-op.
+    let owns = matches!((token, guard.as_ref()), (Some(t), Some(h)) if h.token == t);
+    if !owns {
+        return Ok(());
+    }
+    let handle = guard.take();
+    drop(guard);
     if let Some(mut h) = handle {
         h.stop.store(true, Ordering::SeqCst);
         if let Some(j) = h.join.take() {
