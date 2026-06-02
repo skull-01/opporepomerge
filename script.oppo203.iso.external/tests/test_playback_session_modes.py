@@ -1,4 +1,4 @@
-"""run_playback_session -- the shared six-option session engine.
+"""run_playback_session -- the shared seven-option session engine.
 
 The three routings (playercorefactory, service-interception, http_handoff) call
 this one function, so these pin that:
@@ -18,6 +18,8 @@ exercises the engine without touching real TV/OPPO/AVR code.
 import json
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
@@ -375,16 +377,16 @@ def test_fast_start_http_runs_tv_avr_then_http_launch(monkeypatch):
     assert order == [("tv", "oppo"), "avr", ("play", "/mnt/nfs1/m.iso")]
 
 
-def test_start_oppo_http_failure_is_nonfatal(monkeypatch):
-    logs = []
-    monkeypatch.setattr(ep, "log", lambda m: logs.append(m))
+def test_start_oppo_http_failure_propagates(monkeypatch):
+    # H2: a failed HTTP play propagates so run_playback_session records the session as failed.
+    monkeypatch.setattr(ep, "log", lambda m: None)
 
     def boom(s, f):
         raise RuntimeError("http down")
 
     _patch_http(monkeypatch, play=boom)
-    ep._start_oppo_http(sr.Settings({}), "/mnt/nfs1/m.iso")  # must not raise
-    assert any("HTTP handoff failed" in m for m in logs)
+    with pytest.raises(RuntimeError):
+        ep._start_oppo_http(sr.Settings({}), "/mnt/nfs1/m.iso")
 
 
 def test_start_oppo_http_honors_startup_delay(monkeypatch):
