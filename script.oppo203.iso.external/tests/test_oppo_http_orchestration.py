@@ -3,11 +3,14 @@
 The oppo_control HTTP primitives are replaced with recording fakes -- no real OPPO, network, or
 time. Pins the sequence (wake -> signin -> best-effort mount -> disc-aware play -> confirm), the
 SMB/NFS mount routing, the one-shot ISO auto-heal, the BDMV probe, and that every enrichment step
-is non-fatal so the launch degrades to the proven play.
+(wake, mount, auto-heal, confirm) is non-fatal while a hard failure of the required
+activate -> signin -> play core propagates.
 """
 
 import sys
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 LIB = ROOT / "resources" / "lib"
@@ -187,14 +190,27 @@ def test_normal_path_no_bdmv_no_autoheal(monkeypatch):
     assert ctl.calls.count("play") == 1  # not an ISO -> no auto-heal even when not playing
 
 
-def test_launch_is_nonfatal_on_play_failure(monkeypatch):
+def test_launch_propagates_on_play_failure(monkeypatch):
+    # H2: a failed play (the required core) must propagate so run_playback_session records the
+    # session as failed instead of silently reporting success.
     ctl = Ctl()
     ctl.play_raises = True
-    logs: list[str] = []
     _install_oc(monkeypatch, ctl)
-    monkeypatch.setattr(ep, "log", lambda m: logs.append(m))
-    ep._start_oppo_http(_settings(), "smb://10.0.1.10/share/film.iso")  # must not raise
-    assert any("HTTP handoff failed" in m for m in logs)
+    with pytest.raises(RuntimeError):
+        ep._start_oppo_http(_settings(), "smb://10.0.1.10/share/film.iso")
+
+
+def test_launch_propagates_on_signin_failure(monkeypatch):
+    # H2: signin is part of the required core, so its failure propagates too.
+    ctl = Ctl()
+    _install_oc(monkeypatch, ctl)
+
+    def boom(_s):
+        raise RuntimeError("signin failed")
+
+    monkeypatch.setattr(ep._oppo_control_module(), "signin_http_api", boom, raising=False)
+    with pytest.raises(RuntimeError):
+        ep._start_oppo_http(_settings(), "smb://10.0.1.10/share/film.iso")
 
 
 def test_parse_network_share_helper():

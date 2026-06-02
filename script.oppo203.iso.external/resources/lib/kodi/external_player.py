@@ -313,16 +313,16 @@ def _start_oppo_http(settings: Settings, media_file: str) -> None:
     if startup_delay > 0:
         log(f"Waiting {startup_delay} second(s) before HTTP handoff.")
         time.sleep(startup_delay)
-    try:
-        oc.activate_http_api(settings)
-        _http_best_effort(lambda: oc.send_remote_key_http(settings, "PON"), "wake")
-        oc.signin_http_api(settings)
-        _http_ensure_share_mounted(oc, settings, media_file)
-        reply = _http_play_disc_aware(oc, settings, media_file)
-        log(f"OPPO HTTP handoff launched: {reply!r}")
-        _http_log_confirmation(oc, settings)
-    except Exception as exc:
-        log(f"OPPO HTTP handoff failed (non-fatal): {exc}")
+    # Only activate -> signin -> play is required; the wake, mount, auto-heal, and confirm steps
+    # are individually best-effort (see _http_best_effort), so a hard failure of the core
+    # propagates and run_playback_session records the session as failed -- not silent success.
+    oc.activate_http_api(settings)
+    _http_best_effort(lambda: oc.send_remote_key_http(settings, "PON"), "wake")
+    oc.signin_http_api(settings)
+    _http_ensure_share_mounted(oc, settings, media_file)
+    reply = _http_play_disc_aware(oc, settings, media_file)
+    log(f"OPPO HTTP handoff launched: {reply!r}")
+    _http_log_confirmation(oc, settings)
 
 
 def fast_start_http(settings: Settings, media_file: str) -> None:
