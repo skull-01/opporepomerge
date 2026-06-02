@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — pure-HTTP/436 OPPO primitives (Xnoppo V3 adoption, PR1 of 6) — #207
+
+- **Branch / PR:** `claude/http-primitives-b58647f2` → PR (base `main`). Issue [#207](https://github.com/skull-01/script.oppo203.iso.external/issues/207).
+- **What changed (software-verified only):** adds community-reverse-engineered pure-HTTP/436 primitives to `resources/lib/oppo/oppo_control.py` (Xnoppo Elite V3 / emby-chinoppo-bridge model): `send_remote_key_http`, `get_global_info`/`global_info_is_playing`, `get_playing_time`, `get_device_list`, `detect_nfs`, `login_smb`/`login_nfs`, `list_smb_shares`/`list_nfs_shares`, `mount_smb`/`mount_nfs` (leading-slash stripped, no unmount-first), `check_folder_has_bdmv`. **Function-only / unwired** — nothing calls them yet (PR3 wires the launch orchestration). Every transport failure raises `OppoError`. New `tests/test_oppo_http_pure.py` (mocked `urlopen`).
+- **Software gates (this machine):** `pytest -n auto` **1081 passed / 3 skipped** (+28), `ruff check` + `ruff format --check` clean, mypy `--strict` **51/0**, serial coverage **99%** (gate exit 0).
+- **Operator verifies (Phase A):** read the new primitives + `test_oppo_http_pure.py`; confirm they are unwired (no caller) and additive.
+- **Operator verifies (Phase C — real hardware):** the **endpoint paths/params are not hardware-validated**. When PR3 wires them, confirm on a real OPPO/NAS that `/sendremotekey`, `/getglobalinfo`, `/getplayingtime`, the SMB/NFS login+mount endpoints, and `/checkfolderhasBDMV` are the player's actual API (adjust the endpoint strings if firmware differs).
+
 ### Configurator — TV DB China models (CN region) + tv_ip comment fix (PR-only)
 
 - **Branch / PR:** `claude/cfg-tvdb-china-695795c6` → draft PR (base `main`). PR-only theme (no tracked issue).
