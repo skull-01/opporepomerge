@@ -5,8 +5,8 @@
 
 /** The English message catalog. Keys are dotted by area (app.* / window.* / ...). */
 export const en = {
-  "app.title": "OppoKodiAddon Configurator",
-  "app.versionLine": "Configurator v{version}",
+  "app.title": "Kodi Oppo External Player Configurator",
+  "app.versionLine": "{name}-v{version}",
   "window.minimize": "Minimize",
   "window.maximize": "Maximize",
   "window.close": "Close",

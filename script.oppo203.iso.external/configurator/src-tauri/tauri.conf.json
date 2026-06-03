@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OppoKodiAddon Configurator",
+  "productName": "Kodi Oppo External Player Configurator",
   "version": "0.9.5",
   "identifier": "com.script-oppo203-iso-external.configurator",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "OppoKodiAddon Configurator",
+        "title": "Kodi Oppo External Player Configurator",
         "label": "main",
         "width": 1180,
         "height": 820,

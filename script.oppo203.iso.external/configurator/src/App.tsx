@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { WinShell } from "./shell/WinShell";
+import { t } from "./i18n";
 import { Chain } from "./shell/Chain";
 import { Progress } from "./shell/Progress";
 import { Sidebar } from "./shell/Sidebar";
@@ -139,7 +140,7 @@ export default function App() {
   const Screen = SCREEN_RENDERERS[screen] ?? Step0Gate;
 
   return (
-    <WinShell title="OppoKodiAddon Configurator · setup wizard">
+    <WinShell title={t("app.versionLine", { name: t("app.title"), version: __APP_VERSION__ })}>
       <div className="app-header">
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginBottom: 8 }}>
           {screen !== "developer" && (
