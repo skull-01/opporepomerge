@@ -497,6 +497,15 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
+**As of 2026-06-03 (EOD #18 — embedded add-on build tag SHIPPED; cut configurator v0.9.3 via the CI tag).**
+**Clean stopping point — 0 open PRs; `main`@`6266aa7` is configurator v0.9.3; both build-tag PRs merged + CI-gated; release built + published by the CI tag job.**
+Cross-area follow-up to the v0.9.2 add-on validation (the operator chose the deferred "embedded tag", umbrella **[#322]**): full content hash · allow-unsigned-but-label.
+- **PR 1** [#325, **area:addon**] — `tools/package_installable_zip.py` stamps `resources/oppokodiaddon.sig` (addon id/version + a SHA-256 content manifest over the zip's files, via `compute_manifest_sig`) into the installable zip — Kodi-inert metadata under the allowlisted resources/ dir, **no runtime change**; the allowlist invariant (`set(namelist)==names`) holds. Gate: pytest -n auto **1162/3**, **serial coverage 99%**, ruff clean.
+- **PR 2** [#326, cfg] — `validate_addon_zip` recomputes the manifest (Rust `addon_manifest_sig` + dep `sha2`) → **signed** / **unsigned** (older build, still allowed + labeled) / **mismatch** (tampered → blocked). KodiPanel shows the state on the validation line.
+**Cross-language guard:** a cargo test pins `addon_manifest_sig` to the **same fixture hash** as `tests/test_addon_signature.py` (`bbcc6382…`) — Python (packaging) ↔ Rust (validation) can't drift. Then bump [#327] → tag **`configurator-v0.9.3`** → CI repackages `main`'s add-on (now signed) + publishes as Latest. Gates: `tsc -b` · vitest 356 · **cargo 54** · `vite build`. ENH **#323/#324** (+ umbrella **#322**) SHA-commented + **OPEN**; Phase-C rows in the checklist. **Resume (configurator):** Phase-C the dev-console + AutoScript + build-tag flows on real hardware, or a fresh theme.
+
+---
+
 **As of 2026-06-03 (EOD #17 — Developer Options UX refinements SHIPPED; cut configurator v0.9.2 via the CI tag).**
 **Clean stopping point — 0 open PRs; `main`@`07a3f3f` is configurator v0.9.2; all 3 refinement PRs merged + CI-gated; release built + published by the CI tag job.**
 Operator feedback after the AutoScript ship → 3 refinements (umbrella **[#314]**), answered the one open decision (add-on validation = identity+structure, not crypto), built + merged:
@@ -2280,6 +2289,13 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   **`configurator-v0.9.2`** → CI built MSI/NSIS + published as Latest. New configurator Rust cmds
   `validate_addon_zip` + `pick_addon_zip` (new dep `rfd`). Rewrote §3b's top to the EOD #17 record;
   noted under BUILD_PLAN §2; added the refinements' Phase-C section to the checklist. `main`@`07a3f3f`;
+  **0 open PRs**.
+- **2026-06-03 (EOD #18)** — Shipped the **embedded add-on build tag** (#322, the deferred v0.9.2
+  follow-up): PR #325 (add-on packaging stamps `resources/oppokodiaddon.sig`, a SHA-256 content
+  manifest; `compute_manifest_sig`) + PR #326 (configurator `validate_addon_zip` verifies it →
+  signed/unsigned/mismatch; Rust `addon_manifest_sig` + dep `sha2`) + bump #327; tagged
+  **`configurator-v0.9.3`**. Cross-language guard: `tests/test_addon_signature.py` ↔ a cargo test
+  both pin the same fixture hash. New cross-language guard + new configurator dep (`sha2`). `main`@`6266aa7`;
   **0 open PRs**.
 
 ---

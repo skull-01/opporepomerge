@@ -43,6 +43,14 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — embedded add-on build tag (2026-06-03, EOD #18) → v0.9.3
+
+The deferred follow-up to the v0.9.2 add-on validation (umbrella [#322](https://github.com/skull-01/script.oppo203.iso.external/issues/322)). The add-on packaging stamps a SHA-256 content-manifest tag (`resources/oppokodiaddon.sig`, Kodi-inert) and the configurator verifies it. **configurator v0.9.3** published as Latest on the `configurator-v0.9.3` tag (CI repackages `main`'s add-on, now signed). Gates green: add-on `pytest -n auto` **1162/3** + serial coverage **99%** + ruff clean; cfg `tsc -b` · vitest 356 · **cargo 54** · vite build. The Python↔Rust manifest is pinned to one shared fixture hash. **Mostly no Phase C** (software-only integrity tooling):
+
+- **PR 1 — packaging stamp** ([#325](https://github.com/skull-01/script.oppo203.iso.external/pull/325), #323, area:addon). **No Phase C** (no runtime change; the tag is Kodi-inert metadata, cross-language-pinned).
+- **PR 2 — configurator verify** ([#326](https://github.com/skull-01/script.oppo203.iso.external/pull/326), #324). **Phase C (real Windows host, optional):** in the Kodi tab, Browse to a **v0.9.3-built** add-on zip → confirm it reads `✓ Valid add-on vX.Y.Z — signed build ✓`; Browse to an **older (pre-tag)** zip → `— unsigned (older build)` (still uploadable); a hand-modified zip → `✗ build tag mismatch` and Upload **disabled**.
+- **Release — bump** ([#327](https://github.com/skull-01/script.oppo203.iso.external/pull/327)) **+ tag `configurator-v0.9.3`.** **Phase C:** install the published MSI/NSIS; verify SHA-256 against the release's `SHA256SUMS.txt` / `release-evidence/v0.9.3/BUILD_NOTES.md`.
+
 ### Configurator — Developer Options UX refinements (2026-06-03, EOD #17) → v0.9.2
 
 Operator feedback after the AutoScript ship (umbrella [#314](https://github.com/skull-01/script.oppo203.iso.external/issues/314)). **configurator v0.9.2** published as Latest by CI on the `configurator-v0.9.2` tag (bundles add-on v2.9.15). Gates green: `tsc -b` · **vitest 356** · **cargo test 53** (+`rfd`) · `vite build`; browser-verified each change.
