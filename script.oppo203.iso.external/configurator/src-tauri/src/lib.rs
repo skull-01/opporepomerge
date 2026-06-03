@@ -1843,6 +1843,60 @@ fn yamaha_input_path(input: &str) -> Result<String, String> {
     ))
 }
 
+/// Validate a raw Denon/Marantz protocol command (e.g. `PWON`, `MV50`, `MVUP`, `MUOFF`, `PW?`).
+/// Denon's IP control is line-oriented ASCII; the wire frame appends CR. Looser than the
+/// input-select validator (allows `?`, etc.) but still printable-ASCII-only and bounded, and case
+/// is preserved so the console sends exactly what was typed.
+fn denon_raw_command(command: &str) -> Result<String, String> {
+    let text = command.trim();
+    let n = text.chars().count();
+    if !(1..=64).contains(&n) {
+        return Err("Denon raw command must be 1-64 characters".to_string());
+    }
+    if !text.chars().all(|c| ('\x20'..='\x7e').contains(&c)) {
+        return Err("Denon raw command must be printable ASCII (no control characters)".to_string());
+    }
+    Ok(text.to_string())
+}
+
+/// Validate a raw Onkyo/Pioneer eISCP command payload (e.g. `!1PWR01`, `!1MVLUP`, `!1PWRQSTN`).
+/// Payloads start with `!`; we accept any printable-ASCII payload of bounded length and let
+/// eiscp_frame wrap it with the ISCP header.
+fn eiscp_raw_payload(command: &str) -> Result<String, String> {
+    let text = command.trim();
+    let n = text.chars().count();
+    if !(2..=64).contains(&n) {
+        return Err("eISCP payload must be 2-64 characters".to_string());
+    }
+    if !text.starts_with('!') {
+        return Err("eISCP payload must start with '!' (e.g. !1PWR01)".to_string());
+    }
+    if !text.chars().all(|c| ('\x20'..='\x7e').contains(&c)) {
+        return Err("eISCP payload must be printable ASCII".to_string());
+    }
+    Ok(text.to_string())
+}
+
+/// Validate a raw Yamaha MusicCast/YXC API path+query, e.g.
+/// `/YamahaExtendedControl/v1/main/setPower?power=on`. Fired as an HTTP GET, so it must be an
+/// absolute path with no traversal or header-splitting characters.
+fn yamaha_raw_path(path: &str) -> Result<String, String> {
+    let text = path.trim();
+    if text.is_empty() {
+        return Err("Yamaha raw path is empty".to_string());
+    }
+    if !text.starts_with('/') {
+        return Err("Yamaha raw path must start with '/'".to_string());
+    }
+    if text.chars().count() > 256 {
+        return Err("Yamaha raw path too long (max 256 characters)".to_string());
+    }
+    if text.contains("..") || text.chars().any(|c| matches!(c, '\r' | '\n' | ' ')) {
+        return Err("Yamaha raw path must not contain '..', spaces, or newlines".to_string());
+    }
+    Ok(text.to_string())
+}
+
 /// Compact, key-sorted Sony Audio Control API JSON-RPC body (matches build_sony_audio_payload:
 /// serde_json's default Map is a BTreeMap, so keys serialize sorted like Python's sort_keys=True).
 fn sony_audio_payload(method: &str, params: serde_json::Value) -> String {
@@ -2022,6 +2076,58 @@ fn avr_switch_sony_audio(
         timeout_ms.unwrap_or(5000),
     )?;
     device_response_ok(&resp)
+}
+
+/// Send a raw, arbitrary command to an AV receiver over its native transport -- distinct from the
+/// input-select palette. Denon/Marantz: a line-ASCII protocol command over telnet (:23, CR-framed).
+/// Onkyo/Pioneer: an eISCP payload framed over :60128. Yamaha: a MusicCast API path over HTTP (:80).
+/// Best-effort + hardware-pending; Sony's raw surface stays its setPlayContent URI box (its API has
+/// no line protocol, so there is nothing "raw" to type).
+#[tauri::command]
+fn avr_raw_send(
+    backend: String,
+    host: String,
+    command: String,
+    port: Option<u16>,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    match backend.as_str() {
+        "denon" => {
+            let cmd = denon_raw_command(&command)?;
+            let resp = socket_exchange(
+                &host,
+                port.unwrap_or(DENON_PORT),
+                format!("{cmd}\r").as_bytes(),
+                timeout_ms.unwrap_or(4000),
+            )?;
+            Ok(first_line_or_sent(&resp))
+        }
+        "eiscp" => {
+            let payload = eiscp_raw_payload(&command)?;
+            let resp = socket_exchange(
+                &host,
+                port.unwrap_or(EISCP_PORT),
+                &eiscp_frame(&payload),
+                timeout_ms.unwrap_or(4000),
+            )?;
+            Ok(first_line_or_sent(&resp))
+        }
+        "yamaha" => {
+            let p = port.unwrap_or(YAMAHA_PORT);
+            let path = yamaha_raw_path(&command)?;
+            let resp = socket_exchange(
+                &host,
+                p,
+                http_get_request(&host, p, &path).as_bytes(),
+                timeout_ms.unwrap_or(5000),
+            )?;
+            device_response_ok(&resp)
+        }
+        other => Err(format!(
+            "raw command unsupported for backend '{other}' (Sony uses the setPlayContent URI box)"
+        )),
+    }
 }
 
 // ============================================================
@@ -2621,7 +2727,7 @@ fn pick_addon_zip() -> Option<String> {
 mod tests {
     use super::{
         adb_switch_command_line, box_reset_targets, classify_frame, copy_progress_percent,
-        denon_input_command,
+        denon_input_command, denon_raw_command, eiscp_raw_payload, yamaha_raw_path,
         device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
         addon_manifest_sig, format_external_command, http_get_request, json_post_request,
         kodi_enable_body, nas_unc, validate_addon_contents,
@@ -2751,6 +2857,43 @@ mod tests {
         );
         assert!(yamaha_input_path("").is_err());
         assert!(yamaha_input_path("bad input").is_err());
+    }
+
+    #[test]
+    fn denon_raw_command_accepts_protocol_tokens_and_rejects_junk() {
+        // trims, preserves case (raw console sends exactly what was typed).
+        assert_eq!(denon_raw_command("  PWON ").unwrap(), "PWON");
+        assert_eq!(denon_raw_command("MV505").unwrap(), "MV505");
+        assert_eq!(denon_raw_command("PW?").unwrap(), "PW?"); // query is allowed (unlike SI)
+        assert!(denon_raw_command("").is_err());
+        assert!(denon_raw_command("PW\rON").is_err()); // embedded CR (control char)
+        assert!(denon_raw_command(&"X".repeat(65)).is_err()); // over the length bound
+    }
+
+    #[test]
+    fn eiscp_raw_payload_requires_bang_prefix_and_ascii() {
+        assert_eq!(eiscp_raw_payload(" !1PWR01 ").unwrap(), "!1PWR01");
+        assert_eq!(eiscp_raw_payload("!1PWRQSTN").unwrap(), "!1PWRQSTN");
+        assert!(eiscp_raw_payload("PWR01").is_err()); // missing leading !
+        assert!(eiscp_raw_payload("!").is_err()); // too short
+        assert!(eiscp_raw_payload("!1PWR\n01").is_err()); // control char
+        // a valid raw payload frames with the ISCP magic + a CR-terminated body.
+        let frame = eiscp_frame(&eiscp_raw_payload("!1MVLUP").unwrap());
+        assert_eq!(&frame[0..4], b"ISCP");
+        assert_eq!(&frame[16..], b"!1MVLUP\r");
+    }
+
+    #[test]
+    fn yamaha_raw_path_requires_absolute_safe_path() {
+        assert_eq!(
+            yamaha_raw_path("/YamahaExtendedControl/v1/main/setPower?power=on").unwrap(),
+            "/YamahaExtendedControl/v1/main/setPower?power=on"
+        );
+        assert!(yamaha_raw_path("main/setPower").is_err()); // not absolute
+        assert!(yamaha_raw_path("/a/../b").is_err()); // traversal
+        assert!(yamaha_raw_path("/a b").is_err()); // space would split the request line
+        assert!(yamaha_raw_path("/a\r\nHost: evil").is_err()); // header injection
+        assert!(yamaha_raw_path("").is_err());
     }
 
     #[test]
@@ -3227,6 +3370,7 @@ pub fn run() {
             avr_switch_eiscp,
             avr_switch_yamaha,
             avr_switch_sony_audio,
+            avr_raw_send,
             tv_switch_sony_bravia,
             tv_sony_bravia_ircc,
             tv_switch_external,
