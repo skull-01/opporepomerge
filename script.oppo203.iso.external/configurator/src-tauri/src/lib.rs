@@ -1354,6 +1354,60 @@ fn kodi_set_addon_enabled(host: String, user: String) -> Result<bool, String> {
     Ok(kodi_enable_ok(&run_ssh_capture(&target, &cmd)?))
 }
 
+/// Restart Kodi on the box over SSH (`systemctl restart kodi`), for the Developer Options remote
+/// restart. Mirrors the restart the install flow already issues. Software-verified only.
+#[tauri::command]
+fn kodi_restart(host: String, user: String) -> Result<(), String> {
+    validate_ssh_target(&host, &user)?;
+    run_ssh(&format!("{user}@{host}"), "systemctl restart kodi")
+}
+
+/// Deploy a user-picked add-on `.zip` onto the box over SSH and expand it (Developer Options
+/// upload-any-version), backing up any existing copy first. Unlike `install_addon` this takes an
+/// arbitrary local zip rather than the bundled one and never restarts -- the dev workflow
+/// re-registers via `kodi_set_addon_enabled` to minimise restarts during test cycles. The version
+/// is read from the zip's addon.xml. SSH/box behaviour is software-verified only.
+#[tauri::command]
+fn install_addon_zip(
+    host: String,
+    user: String,
+    addons_path: String,
+    zip_path: String,
+) -> Result<InstallReport, String> {
+    validate_ssh_target(&host, &user)?;
+    let zip = PathBuf::from(&zip_path);
+    if !zip.is_file() {
+        return Err(format!("zip not found: {zip_path}"));
+    }
+    let version = read_addon_version_from_zip(&zip)?;
+    let ssh_target = format!("{user}@{host}");
+    let base = addons_path.trim_end_matches('/');
+    let remote_dir = format!("{base}/{ADDON_ID}");
+    let remote_zip = format!("{base}/.{ADDON_ID}.oppocfg.zip");
+    let stamp = backup_suffix();
+    let bytes = fs::read(&zip).map_err(|e| e.to_string())?;
+    run_ssh_stdin(
+        &ssh_target,
+        &format!("mkdir -p '{base}' && cat > '{remote_zip}'"),
+        &bytes,
+    )?;
+    let script = format!(
+        "if [ -d '{remote_dir}' ]; then mv '{remote_dir}' '{remote_dir}.{stamp}.bak' && printf 'BAK:%s\\n' '{remote_dir}.{stamp}.bak'; fi && (python3 -m zipfile -e '{remote_zip}' '{base}/' || unzip -oq '{remote_zip}' -d '{base}/') && rm -f '{remote_zip}'"
+    );
+    let out = run_ssh_capture(&ssh_target, &script)?;
+    let backed_up = out
+        .lines()
+        .find(|l| l.starts_with("BAK:"))
+        .map(|l| l.trim_start_matches("BAK:").to_string());
+    Ok(InstallReport {
+        addon_id: ADDON_ID.to_string(),
+        version,
+        files: 0,
+        target: remote_dir,
+        backed_up,
+    })
+}
+
 // ============================================================
 // Live OPPO verbose-mode monitor (dashboard live stream)
 // ============================================================
@@ -2532,6 +2586,8 @@ pub fn run() {
             oppo_http_get,
             bundled_addon_info,
             install_addon,
+            install_addon_zip,
+            kodi_restart,
             kodi_set_addon_enabled,
             tv_switch_roku,
             avr_switch_denon,
