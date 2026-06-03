@@ -470,6 +470,63 @@ fn export_autoscript_bundle(
 }
 
 // ============================================================
+// AutoScript over telnet (Developer Options) — re-install/update once a telnet shell is up
+// ============================================================
+//
+// A fresh JB OPPO has no shell yet, so the USB export is the primary install path; once AutoScript's
+// telnetd (port 2323) is running, this pushes/updates the script over it. Best-effort + Phase-C: the
+// player's busybox telnetd presents a raw shell; IAC option negotiation is not handled.
+
+const AUTOSCRIPT_TELNET_PORT: u16 = 2323;
+
+/// Build the shell snippet that writes `contents` to `remote_path` over a telnet shell (a quoted
+/// heredoc, so the script's `$vars` / quotes pass through literally), makes it executable, and
+/// prints a completion marker. `contents` is LF-normalized (the player runs /bin/sh).
+fn telnet_push_command(remote_path: &str, contents: &str) -> String {
+    let body = contents.replace("\r\n", "\n").replace('\r', "\n");
+    format!(
+        "cat > '{remote_path}' <<'OPPOEOF'\n{body}\nOPPOEOF\nchmod +x '{remote_path}'\necho OPPO_AS_PUSH_DONE\n"
+    )
+}
+
+/// Check whether a telnet shell is answering on the player (AutoScript's telnetd): send an echo and
+/// look for the marker in the reply. Best-effort + hardware-pending.
+#[tauri::command]
+fn autoscript_telnet_check(host: String, port: Option<u16>) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    let p = port.unwrap_or(AUTOSCRIPT_TELNET_PORT);
+    let reply = socket_exchange(&host, p, b"echo OPPO_AS_TELNET_OK\n", 4000)?;
+    if reply.contains("OPPO_AS_TELNET_OK") {
+        Ok(format!("telnet shell responding on :{p}"))
+    } else {
+        Ok(format!("connected to :{p} but no shell echo -- got: {}", first_line_or_sent(&reply)))
+    }
+}
+
+/// Push the AutoScript to `remote_path` on the player over its telnet shell + chmod it. Returns the
+/// outcome (looks for the completion marker). Best-effort + hardware-pending.
+#[tauri::command]
+fn autoscript_push_telnet(
+    host: String,
+    port: Option<u16>,
+    remote_path: String,
+    contents: String,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    if remote_path.is_empty() || remote_path.contains(['\'', '\r', '\n']) {
+        return Err("invalid remote path (no quotes or newlines)".to_string());
+    }
+    let p = port.unwrap_or(AUTOSCRIPT_TELNET_PORT);
+    let cmd = telnet_push_command(&remote_path, &contents);
+    let reply = socket_exchange(&host, p, cmd.as_bytes(), 8000)?;
+    if reply.contains("OPPO_AS_PUSH_DONE") {
+        Ok(format!("pushed {} bytes to {remote_path} and chmod +x", contents.len()))
+    } else {
+        Ok(format!("push sent to {remote_path}; response: {}", first_line_or_sent(&reply)))
+    }
+}
+
+// ============================================================
 // Test-ISO copy to the media share (Phase 4.2 self-test; D-2 = user supplies the ISO)
 // ============================================================
 //
@@ -2406,7 +2463,7 @@ mod tests {
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
         parse_kodi_version,
         parse_verbose_mode, percent_encode, remove_existing_paths, roku_keypress_request,
-        sony_ircc_envelope, subnet_hosts,
+        sony_ircc_envelope, subnet_hosts, telnet_push_command,
         safe_app_rel,
         smartthings_command_url, smartthings_set_input_body, sony_audio_set_input_payload,
         sony_bravia_set_input_body, to_hex, unc_host, validate_copy_paths, yamaha_input_path,
@@ -2545,6 +2602,15 @@ mod tests {
         assert!(req.contains(&format!("Content-Length: {}\r\n", body.len())));
         assert!(req.contains("X-Auth-PSK: k\r\n"));
         assert!(req.ends_with(body));
+    }
+
+    #[test]
+    fn telnet_push_command_uses_quoted_heredoc_and_marker() {
+        let c = telnet_push_command("/tmp/usb/sda1/autoexec.sh", "#!/bin/sh\necho hi\n");
+        assert!(c.contains("cat > '/tmp/usb/sda1/autoexec.sh' <<'OPPOEOF'"));
+        assert!(c.contains("chmod +x '/tmp/usb/sda1/autoexec.sh'"));
+        assert!(c.contains("OPPO_AS_PUSH_DONE"));
+        assert!(c.contains("#!/bin/sh\necho hi"));
     }
 
     #[test]
@@ -2948,7 +3014,9 @@ pub fn run() {
             reset_app_data,
             diagnostics_env,
             write_diagnostics,
-            export_autoscript_bundle
+            export_autoscript_bundle,
+            autoscript_telnet_check,
+            autoscript_push_telnet
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

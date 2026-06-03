@@ -56,6 +56,8 @@ export function AutoScriptPanel({ state }: DevPanelProps) {
   const [openPorts, setOpenPorts] = useState<number[] | null>(null);
   const [exportMsg, setExportMsg] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [remotePath, setRemotePath] = useState("/tmp/usb/sda1/autoexec.sh");
+  const [confirmPush, setConfirmPush] = useState(false);
 
   const opts: AutoScriptOptions = {
     enableTelnet,
@@ -115,6 +117,32 @@ export function AutoScriptPanel({ state }: DevPanelProps) {
       setCopied(true);
     } catch (e) {
       setExportMsg(`Copy failed: ${String(e)}`);
+    }
+  }
+
+  async function checkTelnet() {
+    tx.push({ dir: "info", text: `telnet check ${host}:${Number(telnetPort) || 2323}` });
+    try {
+      const r = await invoke<string>("autoscript_telnet_check", { host, port: Number(telnetPort) || 2323 });
+      tx.push({ dir: "rx", text: r });
+    } catch (e) {
+      tx.push({ dir: "err", text: String(e) });
+    }
+  }
+
+  async function pushTelnet() {
+    setConfirmPush(false);
+    tx.push({ dir: "tx", text: `push autoexec.sh -> ${remotePath} over telnet :${Number(telnetPort) || 2323}` });
+    try {
+      const r = await invoke<string>("autoscript_push_telnet", {
+        host,
+        port: Number(telnetPort) || 2323,
+        remotePath,
+        contents: script,
+      });
+      tx.push({ dir: "rx", text: r });
+    } catch (e) {
+      tx.push({ dir: "err", text: String(e) });
     }
   }
 
@@ -184,6 +212,29 @@ export function AutoScriptPanel({ state }: DevPanelProps) {
           ))}
         </div>
         {exportMsg && <p className="field-hint" style={{ marginBottom: 0 }} role="status">{exportMsg}</p>}
+      </section>
+
+      <section className="card">
+        <h3 style={{ marginTop: 0 }}>Install over telnet</h3>
+        <div className="callout info" style={{ marginBottom: 12 }}>
+          <span className="callout-icon">i</span>
+          <div className="callout-body">
+            For a fresh player, use <strong>Export to Desktop</strong> + a USB drive first. Once
+            AutoScript's telnet shell is up, push updates here without re-doing the USB.
+          </div>
+        </div>
+        <div className="row wrap" style={{ gap: 12, alignItems: "flex-end" }}>
+          <Field id="dev-as-remote" label="Remote path on the player" value={remotePath} setValue={setRemotePath} width={280} />
+          <button className="btn outline" onClick={() => void checkTelnet()}>Check telnet</button>
+          {confirmPush ? (
+            <span className="row" style={{ gap: 6 }}>
+              <button className="btn danger" onClick={() => void pushTelnet()}>Confirm push</button>
+              <button className="btn ghost" onClick={() => setConfirmPush(false)}>Cancel</button>
+            </span>
+          ) : (
+            <button className="btn" onClick={() => setConfirmPush(true)}>Install over telnet…</button>
+          )}
+        </div>
       </section>
 
       <section className="card">
