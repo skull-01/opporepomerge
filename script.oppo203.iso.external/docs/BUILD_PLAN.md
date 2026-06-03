@@ -66,7 +66,8 @@ verbose-push stream, the remote-control commands (`oppo_power`/`tv_switch_*`/`av
 `bundled_addon_info`).
 
 **Status: PLANNED — awaiting operator Go.** The OPPO **HTTP command catalog** already landed as the
-data layer (PR #285 → `configurator/src/oppo-commands/http-commands.ts`).
+data layer (PR #285 → `configurator/src/oppo-commands/http-commands.ts`). All five device
+sub-sections (Kodi / TV / OPPO / AVR / NAS) are now fully specified.
 
 ### Per-PR scope
 - **PR A — Dev-tab shell + nav** (~150 LOC, UI only). Header "Developer…" entry (hidden on dev
@@ -91,10 +92,25 @@ data layer (PR #285 → `configurator/src/oppo-commands/http-commands.ts`).
   `captureSettingsSnapshot`); remote restart; **register-without-restart** (`kodi_set_addon_enabled`);
   **upload-any-version** = a new `install_addon_zip(path)` (deploy a user-picked `.zip` + JSON-RPC
   enable, to minimize restarts during test cycles).
-- **PR D — TV / AVR / NAS panels** (~200 LOC, mostly reuse). Remote control via existing
-  `tv_switch_*` / `avr_switch_*` / `smartthings_switch_request`; "live" = reachability + last-command
-  status (these devices expose **no telemetry feed** — stated honestly, not a faked stream); NAS =
-  SMB :445 reachability + the deploy path.
+- **PR D-TV — TV command console** (~220 LOC + ~2 thin Rust cmds). **All TV backends available for
+  experimentation regardless of the configured one** — per-backend palettes: **Roku ECP** (any
+  keypress/launch via `tv_switch_roku`, which already takes a `key`), **ADB** (any `input
+  keyevent`/`am start` via `tv_switch_adb`), **Sony Bravia** (IRCC + REST), **Samsung** (`samsungctl
+  KEY_*`), **LG webOS**, **SmartThings** (device commands via `smartthings_switch_request`),
+  **custom_command** (raw shell) — each grouped with its command set + a free-text **raw box**; fired
+  via the existing `tv_switch_*`/`smartthings_switch_request` (+ thin generic fire commands where
+  today's are input-only). **Live transcript** of command → response (reuse the IPC log; TVs expose no
+  telemetry feed, so it's a command/response log + reachability — stated honestly).
+- **PR D-AVR — AVR command console** (~180 LOC). Same pattern for **all AVR backends** —
+  **Denon/Marantz** (`SI`/`MV`/`PW`, :23), **Onkyo/Pioneer/Integra eISCP** (`!1xxx`, :60128),
+  **Yamaha** (`setInput`/setX, :80), **Sony audio** (REST) — per-backend palette + raw box, fired via
+  `avr_switch_*`, with the same live command/response transcript.
+- **PR D-NAS — NAS panel** (~220 LOC + ~2 Rust cmds). **Scan** the LAN for NAS hosts (`scan_nas_hosts`:
+  subnet sweep of NAS service ports via the existing `tv_port_probe`/`connect_timeout` logic —
+  **445/139 SMB, 2049 NFS, 548 AFP, 21 FTP**) and **identify the protocol** by which port answers;
+  **test-login to a share** for troubleshooting (`nas_test_login`: SMB auth + list, reusing/extending
+  `smb_test_write`; NFS mount/access check) — credentials **redacted in the transcript + never
+  persisted**; a **live message panel** of scan results, login attempts, and errors.
 - **PR E — LAN scan for a Kodi box** (~120 LOC + 1 Rust cmd). New `scan_kodi_hosts`: enumerate the
   configurator host's local IPv4 /24, parallel-probe each host on :8080 with a short timeout, confirm
   each hit via JSON-RPC `Application.GetProperties` (also yields the Kodi version); a "Scan network"
@@ -104,8 +120,10 @@ data layer (PR #285 → `configurator/src/oppo-commands/http-commands.ts`).
 ```
 PR A (shell) ──┬─► PR B-OPPO (console; HTTP catalog ✅ landed #285)
                ├─► PR C (Kodi dev tools)
-               ├─► PR D (TV / AVR / NAS panels)
-               └─► PR E (LAN scan)
+               ├─► PR D-TV (TV command console)
+               ├─► PR D-AVR (AVR command console)
+               ├─► PR D-NAS (scan + protocol + test-login + live)
+               └─► PR E (Kodi LAN scan)   ← shares a subnet-sweep helper with D-NAS
 ```
 
 ### 📊 Rollup
@@ -114,8 +132,10 @@ PR A (shell) ──┬─► PR B-OPPO (console; HTTP catalog ✅ landed #285)
 | A — shell | 150 | 0 | Low — mirrors the #264 reset-all pattern |
 | B-OPPO — console | 220 | ~3 (generic HTTP GET + getglobalinfo/checkfolderhasBDMV/remote-key) | Med — device I/O is Phase-C; `#SVM` + single-stream caveats |
 | C — Kodi dev | 250 | 1 (`install_addon_zip`) | **Med-High** — arbitrary-zip upload + restart (powerful; dev-gated) |
-| D — TV/AVR/NAS | 200 | 0 | Med — reuse; control is Phase-C; no telemetry for TV/AVR/NAS |
-| E — LAN scan | 120 | 1 (`scan_kodi_hosts`) | Med — scan perf (parallel + timeout); real-network behavior Phase-C |
+| D-TV — TV console | 220 | ~2 | Med — all-backend command catalogs; control is Phase-C; no TV telemetry feed |
+| D-AVR — AVR console | 180 | 0 | Med — all-backend command catalogs; control is Phase-C |
+| D-NAS — NAS panel | 220 | ~2 (`scan_nas_hosts`, `nas_test_login`) | Med-High — scan + share test-login (creds redacted); Phase-C |
+| E — Kodi LAN scan | 120 | 1 (`scan_kodi_hosts`) | Med — scan perf (parallel + timeout); real-network Phase-C |
 
 ### ⚠️ Risks & open inputs
 - **Nearly all behavior is Phase-C** (real devices). In-session only the UI + pure logic (command
