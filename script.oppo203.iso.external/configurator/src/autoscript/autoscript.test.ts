@@ -38,6 +38,14 @@ const CASES: Record<string, AutoScriptOptions> = {
     adbPort: 5555,
     heartbeatPath: "/tmp/usb/sda1/oppo_autoexec_ran",
   },
+  crlf_paths: {
+    mountType: "cifs",
+    mountRemote: "//nas/Media\r",
+    mountLocal: "/tmp/share\r\n",
+    cifsUser: "u\ru",
+    cifsPass: "p\np",
+    heartbeatPath: "/tmp/usb/sda1/oppo_autoexec_ran\r",
+  },
 };
 
 describe("AutoScript generator — byte-identical to the add-on", () => {

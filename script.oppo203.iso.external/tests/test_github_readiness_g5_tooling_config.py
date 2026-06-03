@@ -19,7 +19,7 @@ def test_pyproject_declares_non_runtime_tooling_baseline() -> None:
     text = _read("pyproject.toml")
     assert "[project]" in text
     assert 'name = "script-oppo203-iso-external"' in text
-    assert 'version = "2.9.15"' in text
+    assert 'version = "2.9.16"' in text
     assert 'requires-python = ">=3.9"' in text
     assert "[tool.github-readiness]" in text
     assert "runtime_behavior_changed = false" in text

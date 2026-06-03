@@ -52,7 +52,7 @@ python tools/test_layout.py --check
 python tools/i18n_extract.py --check
 pytest -q tests/test_v2910_final_release.py
 pytest -q tests/test_v2910*.py
-python tools/audit_release.py --expected-version 2.9.15
+python tools/audit_release.py --expected-version 2.9.16
 ```
 
 For release or packaging work, also run the full pytest/unittest/coverage gates, packaging script, runtime ZIP audit, and post-unpack dev-source verification.

@@ -1,14 +1,14 @@
 # Shared documentation metadata for generated reference blocks.
 # This file is intentionally dependency-free and parsed by tools/render_docs.py.
 release:
-  version: 2.9.15
-  build_number: 24
-  build_id: v2.9.15 Final
-  title: Pure-HTTP/436 control (Xnoppo V3) — 7th preset, HTTP monitor and orchestration, BDMV-first disc nav, and selectable HDMI switching
+  version: 2.9.16
+  build_number: 25
+  build_id: v2.9.16 Final
+  title: Maintenance and hardening — AVR and Pure-HTTP correctness, monitor and transport hardening, settings schema guards, and coercion-crash fixes
   package_suffix: final
   hardware_validation_claimed: false
   runtime_behavior_changed: true
-  source_recommendation: v2.9.15 Pure-HTTP/436 control (Xnoppo V3): 7th preset http_handoff_http, HTTP monitor and launch orchestration, checkfolderhasBDMV-first disc nav, and selectable HDMI switching
+  source_recommendation: v2.9.16 maintenance/hardening: AVR http_handoff eligibility + HTTP path translation, SVM3/eISCP transport hardening, configurator-owned settings schema guards, honest Pure-HTTP launch failures, distinct Samsung HDMI defaults, and property-test coercion-crash fixes
 protected_behavior:
   - 4K/UHD/2160p disc-style interception only
   - loose/raw video files stay with Kodi

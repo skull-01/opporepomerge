@@ -230,8 +230,8 @@ def test_tv_control_uses_guarded_smartthings_helper_nonfatally_without_ack():
 
 
 def test_build10_metadata_and_documentation_identity():
-    assert version.BUILD_ID == "v2.9.15 Final"
-    assert version.BUILD_NUMBER == 24
+    assert version.BUILD_ID == "v2.9.16 Final"
+    assert version.BUILD_NUMBER == 25
     for rel in ("addon.xml", "README.md", "reference.md", "web-references.md"):
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 11" in text

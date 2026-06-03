@@ -1,4 +1,4 @@
-"""v2.9.15 Build 3 — in-add-on add-on-language switcher (ENH-#42, language part).
+"""v2.9.16 Build 3 — in-add-on add-on-language switcher (ENH-#42, language part).
 
 Covers the language half of ENH-#42:
 - `i18n.supported_languages()` now lists all 12 bundled locales (was stale at 7).

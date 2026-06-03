@@ -153,7 +153,7 @@ def test_build3_metadata_and_release_audit_evidence():
     )
     audit = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.15")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.16")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

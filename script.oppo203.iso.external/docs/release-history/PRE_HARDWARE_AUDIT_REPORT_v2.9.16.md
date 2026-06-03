@@ -1,0 +1,3 @@
+# Pre-Hardware Audit Report — v2.9.16 Final
+
+The release is ready for user-owned hardware validation after software verification. The AVR/Pure-HTTP correctness fixes, the monitor/transport hardening, the settings schema guards, the honest launch-failure reporting, the distinct Samsung HDMI defaults, the coercion-crash fixes, and the AutoScript CR/LF hardening all pass their software gates (full pytest 1187/3, 99% coverage, `mypy --strict` 51/0, ruff clean, release audit PASS, configurator gate green), but their real-device behavior on an OPPO/Kodi/NAS/AVR/TV chain is pending a tester report. Support-matrix wording separates software support from real hardware-validated support. Hardware validation is not performed and not claimed.
