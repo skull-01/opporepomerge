@@ -57,6 +57,12 @@ A property/fuzz sweep over the add-on's pure helpers ([#329](https://github.com/
 
 - **No Phase C.** Pure input-coercion hardening, fully covered by automated tests; nothing hardware-observable changes and no happy-path behavior changes. **Phase B sanity only:** confirm `main` still builds + the add-on suite is green (it is). These fixes ride **configurator v0.9.4** (CI repackages `main`'s add-on into the bundle).
 
+### Configurator — AVR raw-command console (2026-06-03) → rides v0.9.4
+
+New dev-panel feature ([#331](https://github.com/skull-01/script.oppo203.iso.external/issues/331), area:configurator; implemented `26dcc30`, PR [#332](https://github.com/skull-01/script.oppo203.iso.external/pull/332), merged `210b7b4`). The AV receiver tab gains a raw-command console (arbitrary power/volume/mute/query) alongside input-select, fired through a new thin Rust `avr_raw_send`: Denon line-ASCII over telnet (:23), Onkyo/Pioneer eISCP framed over :60128, Yamaha MusicCast API path over HTTP (:80). Sony keeps its `setPlayContent` URI box (no line protocol). Pure builders (`denon_raw_command`/`eiscp_raw_payload`/`yamaha_raw_path`) reject control chars / over-length / traversal / header-splitting before any socket opens. Gate: **cargo 57**, `tsc -b`, **vitest 356**, `vite build`; preview render verified (Denon + eISCP palettes, placeholders, hints).
+
+- **Phase C (real receivers, optional):** with a Denon/Marantz, Onkyo/Integra/Pioneer, or Yamaha receiver on the LAN, set its IP and fire a raw command (e.g. Denon `PWON` → receiver powers on; eISCP `!1PWRQSTN` → returns a power-status reply; Yamaha `…/getStatus` → JSON status). Confirm the transcript shows the device reply (or a clean "command sent" when the device stays silent). Invalid payloads (e.g. a Yamaha path without a leading `/`, or a Denon command with a control char) must be rejected client-side with an error, not sent. Rides **configurator v0.9.4**.
+
 ### Configurator — Developer Options UX refinements (2026-06-03, EOD #17) → v0.9.2
 
 Operator feedback after the AutoScript ship (umbrella [#314](https://github.com/skull-01/script.oppo203.iso.external/issues/314)). **configurator v0.9.2** published as Latest by CI on the `configurator-v0.9.2` tag (bundles add-on v2.9.15). Gates green: `tsc -b` · **vitest 356** · **cargo test 53** (+`rfd`) · `vite build`; browser-verified each change.
