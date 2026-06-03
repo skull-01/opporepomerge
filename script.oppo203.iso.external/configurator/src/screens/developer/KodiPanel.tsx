@@ -9,6 +9,8 @@ import type { DevPanelProps } from "./types";
 
 const ADDON_ID = "script.oppo203.iso.external";
 
+type KodiHost = { ip: string; version: string | null };
+
 /** Pull version="..." off the first <addon> element of an addon.xml string (mirrors the Rust parse). */
 function parseAddonVersion(xml: string): string | null {
   return /<addon\b[^>]*\bversion="([^"]+)"/.exec(xml)?.[1] ?? null;
@@ -21,9 +23,13 @@ function parseAddonVersion(xml: string): string | null {
  * the zip upload (which overwrites the installed add-on) are confirm-gated. All box I/O is
  * hardware-pending.
  */
-export function KodiPanel({ state }: DevPanelProps) {
+export function KodiPanel({ state, set }: DevPanelProps) {
   const addonsDir = addonsDirForPlatform(state.kodiPlatform ?? "coreelec");
 
+  const [scanBase, setScanBase] = useState("");
+  const [scanning, setScanning] = useState(false);
+  const [boxes, setBoxes] = useState<KodiHost[]>([]);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
   const [bundled, setBundled] = useState<string | null>(null);
   const [installed, setInstalled] = useState<string | null>(null);
   const [versErr, setVersErr] = useState<string | null>(null);
@@ -33,6 +39,23 @@ export function KodiPanel({ state }: DevPanelProps) {
   const [confirm, setConfirm] = useState<null | "restart" | "upload">(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  async function scanForBoxes() {
+    setScanning(true);
+    setScanMsg(null);
+    try {
+      const found = await invoke<KodiHost[]>("scan_kodi_hosts", { baseIp: scanBase.trim() || undefined });
+      setBoxes(found);
+      setScanMsg(
+        found.length ? `Found ${found.length} Kodi box(es).` : "No Kodi boxes answered on :8080."
+      );
+    } catch (e) {
+      setBoxes([]);
+      setScanMsg(`Scan failed: ${String(e)}`);
+    } finally {
+      setScanning(false);
+    }
+  }
 
   async function refreshVersions() {
     setBusy(true);
@@ -148,6 +171,38 @@ export function KodiPanel({ state }: DevPanelProps) {
 
   return (
     <div className="stack-lg">
+      <section className="card">
+        <h3 style={{ marginTop: 0 }}>Find the Kodi box</h3>
+        <div className="row wrap" style={{ alignItems: "flex-end", gap: 12 }}>
+          <div className="field" style={{ maxWidth: 280 }}>
+            <label className="field-label" htmlFor="dev-kodi-scanbase">
+              Base IP (optional — defaults to this host's subnet)
+            </label>
+            <input id="dev-kodi-scanbase" className="input" value={scanBase} placeholder="10.0.1.0" spellCheck={false} onChange={(e) => setScanBase(e.target.value)} />
+          </div>
+          <button className="btn" disabled={scanning} onClick={() => void scanForBoxes()}>
+            {scanning ? "Scanning…" : "Scan network"}
+          </button>
+        </div>
+        <span className="field-hint">Probes :8080 across the /24 and confirms each hit via Kodi JSON-RPC (yields the version). Currently set: <span className="mono">{state.kodiIp}</span>.</span>
+        {boxes.length > 0 && (
+          <div className="model-list" style={{ marginTop: 12 }}>
+            {boxes.map((b) => (
+              <button
+                key={b.ip}
+                className="model-row"
+                onClick={() => { set({ kodiIp: b.ip }); setScanMsg(`Kodi IP set to ${b.ip}.`); }}
+                style={{ background: "none", border: "none", font: "inherit", textAlign: "left", cursor: "pointer", width: "100%" }}
+              >
+                <span className="mono">{b.ip}</span>
+                <span className="model-row-meta">{b.version ? `Kodi ${b.version}` : "Kodi (version n/a)"}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {scanMsg && <p className="field-hint" style={{ marginBottom: 0 }} role="status">{scanMsg}</p>}
+      </section>
+
       <section className="card">
         <div className="row-between" style={{ marginBottom: 10 }}>
           <h3 style={{ margin: 0 }}>Add-on version</h3>

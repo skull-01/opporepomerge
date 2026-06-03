@@ -2309,6 +2309,70 @@ fn nas_test_login(
     }
 }
 
+const KODI_JSONRPC_PORT: u16 = 8080;
+
+/// The JSON-RPC body asking Kodi for its application version.
+fn kodi_version_body() -> String {
+    r#"{"jsonrpc":"2.0","id":1,"method":"Application.GetProperties","params":{"properties":["version"]}}"#
+        .to_string()
+}
+
+/// Parse the Kodi version ("21.1") from an Application.GetProperties reply (HTTP response or bare
+/// body), or None if it isn't a parseable JSON-RPC result.
+fn parse_kodi_version(reply: &str) -> Option<String> {
+    let body = reply.split_once("\r\n\r\n").map(|(_, b)| b).unwrap_or(reply);
+    let v: serde_json::Value = serde_json::from_str(body.trim()).ok()?;
+    let ver = v.get("result")?.get("version")?;
+    let major = ver.get("major")?.as_u64()?;
+    let minor = ver.get("minor").and_then(serde_json::Value::as_u64).unwrap_or(0);
+    Some(format!("{major}.{minor}"))
+}
+
+/// True if a :8080 reply looks like Kodi's JSON-RPC web server (a JSON-RPC body or its XBMC realm),
+/// so a generic service on :8080 isn't reported as a Kodi box.
+fn looks_like_kodi(reply: &str) -> bool {
+    let low = reply.to_ascii_lowercase();
+    low.contains("jsonrpc") || low.contains("\"version\"") || low.contains("xbmc")
+}
+
+#[derive(serde::Serialize)]
+struct KodiHost {
+    ip: String,
+    version: Option<String>,
+}
+
+/// Scan the local /24 for Kodi boxes: parallel-probe :8080, then confirm each hit via JSON-RPC
+/// Application.GetProperties (which also yields the version). `base_ip` overrides the auto-detected
+/// subnet. Reuses the shared subnet sweep with the NAS scan.
+#[tauri::command]
+fn scan_kodi_hosts(base_ip: Option<String>, timeout_ms: Option<u64>) -> Result<Vec<KodiHost>, String> {
+    let base = resolve_scan_base(base_ip)?;
+    let hosts = subnet_hosts(base);
+    let open: Vec<std::net::Ipv4Addr> = parallel_open_ports(&hosts, &[KODI_JSONRPC_PORT], timeout_ms.unwrap_or(300))
+        .into_iter()
+        .filter(|(_, o)| !o.is_empty())
+        .map(|(ip, _)| ip)
+        .collect();
+    let confirmed: Vec<KodiHost> = std::thread::scope(|s| {
+        let handles: Vec<_> = open
+            .iter()
+            .map(|&ip| {
+                s.spawn(move || {
+                    let req = json_post_request(&ip.to_string(), KODI_JSONRPC_PORT, "/jsonrpc", &kodi_version_body(), "");
+                    match socket_exchange(&ip.to_string(), KODI_JSONRPC_PORT, req.as_bytes(), 1500) {
+                        Ok(resp) if looks_like_kodi(&resp) => {
+                            Some(KodiHost { ip: ip.to_string(), version: parse_kodi_version(&resp) })
+                        }
+                        _ => None,
+                    }
+                })
+            })
+            .collect();
+        handles.into_iter().filter_map(|h| h.join().unwrap()).collect()
+    });
+    Ok(confirmed)
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -2316,10 +2380,12 @@ mod tests {
         denon_input_command,
         device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
         format_external_command, http_get_request, json_post_request, kodi_enable_body, nas_unc,
-        kodi_enable_ok, kodi_get_item_body, oppo_http_get_request, oppo_info_request,
+        kodi_enable_ok, kodi_get_item_body, kodi_version_body, looks_like_kodi,
+        oppo_http_get_request, oppo_info_request,
         oppo_play_payload,
         oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
+        parse_kodi_version,
         parse_verbose_mode, percent_encode, remove_existing_paths, roku_keypress_request,
         sony_ircc_envelope, subnet_hosts,
         safe_app_rel,
@@ -2522,6 +2588,26 @@ mod tests {
         assert!(kodi_enable_ok(r#"{"result": "OK"}"#));
         assert!(!kodi_enable_ok(r#"{"error":{"code":-32602}}"#));
         assert!(!kodi_enable_ok("not json"));
+    }
+
+    #[test]
+    fn parse_kodi_version_reads_major_minor() {
+        let body = "HTTP/1.1 200 OK\r\n\r\n{\"id\":1,\"jsonrpc\":\"2.0\",\"result\":{\"version\":{\"major\":21,\"minor\":1,\"revision\":\"x\",\"tag\":\"stable\"}}}";
+        assert_eq!(parse_kodi_version(body), Some("21.1".to_string()));
+        assert_eq!(parse_kodi_version("not json"), None);
+        assert_eq!(parse_kodi_version("{\"result\":{}}"), None);
+    }
+
+    #[test]
+    fn kodi_version_body_targets_application_getproperties() {
+        assert!(kodi_version_body().contains("Application.GetProperties"));
+    }
+
+    #[test]
+    fn looks_like_kodi_detects_jsonrpc_and_realm() {
+        assert!(looks_like_kodi("{\"jsonrpc\":\"2.0\",\"result\":1}"));
+        assert!(looks_like_kodi("HTTP/1.1 401 Unauthorized\r\nWWW-Authenticate: Basic realm=\"XBMC\""));
+        assert!(!looks_like_kodi("HTTP/1.1 200 OK\r\n\r\n<html>hello</html>"));
     }
 
     #[test]
@@ -2835,6 +2921,7 @@ pub fn run() {
             smartthings_switch_request,
             scan_nas_hosts,
             nas_test_login,
+            scan_kodi_hosts,
             start_oppo_live_monitor,
             stop_oppo_live_monitor,
             reset_box_userdata,
