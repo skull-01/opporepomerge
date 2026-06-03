@@ -497,6 +497,16 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
+**As of 2026-06-03 (EOD #17 — Developer Options UX refinements SHIPPED; cut configurator v0.9.2 via the CI tag).**
+**Clean stopping point — 0 open PRs; `main`@`07a3f3f` is configurator v0.9.2; all 3 refinement PRs merged + CI-gated; release built + published by the CI tag job.**
+Operator feedback after the AutoScript ship → 3 refinements (umbrella **[#314]**), answered the one open decision (add-on validation = identity+structure, not crypto), built + merged:
+- **PR 1** [#318] **side-by-side live transcript** — new responsive `.dev-split` layout (controls left, transcript in a tall sticky right column, collapses to 1 col under 900px) on the OPPO/TV/AVR/NAS/AutoScript panels, so the live screen sits beside the controls instead of stacked at the bottom.
+- **PR 2** [#319] **Browse + add-on validation** (Kodi upload) — a native file picker (new Rust `pick_addon_zip` via the `rfd` crate) + `validate_addon_zip` → {valid, version, reason} (identity+structure: our addon id, default.py/service.py/resources/lib, parseable version; pure `validate_addon_contents` cargo-tested). Upload + register stays disabled until a valid OppoKodiAddon zip is picked; reason shown inline. Identity check, not cryptographic (unsigned posture).
+- **PR 3** [#320] **TV HDMI input switch** — an "HDMI input switching" card atop the TV console: Switch to OPPO / Switch to Kodi fire the wizard's configured switch via `planSwitch` (the exact add-on handoff), with an honest manual fallback; plus ADB HDMI presets.
+Then bump [#321] → tag **`configurator-v0.9.2`** → CI built MSI/NSIS + published as Latest (bundles add-on **v2.9.15**). Gates green: `tsc -b` · **vitest 356** · **cargo test 53** (+`rfd`) · `vite build`; browser-verified the 2-col layout, the Upload-disabled-until-valid gate, the HDMI switch wiring. New Rust cmds: `validate_addon_zip`, `pick_addon_zip`. New dep: `rfd`. ENH **#315–#317** (+ umbrella **#314**) SHA-commented + **OPEN**; Phase-C rows in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. **Resume (configurator):** Phase-C the AutoScript flow + these refinements on real hardware, or a fresh theme.
+
+---
+
 **As of 2026-06-03 (EOD #16 — AutoScript helper SHIPPED as the 6th Developer Options sub-section; cut configurator v0.9.1 via the CI tag).**
 **Clean stopping point — 0 open PRs; `main`@`02f44bf` is configurator v0.9.1; all 3 AutoScript PRs merged + CI-gated; release built + published by the CI tag job.**
 Operator (right after the Developer Options release): "add another section on the dev panel — autoscript, everything here to check and install autoscript to a JB and clone OPPO; create a plan." Produced a canonical plan; operator answered the open inputs (export a **Desktop folder** the user copies to USB with an instructions file · keep **telnet** push + availability check · release **v0.9.1**) = Go. Built **3 PRs** under umbrella **[#306]**:
@@ -2264,6 +2274,13 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   `autoscript_push_telnet`. Rewrote §3b's top entry to the EOD #16 record; noted the AutoScript helper
   delivered under `docs/BUILD_PLAN.md` §2; added an AutoScript Phase-C section to the checklist.
   `main`@`02f44bf`; **0 open PRs**.
+- **2026-06-03 (EOD #17)** — Shipped **Developer Options UX refinements** (#314) from operator feedback:
+  3 PRs (#318 side-by-side `.dev-split` transcript layout, #319 Browse + add-on identity validation
+  gate on the Kodi upload, #320 TV HDMI input switch via `planSwitch`) + bump #321; tagged
+  **`configurator-v0.9.2`** → CI built MSI/NSIS + published as Latest. New configurator Rust cmds
+  `validate_addon_zip` + `pick_addon_zip` (new dep `rfd`). Rewrote §3b's top to the EOD #17 record;
+  noted under BUILD_PLAN §2; added the refinements' Phase-C section to the checklist. `main`@`07a3f3f`;
+  **0 open PRs**.
 
 ---
 

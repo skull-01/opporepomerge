@@ -43,6 +43,15 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — Developer Options UX refinements (2026-06-03, EOD #17) → v0.9.2
+
+Operator feedback after the AutoScript ship (umbrella [#314](https://github.com/skull-01/script.oppo203.iso.external/issues/314)). **configurator v0.9.2** published as Latest by CI on the `configurator-v0.9.2` tag (bundles add-on v2.9.15). Gates green: `tsc -b` · **vitest 356** · **cargo test 53** (+`rfd`) · `vite build`; browser-verified each change.
+
+- **PR 1 — side-by-side transcript** ([#318](https://github.com/skull-01/script.oppo203.iso.external/pull/318), #315). **No Phase C** (UI/CSS) — browser-verified the 2-column layout on OPPO + TV.
+- **PR 2 — Browse + add-on validation** ([#319](https://github.com/skull-01/script.oppo203.iso.external/pull/319), #316). **Phase C (real Windows host):** in the Kodi tab, click **Browse…**, pick an OppoKodiAddon `.zip` → confirm it validates (`✓ Valid add-on vX.Y.Z`) and **Upload + register** enables; pick a non-add-on zip → confirm it's rejected with a reason and Upload stays **disabled**; then run the upload against a real box.
+- **PR 3 — TV HDMI switch** ([#320](https://github.com/skull-01/script.oppo203.iso.external/pull/320), #317). **Phase C (real TV):** with a configured TV backend, the TV console's **Switch to OPPO input / Switch to Kodi input** drive the actual HDMI switch (the same as the wizard handoff); ADB HDMI presets fire `KEYCODE_TV_INPUT_HDMI_n`.
+- **Release — bump** ([#321](https://github.com/skull-01/script.oppo203.iso.external/pull/321)) **+ tag `configurator-v0.9.2`.** **Phase C:** install the published MSI/NSIS; verify SHA-256 against the release's `SHA256SUMS.txt` / `release-evidence/v0.9.2/BUILD_NOTES.md`.
+
 ### Configurator — AutoScript helper (2026-06-03, EOD #16) — build/check/install AutoScript to JB + clone OPPOs → v0.9.1
 
 A 6th Developer Options sub-section (umbrella [#306](https://github.com/skull-01/script.oppo203.iso.external/issues/306)) — generate the player's `autoexec.sh`, check readiness, and install it. Built as **3 CI-gated PRs**; **configurator v0.9.1** published as Latest by CI on the `configurator-v0.9.1` tag (bundles add-on v2.9.15). The configurator generator is a **byte-exact mirror** of the add-on's `autoscript_helper.generate()`, pinned by `tests/test_autoscript_consistency.py` ↔ `autoscript.test.ts`. Gates green: `tsc -b` · **vitest 356** · **cargo test 51** · `vite build`; add-on `pytest -n auto` **1160/3** + serial coverage **99%** + ruff clean. Browser-verified the live preview, the port-23 toggle, the redaction, and the confirm gates. ENH SHA-commented + left **OPEN**.
