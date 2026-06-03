@@ -65,7 +65,9 @@ verbose-push stream, the remote-control commands (`oppo_power`/`tv_switch_*`/`av
 `smartthings_switch_request`), and the install/enable commands (`install_addon`/`kodi_set_addon_enabled`/
 `bundled_addon_info`).
 
-**Status: ✅ DELIVERED — shipped in configurator v0.9.0 (2026-06-03) as 7 CI-gated PRs (#298 shell · #299 OPPO · #300 Kodi · #301 TV · #302 AVR · #303 NAS · #304 Kodi-scan) + bump #305, umbrella #290; all software-verified, Phase-C on real devices pending.** The OPPO **HTTP command catalog** already landed as the
+**Status: ✅ DELIVERED — shipped in configurator v0.9.0 (2026-06-03) as 7 CI-gated PRs (#298 shell · #299 OPPO · #300 Kodi · #301 TV · #302 AVR · #303 NAS · #304 Kodi-scan) + bump #305, umbrella #290; all software-verified, Phase-C on real devices pending.**
+**Follow-on ✅ DELIVERED — a 6th sub-section, the AutoScript helper, shipped in configurator v0.9.1 (umbrella #306; PRs #310 generator/contract · #311 panel + Desktop export · #312 telnet + bump #313): build/preview/check/install AutoScript (autoexec.sh) to JB + clone OPPOs, with a byte-exact cross-language guard against the add-on's `autoscript_helper`. Phase-C on real JB/clone OPPO pending.**
+The OPPO **HTTP command catalog** already landed as the
 data layer (PR #285 → `configurator/src/oppo-commands/http-commands.ts`). All five device
 sub-sections (Kodi / TV / OPPO / AVR / NAS) are fully specified; the scope below is the **plan of
 record** (locked — no further refinement expected before build). Non-blocking first-build inputs: an

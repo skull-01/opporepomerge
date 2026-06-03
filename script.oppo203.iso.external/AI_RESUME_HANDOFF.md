@@ -497,6 +497,16 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
+**As of 2026-06-03 (EOD #16 — AutoScript helper SHIPPED as the 6th Developer Options sub-section; cut configurator v0.9.1 via the CI tag).**
+**Clean stopping point — 0 open PRs; `main`@`02f44bf` is configurator v0.9.1; all 3 AutoScript PRs merged + CI-gated; release built + published by the CI tag job.**
+Operator (right after the Developer Options release): "add another section on the dev panel — autoscript, everything here to check and install autoscript to a JB and clone OPPO; create a plan." Produced a canonical plan; operator answered the open inputs (export a **Desktop folder** the user copies to USB with an instructions file · keep **telnet** push + availability check · release **v0.9.1**) = Go. Built **3 PRs** under umbrella **[#306]**:
+- **PR 1** [#310] generator + capability **contract** — `configurator/src/autoscript/autoscript-gen.ts` is a byte-exact mirror of the add-on's `autoscript_helper.generate()` (autoexec.sh: telnet/2323, passwordless root, NFS/CIFS mount, ADB, heartbeat); `capability.ts` mirrors `oppo20x_autoscript_firmware_status` (20X-56 min / 20X-65-0131 rec) + JB/clone family. Cross-language guard `tests/test_autoscript_consistency.py` (add-on side) + `autoscript.test.ts` (cfg side) both pin to `autoscript-fixtures.json`. No UI/IO.
+- **PR 2** [#311] panel — 6th DevTab "AutoScript": builder form → live `autoexec.sh` preview → readiness check (`#QVR` firmware capability + family + telnet/ADB/HTTP probes + port-23 risk callout) → **export `<Desktop>/OppoKodiAddon-AutoScript/`** (autoexec.sh + HOW-TO-INSTALL.txt: FAT32 / copy to USB root / boot / verify) via new Rust `export_autoscript_bundle`. New `readme.ts` + `parseQvrFirmware`. CIFS password shown in the preview, never persisted.
+- **PR 3** [#312] telnet — `autoscript_telnet_check` (probe busybox telnetd :2323 for a live shell) + confirm-gated `autoscript_push_telnet` (push autoexec.sh via a quoted heredoc + chmod). USB export stays primary for a fresh player.
+Then bump [#313] → tag **`configurator-v0.9.1`** → the CI release job builds MSI/NSIS + publishes as Latest (bundles add-on **v2.9.15**). Gates green: `tsc -b` · **vitest 356** · **cargo test 51** · `vite build`; add-on `pytest -n auto` **1160/3** + serial coverage **99%** + ruff clean (PR 1's cross-language guard). Every panel browser-verified (live preview updates, port-23 toggle, the redaction, the confirm gates). ENH **#307–#309** (+ umbrella **#306**) SHA-commented + **OPEN**; Phase-C rows in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. New Rust cmds: `export_autoscript_bundle`, `autoscript_telnet_check`, `autoscript_push_telnet`. **Resume (configurator) — Phase-C** the AutoScript flow on a real JB/clone OPPO (USB boot of autoexec.sh, the #QVR/port readiness, telnet check + push), then pick a fresh theme.
+
+---
+
 **As of 2026-06-03 (EOD #15 — Developer Options console SHIPPED across 7 PRs; cut configurator v0.9.0 via the CI tag).**
 **Clean stopping point — 0 open PRs; `main`@`c3b8bcf` is configurator v0.9.0; all 7 PRs merged + CI-gated; release built + published by the CI tag job.**
 Operator picked `resume` → Configurator → the LOCKED **Developer Options** theme, then "complete all the phases automatically then release it" (full auth, 4 up-front decisions: v0.9.0 via CI tag · documented OPPO TCP set + raw box · umbrella + per-PR ENH issues · merge-as-I-go). Built + merged **all 7 PRs** under umbrella **[#290]**, each CI-gated and merged to `main` as it passed:
@@ -2245,6 +2255,15 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   commands: `oppo_http_get`, `install_addon_zip`, `kodi_restart`, `tv_sony_bravia_ircc`,
   `scan_nas_hosts`, `nas_test_login`, `scan_kodi_hosts` (cargo 47→50; vitest 328→338). `main`@`c3b8bcf`;
   **0 open PRs**.
+- **2026-06-03 (EOD #16)** — Shipped the **AutoScript helper** (#306) as the 6th Developer Options
+  sub-section: 3 PRs (#310 generator/contract, #311 panel + Desktop export, #312 telnet) + bump #313;
+  tagged **`configurator-v0.9.1`** → CI built MSI/NSIS + published as Latest. New cross-language guard
+  `tests/test_autoscript_consistency.py` (the configurator AutoScript generator mirrors the add-on's
+  `autoscript_helper.generate()` byte-for-byte, pinned by `autoscript-fixtures.json`). New configurator
+  Rust cmds: `export_autoscript_bundle` (Desktop folder), `autoscript_telnet_check`,
+  `autoscript_push_telnet`. Rewrote §3b's top entry to the EOD #16 record; noted the AutoScript helper
+  delivered under `docs/BUILD_PLAN.md` §2; added an AutoScript Phase-C section to the checklist.
+  `main`@`02f44bf`; **0 open PRs**.
 
 ---
 
