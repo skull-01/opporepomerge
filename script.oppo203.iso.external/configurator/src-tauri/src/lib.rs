@@ -1027,6 +1027,19 @@ fn oppo_http_request(host: &str, endpoint: &str, query: &str) -> String {
     )
 }
 
+/// Build a raw HTTP/1.0 GET for an OPPO endpoint, omitting the trailing `?` when there is no
+/// query so no-param endpoints (e.g. /getglobalinfo) are requested cleanly. Used by the generic
+/// dev-console GET.
+fn oppo_http_get_request(host: &str, endpoint: &str, query: &str) -> String {
+    if query.is_empty() {
+        format!(
+            "GET {endpoint} HTTP/1.0\r\nHost: {host}:{OPPO_HTTP_PORT}\r\nConnection: close\r\n\r\n"
+        )
+    } else {
+        oppo_http_request(host, endpoint, query)
+    }
+}
+
 fn oppo_signin_request(host: &str) -> String {
     oppo_http_request(
         host,
@@ -1091,6 +1104,35 @@ fn oppo_info_request(host: &str) -> String {
 fn oppo_playback_info(host: String) -> Result<String, String> {
     validate_ssh_component("host", &host)?;
     let raw = oppo_http_exchange(&host, &oppo_info_request(&host), 5000)?;
+    Ok(raw
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or(raw))
+}
+
+/// Generic OPPO HTTP app-API GET for the Developer Options OPPO console: fire any catalog
+/// endpoint (read or control) with an optional query string and return the response body, reusing
+/// the same raw-HTTP path as oppo_playback_info. The endpoint must be an absolute path and neither
+/// it nor the query may contain a space or CR/LF, so a value cannot inject a second request line.
+/// Best-effort + hardware-pending.
+#[tauri::command]
+fn oppo_http_get(
+    host: String,
+    endpoint: String,
+    query: Option<String>,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    if !endpoint.starts_with('/') || endpoint.len() < 2 {
+        return Err("endpoint must be an absolute path like /getglobalinfo".to_string());
+    }
+    let query = query.unwrap_or_default();
+    let unsafe_char = |c: char| c == ' ' || c == '\r' || c == '\n';
+    if endpoint.contains(unsafe_char) || query.contains(unsafe_char) {
+        return Err("endpoint/query must be single-line with no spaces (percent-encode spaces as %20)".to_string());
+    }
+    let request = oppo_http_get_request(&host, &endpoint, &query);
+    let raw = oppo_http_exchange(&host, &request, timeout_ms.unwrap_or(5000))?;
     Ok(raw
         .split_once("\r\n\r\n")
         .map(|(_, body)| body.to_string())
@@ -2011,7 +2053,8 @@ mod tests {
         denon_input_command,
         device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
         format_external_command, http_get_request, json_post_request, kodi_enable_body,
-        kodi_enable_ok, kodi_get_item_body, oppo_info_request, oppo_play_payload,
+        kodi_enable_ok, kodi_get_item_body, oppo_http_get_request, oppo_info_request,
+        oppo_play_payload,
         oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
         parse_verbose_mode, percent_encode, remove_existing_paths, roku_keypress_request,
@@ -2340,6 +2383,18 @@ mod tests {
     }
 
     #[test]
+    fn oppo_http_get_request_omits_question_mark_when_no_query() {
+        assert_eq!(
+            oppo_http_get_request("10.0.1.77", "/getglobalinfo", ""),
+            "GET /getglobalinfo HTTP/1.0\r\nHost: 10.0.1.77:436\r\nConnection: close\r\n\r\n"
+        );
+        assert_eq!(
+            oppo_http_get_request("10.0.1.77", "/sendremotekey", "key=Up"),
+            "GET /sendremotekey?key=Up HTTP/1.0\r\nHost: 10.0.1.77:436\r\nConnection: close\r\n\r\n"
+        );
+    }
+
+    #[test]
     fn oppo_play_payload_has_the_spec_fields() {
         let p = oppo_play_payload("smb://nas/Movies/Film.iso");
         assert!(p.contains(r#""path":"smb://nas/Movies/Film.iso""#));
@@ -2474,6 +2529,7 @@ pub fn run() {
             kodi_now_playing,
             oppo_http_play,
             oppo_playback_info,
+            oppo_http_get,
             bundled_addon_info,
             install_addon,
             kodi_set_addon_enabled,
