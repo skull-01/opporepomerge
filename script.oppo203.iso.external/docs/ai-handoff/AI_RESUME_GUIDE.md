@@ -16,11 +16,14 @@
 - **What this is:** a Kodi (Python) add-on, `script.oppo203.iso.external`, that hands off
   4K/UHD disc-style playback from Kodi to an OPPO UDP-203/205 (or compatible clone) over
   IP control, plus a first-run setup wizard. Repo: **`skull-01/script.oppo203.iso.external`**.
-- **Latest release:** **v2.9.14** (tag `v2.9.14`, PR #205 → `a6fdcef`; built/published by
-  `package.yml`) — six-option playback architecture (SVM3 + http_handoff), the `#SVM 3`
-  verbose-mode monitor, richer `oppo203iso-status.json` session status, and robustness
-  hardening. The companion **`configurator-v0.7.0`** (cut the same day, 2026-06-02) holds the
-  repo "Latest" badge and bundles this add-on. See [[configurator-release-is-manual]].
+- **Latest add-on release:** **v2.9.16 Final** (tag `v2.9.16`, merge `371c5ff`; built/published
+  by `package.yml`, 2026-06-03) — a software-verified maintenance & hardening release folding
+  the AVR/Pure-HTTP correctness, monitor/transport, settings-guard, honest-launch, Samsung-HDMI,
+  coercion (#275/#329), and cross-area AutoScript CR/LF fixes merged since v2.9.15. (v2.9.15
+  added the **7th** preset `http_handoff_http` / Pure-HTTP path.) The companion
+  **`configurator-v0.9.4`** holds the repo "Latest" badge and bundles this add-on (the bare
+  add-on tag does not). For live per-area WIP, the spine is
+  [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §3a/§3b. See [[configurator-release-is-manual]].
 - **Releases are tag-driven:** push a `v*` tag → `.github/workflows/package.yml` builds the
   installable ZIP + SHA256 and creates the GitHub Release. There is a canonical runbook:
   the **`/release`** slash command (`.claude/commands/release.md`).
@@ -36,9 +39,11 @@
   historical records). Blind find/replace breaks the frozen evidence. See §3.2.
 - **Commit messages:** do **not** add a `Co-Authored-By: ... Claude ...` footer — the
   harness/classifier blocks agent self-attribution. Keep messages plain.
-- **CI caveat:** the `claude-review` GitHub check is currently **broken** (bot secret
-  issue) and always fails. It does not block; the *real* gates are `Release gate`, `Lint
-  and format checks`, `Compatibility smoke`, `Build Kodi installable ZIP`.
+- **CI caveat:** the `claude-review` GitHub check was historically **broken** (bot secret
+  issue) and always failed; it was observed **passing** on PR #333 (2026-06-03). Either way
+  it does not block; the *real* gates are `Release gate`, `Lint and format checks`,
+  `Compatibility smoke`, `Build Kodi installable ZIP` (+ the configurator `Gate` when
+  `configurator/` is touched).
 
 ---
 
@@ -51,7 +56,7 @@
 | Repo | `github.com/skull-01/script.oppo203.iso.external` |
 | Language | Python 3 (Kodi runtime; `requires-python >=3.9`) |
 | Default branch | `main` |
-| Latest release | `v2.9.14` (configurator companion `configurator-v0.7.0`) |
+| Latest add-on release | `v2.9.16` (2026-06-03; configurator companion `configurator-v0.9.4` holds repo "Latest") |
 | Provider | "Perplexity Computer" (per addon.xml) |
 | License | MIT |
 
@@ -534,6 +539,17 @@ real on-device bug fixes staged for v2.9.14. Each step's rationale:
 > areas, read the spine [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §3a/§3b — the
 > `wip/wizard-ux` snapshot below is historical.
 
+> **2026-06-03 update — v2.9.15 and v2.9.16 shipped.** **v2.9.15 Final** added the 7th
+> playback preset `http_handoff_http` (Xnoppo V3 / Pure-HTTP) + the HTTP monitor and
+> orchestration (default install preset is now `http_handoff_http`). **v2.9.16 Final** (tag
+> `v2.9.16`, merge `371c5ff`, 2026-06-03) is a software-verified maintenance & hardening
+> release folding the AVR/Pure-HTTP, monitor/transport, settings-guard, honest-launch,
+> Samsung-HDMI, coercion (#275/#329), and cross-area AutoScript CR/LF fixes merged since
+> v2.9.15 (gate: pytest 1187/3, serial coverage 99%, mypy --strict 51/0, audit 607/607). The
+> companion **configurator-v0.9.4** holds the repo "Latest" badge. The `wip/wizard-ux`
+> snapshot below is historical; live per-area WIP lives in
+> [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §3a/§3b.
+
 **Branch `wip/wizard-ux`** (off `main`; the v2.9.14 candidate — NOT yet version-bumped)
 contains, as separate commits:
 - `tools/dev_build.py` (+ `--sync/--deploy/--restart` modes) — dev tooling.
@@ -614,6 +630,7 @@ to a two-area split landed alongside the hybrid issue model adopted on 2026-05-2
 
 ---
 
-*This guide reflects the project state as of the v2.9.13 release plus the `wip/wizard-ux`
-work staged for v2.9.14. Keep it updated as norms evolve; treat live code + `git` history
-as authoritative.*
+*This guide's norms (§§1–8, 10) reflect the project through the **v2.9.16** add-on release
+(2026-06-03). For live per-area state, treat
+[`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §3a/§3b as authoritative, and live
+code + `git` history above all.*

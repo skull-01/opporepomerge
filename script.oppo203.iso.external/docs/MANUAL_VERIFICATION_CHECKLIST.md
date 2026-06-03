@@ -43,6 +43,13 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on — v2.9.16 Final release (2026-06-03) → published (standalone add-on track)
+
+Standalone add-on release folding the correctness/robustness fixes merged since v2.9.15 into a versioned ZIP (tag [`v2.9.16`](https://github.com/skull-01/script.oppo203.iso.external/releases/tag/v2.9.16), merge `371c5ff`; published by `package.yml` with `script.oppo203.iso.external-2.9.16.zip` 376,051 B + `.sha256`). Folds #221–#224 (AVR/Pure-HTTP), #226–#233 (monitor/transport), #235–#237 (settings guards), #254 (honest launch), #256 (Samsung HDMI), #275/#329 (coercion) — each already on `main`, now SHA-commented as shipped (left **OPEN** for operator close). **New in this release:** AutoScript CR/LF hardening (cross-area: add-on `_safe_text` + the configurator `safeText` mirror, both consistency guards green) + a `discovery._safe_port` mypy `--strict` fix. Gate: pytest **1187/3** · serial coverage **99%** · mypy --strict **51/0** · ruff clean · `audit_release` **PASS 607/607**. Configurator unchanged except the AutoScript mirror; **configurator-v0.9.4 still holds repo "Latest"** (the bare add-on tag does not).
+
+- **Phase B — post-merge sanity (done):** `main`@`371c5ff` builds; add-on suite 1187/3 green; release published with ZIP+SHA256.
+- **Phase C — install verify (real Kodi box):** install the published `script.oppo203.iso.external-2.9.16.zip` (verify SHA-256 against the release `.sha256`); confirm Kodi shows add-on **v2.9.16** and it loads. The folded runtime fixes' device verification is the per-issue runbook in [`docs/audit/`](audit/README.md) + the AVR/Pure-HTTP/monitor Phase-C rows below — now shipped in a versioned release. AutoScript CR/LF is software-pinned; optional device check: generate an `autoexec.sh` with a path containing a stray CR and confirm the exported file is not corrupted.
+
 ### Configurator — embedded add-on build tag (2026-06-03, EOD #18) → v0.9.3
 
 The deferred follow-up to the v0.9.2 add-on validation (umbrella [#322](https://github.com/skull-01/script.oppo203.iso.external/issues/322)). The add-on packaging stamps a SHA-256 content-manifest tag (`resources/oppokodiaddon.sig`, Kodi-inert) and the configurator verifies it. **configurator v0.9.3** published as Latest on the `configurator-v0.9.3` tag (CI repackages `main`'s add-on, now signed). Gates green: add-on `pytest -n auto` **1162/3** + serial coverage **99%** + ruff clean; cfg `tsc -b` · vitest 356 · **cargo 54** · vite build. The Python↔Rust manifest is pinned to one shared fixture hash. **Mostly no Phase C** (software-only integrity tooling):
