@@ -1,4 +1,4 @@
-; Tauri NSIS PREINSTALL hook for OppoKodiAddon Configurator.
+; Tauri NSIS PREINSTALL hook for Kodi Oppo External Player Configurator.
 ;
 ; This is the SINGLE old-version prompt for the installer. The stock Tauri NSIS
 ; reinstall page -- which used to detect a prior NSIS install and offer to remove

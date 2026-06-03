@@ -11,7 +11,9 @@ describe("i18n", () => {
   });
 
   it("interpolates {name} placeholders from vars", () => {
-    expect(t("app.versionLine", { version: "0.8.6" })).toBe("Configurator v0.8.6");
+    expect(t("app.versionLine", { name: "Configurator", version: "0.8.6" })).toBe(
+      "Configurator-v0.8.6"
+    );
   });
 
   it("falls back to the key itself for an unknown key (degrades visibly)", () => {
