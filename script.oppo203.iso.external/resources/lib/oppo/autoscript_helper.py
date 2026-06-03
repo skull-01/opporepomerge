@@ -9,7 +9,10 @@ from typing import Any
 def _safe_int(v: Any, default: int) -> int:
     try:
         return int(v)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
+        # OverflowError covers int(float("inf")); a JSON-loaded preset can carry a
+        # non-finite float for telnet_port/adb_port. Matches the repo-wide guard
+        # pattern (oppo_control, i18n) so the generator degrades to the default.
         return int(default)
 
 
