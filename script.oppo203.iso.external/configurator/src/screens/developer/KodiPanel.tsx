@@ -1,14 +1,282 @@
+import { useState } from "react";
+import { invoke } from "../../ipc";
+import { fileReadPlan } from "../../dashboard_status";
+import { ADDON_DATA_SETTINGS_REL, parseSettingsXml } from "../../settings_xml";
+import { sanitizeSettings } from "../../settings_diff";
+import { addonsDirForPlatform } from "../../generate";
+import type { AddonSettings } from "../../mapping";
 import type { DevPanelProps } from "./types";
 
-/** Kodi dev tools — version, settings, restart, register, upload-any-version (PR C) + LAN scan (PR E). */
-export function KodiPanel(_props: DevPanelProps) {
+const ADDON_ID = "script.oppo203.iso.external";
+
+/** Pull version="..." off the first <addon> element of an addon.xml string (mirrors the Rust parse). */
+function parseAddonVersion(xml: string): string | null {
+  return /<addon\b[^>]*\bversion="([^"]+)"/.exec(xml)?.[1] ?? null;
+}
+
+/**
+ * Kodi developer tools: installed-vs-bundled add-on version, a live settings table, and the
+ * box operations that shorten test cycles — register-without-restart, remote restart, and
+ * upload-any-version. The box operations run over SSH to the configured Kodi box; the restart and
+ * the zip upload (which overwrites the installed add-on) are confirm-gated. All box I/O is
+ * hardware-pending.
+ */
+export function KodiPanel({ state }: DevPanelProps) {
+  const addonsDir = addonsDirForPlatform(state.kodiPlatform ?? "coreelec");
+
+  const [bundled, setBundled] = useState<string | null>(null);
+  const [installed, setInstalled] = useState<string | null>(null);
+  const [versErr, setVersErr] = useState<string | null>(null);
+  const [settings, setSettings] = useState<AddonSettings | null>(null);
+  const [settingsErr, setSettingsErr] = useState<string | null>(null);
+  const [zipPath, setZipPath] = useState("");
+  const [confirm, setConfirm] = useState<null | "restart" | "upload">(null);
+  const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function refreshVersions() {
+    setBusy(true);
+    setVersErr(null);
+    try {
+      const b = await invoke<{ version: string }>("bundled_addon_info");
+      setBundled(b.version);
+    } catch (e) {
+      setBundled(null);
+      setVersErr(`Bundled version: ${String(e)}`);
+    }
+    try {
+      const xml = await invoke<string | null>("read_ssh_file", {
+        host: state.kodiIp,
+        user: state.sshUser,
+        userdataPath: addonsDir,
+        rel: `${ADDON_ID}/addon.xml`,
+      });
+      setInstalled(xml ? (parseAddonVersion(xml) ?? "unknown") : "not installed");
+    } catch (e) {
+      setInstalled(null);
+      setVersErr(`Installed version (SSH): ${String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function readSettings() {
+    setBusy(true);
+    setSettingsErr(null);
+    setSettings(null);
+    const plan = fileReadPlan(state, ADDON_DATA_SETTINGS_REL);
+    if (!plan.supported) {
+      setSettingsErr(plan.note);
+      setBusy(false);
+      return;
+    }
+    try {
+      const raw = await invoke<string | null>(plan.command, plan.args);
+      if (raw == null) setSettingsErr("No settings.xml on the box yet.");
+      else setSettings(sanitizeSettings(parseSettingsXml(raw)));
+    } catch (e) {
+      setSettingsErr(String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function register() {
+    setBusy(true);
+    setActionMsg(null);
+    try {
+      const ok = await invoke<boolean>("kodi_set_addon_enabled", {
+        host: state.kodiIp,
+        user: state.sshUser,
+      });
+      setActionMsg(ok ? "Add-on enabled via Kodi JSON-RPC (no restart)." : "Kodi did not confirm the enable — try a restart.");
+    } catch (e) {
+      setActionMsg(`Register failed: ${String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function restart() {
+    setConfirm(null);
+    setBusy(true);
+    setActionMsg(null);
+    try {
+      await invoke("kodi_restart", { host: state.kodiIp, user: state.sshUser });
+      setActionMsg("Restart command sent (systemctl restart kodi).");
+    } catch (e) {
+      setActionMsg(`Restart failed: ${String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function upload() {
+    setConfirm(null);
+    const p = zipPath.trim();
+    if (!p) {
+      setActionMsg("Enter the path to an add-on .zip first.");
+      return;
+    }
+    setBusy(true);
+    setActionMsg(null);
+    try {
+      const rep = await invoke<{ version: string; target: string; backed_up?: string | null }>(
+        "install_addon_zip",
+        { host: state.kodiIp, user: state.sshUser, addonsPath: addonsDir, zipPath: p }
+      );
+      let msg = `Uploaded add-on ${rep.version} to ${rep.target}.`;
+      if (rep.backed_up) msg += ` Backed up the previous copy to ${rep.backed_up}.`;
+      try {
+        const ok = await invoke<boolean>("kodi_set_addon_enabled", {
+          host: state.kodiIp,
+          user: state.sshUser,
+        });
+        msg += ok ? " Enabled it via Kodi (no restart)." : " Enable it in Kodi → Add-ons, or restart.";
+      } catch {
+        msg += " Couldn't auto-enable — restart Kodi or enable it in Add-ons.";
+      }
+      setActionMsg(msg);
+    } catch (e) {
+      setActionMsg(`Upload failed: ${String(e)}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const settingsRows = settings ? Object.entries(settings) : [];
+
   return (
-    <section className="card">
-      <h3 style={{ marginTop: 0 }}>Kodi developer tools</h3>
-      <p className="field-hint" style={{ marginTop: 0 }}>
-        Add-on version, settings, restart, register-without-restart, and upload-any-version land
-        in PR C; the LAN scan for a Kodi box lands in PR E.
-      </p>
-    </section>
+    <div className="stack-lg">
+      <section className="card">
+        <div className="row-between" style={{ marginBottom: 10 }}>
+          <h3 style={{ margin: 0 }}>Add-on version</h3>
+          <button className="btn ghost sm" disabled={busy} onClick={() => void refreshVersions()}>
+            Refresh
+          </button>
+        </div>
+        <div className="row wrap" style={{ gap: 18 }}>
+          <div>
+            <div className="field-label">Bundled (configurator)</div>
+            <div className="mono">{bundled ?? "—"}</div>
+          </div>
+          <div>
+            <div className="field-label">Installed (on the box)</div>
+            <div className="mono">{installed ?? "—"}</div>
+          </div>
+          {bundled && installed && installed !== "not installed" && installed !== "unknown" && (
+            <span className={`chip ${bundled === installed ? "success" : "warn"}`}>
+              {bundled === installed ? "match" : "differ"}
+            </span>
+          )}
+        </div>
+        <span className="field-hint">Installed version is read from {addonsDir}/{ADDON_ID}/addon.xml over SSH.</span>
+        {versErr && (
+          <p className="danger-text" style={{ marginBottom: 0 }} role="status">
+            {versErr}
+          </p>
+        )}
+      </section>
+
+      <section className="card">
+        <div className="row-between" style={{ marginBottom: 10 }}>
+          <h3 style={{ margin: 0 }}>Add-on settings</h3>
+          <button className="btn ghost sm" disabled={busy} onClick={() => void readSettings()}>
+            Read settings
+          </button>
+        </div>
+        {settingsErr && (
+          <p className="danger-text" style={{ marginTop: 0 }} role="status">
+            {settingsErr}
+          </p>
+        )}
+        {settings && (
+          <div className="dev-transcript" role="table" aria-label="Add-on settings">
+            {settingsRows.length === 0 ? (
+              <div className="dev-tline dev-info">(no settings)</div>
+            ) : (
+              settingsRows.map(([k, v]) => (
+                <div key={k} className="dev-tline">
+                  <span className="muted">{k}</span> = {String(v)}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+        {settings && (
+          <span className="field-hint">{settingsRows.length} settings — secrets masked.</span>
+        )}
+      </section>
+
+      <section className="card">
+        <h3 style={{ marginTop: 0 }}>Box operations (SSH)</h3>
+        <div className="callout info" style={{ marginBottom: 12 }}>
+          <span className="callout-icon">i</span>
+          <div className="callout-body">
+            These run over SSH to the Kodi box (<span className="mono">{state.sshUser}@{state.kodiIp}</span>).
+          </div>
+        </div>
+
+        <div className="row wrap" style={{ gap: 10, marginBottom: 14 }}>
+          <button className="btn" disabled={busy} onClick={() => void register()}>
+            Register add-on (no restart)
+          </button>
+          {confirm === "restart" ? (
+            <span className="row" style={{ gap: 6 }}>
+              <button className="btn danger" disabled={busy} onClick={() => void restart()}>
+                Confirm restart
+              </button>
+              <button className="btn ghost" onClick={() => setConfirm(null)}>
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button className="btn outline" disabled={busy} onClick={() => setConfirm("restart")}>
+              Restart Kodi…
+            </button>
+          )}
+        </div>
+
+        <div className="field">
+          <label className="field-label" htmlFor="dev-kodi-zip">
+            Upload add-on .zip (any version)
+          </label>
+          <input
+            id="dev-kodi-zip"
+            className="input mono"
+            placeholder="C:\path\to\script.oppo203.iso.external-x.y.z.zip"
+            value={zipPath}
+            spellCheck={false}
+            onChange={(e) => setZipPath(e.target.value)}
+          />
+          <span className="field-hint">
+            Deploys this .zip to the box over SSH (backing up the current copy) and re-registers it
+            without a restart.
+          </span>
+          <div className="row" style={{ gap: 6, marginTop: 8 }}>
+            {confirm === "upload" ? (
+              <>
+                <button className="btn danger" disabled={busy} onClick={() => void upload()}>
+                  Confirm upload + replace
+                </button>
+                <button className="btn ghost" onClick={() => setConfirm(null)}>
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button className="btn" disabled={busy || !zipPath.trim()} onClick={() => setConfirm("upload")}>
+                Upload + register…
+              </button>
+            )}
+          </div>
+        </div>
+
+        {actionMsg && (
+          <p style={{ marginBottom: 0 }} role="status">
+            {actionMsg}
+          </p>
+        )}
+      </section>
+    </div>
   );
 }
