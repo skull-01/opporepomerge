@@ -15,3 +15,17 @@ describe("reset_all utility screen wiring", () => {
     expect(STEPS.some((s) => (s.id as string) === "reset_all")).toBe(false);
   });
 });
+
+describe("developer utility screen wiring", () => {
+  it("rides step-0's stepper group", () => {
+    expect(SCREEN_TO_STEP.developer).toBe("step0");
+  });
+
+  it("maps to the media chain target (matches step 0)", () => {
+    expect(SCREEN_TO_CHAIN.developer).toBe("media");
+  });
+
+  it("is reachable but not a numbered wizard step", () => {
+    expect(STEPS.some((s) => (s.id as string) === "developer")).toBe(false);
+  });
+});

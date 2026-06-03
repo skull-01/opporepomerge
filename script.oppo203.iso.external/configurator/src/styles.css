@@ -1017,6 +1017,34 @@ input:focus, .input:focus {
 .tabular { font-variant-numeric: tabular-nums; }
 
 /* ============================================================
+   Developer Options — device sub-section tabs
+   ============================================================ */
+.dev-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 18px;
+}
+.dev-tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: var(--radius-button) var(--radius-button) 0 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.dev-tab:hover { color: var(--text); background: var(--surface-2); }
+.dev-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ============================================================
    Intro / hero / mockups
    ============================================================ */
 .intro-hero {
