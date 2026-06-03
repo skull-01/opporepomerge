@@ -16,18 +16,30 @@ def _safe_int(v: Any, default: int) -> int:
         return int(default)
 
 
+def _safe_text(v: Any) -> str:
+    """Coerce a value to a single-line string before embedding it in the script.
+
+    Device-cache JSON, wizard input, and AutoScript presets can carry a value
+    with an embedded carriage return or newline. Embedding one raw would put a
+    CR into autoexec.sh (BusyBox sh on the OPPO chokes on CRLF) or split a single
+    directive across lines; strip both so the script stays LF-only, one directive
+    per line.
+    """
+    return str(v).replace("\r", "").replace("\n", "")
+
+
 def generate(opts: dict[str, Any] | None) -> str:
     o = dict(opts or {})
     et = bool(o.get("enable_telnet", True))
     tp = _safe_int(o.get("telnet_port", 2323), 2323)
     pr = bool(o.get("passwordless_root", True))
     mt = str(o.get("mount_type", "none") or "none").lower()
-    mr = o.get("mount_remote", "")
-    ml = o.get("mount_local", "/tmp/share")
-    mo = o.get("mount_options", "")
-    cu = o.get("cifs_user", "")
-    cp = o.get("cifs_pass", "")
-    hb = o.get("heartbeat_path", "/tmp/usb/sda1/oppo_autoexec_ran")
+    mr = _safe_text(o.get("mount_remote", ""))
+    ml = _safe_text(o.get("mount_local", "/tmp/share"))
+    mo = _safe_text(o.get("mount_options", ""))
+    cu = _safe_text(o.get("cifs_user", ""))
+    cp = _safe_text(o.get("cifs_pass", ""))
+    hb = _safe_text(o.get("heartbeat_path", "/tmp/usb/sda1/oppo_autoexec_ran"))
     ea = bool(o.get("enable_adb", False))
     ap = _safe_int(o.get("adb_port", 5555), 5555)
     L = [

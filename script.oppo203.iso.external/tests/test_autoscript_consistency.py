@@ -55,6 +55,14 @@ CASES = {
         "adb_port": 5555,
         "heartbeat_path": "/tmp/usb/sda1/oppo_autoexec_ran",
     },
+    "crlf_paths": {
+        "mount_type": "cifs",
+        "mount_remote": "//nas/Media\r",
+        "mount_local": "/tmp/share\r\n",
+        "cifs_user": "u\ru",
+        "cifs_pass": "p\np",
+        "heartbeat_path": "/tmp/usb/sda1/oppo_autoexec_ran\r",
+    },
 }
 
 

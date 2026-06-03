@@ -44,7 +44,7 @@ def _safe_port(value: object, default: int = 23) -> int:
     if not value:
         return default
     try:
-        return int(value)
+        return int(cast(Any, value))
     except (TypeError, ValueError, OverflowError):
         return default
 

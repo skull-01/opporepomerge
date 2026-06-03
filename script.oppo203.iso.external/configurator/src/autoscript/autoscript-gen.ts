@@ -28,18 +28,23 @@ function safeInt(v: unknown, dflt: number): number {
   return Number.isFinite(n) ? Math.trunc(n) : dflt;
 }
 
+/** Mirror of the add-on's `_safe_text`: strip CR/LF so the script stays LF-only and single-line. */
+function safeText(v: string): string {
+  return v.replace(/\r/g, "").replace(/\n/g, "");
+}
+
 /** Generate the OPPO AutoScript `autoexec.sh`. Mirrors `autoscript_helper.generate(opts)`. */
 export function generateAutoexec(opts: AutoScriptOptions = {}): string {
   const et = opts.enableTelnet ?? true;
   const tp = safeInt(opts.telnetPort ?? 2323, 2323);
   const pr = opts.passwordlessRoot ?? true;
   const mt = String(opts.mountType || "none").toLowerCase();
-  const mr = opts.mountRemote ?? "";
-  const ml = opts.mountLocal ?? "/tmp/share";
-  const mo = opts.mountOptions ?? "";
-  const cu = opts.cifsUser ?? "";
-  const cp = opts.cifsPass ?? "";
-  const hb = opts.heartbeatPath ?? "/tmp/usb/sda1/oppo_autoexec_ran";
+  const mr = safeText(opts.mountRemote ?? "");
+  const ml = safeText(opts.mountLocal ?? "/tmp/share");
+  const mo = safeText(opts.mountOptions ?? "");
+  const cu = safeText(opts.cifsUser ?? "");
+  const cp = safeText(opts.cifsPass ?? "");
+  const hb = safeText(opts.heartbeatPath ?? "/tmp/usb/sda1/oppo_autoexec_ran");
   const ea = opts.enableAdb ?? false;
   const ap = safeInt(opts.adbPort ?? 5555, 5555);
 
