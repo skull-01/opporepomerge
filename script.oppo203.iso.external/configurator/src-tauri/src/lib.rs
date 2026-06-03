@@ -2449,6 +2449,97 @@ fn scan_kodi_hosts(base_ip: Option<String>, timeout_ms: Option<u64>) -> Result<V
     Ok(confirmed)
 }
 
+// ============================================================
+// Add-on zip validation (Developer Options "Browse" upload gate)
+// ============================================================
+
+#[derive(serde::Serialize)]
+struct AddonZipInfo {
+    valid: bool,
+    version: Option<String>,
+    reason: String,
+}
+
+/// Identity + structure check given the zip's entry names + its addon.xml: is this our add-on? Pure
+/// + unit-tested. Validates the canonical `<id>/addon.xml`, the addon id, the entry points
+/// (default.py / service.py / resources/lib), and a parseable version. Not cryptographic -- the
+/// project ships unsigned, so this guards against a wrong/corrupt zip, not a determined forger.
+fn validate_addon_contents(names: &[String], addon_xml: Option<&str>) -> AddonZipInfo {
+    let want = |rel: &str| names.iter().any(|n| n == &format!("{ADDON_ID}/{rel}"));
+    if !want("addon.xml") {
+        return AddonZipInfo {
+            valid: false,
+            version: None,
+            reason: format!("not the {ADDON_ID} add-on (no {ADDON_ID}/addon.xml)"),
+        };
+    }
+    let xml = match addon_xml {
+        Some(x) => x,
+        None => {
+            return AddonZipInfo { valid: false, version: None, reason: "could not read addon.xml".into() }
+        }
+    };
+    let version = parse_addon_version(xml);
+    if !xml.contains(&format!("id=\"{ADDON_ID}\"")) {
+        return AddonZipInfo { valid: false, version, reason: "addon.xml id is not script.oppo203.iso.external".into() };
+    }
+    if version.is_none() {
+        return AddonZipInfo { valid: false, version: None, reason: "could not parse the add-on version from addon.xml".into() };
+    }
+    let entry_points = want("default.py")
+        && want("service.py")
+        && names.iter().any(|n| n.starts_with(&format!("{ADDON_ID}/resources/lib/")));
+    if !entry_points {
+        return AddonZipInfo { valid: false, version, reason: "missing default.py / service.py / resources/lib".into() };
+    }
+    AddonZipInfo { valid: true, version, reason: "valid OppoKodiAddon zip".into() }
+}
+
+/// Validate that `path` is one of our add-on zips, so the dev-console upload is enabled only for a
+/// real OppoKodiAddon. Reads the zip's entries + addon.xml, then delegates to validate_addon_contents.
+/// Never errors on a bad file -- returns valid:false with a reason for the UI.
+#[tauri::command]
+fn validate_addon_zip(path: String) -> Result<AddonZipInfo, String> {
+    let p = PathBuf::from(&path);
+    if !p.is_file() {
+        return Ok(AddonZipInfo { valid: false, version: None, reason: format!("not a file: {path}") });
+    }
+    let file = match fs::File::open(&p) {
+        Ok(f) => f,
+        Err(e) => return Ok(AddonZipInfo { valid: false, version: None, reason: format!("cannot open: {e}") }),
+    };
+    let mut zip = match zip::ZipArchive::new(file) {
+        Ok(z) => z,
+        Err(e) => return Ok(AddonZipInfo { valid: false, version: None, reason: format!("not a valid zip: {e}") }),
+    };
+    let mut names: Vec<String> = Vec::with_capacity(zip.len());
+    for i in 0..zip.len() {
+        if let Ok(e) = zip.by_index(i) {
+            names.push(e.name().replace('\\', "/"));
+        }
+    }
+    let xml = match zip.by_name(&format!("{ADDON_ID}/addon.xml")) {
+        Ok(mut e) => {
+            let mut s = String::new();
+            e.read_to_string(&mut s).ok();
+            Some(s)
+        }
+        Err(_) => None,
+    };
+    Ok(validate_addon_contents(&names, xml.as_deref()))
+}
+
+/// Open a native file picker for an add-on .zip (Developer Options Browse). Returns the chosen
+/// absolute path, or None if the user cancels.
+#[tauri::command]
+fn pick_addon_zip() -> Option<String> {
+    rfd::FileDialog::new()
+        .add_filter("Add-on zip", &["zip"])
+        .set_title("Select an OppoKodiAddon .zip")
+        .pick_file()
+        .map(|p| p.to_string_lossy().into_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
@@ -2456,6 +2547,7 @@ mod tests {
         denon_input_command,
         device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
         format_external_command, http_get_request, json_post_request, kodi_enable_body, nas_unc,
+        validate_addon_contents,
         kodi_enable_ok, kodi_get_item_body, kodi_version_body, looks_like_kodi,
         oppo_http_get_request, oppo_info_request,
         oppo_play_payload,
@@ -2611,6 +2703,47 @@ mod tests {
         assert!(c.contains("chmod +x '/tmp/usb/sda1/autoexec.sh'"));
         assert!(c.contains("OPPO_AS_PUSH_DONE"));
         assert!(c.contains("#!/bin/sh\necho hi"));
+    }
+
+    fn addon_names() -> Vec<String> {
+        vec![
+            "script.oppo203.iso.external/addon.xml".to_string(),
+            "script.oppo203.iso.external/default.py".to_string(),
+            "script.oppo203.iso.external/service.py".to_string(),
+            "script.oppo203.iso.external/resources/lib/__init__.py".to_string(),
+        ]
+    }
+
+    #[test]
+    fn validate_addon_contents_accepts_our_addon() {
+        let xml = r#"<addon id="script.oppo203.iso.external" version="2.9.15" name="x"/>"#;
+        let r = validate_addon_contents(&addon_names(), Some(xml));
+        assert!(r.valid, "{}", r.reason);
+        assert_eq!(r.version.as_deref(), Some("2.9.15"));
+    }
+
+    #[test]
+    fn validate_addon_contents_rejects_non_ours() {
+        // a different add-on entirely
+        assert!(
+            !validate_addon_contents(
+                &["some.other.addon/addon.xml".to_string()],
+                Some(r#"<addon id="some.other.addon" version="1.0"/>"#)
+            )
+            .valid
+        );
+        // our folder layout but the addon.xml id is wrong
+        assert!(!validate_addon_contents(&addon_names(), Some(r#"<addon id="evil" version="1.0"/>"#)).valid);
+        // our id + version but missing the entry points
+        assert!(
+            !validate_addon_contents(
+                &["script.oppo203.iso.external/addon.xml".to_string()],
+                Some(r#"<addon id="script.oppo203.iso.external" version="2.9.15"/>"#)
+            )
+            .valid
+        );
+        // our id + entry points but no parseable version
+        assert!(!validate_addon_contents(&addon_names(), Some(r#"<addon id="script.oppo203.iso.external" name="x"/>"#)).valid);
     }
 
     #[test]
@@ -3016,7 +3149,9 @@ pub fn run() {
             write_diagnostics,
             export_autoscript_bundle,
             autoscript_telnet_check,
-            autoscript_push_telnet
+            autoscript_push_telnet,
+            validate_addon_zip,
+            pick_addon_zip
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
