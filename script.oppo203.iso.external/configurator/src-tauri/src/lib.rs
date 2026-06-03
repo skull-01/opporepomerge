@@ -516,6 +516,9 @@ fn autoscript_push_telnet(
     if remote_path.is_empty() || remote_path.contains(['\'', '\r', '\n']) {
         return Err("invalid remote path (no quotes or newlines)".to_string());
     }
+    if contents.lines().any(|l| l == "OPPOEOF") {
+        return Err("script contains the heredoc terminator (OPPOEOF) and can't be pushed safely".to_string());
+    }
     let p = port.unwrap_or(AUTOSCRIPT_TELNET_PORT);
     let cmd = telnet_push_command(&remote_path, &contents);
     let reply = socket_exchange(&host, p, cmd.as_bytes(), 8000)?;
@@ -1451,6 +1454,9 @@ fn install_addon_zip(
     zip_path: String,
 ) -> Result<InstallReport, String> {
     validate_ssh_target(&host, &user)?;
+    if addons_path.contains(['\'', '\r', '\n']) {
+        return Err("invalid addons path (no quotes or newlines)".to_string());
+    }
     let zip = PathBuf::from(&zip_path);
     if !zip.is_file() {
         return Err(format!("zip not found: {zip_path}"));
@@ -2328,6 +2334,16 @@ fn nas_test_smb(host: &str, share: &str, user: Option<&str>, password: Option<&s
     if share_clean.contains(['"', '\r', '\n']) {
         return Err("invalid share name".to_string());
     }
+    // net.exe re-parses its argv: a quote/newline or a `/`-leading or `*` password can be read as
+    // a switch/prompt rather than the password, so reject those (no shell is involved -- not RCE).
+    if user.is_some_and(|u| u.contains(['"', '\r', '\n']))
+        || password.is_some_and(|pw| pw.contains(['"', '\r', '\n']))
+    {
+        return Err("user/password must not contain quotes or newlines".to_string());
+    }
+    if password.is_some_and(|p| p == "*" || p.starts_with('/')) {
+        return Err("password can't be '*' or start with '/' (net.exe would read it as an option/prompt)".to_string());
+    }
     let unc = nas_unc(host, share);
     let with_creds = user.map(str::trim).is_some_and(|u| !u.is_empty());
     if with_creds {
@@ -2546,14 +2562,17 @@ fn validate_addon_zip(path: String) -> Result<AddonZipInfo, String> {
     let mut names: Vec<String> = Vec::with_capacity(zip.len());
     let mut members: Vec<(String, Vec<u8>)> = Vec::with_capacity(zip.len());
     let mut sig_json: Option<String> = None;
+    const MAX_ADDON_ENTRY_BYTES: u64 = 16 * 1024 * 1024;
     for i in 0..zip.len() {
         let mut e = match zip.by_index(i) {
             Ok(e) => e,
             Err(_) => continue,
         };
         let name = e.name().replace('\\', "/");
+        // Cap each entry's decompressed read so a crafted zip can't balloon memory; an over-cap
+        // entry is truncated, so its hash won't match -> reported mismatch, never "signed".
         let mut data = Vec::new();
-        let _ = e.read_to_end(&mut data);
+        let _ = (&mut e).take(MAX_ADDON_ENTRY_BYTES).read_to_end(&mut data);
         if name == sig_arcname {
             sig_json = Some(String::from_utf8_lossy(&data).into_owned());
         } else {

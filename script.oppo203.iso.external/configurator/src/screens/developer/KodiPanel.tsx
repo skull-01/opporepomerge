@@ -363,7 +363,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
           {zipValid !== null && (
             <p className={zipValid ? "success-text" : "danger-text"} style={{ marginBottom: 0 }} role="status">
               {zipValid
-                ? `✓ Valid add-on${zipVersion ? ` v${zipVersion}` : ""}${zipSig === "signed" ? " — signed build ✓" : zipSig === "unsigned" ? " — unsigned (older build)" : ""}`
+                ? `✓ Valid add-on${zipVersion ? ` v${zipVersion}` : ""}${zipSig === "signed" ? " — build tag verified ✓" : zipSig === "unsigned" ? " — no build tag (older build)" : ""}`
                 : `✗ ${zipReason}`}
             </p>
           )}
