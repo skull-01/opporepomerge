@@ -51,6 +51,12 @@ The deferred follow-up to the v0.9.2 add-on validation (umbrella [#322](https://
 - **PR 2 — configurator verify** ([#326](https://github.com/skull-01/script.oppo203.iso.external/pull/326), #324). **Phase C (real Windows host, optional):** in the Kodi tab, Browse to a **v0.9.3-built** add-on zip → confirm it reads `✓ Valid add-on vX.Y.Z — signed build ✓`; Browse to an **older (pre-tag)** zip → `— unsigned (older build)` (still uploadable); a hand-modified zip → `✗ build tag mismatch` and Upload **disabled**.
 - **Release — bump** ([#327](https://github.com/skull-01/script.oppo203.iso.external/pull/327)) **+ tag `configurator-v0.9.3`.** **Phase C:** install the published MSI/NSIS; verify SHA-256 against the release's `SHA256SUMS.txt` / `release-evidence/v0.9.3/BUILD_NOTES.md`.
 
+### Add-on — property-test pass: int() coercion crash fixes (2026-06-03) → rides v0.9.4
+
+A property/fuzz sweep over the add-on's pure helpers ([#329](https://github.com/skull-01/script.oppo203.iso.external/issues/329), area:addon; implemented `a4d0509`, PR [#330](https://github.com/skull-01/script.oppo203.iso.external/pull/330), merged `f276de9`) fixed a cluster of `int()`-coercion crashes: a textual (`"8060/tcp"`) or non-finite (`inf`) port from device-cache JSON / an mDNS record / a JSON-loaded AutoScript preset previously raised `ValueError`/`OverflowError` instead of degrading. New `_safe_port` (discovery, all three call sites) + an `OverflowError` guard (`_safe_int`, autoscript) close it; `tests/test_property_addon_robustness.py` pins all four plus the eISCP frame round-trip and path-normalize idempotence (optional Hypothesis + curated fallback so the gate never weakens). Gate: `pytest -n auto` **1187/3**, serial coverage **99%** (exit 0), ruff clean.
+
+- **No Phase C.** Pure input-coercion hardening, fully covered by automated tests; nothing hardware-observable changes and no happy-path behavior changes. **Phase B sanity only:** confirm `main` still builds + the add-on suite is green (it is). These fixes ride **configurator v0.9.4** (CI repackages `main`'s add-on into the bundle).
+
 ### Configurator — Developer Options UX refinements (2026-06-03, EOD #17) → v0.9.2
 
 Operator feedback after the AutoScript ship (umbrella [#314](https://github.com/skull-01/script.oppo203.iso.external/issues/314)). **configurator v0.9.2** published as Latest by CI on the `configurator-v0.9.2` tag (bundles add-on v2.9.15). Gates green: `tsc -b` · **vitest 356** · **cargo test 53** (+`rfd`) · `vite build`; browser-verified each change.
