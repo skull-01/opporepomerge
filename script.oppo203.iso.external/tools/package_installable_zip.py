@@ -11,11 +11,47 @@ allowlisted runtime directory.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import zipfile
 from collections.abc import Iterator
 from pathlib import Path
 
 ADDON_DIR_NAME = "script.oppo203.iso.external"
+
+# Build tag (the configurator verifies it): a SHA-256 content manifest stamped into the installable
+# zip as resources/oppokodiaddon.sig. Kodi-inert metadata; not a cryptographic signature.
+SIGNATURE_REL = "resources/oppokodiaddon.sig"
+SIGNATURE_ALG = "oppocfg-manifest-sha256-v1"
+
+
+def compute_manifest_sig(members: list[tuple[str, bytes]]) -> str:
+    """Deterministic SHA-256 over a sorted ``arcname\\n<sha256(bytes)>\\n`` manifest of the members.
+
+    This format is the cross-language contract the configurator's Rust ``addon_manifest_sig``
+    mirrors; both are pinned to a shared fixture hash in the tests so they cannot silently drift.
+    """
+    parts: list[str] = []
+    for arcname, data in sorted(members, key=lambda m: m[0]):
+        parts.append(arcname)
+        parts.append("\n")
+        parts.append(hashlib.sha256(data).hexdigest())
+        parts.append("\n")
+    return hashlib.sha256("".join(parts).encode("utf-8")).hexdigest()
+
+
+def _addon_version_from_xml(xml: bytes) -> str:
+    text = xml.decode("utf-8", "replace")
+    start = text.find("<addon")
+    if start == -1:
+        return ""
+    key = text.find('version="', start)
+    if key == -1:
+        return ""
+    after = text[key + len('version="') :]
+    end = after.find('"')
+    return after[:end] if end != -1 else ""
+
 
 # Build 7 allowlist: only these root files and runtime directories are eligible
 # for the installable Kodi package. Development folders such as tests/, tools/,
@@ -99,11 +135,25 @@ def create_installable_zip(root: Path, output_zip: Path) -> list[str]:
     root = project_root(root)
     output_zip.parent.mkdir(parents=True, exist_ok=True)
     written: list[str] = []
+    members: list[tuple[str, bytes]] = []
+    sig_arcname = f"{ADDON_DIR_NAME}/{SIGNATURE_REL}"
     with zipfile.ZipFile(output_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         for path, rel in iter_runtime_files(root):
             arcname = f"{ADDON_DIR_NAME}/{rel.as_posix()}"
             zf.write(path, arcname)
+            members.append((arcname, path.read_bytes()))
             written.append(arcname)
+        # Stamp the build tag last, over the runtime members (excluding the tag itself).
+        addon_xml = next((d for a, d in members if a == f"{ADDON_DIR_NAME}/addon.xml"), b"")
+        payload = {
+            "alg": SIGNATURE_ALG,
+            "addon": ADDON_DIR_NAME,
+            "version": _addon_version_from_xml(addon_xml),
+            "files": len(members),
+            "sig": compute_manifest_sig(members),
+        }
+        zf.writestr(sig_arcname, json.dumps(payload, sort_keys=True, separators=(",", ":")))
+        written.append(sig_arcname)
     return written
 
 
