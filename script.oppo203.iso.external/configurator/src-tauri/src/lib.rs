@@ -450,6 +450,25 @@ fn write_diagnostics(app: tauri::AppHandle, contents: String) -> Result<String, 
     Ok(path.to_string_lossy().into_owned())
 }
 
+/// Write the generated AutoScript bundle to a folder on the user's Desktop (autoexec.sh +
+/// HOW-TO-INSTALL.txt) so they can copy it to a USB drive. The script is LF-normalized (the player
+/// runs /bin/sh; CRLF would break the shebang). The README + script are built by the frontend; this
+/// only writes bytes. Returns the folder's absolute path.
+#[tauri::command]
+fn export_autoscript_bundle(
+    app: tauri::AppHandle,
+    script: String,
+    readme: String,
+) -> Result<String, String> {
+    let desktop = app.path().desktop_dir().map_err(|e| e.to_string())?;
+    let dir = desktop.join("OppoKodiAddon-AutoScript");
+    fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let script_lf = script.replace("\r\n", "\n").replace('\r', "\n");
+    fs::write(dir.join("autoexec.sh"), script_lf.as_bytes()).map_err(|e| e.to_string())?;
+    fs::write(dir.join("HOW-TO-INSTALL.txt"), readme.as_bytes()).map_err(|e| e.to_string())?;
+    Ok(dir.to_string_lossy().into_owned())
+}
+
 // ============================================================
 // Test-ISO copy to the media share (Phase 4.2 self-test; D-2 = user supplies the ISO)
 // ============================================================
@@ -2928,7 +2947,8 @@ pub fn run() {
             reset_box_ssh,
             reset_app_data,
             diagnostics_env,
-            write_diagnostics
+            write_diagnostics,
+            export_autoscript_bundle
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

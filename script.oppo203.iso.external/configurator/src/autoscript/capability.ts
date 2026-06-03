@@ -78,3 +78,12 @@ export function autoscriptFamily(model: string | null | undefined): AutoScriptFa
   if (/UDP-?20[35]/.test(upper)) return "oppo20x_jailbroken";
   return "unknown";
 }
+
+/**
+ * Pull the firmware string from a #QVR reply ("OK UDP20X-65-0131" / "@QVR OK UDP20X-65-0131") into
+ * the "20X-65-0131" form firmwareMajorBuild expects (drops the UDP prefix). "" if none found.
+ */
+export function parseQvrFirmware(reply: string | null | undefined): string {
+  const m = /(?:UDP)?(20X-[A-Z0-9-]+)/.exec(String(reply ?? "").toUpperCase());
+  return m ? m[1] : "";
+}
