@@ -2138,19 +2138,190 @@ fn smartthings_switch_request(
     })
 }
 
+// ============================================================
+// LAN scan + NAS panel (Developer Options)
+// ============================================================
+//
+// A subnet sweep over the configurator host's local /24, probing service ports in parallel. Shared
+// by the NAS scan (this section) and the Kodi-box scan. All network I/O is best-effort + Phase-C.
+
+/// Best-effort local IPv4 of the primary route. Opens a UDP socket and "connects" it to a public
+/// address (no packet is sent) so the OS picks the outbound interface, then reads its local addr.
+fn local_ipv4() -> Option<std::net::Ipv4Addr> {
+    let sock = UdpSocket::bind("0.0.0.0:0").ok()?;
+    sock.connect("8.8.8.8:80").ok()?;
+    match sock.local_addr().ok()?.ip() {
+        std::net::IpAddr::V4(v4) => Some(v4),
+        std::net::IpAddr::V6(_) => None,
+    }
+}
+
+/// The /24 host addresses for `ip` (x.y.z.1 ..= x.y.z.254), excluding `ip` itself.
+fn subnet_hosts(ip: std::net::Ipv4Addr) -> Vec<std::net::Ipv4Addr> {
+    let o = ip.octets();
+    (1u8..=254)
+        .map(|h| std::net::Ipv4Addr::new(o[0], o[1], o[2], h))
+        .filter(|c| *c != ip)
+        .collect()
+}
+
+/// Probe `hosts` concurrently: per host, return the subset of `ports` that accept a TCP connection
+/// within `timeout_ms`. Bounded concurrency (chunks of 48) so a /24 sweep doesn't spawn 254 threads
+/// at once. Hosts with no open port are dropped by the caller.
+fn parallel_open_ports(
+    hosts: &[std::net::Ipv4Addr],
+    ports: &[u16],
+    timeout_ms: u64,
+) -> Vec<(std::net::Ipv4Addr, Vec<u16>)> {
+    let mut out = Vec::new();
+    for chunk in hosts.chunks(48) {
+        let results: Vec<(std::net::Ipv4Addr, Vec<u16>)> = std::thread::scope(|s| {
+            let handles: Vec<_> = chunk
+                .iter()
+                .map(|&ip| {
+                    s.spawn(move || {
+                        let open: Vec<u16> = ports
+                            .iter()
+                            .copied()
+                            .filter(|&p| connect_timeout(&ip.to_string(), p, timeout_ms).is_ok())
+                            .collect();
+                        (ip, open)
+                    })
+                })
+                .collect();
+            handles.into_iter().map(|h| h.join().unwrap()).collect()
+        });
+        out.extend(results);
+    }
+    out
+}
+
+/// Resolve the scan base: an explicit IPv4 string, else the host's primary local IPv4.
+fn resolve_scan_base(base_ip: Option<String>) -> Result<std::net::Ipv4Addr, String> {
+    match base_ip.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        Some(s) => s.parse().map_err(|e| format!("invalid base IP '{s}': {e}")),
+        None => local_ipv4().ok_or_else(|| "could not determine the local IPv4 (no default route?)".to_string()),
+    }
+}
+
+const NAS_PORTS: &[(u16, &str)] = &[(445, "SMB"), (139, "SMB"), (2049, "NFS"), (548, "AFP"), (21, "FTP")];
+
+#[derive(serde::Serialize)]
+struct NasHost {
+    ip: String,
+    protocols: Vec<String>,
+}
+
+/// Sweep the local /24 for NAS hosts, identifying the protocol by which service port answers
+/// (445/139 SMB, 2049 NFS, 548 AFP, 21 FTP). `base_ip` overrides the auto-detected local subnet.
+#[tauri::command]
+fn scan_nas_hosts(base_ip: Option<String>, timeout_ms: Option<u64>) -> Result<Vec<NasHost>, String> {
+    let base = resolve_scan_base(base_ip)?;
+    let hosts = subnet_hosts(base);
+    let ports: Vec<u16> = NAS_PORTS.iter().map(|(p, _)| *p).collect();
+    let found = parallel_open_ports(&hosts, &ports, timeout_ms.unwrap_or(300));
+    Ok(found
+        .into_iter()
+        .filter(|(_, open)| !open.is_empty())
+        .map(|(ip, open)| {
+            let mut protocols: Vec<String> = open
+                .iter()
+                .filter_map(|p| NAS_PORTS.iter().find(|(np, _)| np == p).map(|(_, n)| n.to_string()))
+                .collect();
+            protocols.sort();
+            protocols.dedup();
+            NasHost { ip: ip.to_string(), protocols }
+        })
+        .collect())
+}
+
+/// Build the UNC path `\\host\share` for an SMB share, trimming leading slashes off the share name.
+fn nas_unc(host: &str, share: &str) -> String {
+    let s = share.trim().trim_start_matches(['\\', '/']);
+    format!(r"\\{host}\{s}")
+}
+
+/// Test-login to an SMB share + list it (Windows `net use` with the supplied credentials, then a
+/// directory read, then tear the mapping down). Credentials are passed but never persisted; the
+/// caller redacts them from the transcript. Hardware-pending.
+fn nas_test_smb(host: &str, share: &str, user: Option<&str>, password: Option<&str>) -> Result<String, String> {
+    let share_clean = share.trim().trim_start_matches(['\\', '/']);
+    if share_clean.is_empty() {
+        return Err("share name is required".to_string());
+    }
+    if share_clean.contains(['"', '\r', '\n']) {
+        return Err("invalid share name".to_string());
+    }
+    let unc = nas_unc(host, share);
+    let with_creds = user.map(str::trim).is_some_and(|u| !u.is_empty());
+    if with_creds {
+        let u = user.unwrap().trim();
+        // Explicit password (even empty) prevents net.exe from blocking on an interactive prompt.
+        let out = std::process::Command::new("net")
+            .args(["use", &unc, password.unwrap_or(""), &format!("/user:{u}")])
+            .output()
+            .map_err(|e| format!("could not run net use: {e}"))?;
+        if !out.status.success() {
+            return Err(format!("net use failed: {}", String::from_utf8_lossy(&out.stderr).trim()));
+        }
+    }
+    let listing = fs::read_dir(&unc);
+    if with_creds {
+        let _ = std::process::Command::new("net").args(["use", &unc, "/delete", "/yes"]).output();
+    }
+    match listing {
+        Ok(rd) => {
+            let names: Vec<String> = rd
+                .filter_map(|e| e.ok())
+                .take(20)
+                .map(|e| e.file_name().to_string_lossy().into_owned())
+                .collect();
+            Ok(format!("{unc} — listed {} entries: {}", names.len(), names.join(", ")))
+        }
+        Err(e) => Err(format!("could not list {unc}: {e}")),
+    }
+}
+
+/// Test-login to a NAS share for troubleshooting (`protocol` = smb | nfs). SMB authenticates + lists
+/// (nas_test_smb); NFS does a reachability check (a full mount needs the Windows NFS client).
+/// Credentials are never persisted. Hardware-pending.
+#[tauri::command]
+fn nas_test_login(
+    host: String,
+    share: String,
+    user: Option<String>,
+    password: Option<String>,
+    protocol: String,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    match protocol.as_str() {
+        "smb" => nas_test_smb(&host, &share, user.as_deref(), password.as_deref()),
+        "nfs" => {
+            if connect_timeout(&host, 2049, 1500).is_ok() {
+                Ok(format!(
+                    "NFS port 2049 reachable on {host}. A full mount/list needs the Windows NFS client (Services for NFS)."
+                ))
+            } else {
+                Err(format!("NFS port 2049 not reachable on {host}"))
+            }
+        }
+        other => Err(format!("unknown protocol '{other}' (expected smb or nfs)")),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{
         adb_switch_command_line, box_reset_targets, classify_frame, copy_progress_percent,
         denon_input_command,
         device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
-        format_external_command, http_get_request, json_post_request, kodi_enable_body,
+        format_external_command, http_get_request, json_post_request, kodi_enable_body, nas_unc,
         kodi_enable_ok, kodi_get_item_body, oppo_http_get_request, oppo_info_request,
         oppo_play_payload,
         oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
         parse_verbose_mode, percent_encode, remove_existing_paths, roku_keypress_request,
-        sony_ircc_envelope,
+        sony_ircc_envelope, subnet_hosts,
         safe_app_rel,
         smartthings_command_url, smartthings_set_input_body, sony_audio_set_input_payload,
         sony_bravia_set_input_body, to_hex, unc_host, validate_copy_paths, yamaha_input_path,
@@ -2297,6 +2468,22 @@ mod tests {
         assert!(e.contains("<IRCCCode>AAAAAQAAAAEAAAAVAw==</IRCCCode>"));
         assert!(e.contains("urn:schemas-sony-com:service:IRCC:1"));
         assert!(e.starts_with("<?xml"));
+    }
+
+    #[test]
+    fn subnet_hosts_covers_the_24_excluding_self() {
+        let hosts = subnet_hosts("10.0.1.42".parse().unwrap());
+        assert_eq!(hosts.len(), 253);
+        assert!(hosts.iter().all(|h| (1..=254).contains(&h.octets()[3])));
+        assert!(!hosts.iter().any(|h| h.to_string() == "10.0.1.42"));
+        assert!(hosts.iter().any(|h| h.to_string() == "10.0.1.1"));
+        assert!(hosts.iter().any(|h| h.to_string() == "10.0.1.254"));
+    }
+
+    #[test]
+    fn nas_unc_builds_double_backslash_path() {
+        assert_eq!(nas_unc("10.0.1.10", "Media"), r"\\10.0.1.10\Media");
+        assert_eq!(nas_unc("nas", "//pub"), r"\\nas\pub");
     }
 
     #[test]
@@ -2646,6 +2833,8 @@ pub fn run() {
             tv_switch_external,
             tv_switch_adb,
             smartthings_switch_request,
+            scan_nas_hosts,
+            nas_test_login,
             start_oppo_live_monitor,
             stop_oppo_live_monitor,
             reset_box_userdata,
