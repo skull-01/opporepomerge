@@ -173,7 +173,8 @@ export function OppoPanel({ state }: DevPanelProps) {
   }
 
   return (
-    <div className="stack-lg">
+    <div className="dev-split">
+      <div className="stack-lg">
       <section className="card">
         <h3 style={{ marginTop: 0 }}>OPPO console</h3>
         <div className="field" style={{ maxWidth: 280 }}>
@@ -309,7 +310,8 @@ export function OppoPanel({ state }: DevPanelProps) {
           </div>
         )}
       </section>
-
+      </div>
+      <div className="dev-split-aside">
       <section className="card">
         <div className="row-between" style={{ marginBottom: 10 }}>
           <h3 style={{ margin: 0 }}>Live transcript</h3>
@@ -367,6 +369,7 @@ export function OppoPanel({ state }: DevPanelProps) {
           )}
         </div>
       </section>
+      </div>
     </div>
   );
 }

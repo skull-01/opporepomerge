@@ -96,7 +96,8 @@ export function TvPanel({ state }: DevPanelProps) {
     });
 
   return (
-    <div className="stack-lg">
+    <div className="dev-split">
+      <div className="stack-lg">
       <section className="card">
         <h3 style={{ marginTop: 0 }}>TV console</h3>
         <div className="field" style={{ maxWidth: 280 }}>
@@ -191,8 +192,10 @@ export function TvPanel({ state }: DevPanelProps) {
           </div>
         )}
       </section>
-
-      <Transcript api={tx} title="TV transcript" note="TVs expose no telemetry feed — this is a command/response log plus reachability, not a live device view." />
+      </div>
+      <div className="dev-split-aside">
+        <Transcript api={tx} title="TV transcript" note="TVs expose no telemetry feed — this is a command/response log plus reachability, not a live device view." />
+      </div>
     </div>
   );
 }
