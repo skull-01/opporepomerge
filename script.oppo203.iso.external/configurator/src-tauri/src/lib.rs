@@ -1990,6 +1990,44 @@ fn tv_switch_sony_bravia(
     device_response_ok(&resp)
 }
 
+/// The SOAP envelope for a Sony Bravia IRCC remote-control key (`X_SendIRCC`).
+fn sony_ircc_envelope(code: &str) -> String {
+    format!(
+        "<?xml version=\"1.0\"?><s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\" s:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\"><s:Body><u:X_SendIRCC xmlns:u=\"urn:schemas-sony-com:service:IRCC:1\"><IRCCCode>{code}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>"
+    )
+}
+
+/// Fire a Sony Bravia IRCC remote-control code over the REST API (POST /sony/IRCC, SOAP body,
+/// X-Auth-PSK) -- the remote-key half of the Bravia surface, complementing the HDMI-port switch in
+/// tv_switch_sony_bravia. IRCC codes are base64. Best-effort + hardware-pending.
+#[tauri::command]
+fn tv_sony_bravia_ircc(
+    host: String,
+    psk: String,
+    code: String,
+    timeout_ms: Option<u64>,
+) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    if psk.trim().is_empty() {
+        return Err("Sony Bravia PSK is required".to_string());
+    }
+    let c = code.trim();
+    if c.is_empty() || !c.chars().all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '+' | '/' | '=')) {
+        return Err(format!("invalid IRCC code '{code}' (expected a base64 IRCC code)"));
+    }
+    let body = sony_ircc_envelope(c);
+    let extra = format!(
+        "X-Auth-PSK: {}\r\nSOAPACTION: \"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC\"\r\n",
+        psk.trim()
+    );
+    let request = format!(
+        "POST /sony/IRCC HTTP/1.0\r\nHost: {host}:{SONY_BRAVIA_PORT}\r\nContent-Type: text/xml; charset=UTF-8\r\nContent-Length: {len}\r\n{extra}Connection: close\r\n\r\n{body}",
+        len = body.len()
+    );
+    let resp = socket_exchange(&host, SONY_BRAVIA_PORT, request.as_bytes(), timeout_ms.unwrap_or(5000))?;
+    device_response_ok(&resp)
+}
+
 /// Substitute `{tv_ip}` into a user-configured TV command template (lg / samsung / custom),
 /// mirroring tv_control._run_external's `command.format(tv_ip=...)`.
 fn format_external_command(template: &str, tv_ip: &str) -> Result<String, String> {
@@ -2112,6 +2150,7 @@ mod tests {
         oppo_play_request, oppo_power_token, oppo_signin_request, parse_addon_version,
         parse_kodi_active_player_id, parse_kodi_log_file, parse_kodi_player_file,
         parse_verbose_mode, percent_encode, remove_existing_paths, roku_keypress_request,
+        sony_ircc_envelope,
         safe_app_rel,
         smartthings_command_url, smartthings_set_input_body, sony_audio_set_input_payload,
         sony_bravia_set_input_body, to_hex, unc_host, validate_copy_paths, yamaha_input_path,
@@ -2250,6 +2289,14 @@ mod tests {
         assert!(req.contains(&format!("Content-Length: {}\r\n", body.len())));
         assert!(req.contains("X-Auth-PSK: k\r\n"));
         assert!(req.ends_with(body));
+    }
+
+    #[test]
+    fn sony_ircc_envelope_wraps_the_code() {
+        let e = sony_ircc_envelope("AAAAAQAAAAEAAAAVAw==");
+        assert!(e.contains("<IRCCCode>AAAAAQAAAAEAAAAVAw==</IRCCCode>"));
+        assert!(e.contains("urn:schemas-sony-com:service:IRCC:1"));
+        assert!(e.starts_with("<?xml"));
     }
 
     #[test]
@@ -2595,6 +2642,7 @@ pub fn run() {
             avr_switch_yamaha,
             avr_switch_sony_audio,
             tv_switch_sony_bravia,
+            tv_sony_bravia_ircc,
             tv_switch_external,
             tv_switch_adb,
             smartthings_switch_request,
