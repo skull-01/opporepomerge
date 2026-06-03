@@ -491,6 +491,23 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
+**▶ NEXT THEME (🔒 LOCKED, queued 2026-06-03): Developer Options console.** The next configurator
+build theme is the **Developer Options** dev surface — a confirm-gated tab (mirrors the Reset-all
+persistent entry) with **Kodi / TV / OPPO / AVR / NAS** sub-sections, each a **live view + remote
+control**, plus Kodi dev tooling (version/settings view, **upload-any-version**, remote restart,
+register-without-restart) and a **LAN scan**. The plan is **LOCKED** (plan of record) in
+[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) §2. **Resume (configurator) → start here: Session A = PR A
+(dev-tab shell, mirrors #264) + PR B-OPPO** (TCP `#XXX` palette + raw box via `oppo_query`; HTTP
+palette over the **already-landed 61-endpoint catalog** `configurator/src/oppo-commands/http-commands.ts`
+from #285; live transcript with a **TCP⇄HTTP monitor switch**). Then PR C (Kodi dev), PR D-TV / D-AVR
+(all-backend command consoles), PR D-NAS (scan + protocol-detect + share test-login + live message
+panel), PR E (Kodi LAN scan). **~7 PRs → multi-session.** Non-blocking first-build inputs: an optional
+tester OPPO TCP command list (else the documented UDP-20x set); file the umbrella + per-PR ENH issues.
+Nearly all behavior is **Phase-C** (real OPPO/Kodi/TV/AVR/NAS) — in-session, software-verify the UI +
+pure logic (command catalogs, subnet enumeration, JSON-RPC/command builders, transcript folding).
+
+---
+
 **As of 2026-06-03 (EOD #14 — 7-theme infra/hardening batch + configurator v0.8.6 cut by the NEW CI release automation).**
 **Clean stopping point — 0 open PRs; `main`@`2eaf1a7` is configurator v0.8.6 (the docs-wrap commit follows); the configurator gate now runs in GitHub Actions.**
 Operator: "do all of this automatically" — seven themes, each delivered as its own CI-gated PR:
