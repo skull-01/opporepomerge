@@ -6,6 +6,7 @@ import { KodiPanel } from "./KodiPanel";
 import { TvPanel } from "./TvPanel";
 import { AvrPanel } from "./AvrPanel";
 import { NasPanel } from "./NasPanel";
+import { AutoScriptPanel } from "./AutoScriptPanel";
 
 // Tab order leads with OPPO (the device the whole add-on drives), then the rest of the chain.
 const TABS: readonly { id: DevTab; label: string }[] = [
@@ -14,6 +15,7 @@ const TABS: readonly { id: DevTab; label: string }[] = [
   { id: "tv", label: "TV" },
   { id: "avr", label: "AV receiver" },
   { id: "nas", label: "NAS" },
+  { id: "autoscript", label: "AutoScript" },
 ];
 
 /**
@@ -57,6 +59,7 @@ export function DeveloperScreen({ go, state, set }: ScreenProps) {
         {tab === "tv" && <TvPanel {...panelProps} />}
         {tab === "avr" && <AvrPanel {...panelProps} />}
         {tab === "nas" && <NasPanel {...panelProps} />}
+        {tab === "autoscript" && <AutoScriptPanel {...panelProps} />}
       </div>
 
       <div className="footer-nav">
