@@ -497,20 +497,17 @@ branch unprompted.
 
 ## §3b Configurator work — in progress
 
-**▶ NEXT THEME (🔒 LOCKED, queued 2026-06-03): Developer Options console.** The next configurator
-build theme is the **Developer Options** dev surface — a confirm-gated tab (mirrors the Reset-all
-persistent entry) with **Kodi / TV / OPPO / AVR / NAS** sub-sections, each a **live view + remote
-control**, plus Kodi dev tooling (version/settings view, **upload-any-version**, remote restart,
-register-without-restart) and a **LAN scan**. The plan is **LOCKED** (plan of record) in
-[`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) §2. **Resume (configurator) → start here: Session A = PR A
-(dev-tab shell, mirrors #264) + PR B-OPPO** (TCP `#XXX` palette + raw box via `oppo_query`; HTTP
-palette over the **already-landed 61-endpoint catalog** `configurator/src/oppo-commands/http-commands.ts`
-from #285; live transcript with a **TCP⇄HTTP monitor switch**). Then PR C (Kodi dev), PR D-TV / D-AVR
-(all-backend command consoles), PR D-NAS (scan + protocol-detect + share test-login + live message
-panel), PR E (Kodi LAN scan). **~7 PRs → multi-session.** Non-blocking first-build inputs: an optional
-tester OPPO TCP command list (else the documented UDP-20x set); file the umbrella + per-PR ENH issues.
-Nearly all behavior is **Phase-C** (real OPPO/Kodi/TV/AVR/NAS) — in-session, software-verify the UI +
-pure logic (command catalogs, subnet enumeration, JSON-RPC/command builders, transcript folding).
+**As of 2026-06-03 (EOD #15 — Developer Options console SHIPPED across 7 PRs; cut configurator v0.9.0 via the CI tag).**
+**Clean stopping point — 0 open PRs; `main`@`c3b8bcf` is configurator v0.9.0; all 7 PRs merged + CI-gated; release built + published by the CI tag job.**
+Operator picked `resume` → Configurator → the LOCKED **Developer Options** theme, then "complete all the phases automatically then release it" (full auth, 4 up-front decisions: v0.9.0 via CI tag · documented OPPO TCP set + raw box · umbrella + per-PR ENH issues · merge-as-I-go). Built + merged **all 7 PRs** under umbrella **[#290]**, each CI-gated and merged to `main` as it passed:
+- **PR A** [#298] dev-tab shell + nav — a `developer` screen + a persistent header "Developer…" entry (hidden on dev screens, mirrors #264 reset-all), 5 sub-section tabs, wired into `steps.ts` (ScreenId + both maps) + `App.tsx`, pinned by `steps.test.ts`.
+- **PR B-OPPO** [#299] OPPO console — TCP palette (canonical 76-key `#XXX` map → `oppo-commands/tcp-commands.ts`) via `oppo_query` + raw box; HTTP palette over the 61-endpoint catalog (#285) via a new generic `oppo_http_get`; live transcript with a TCP-push (`#SVM 3`) ⇄ HTTP-poll (`getmovieplayinfo`+`getglobalinfo`) monitor switch. Credential endpoints redacted in the transcript + never persisted (`oppoConsole.ts`, unit-tested).
+- **PR C** [#300] Kodi dev tools — installed-vs-bundled version (`bundled_addon_info` + box `addon.xml` over SSH), a live settings table, register-without-restart (`kodi_set_addon_enabled`), remote restart (new `kodi_restart`), upload-any-version (new `install_addon_zip`); restart + zip-upload confirm-gated.
+- **PR D-TV** [#301] TV console — all backends (Roku ECP / ADB / Sony Bravia / LG-Samsung-custom / SmartThings), each fired via the existing `tv_switch_*`/`smartthings_switch_request` + a new generic IRCC `tv_sony_bravia_ircc`; shared live transcript (new `devTranscript.tsx`: `useTranscript`/`Transcript`/`runAndLog`).
+- **PR D-AVR** [#302] AVR console — all backends via the existing `avr_switch_*` (input-select; **0 new Rust cmds**); shared form controls (`devControls.tsx`).
+- **PR D-NAS** [#303] NAS panel — `scan_nas_hosts` (parallel /24 sweep of 445/139/2049/548/21 + protocol-detect) + `nas_test_login` (SMB net-use auth+list / NFS reachability); creds redacted + never persisted; shared subnet sweep helpers (`local_ipv4`/`subnet_hosts`/`parallel_open_ports`).
+- **PR E** [#304] Kodi LAN scan — `scan_kodi_hosts` (:8080 sweep + JSON-RPC `Application.GetProperties` confirm, yields version), lists found boxes + fills the Kodi IP; reuses the D-NAS subnet helpers.
+Then bump [#305] → tag **`configurator-v0.9.0`** → the **CI release job** builds MSI/NSIS + publishes as Latest (bundles add-on **v2.9.15**). Gates green throughout: `tsc -b` · **vitest 338** · **cargo test 50** · `vite build`; every panel **browser-verified** (nav, command-firing, the OPPO + NAS credential redaction, the Kodi scan). ENH **#291–#297** (+ umbrella **#290**) SHA-commented + **OPEN** (only-operator-closes); Phase-C rows in `docs/MANUAL_VERIFICATION_CHECKLIST.md`; `docs/BUILD_PLAN.md` §2 is now **✅ DELIVERED**. **Resume (configurator) — Phase-C** the whole Developer Options surface on real OPPO/Kodi/TV/AVR/NAS (every console's device I/O is hardware-pending: TCP/HTTP commands, verbose-push/HTTP monitors, SSH register/restart/zip-upload, the scans, the SMB/NFS login), then pick a fresh theme. Standing rule: a bare "release" = the configurator release bundling the add-on (see [[configurator-release-is-manual]], CI path).
 
 ---
 
@@ -2239,6 +2236,15 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   OverflowError fix is captured in the EOD #14 batch). Extended memory [[gh-powershell-json-gotchas]]
   (a PowerShell here-string mangles `gh --body`/`git commit -m` → use `--body-file`/`-F`). All
   software-verified; **0 open PRs**; `main`@`eec9edf`. Releases are now `git tag configurator-v*` → CI.
+- **2026-06-03 (EOD #15)** — Built the entire **Developer Options console** initiative (#290) in one
+  session: 7 PRs (#298 shell, #299 OPPO, #300 Kodi, #301 TV, #302 AVR, #303 NAS, #304 Kodi-scan) + bump
+  #305, all merged to `main` and CI-gated; tagged **`configurator-v0.9.0`** → the CI release job built
+  MSI/NSIS + published as Latest (bundles add-on v2.9.15). Rewrote §3b's top entry from the LOCKED
+  "next theme" block to the shipped EOD #15 record; marked `docs/BUILD_PLAN.md` §2 ✅ DELIVERED; added a
+  Developer-Options Phase-C section to `docs/MANUAL_VERIFICATION_CHECKLIST.md`. New configurator Rust
+  commands: `oppo_http_get`, `install_addon_zip`, `kodi_restart`, `tv_sony_bravia_ircc`,
+  `scan_nas_hosts`, `nas_test_login`, `scan_kodi_hosts` (cargo 47→50; vitest 328→338). `main`@`c3b8bcf`;
+  **0 open PRs**.
 
 ---
 

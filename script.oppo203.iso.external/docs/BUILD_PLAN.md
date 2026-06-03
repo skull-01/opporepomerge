@@ -53,7 +53,7 @@ No agent code remains for the delivered initiatives.
 
 ---
 
-## §2 ▶ ACTIVE INITIATIVE (queued — at the Go gate): Developer Options console
+## §2 ✅ DELIVERED (configurator v0.9.0, 2026-06-03): Developer Options console
 
 A confirm-gated **Developer Options** surface that mirrors the Reset-all persistent entry (a header
 button + a dedicated screen + `steps.ts` routing), with per-device sub-sections — **Kodi / TV / OPPO /
@@ -65,7 +65,7 @@ verbose-push stream, the remote-control commands (`oppo_power`/`tv_switch_*`/`av
 `smartthings_switch_request`), and the install/enable commands (`install_addon`/`kodi_set_addon_enabled`/
 `bundled_addon_info`).
 
-**Status: 🔒 LOCKED (approved 2026-06-03) — queued as the next configurator theme; build Session A = PR A + PR B-OPPO.** The OPPO **HTTP command catalog** already landed as the
+**Status: ✅ DELIVERED — shipped in configurator v0.9.0 (2026-06-03) as 7 CI-gated PRs (#298 shell · #299 OPPO · #300 Kodi · #301 TV · #302 AVR · #303 NAS · #304 Kodi-scan) + bump #305, umbrella #290; all software-verified, Phase-C on real devices pending.** The OPPO **HTTP command catalog** already landed as the
 data layer (PR #285 → `configurator/src/oppo-commands/http-commands.ts`). All five device
 sub-sections (Kodi / TV / OPPO / AVR / NAS) are fully specified; the scope below is the **plan of
 record** (locked — no further refinement expected before build). Non-blocking first-build inputs: an
