@@ -2458,6 +2458,39 @@ struct AddonZipInfo {
     valid: bool,
     version: Option<String>,
     reason: String,
+    /// "signed" (build tag present + matches), "unsigned" (no tag — an older build), or "mismatch"
+    /// (tag present but the content hash differs — modified after build; the upload is blocked).
+    signature_state: String,
+}
+
+/// An identity+structure result with no build-tag knowledge yet (signature_state filled by the
+/// caller). `valid:false` short-circuits before the tag is even read.
+fn addon_id_result(valid: bool, version: Option<String>, reason: impl Into<String>) -> AddonZipInfo {
+    AddonZipInfo { valid, version, reason: reason.into(), signature_state: "unsigned".into() }
+}
+
+/// SHA-256 of `data` as lowercase hex.
+fn sha256_hex(data: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    h.update(data);
+    h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+}
+
+/// Rust mirror of the add-on packaging `compute_manifest_sig`: SHA-256 over a sorted
+/// `arcname\n<sha256(bytes)>\n` manifest of the members. Pinned to the same fixture hash as the
+/// Python side (tests) so the cross-language contract cannot silently drift.
+fn addon_manifest_sig(members: &[(String, Vec<u8>)]) -> String {
+    let mut sorted: Vec<&(String, Vec<u8>)> = members.iter().collect();
+    sorted.sort_by(|a, b| a.0.cmp(&b.0));
+    let mut manifest = String::new();
+    for (arcname, data) in sorted {
+        manifest.push_str(arcname);
+        manifest.push('\n');
+        manifest.push_str(&sha256_hex(data));
+        manifest.push('\n');
+    }
+    sha256_hex(manifest.as_bytes())
 }
 
 /// Identity + structure check given the zip's entry names + its addon.xml: is this our add-on? Pure
@@ -2467,66 +2500,91 @@ struct AddonZipInfo {
 fn validate_addon_contents(names: &[String], addon_xml: Option<&str>) -> AddonZipInfo {
     let want = |rel: &str| names.iter().any(|n| n == &format!("{ADDON_ID}/{rel}"));
     if !want("addon.xml") {
-        return AddonZipInfo {
-            valid: false,
-            version: None,
-            reason: format!("not the {ADDON_ID} add-on (no {ADDON_ID}/addon.xml)"),
-        };
+        return addon_id_result(false, None, format!("not the {ADDON_ID} add-on (no {ADDON_ID}/addon.xml)"));
     }
     let xml = match addon_xml {
         Some(x) => x,
-        None => {
-            return AddonZipInfo { valid: false, version: None, reason: "could not read addon.xml".into() }
-        }
+        None => return addon_id_result(false, None, "could not read addon.xml"),
     };
     let version = parse_addon_version(xml);
     if !xml.contains(&format!("id=\"{ADDON_ID}\"")) {
-        return AddonZipInfo { valid: false, version, reason: "addon.xml id is not script.oppo203.iso.external".into() };
+        return addon_id_result(false, version, "addon.xml id is not script.oppo203.iso.external");
     }
     if version.is_none() {
-        return AddonZipInfo { valid: false, version: None, reason: "could not parse the add-on version from addon.xml".into() };
+        return addon_id_result(false, None, "could not parse the add-on version from addon.xml");
     }
     let entry_points = want("default.py")
         && want("service.py")
         && names.iter().any(|n| n.starts_with(&format!("{ADDON_ID}/resources/lib/")));
     if !entry_points {
-        return AddonZipInfo { valid: false, version, reason: "missing default.py / service.py / resources/lib".into() };
+        return addon_id_result(false, version, "missing default.py / service.py / resources/lib");
     }
-    AddonZipInfo { valid: true, version, reason: "valid OppoKodiAddon zip".into() }
+    addon_id_result(true, version, "valid OppoKodiAddon zip")
 }
 
 /// Validate that `path` is one of our add-on zips, so the dev-console upload is enabled only for a
-/// real OppoKodiAddon. Reads the zip's entries + addon.xml, then delegates to validate_addon_contents.
-/// Never errors on a bad file -- returns valid:false with a reason for the UI.
+/// real OppoKodiAddon. Runs the identity+structure check, then verifies the build tag
+/// (resources/oppokodiaddon.sig): signed (matches), unsigned (no tag), or mismatch (tampered ->
+/// blocked). Never errors on a bad file -- returns valid:false with a reason for the UI.
 #[tauri::command]
 fn validate_addon_zip(path: String) -> Result<AddonZipInfo, String> {
     let p = PathBuf::from(&path);
     if !p.is_file() {
-        return Ok(AddonZipInfo { valid: false, version: None, reason: format!("not a file: {path}") });
+        return Ok(addon_id_result(false, None, format!("not a file: {path}")));
     }
     let file = match fs::File::open(&p) {
         Ok(f) => f,
-        Err(e) => return Ok(AddonZipInfo { valid: false, version: None, reason: format!("cannot open: {e}") }),
+        Err(e) => return Ok(addon_id_result(false, None, format!("cannot open: {e}"))),
     };
     let mut zip = match zip::ZipArchive::new(file) {
         Ok(z) => z,
-        Err(e) => return Ok(AddonZipInfo { valid: false, version: None, reason: format!("not a valid zip: {e}") }),
+        Err(e) => return Ok(addon_id_result(false, None, format!("not a valid zip: {e}"))),
     };
+    let sig_arcname = format!("{ADDON_ID}/resources/oppokodiaddon.sig");
+    // Read every member's bytes once (needed for both the identity check and the manifest hash);
+    // the sig file is kept aside, not counted in the manifest.
     let mut names: Vec<String> = Vec::with_capacity(zip.len());
+    let mut members: Vec<(String, Vec<u8>)> = Vec::with_capacity(zip.len());
+    let mut sig_json: Option<String> = None;
     for i in 0..zip.len() {
-        if let Ok(e) = zip.by_index(i) {
-            names.push(e.name().replace('\\', "/"));
+        let mut e = match zip.by_index(i) {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        let name = e.name().replace('\\', "/");
+        let mut data = Vec::new();
+        let _ = e.read_to_end(&mut data);
+        if name == sig_arcname {
+            sig_json = Some(String::from_utf8_lossy(&data).into_owned());
+        } else {
+            names.push(name.clone());
+            members.push((name, data));
         }
     }
-    let xml = match zip.by_name(&format!("{ADDON_ID}/addon.xml")) {
-        Ok(mut e) => {
-            let mut s = String::new();
-            e.read_to_string(&mut s).ok();
-            Some(s)
+    let xml = members
+        .iter()
+        .find(|(n, _)| n == &format!("{ADDON_ID}/addon.xml"))
+        .map(|(_, d)| String::from_utf8_lossy(d).into_owned());
+    let mut info = validate_addon_contents(&names, xml.as_deref());
+    if !info.valid {
+        return Ok(info);
+    }
+    match sig_json {
+        None => info.signature_state = "unsigned".into(),
+        Some(j) => {
+            let claimed = serde_json::from_str::<serde_json::Value>(&j)
+                .ok()
+                .and_then(|v| v.get("sig").and_then(|s| s.as_str()).map(String::from));
+            if claimed.as_deref() == Some(addon_manifest_sig(&members).as_str()) {
+                info.signature_state = "signed".into();
+            } else {
+                info.valid = false;
+                info.signature_state = "mismatch".into();
+                info.reason = "build tag mismatch -- the zip was modified after it was built".into();
+            }
         }
-        Err(_) => None,
-    };
-    Ok(validate_addon_contents(&names, xml.as_deref()))
+    }
+    Ok(info)
 }
 
 /// Open a native file picker for an add-on .zip (Developer Options Browse). Returns the chosen
@@ -2546,8 +2604,8 @@ mod tests {
         adb_switch_command_line, box_reset_targets, classify_frame, copy_progress_percent,
         denon_input_command,
         device_response_ok, eiscp_frame, eiscp_input_payload, extract_zip_into, first_line_or_sent,
-        format_external_command, http_get_request, json_post_request, kodi_enable_body, nas_unc,
-        validate_addon_contents,
+        addon_manifest_sig, format_external_command, http_get_request, json_post_request,
+        kodi_enable_body, nas_unc, validate_addon_contents,
         kodi_enable_ok, kodi_get_item_body, kodi_version_body, looks_like_kodi,
         oppo_http_get_request, oppo_info_request,
         oppo_play_payload,
@@ -2744,6 +2802,24 @@ mod tests {
         );
         // our id + entry points but no parseable version
         assert!(!validate_addon_contents(&addon_names(), Some(r#"<addon id="script.oppo203.iso.external" name="x"/>"#)).valid);
+    }
+
+    #[test]
+    fn addon_manifest_sig_matches_the_python_fixture() {
+        // Same fixture + expected hash as tests/test_addon_signature.py — the cross-language contract.
+        let members = vec![
+            (
+                "script.oppo203.iso.external/addon.xml".to_string(),
+                br#"<addon id="script.oppo203.iso.external" version="9.9.9"/>"#.to_vec(),
+            ),
+            ("script.oppo203.iso.external/default.py".to_string(), b"print('x')\n".to_vec()),
+            ("script.oppo203.iso.external/resources/lib/__init__.py".to_string(), b"".to_vec()),
+        ];
+        let expected = "bbcc638215a0e5be93c6c7a548cfc8cea1a806fd45cd47aeaf8b457043ee11fa";
+        assert_eq!(addon_manifest_sig(&members), expected);
+        let mut rev = members.clone();
+        rev.reverse();
+        assert_eq!(addon_manifest_sig(&rev), expected); // order-independent
     }
 
     #[test]

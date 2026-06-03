@@ -42,6 +42,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
   const [zipValid, setZipValid] = useState<boolean | null>(null);
   const [zipReason, setZipReason] = useState("");
   const [zipVersion, setZipVersion] = useState<string | null>(null);
+  const [zipSig, setZipSig] = useState<string>("");
 
   async function scanForBoxes() {
     setScanning(true);
@@ -143,17 +144,20 @@ export function KodiPanel({ state, set }: DevPanelProps) {
       setZipValid(null);
       setZipReason("");
       setZipVersion(null);
+      setZipSig("");
       return;
     }
     try {
-      const r = await invoke<{ valid: boolean; version: string | null; reason: string }>("validate_addon_zip", { path: p });
+      const r = await invoke<{ valid: boolean; version: string | null; reason: string; signature_state: string }>("validate_addon_zip", { path: p });
       setZipValid(r.valid);
       setZipReason(r.reason);
       setZipVersion(r.version);
+      setZipSig(r.signature_state);
     } catch (e) {
       setZipValid(false);
       setZipReason(String(e));
       setZipVersion(null);
+      setZipSig("");
     }
   }
 
@@ -344,6 +348,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
                 setZipValid(null);
                 setZipReason("");
                 setZipVersion(null);
+                setZipSig("");
               }}
               onBlur={() => void validateZip(zipPath)}
             />
@@ -357,7 +362,9 @@ export function KodiPanel({ state, set }: DevPanelProps) {
           </span>
           {zipValid !== null && (
             <p className={zipValid ? "success-text" : "danger-text"} style={{ marginBottom: 0 }} role="status">
-              {zipValid ? `✓ Valid add-on${zipVersion ? ` v${zipVersion}` : ""}` : `✗ ${zipReason}`}
+              {zipValid
+                ? `✓ Valid add-on${zipVersion ? ` v${zipVersion}` : ""}${zipSig === "signed" ? " — signed build ✓" : zipSig === "unsigned" ? " — unsigned (older build)" : ""}`
+                : `✗ ${zipReason}`}
             </p>
           )}
           <div className="row" style={{ gap: 6, marginTop: 8 }}>
