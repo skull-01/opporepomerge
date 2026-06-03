@@ -2,7 +2,7 @@
 
 A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Kodi to an external OPPO UDP-203/UDP-205-compatible player workflow while preserving normal Kodi playback for media that should stay internal.
 
-> **Current status:** add-on **v2.9.15 Final** plus the Windows **configurator v0.8.5** (the repository's [Latest release](https://github.com/skull-01/script.oppo203.iso.external/releases/latest), which bundles the add-on) are software-verified releases. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
+> **Current status:** add-on **v2.9.16 Final** plus the Windows **configurator v0.8.5** (the repository's [Latest release](https://github.com/skull-01/script.oppo203.iso.external/releases/latest), which bundles the add-on) are software-verified releases. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
 
 ## What this add-on does
 
@@ -25,9 +25,9 @@ A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Ko
 | Item | Value |
 |---|---|
 | Add-on ID | `script.oppo203.iso.external` |
-| Add-on version | `2.9.15` |
-| Build identity | `v2.9.15 Final` |
-| Runtime package | `script.oppo203.iso.external-2.9.15.zip` |
+| Add-on version | `2.9.16` |
+| Build identity | `v2.9.16 Final` |
+| Runtime package | `script.oppo203.iso.external-2.9.16.zip` |
 | Windows configurator | `v0.8.5` — the repo's **Latest** release; bundles this add-on and sets it up |
 | Runtime behavior changed | `true` |
 | Hardware validation claimed | `false` |
@@ -105,7 +105,7 @@ python tools/test_layout.py --check
 python tools/i18n_extract.py --check
 pytest -q tests/test_v2910_final_release.py
 pytest -q tests/test_v2910*.py
-python tools/audit_release.py --expected-version 2.9.15
+python tools/audit_release.py --expected-version 2.9.16
 ```
 
 For full verification, run the complete pytest/unittest/coverage gates and package audit described in the release evidence and GitHub-readiness handoff files.
@@ -2227,13 +2227,13 @@ Balanced Gate verification is used for this feature build. Full legacy pytest, f
 Build 16 adds AVR setup UI helpers, query-only AVR test actions, explicit user-action gates for power/input tests, sanitized AVR diagnostic export, and safety wording. AVR support remains disabled by default, AVR power-off and volume automation remain disabled by default, no AVR playback sequencing hook is added, diagnostics sanitize credentials and state `hardware_validation_claimed=false`, and hardware validation is not claimed.
 
 <!-- BEGIN GENERATED DOCS METADATA -->
-### Generated documentation metadata — v2.9.15 Final
+### Generated documentation metadata — v2.9.16 Final
 
 - Target document: `README.md`
-- Cleanup scope: Pure-HTTP/436 control (Xnoppo V3) — 7th preset, HTTP monitor and orchestration, BDMV-first disc nav, and selectable HDMI switching
+- Cleanup scope: Maintenance and hardening — AVR and Pure-HTTP correctness, monitor and transport hardening, settings schema guards, and coercion-crash fixes
 - Runtime behavior changed: `true`
 - Hardware validation claimed: `false`
-- Source recommendation: v2.9.15 Pure-HTTP/436 control (Xnoppo V3): 7th preset http_handoff_http, HTTP monitor and launch orchestration, checkfolderhasBDMV-first disc nav, and selectable HDMI switching
+- Source recommendation: v2.9.16 maintenance/hardening: AVR http_handoff eligibility + HTTP path translation, SVM3/eISCP transport hardening, configurator-owned settings schema guards, honest Pure-HTTP launch failures, distinct Samsung HDMI defaults, and property-test coercion-crash fixes
 - Managed documents: `README.md`, `reference.md`, `web-references.md`
 
 Protected behavior preserved:

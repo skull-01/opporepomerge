@@ -14,7 +14,7 @@ from tests._support.project_files import read_project_file
 
 def test_addon_xml_version_matches_v253_package_line():
     root = ET.parse(ROOT / "addon.xml").getroot()
-    assert root.attrib["version"] == "2.9.15"
+    assert root.attrib["version"] == "2.9.16"
     text = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.5.3 Build 3" in text
     assert "Version 2.5.3 Build 2" in text
@@ -31,7 +31,7 @@ def test_release_audit_requires_v253_and_build3_evidence():
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.15")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.16")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -63,4 +63,4 @@ def test_runtime_zip_policy_still_excludes_build3_evidence(tmp_path):
     assert "script.oppo203.iso.external/TEST_AUDIT_REPORT_v2.5.3_BUILD3.md" not in names
     with zipfile.ZipFile(out) as zf:
         addon_text = zf.read("script.oppo203.iso.external/addon.xml").decode("utf-8")
-    assert 'version="2.9.15"' in addon_text
+    assert 'version="2.9.16"' in addon_text

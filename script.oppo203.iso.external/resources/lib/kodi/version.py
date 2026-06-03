@@ -8,10 +8,10 @@ expected audit version, and Python version source aligned.
 from __future__ import annotations
 
 ADDON_ID = "script.oppo203.iso.external"
-ADDON_VERSION = "2.9.15"
-BUILD_ID = "v2.9.15 Final"
-BUILD_NUMBER = 24
-RELEASE_LINE = "v2.9.15 Pure-HTTP/436 control (Xnoppo V3): 7th preset http_handoff_http, HTTP monitor + launch orchestration, checkfolderhasBDMV-first disc nav, and selectable HDMI switching"
+ADDON_VERSION = "2.9.16"
+BUILD_ID = "v2.9.16 Final"
+BUILD_NUMBER = 25
+RELEASE_LINE = "v2.9.16 maintenance/hardening: AVR http_handoff eligibility + HTTP path translation, SVM3/eISCP transport hardening, configurator-owned settings schema guards, honest Pure-HTTP launch failures, distinct Samsung HDMI defaults, and property-test coercion-crash fixes"
 
 
 def addon_version() -> str:

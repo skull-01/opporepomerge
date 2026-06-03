@@ -118,14 +118,14 @@ def test_build2_command_map_remains_unchanged_and_forbidden_tokens_absent():
 
 def test_build2_version_docs_and_audit_evidence_identity():
     version = _load("version_build2", "resources/lib/kodi/version.py")
-    assert version.BUILD_ID == "v2.9.15 Final"
-    assert version.BUILD_NUMBER == 24
+    assert version.BUILD_ID == "v2.9.16 Final"
+    assert version.BUILD_NUMBER == 25
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 2" in addon
     assert "Version 2.9.10 Build 2" in addon
     assert "Version 2.9.10 Build 1" in addon
     audit = _load("audit_release_build2", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.15")
+    results = audit.run_audit(ROOT, expected_version="2.9.16")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

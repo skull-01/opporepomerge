@@ -92,7 +92,7 @@ def test_v291_build2_metadata_and_evidence_are_present():
     ):
         assert find_project_file(ROOT, name).exists(), name
     addon = _read("addon.xml")
-    assert 'version="2.9.15"' in addon
+    assert 'version="2.9.16"' in addon
     assert "Version 2.9.1 Build 2" in addon
     assert "centralized disc classification" in addon
     assert "No playback" in addon
@@ -105,7 +105,7 @@ def test_v291_build2_release_audit_requires_build2_evidence():
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.15")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.16")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
