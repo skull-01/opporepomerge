@@ -39,6 +39,9 @@ export function KodiPanel({ state, set }: DevPanelProps) {
   const [confirm, setConfirm] = useState<null | "restart" | "upload">(null);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [zipValid, setZipValid] = useState<boolean | null>(null);
+  const [zipReason, setZipReason] = useState("");
+  const [zipVersion, setZipVersion] = useState<string | null>(null);
 
   async function scanForBoxes() {
     setScanning(true);
@@ -131,6 +134,39 @@ export function KodiPanel({ state, set }: DevPanelProps) {
       setActionMsg(`Restart failed: ${String(e)}`);
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function validateZip(path: string) {
+    const p = path.trim();
+    if (!p) {
+      setZipValid(null);
+      setZipReason("");
+      setZipVersion(null);
+      return;
+    }
+    try {
+      const r = await invoke<{ valid: boolean; version: string | null; reason: string }>("validate_addon_zip", { path: p });
+      setZipValid(r.valid);
+      setZipReason(r.reason);
+      setZipVersion(r.version);
+    } catch (e) {
+      setZipValid(false);
+      setZipReason(String(e));
+      setZipVersion(null);
+    }
+  }
+
+  async function browse() {
+    try {
+      const picked = await invoke<string | null>("pick_addon_zip");
+      if (picked) {
+        setZipPath(picked);
+        await validateZip(picked);
+      }
+    } catch (e) {
+      setZipValid(false);
+      setZipReason(`Browse failed: ${String(e)}`);
     }
   }
 
@@ -296,18 +332,34 @@ export function KodiPanel({ state, set }: DevPanelProps) {
           <label className="field-label" htmlFor="dev-kodi-zip">
             Upload add-on .zip (any version)
           </label>
-          <input
-            id="dev-kodi-zip"
-            className="input mono"
-            placeholder="C:\path\to\script.oppo203.iso.external-x.y.z.zip"
-            value={zipPath}
-            spellCheck={false}
-            onChange={(e) => setZipPath(e.target.value)}
-          />
+          <div className="row" style={{ gap: 6 }}>
+            <input
+              id="dev-kodi-zip"
+              className="input mono"
+              placeholder="C:\path\to\script.oppo203.iso.external-x.y.z.zip"
+              value={zipPath}
+              spellCheck={false}
+              onChange={(e) => {
+                setZipPath(e.target.value);
+                setZipValid(null);
+                setZipReason("");
+                setZipVersion(null);
+              }}
+              onBlur={() => void validateZip(zipPath)}
+            />
+            <button className="btn outline" onClick={() => void browse()}>
+              Browse…
+            </button>
+          </div>
           <span className="field-hint">
             Deploys this .zip to the box over SSH (backing up the current copy) and re-registers it
-            without a restart.
+            without a restart. It must be a valid OppoKodiAddon — Upload stays disabled otherwise.
           </span>
+          {zipValid !== null && (
+            <p className={zipValid ? "success-text" : "danger-text"} style={{ marginBottom: 0 }} role="status">
+              {zipValid ? `✓ Valid add-on${zipVersion ? ` v${zipVersion}` : ""}` : `✗ ${zipReason}`}
+            </p>
+          )}
           <div className="row" style={{ gap: 6, marginTop: 8 }}>
             {confirm === "upload" ? (
               <>
@@ -319,7 +371,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
                 </button>
               </>
             ) : (
-              <button className="btn" disabled={busy || !zipPath.trim()} onClick={() => setConfirm("upload")}>
+              <button className="btn" disabled={busy || zipValid !== true} onClick={() => setConfirm("upload")}>
                 Upload + register…
               </button>
             )}
