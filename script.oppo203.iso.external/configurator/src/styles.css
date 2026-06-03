@@ -1064,6 +1064,21 @@ input:focus, .input:focus {
 .dev-info { color: var(--muted); }
 .dev-err { color: var(--danger); }
 
+/* Developer Options — controls on the left, the live transcript in a tall column on the right */
+.dev-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 18px;
+  align-items: start;
+}
+.dev-split-aside { position: sticky; top: 0; }
+.dev-split-aside .dev-transcript { max-height: calc(100vh - 230px); min-height: 260px; }
+@media (max-width: 900px) {
+  .dev-split { grid-template-columns: 1fr; }
+  .dev-split-aside { position: static; }
+  .dev-split-aside .dev-transcript { max-height: 280px; }
+}
+
 /* ============================================================
    Intro / hero / mockups
    ============================================================ */

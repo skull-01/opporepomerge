@@ -147,7 +147,8 @@ export function AutoScriptPanel({ state }: DevPanelProps) {
   }
 
   return (
-    <div className="stack-lg">
+    <div className="dev-split">
+      <div className="stack-lg">
       <section className="card">
         <h3 style={{ marginTop: 0 }}>AutoScript builder</h3>
         <div className="row wrap" style={{ gap: 12, alignItems: "flex-end" }}>
@@ -255,10 +256,11 @@ export function AutoScriptPanel({ state }: DevPanelProps) {
           </div>
         </div>
         <span className="field-hint">Reads firmware via #QVR and probes the telnet / ADB / :436 ports — all hardware-pending.</span>
-        <div style={{ marginTop: 12 }}>
-          <Transcript api={tx} title="AutoScript log" />
-        </div>
       </section>
+      </div>
+      <div className="dev-split-aside">
+        <Transcript api={tx} title="AutoScript log" />
+      </div>
     </div>
   );
 }

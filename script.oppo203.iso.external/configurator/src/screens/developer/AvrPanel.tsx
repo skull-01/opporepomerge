@@ -64,7 +64,8 @@ export function AvrPanel({ state }: DevPanelProps) {
     });
 
   return (
-    <div className="stack-lg">
+    <div className="dev-split">
+      <div className="stack-lg">
       <section className="card">
         <h3 style={{ marginTop: 0 }}>AV receiver console</h3>
         <Field id="dev-avr-ip" label="AVR IP" value={avrIp} setValue={setAvrIp} width={280} />
@@ -116,8 +117,10 @@ export function AvrPanel({ state }: DevPanelProps) {
           </div>
         )}
       </section>
-
-      <Transcript api={tx} title="AVR transcript" note="Receivers reply per command (or echo) — this is a command/response log, not a continuous telemetry feed." />
+      </div>
+      <div className="dev-split-aside">
+        <Transcript api={tx} title="AVR transcript" note="Receivers reply per command (or echo) — this is a command/response log, not a continuous telemetry feed." />
+      </div>
     </div>
   );
 }

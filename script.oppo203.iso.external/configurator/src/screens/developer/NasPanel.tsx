@@ -76,7 +76,8 @@ export function NasPanel(_props: DevPanelProps) {
   }
 
   return (
-    <div className="stack-lg">
+    <div className="dev-split">
+      <div className="stack-lg">
       <section className="card">
         <h3 style={{ marginTop: 0 }}>Scan the LAN for NAS hosts</h3>
         <div className="row wrap" style={{ alignItems: "flex-end", gap: 12 }}>
@@ -142,8 +143,10 @@ export function NasPanel(_props: DevPanelProps) {
           </button>
         </div>
       </section>
-
-      <Transcript api={tx} title="NAS messages" note="Scan results, login attempts, and errors. Passwords are never shown or saved." />
+      </div>
+      <div className="dev-split-aside">
+        <Transcript api={tx} title="NAS messages" note="Scan results, login attempts, and errors. Passwords are never shown or saved." />
+      </div>
     </div>
   );
 }
