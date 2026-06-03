@@ -30,6 +30,25 @@ import re as _re
 import time as _time
 from typing import Any, Callable, Protocol, cast
 
+
+def _safe_port(value: object, default: int = 23) -> int:
+    """Coerce a device-supplied port to an int, tolerating junk.
+
+    Device-cache JSON, mDNS/SSDP records, and wizard input can carry a port that
+    is missing, blank, textual ("8060/tcp"), or a non-finite float. The historical
+    ``int(value or 23)`` raised ValueError on text and OverflowError on inf,
+    defeating the graceful-degradation contract of the parse/cache helpers. Falsy
+    values map to the default (matching the old ``or 23``); anything unparseable
+    also degrades to the default rather than raising.
+    """
+    if not value:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError):
+        return default
+
+
 # Vendor -> preset mapping. Case-insensitive substring match.
 _VENDOR_PRESETS = (
     ("oppo", "oppo203"),
@@ -126,7 +145,7 @@ def parse_mdns_record(record: object) -> dict[str, object] | None:
     name = record.get("name", "") or ""
     return {
         "ip": addrs[0],
-        "port": int(record.get("port") or 23),
+        "port": _safe_port(record.get("port")),
         "vendor": props.get("vendor") or props.get("manufacturer") or name,
         "model": props.get("model") or record.get("type", ""),
         "source": "mdns",
@@ -246,7 +265,7 @@ class DeviceCache:
     def add(self, device: object) -> dict[str, object] | None:
         if not isinstance(device, dict) or not device.get("ip"):
             return None
-        key = (device["ip"], int(device.get("port", 23)))
+        key = (device["ip"], _safe_port(device.get("port", 23)))
         d = dict(device)
         d.setdefault("last_seen", self.clock())
         d.setdefault("preset", apply_preset_for(d))
@@ -303,7 +322,7 @@ class DeviceCache:
             if not isinstance(it, dict):
                 continue
             ip = it.get("ip")
-            port = int(it.get("port") or 23)
+            port = _safe_port(it.get("port"))
             if not ip:
                 continue
             self._items[(ip, port)] = it
