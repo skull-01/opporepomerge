@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Transcript, runAndLog, useTranscript } from "./devTranscript";
+import { planSwitch, type SwitchExtras } from "../../step5_switch";
 import type { DevPanelProps } from "./types";
 
 type Backend = "roku" | "adb" | "sony" | "external" | "smartthings";
@@ -28,6 +29,10 @@ const ADB_PRESETS: readonly { label: string; cmd: string }[] = [
   { label: "OK", cmd: "input keyevent KEYCODE_DPAD_CENTER" },
   { label: "Back", cmd: "input keyevent KEYCODE_BACK" },
   { label: "Power", cmd: "input keyevent KEYCODE_POWER" },
+  { label: "HDMI 1", cmd: "input keyevent KEYCODE_TV_INPUT_HDMI_1" },
+  { label: "HDMI 2", cmd: "input keyevent KEYCODE_TV_INPUT_HDMI_2" },
+  { label: "HDMI 3", cmd: "input keyevent KEYCODE_TV_INPUT_HDMI_3" },
+  { label: "HDMI 4", cmd: "input keyevent KEYCODE_TV_INPUT_HDMI_4" },
 ];
 
 const SONY_IRCC: readonly { label: string; code: string }[] = [
@@ -95,9 +100,40 @@ export function TvPanel({ state }: DevPanelProps) {
       inputId: stInput,
     });
 
+  // The configured HDMI switch (the exact handoff the add-on performs) via planSwitch — uses the
+  // wizard's backend + the OPPO/Kodi inputs captured in the HDMI step, not the experiment backend above.
+  function configuredSwitch(target: "oppo" | "kodi") {
+    const extras: SwitchExtras = {
+      externalTemplate: target === "oppo" ? state.tvOppoCommand : state.tvKodiCommand,
+      smartthingsDeviceId: state.tvSmartThingsDeviceId,
+      smartthingsInputId: target === "oppo" ? state.tvSmartThingsOppoInputId : state.tvSmartThingsKodiInputId,
+    };
+    const hdmi = Number(target === "oppo" ? state.playerInput : state.kodiInput) || 0;
+    const plan = planSwitch(state, target, hdmi, extras);
+    if (plan.disposition === "manual") {
+      tx.push({ dir: "info", text: `Switch to ${target}: ${plan.reason}` });
+      return;
+    }
+    void runAndLog(tx, `switch to ${target} (${plan.inputLabel})`, plan.command, plan.args);
+  }
+
   return (
     <div className="dev-split">
       <div className="stack-lg">
+      <section className="card">
+        <h3 style={{ marginTop: 0 }}>HDMI input switching</h3>
+        <p className="field-hint" style={{ marginTop: 0 }}>
+          Fires the wizard's configured switch (backend: {state.tvBackend ?? "none"}
+          {state.topology === "kodi_avr_tv_player" ? ", via the AV receiver" : ""}) — the same handoff the add-on performs on playback.
+        </p>
+        <div className="row wrap" style={{ gap: 10 }}>
+          <button className="btn" onClick={() => configuredSwitch("oppo")}>Switch to OPPO input</button>
+          <button className="btn outline" onClick={() => configuredSwitch("kodi")}>Switch to Kodi input</button>
+        </div>
+        <span className="field-hint">
+          OPPO input: {String(state.playerInput ?? "—")} · Kodi input: {String(state.kodiInput ?? "—")}. Below — experiment with any backend directly.
+        </span>
+      </section>
       <section className="card">
         <h3 style={{ marginTop: 0 }}>TV console</h3>
         <div className="field" style={{ maxWidth: 280 }}>
