@@ -135,6 +135,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $tag = "${{ github.ref_name }}"
+          $version = $tag -replace '^configurator-', ''
           $files = (Get-ChildItem "$env:ARTIFACT_DIR/*").FullName
-          $ghArgs = @($tag, "--latest", "--title", "Configurator $tag", "--generate-notes") + $files
+          $ghArgs = @($tag, "--latest", "--title", "Kodi Oppo External Player Configurator $version", "--generate-notes") + $files
           gh release create @ghArgs
