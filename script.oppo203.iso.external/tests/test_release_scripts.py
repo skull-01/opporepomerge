@@ -34,7 +34,7 @@ def test_configurator_release_script_builds_installers_and_publishes_latest() ->
     assert "npm run dist" in text
     assert "configurator-v$Version" in text
     assert "--latest" in text
-    assert "Kodi Oppo External Player Configurator $Version" in text
+    assert "Kodi Oppo External Player Configurator v$Version" in text
     assert "SHA256SUMS" in text
 
 
