@@ -231,6 +231,8 @@ session. `tests/test_readme_current_release.py` pins the add-on fields to `versi
 if the front page is stale); the configurator line stays norm-enforced. This is a required step
 in the `release` runbook and the `done for the day` / handoff flow.
 
+**Release doc scope (keep it lean):** at release time update the README front page **only**, batched into one commit — do **not** also rewrite the `AI_RESUME_HANDOFF.md` spine (§3a/§3b + the "Latest release" line), which `done for the day` (§2) already owns.
+
 ## CI runs locally — cloud CI is disabled
 
 The add-on + configurator gate and release run **entirely on the local Windows+WSL
