@@ -4,6 +4,23 @@
 
 Releases must be evidence-based. A release is not complete until the package, tests, audit results, hardware-validation status, and handoff are all recorded.
 
+## Local build & publish (local-first)
+
+CI and releases run on the local Windows+WSL machine; the cloud workflows are disabled
+(see [ci.md](ci.md)). The release flow:
+
+1. **Gate:** `wsl bash scripts/ci-local.sh` — clean-room full add-on gate on Python 3.12 +
+   compat-smoke on 3.9/3.10 (a superset of the old `ci.yml`). Merge-on-local-green.
+2. **Add-on release:** `powershell -File scripts/release-addon-local.ps1` — builds the runtime
+   installable ZIP + `.sha256` (via `tools/package_installable_zip.py` under WSL) and runs
+   `gh release create v<X> --title "v<X> Final" --latest=false` (the configurator holds the repo
+   Latest badge). `-DryRun` builds the artifacts without publishing.
+3. **Configurator release:** `powershell -File scripts/release-configurator-local.ps1` —
+   `npm run dist` → MSI/NSIS + `SHA256SUMS` → `gh release create configurator-v<Y> --latest`.
+   `-DryRun` / `-SkipBuild` for checks.
+4. **Every release** also refreshes the README front-page **Current status** + **Current
+   release** (add-on + configurator versions) — pinned by `tests/test_readme_current_release.py`.
+
 ## Build sequence
 
 For GitHub readiness, use the G-series build sequence:

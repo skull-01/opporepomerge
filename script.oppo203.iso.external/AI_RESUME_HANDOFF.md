@@ -166,6 +166,12 @@ described above. There is no database; no external services to verify. (Memory n
 `tauri-env-installed` records that rows 10/11 already passed on 2026-05-29; row 13 was
 satisfied by PR #35 merging the icon stub at `12e5b18`.)
 
+**Local gate prereq (go-local, 2026-06-05):** `scripts/ci-local.sh` — the local CI gate that
+replaced the cloud `ci.yml` — needs `uv` + Python 3.9/3.10/3.12 in **WSL**. Install once:
+`wsl bash -lc 'curl -LsSf https://astral.sh/uv/install.sh | sh && ~/.local/bin/uv python install 3.9 3.10 3.12'`.
+Releases publish locally via `scripts/release-addon-local.ps1` + `scripts/release-configurator-local.ps1`
+(see [[go-local-ci-release-plan]] / §4). Cloud CI is disabled (`gh workflow disable`).
+
 ---
 
 # §3 Work in progress (resume here first)
@@ -1354,12 +1360,16 @@ live in the 2026-05-30 post-EOD session transcript.
   gate → merge → release → record — **uninterrupted**. Hard rules still apply (never close
   issues, never touch operator-only/secret files, honest signature, the cross-area guard
   contracts). See [[protocol-1-full-auth-autonomous]].
-- **CI is a backstop — claude-review off, local-first.** `claude-review` is **disabled** (it
-  consumes Claude credit + ~5–6 min/PR for low value here; re-enable only with operator
-  sign-off). Run the gates locally and don't block merges on a non-required cloud re-run that's
-  already green; build releases locally where possible — add-on ZIP under **WSL** (`*.sh` is
-  LF-pinned in `.gitattributes`), configurator installer via native `npm run dist`, publish with
-  `gh`. See AGENTS.md "CI is a backstop, not the gate".
+- **CI runs locally — cloud CI is disabled.** The gate is `scripts/ci-local.sh`
+  (`wsl bash scripts/ci-local.sh`: clean-room, `uv`-managed, full add-on gate on Python 3.12 +
+  compat-smoke on 3.9/3.10 — a superset of the old `ci.yml`). Releases publish locally via
+  `scripts/release-addon-local.ps1` (add-on; `--latest=false`) +
+  `scripts/release-configurator-local.ps1` (configurator; `--latest`). **Merge-on-local-green is
+  the default.** The cloud workflows (`CI` / `Configurator CI` / `Package Installable ZIP`, plus
+  the already-off `claude-review` / `Claude Code`) are **disabled** via `gh workflow disable` but
+  kept in the repo (pinned by `tests/test_github_readiness_g6_ci_hardening.py`); re-enable with
+  `gh workflow enable`. One-time setup: `uv` + `uv python install 3.9 3.10 3.12`. See AGENTS.md
+  "CI runs locally - cloud CI is disabled".
 
 ---
 
