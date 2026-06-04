@@ -22,6 +22,14 @@
 
 .EXAMPLE
   powershell -File scripts/release-configurator-local.ps1 -DryRun
+
+.NOTES
+  Invoke PLAIN - do NOT pipe through 2>&1 (e.g. "... 2>&1 | Out-String"). This
+  script sets $ErrorActionPreference='Stop'; under 2>&1, Windows PowerShell 5.1
+  wraps a native tool's stderr (npm/tauri) as a terminating NativeCommandError
+  and aborts the build *before* publish (the bundle is built but nothing ships).
+  Fastest clean path: build once via the gate (npm run dist), then run this with
+  -SkipBuild to collect + publish that bundle.
 #>
 [CmdletBinding()]
 param(
@@ -75,7 +83,7 @@ if (-not $files) {
 
 # 4) Publish (configurator holds Latest), or print under -DryRun.
 $tag = "configurator-v$Version"
-$ghArgs = @('release', 'create', $tag, '--latest', '--title', "Kodi Oppo External Player Configurator $Version", '--generate-notes') + $files
+$ghArgs = @('release', 'create', $tag, '--latest', '--title', "Kodi Oppo External Player Configurator v$Version", '--generate-notes') + $files
 if ($DryRun) {
     Write-Host "[dry-run] gh $($ghArgs -join ' ')"
     return
