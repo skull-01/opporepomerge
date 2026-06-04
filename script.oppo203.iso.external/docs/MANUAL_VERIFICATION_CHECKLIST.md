@@ -43,6 +43,21 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Tooling — go-local CI/release (2026-06-05) → ENH [#345](https://github.com/skull-01/script.oppo203.iso.external/issues/345)
+
+CI + release moved fully local; cloud CI disabled. PRs #346 (`c2c784f`) / #347 (`d78009a`) /
+#348 (`7601c71`) / #349 (`dde859f`) merged. The gate is `wsl bash scripts/ci-local.sh`
+(software-verified green this session: 1217/3, coverage 99%, smoke 3.9/3.10). **Operator verify
+at the next release** — cut it with the local scripts and confirm both publish:
+
+- **Add-on:** `powershell -File scripts/release-addon-local.ps1` → a `v<X>` release titled
+  `v<X> Final`, `--latest=false` (configurator keeps Latest), with the runtime ZIP + `.sha256`.
+  (Add-on `-DryRun` was software-verified this session.)
+- **Configurator:** `powershell -File scripts/release-configurator-local.ps1` → `npm run dist`
+  builds MSI/NSIS, publishes `configurator-v<Y>` as **Latest** with `SHA256SUMS`. **The real
+  `npm run dist` publish was NOT exercised this session — only `-DryRun -SkipBuild` logic.**
+- Re-enable cloud anytime: `gh workflow enable "CI"` / `"Configurator CI"` / `"Package Installable ZIP"`.
+
 ### Add-on + Configurator — player DB: 5 OPPO-clone variants + Dolby Vision taxonomy (2026-06-04) → add-on v2.9.17 / configurator v0.9.7
 
 Enriches the OPPO/clone player taxonomy from the PlayBridge capability summary
