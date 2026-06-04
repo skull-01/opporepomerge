@@ -16,6 +16,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from resources.lib.kodi import settings_reader as sr
+from resources.lib.oppo import dolby_vision as dv
 from resources.lib.oppo import hardware_capabilities as caps
 from resources.lib.oppo import hardware_profiles as hp
 
@@ -117,3 +118,12 @@ def test_families_cover_all_model_brands_and_other_aliases_resolve():
     other = next(f for f in DB["families"] if f["id"] == "other")
     for ui_model in other["ui_models"]:
         assert ui_model["hw"] in valid_hw, ui_model
+
+
+def test_dolby_vision_fields_mirror_the_add_on_registry():
+    # Every model's dolby_vision block reproduces the add-on's DOLBY_VISION_PROFILES, and the
+    # top-level global_dv_rule reproduces DOLBY_VISION_TV_RULE -- so the JSON can't drift from
+    # the add-on-side Dolby Vision data (resources/lib/oppo/dolby_vision.py).
+    for m in MODELS:
+        assert m["dolby_vision"] == dv.DOLBY_VISION_PROFILES[m["key"]], m["key"]
+    assert DB["global_dv_rule"] == dv.DOLBY_VISION_TV_RULE

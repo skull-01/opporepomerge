@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "db_version": "2026.05.31",
+  "db_version": "2026.06.04",
   "scope": {
     "purpose": "PlayBridge OPPO/clone player taxonomy for configurator Step 2 and add-on hardware-compatibility resolution.",
     "granularity": "player_model_family",
@@ -35,7 +35,12 @@
     "cineultra_v203",
     "cineultra_v204",
     "magnetar_udp900",
-    "chinoppo_m9205_v1"
+    "chinoppo_m9205_v1",
+    "chinoppo_m9205_v2",
+    "chinoppo_m9205_v3",
+    "chinoppo_m9205_v4",
+    "chinoppo_m9702_plus",
+    "venpro_v203"
   ],
   "families": [
     {
@@ -85,6 +90,13 @@
       "name": "Giec",
       "ch": "G",
       "color": "#C2410C",
+      "posture": "wake-rewrite"
+    },
+    {
+      "id": "venpro",
+      "name": "VenPro",
+      "ch": "V",
+      "color": "#7C3AED",
       "posture": "wake-rewrite"
     },
     {
@@ -144,7 +156,13 @@
         "EU",
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "official",
+        "player_led": "official",
+        "confidence": "high"
+      }
     },
     {
       "key": "UDP-205",
@@ -183,7 +201,13 @@
         "EU",
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "official",
+        "player_led": "official",
+        "confidence": "high"
+      }
     },
     {
       "key": "M9201",
@@ -219,7 +243,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "medium"
+      }
     },
     {
       "key": "M9203",
@@ -255,7 +285,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "medium"
+      }
     },
     {
       "key": "M9205C",
@@ -291,7 +327,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "needs_validation",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "medium"
+      }
     },
     {
       "key": "M9702",
@@ -337,7 +379,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "setup_sensitive",
+        "player_led": "available",
+        "confidence": "medium"
+      }
     },
     {
       "key": "IPUK-UHD8592",
@@ -374,7 +422,13 @@
         "UK",
         "EU"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "not_assessed",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "GIEC-BDP-G5300",
@@ -410,7 +464,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "not_assessed",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "Magnetar-UDP800",
@@ -440,7 +500,13 @@
         "EU",
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "not_assessed",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "Reavon-UBR-X100",
@@ -469,7 +535,13 @@
         "UK",
         "EU"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "not_assessed",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "Reavon-UBR-X110",
@@ -498,7 +570,13 @@
         "UK",
         "EU"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "not_assessed",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "Reavon-UBR-X200",
@@ -527,7 +605,13 @@
         "UK",
         "EU"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "not_assessed",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "M9200",
@@ -563,7 +647,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "needs_validation",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "M9205",
@@ -599,7 +689,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "medium"
+      }
     },
     {
       "key": "CineUltra-V203",
@@ -636,7 +732,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "available",
+        "confidence": "medium"
+      }
     },
     {
       "key": "CineUltra-V204",
@@ -673,7 +775,13 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "available",
+        "confidence": "medium"
+      }
     },
     {
       "key": "Magnetar-UDP900",
@@ -703,7 +811,13 @@
         "EU",
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "not_assessed",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     },
     {
       "key": "M9205-V1",
@@ -740,7 +854,238 @@
       "regions": [
         "Asia"
       ],
-      "validated": false
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "low"
+      }
+    },
+    {
+      "key": "M9205-V2",
+      "hw": "chinoppo_m9205_v2",
+      "ui_label": "M9205 V2",
+      "label": "Chinoppo M9205 V2",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205_v2",
+        "m9205-v2",
+        "m9205_v2"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "low"
+      }
+    },
+    {
+      "key": "M9205-V3",
+      "hw": "chinoppo_m9205_v3",
+      "ui_label": "M9205 V3",
+      "label": "Chinoppo M9205 V3",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205_v3",
+        "m9205-v3",
+        "m9205_v3"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "low"
+      }
+    },
+    {
+      "key": "M9205-V4",
+      "hw": "chinoppo_m9205_v4",
+      "ui_label": "M9205 V4",
+      "label": "Chinoppo M9205 V4",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205_v4",
+        "m9205-v4",
+        "m9205_v4"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "expected",
+        "player_led": "recommended_for_sony_lldv",
+        "confidence": "low"
+      }
+    },
+    {
+      "key": "M9702-Plus",
+      "hw": "chinoppo_m9702_plus",
+      "ui_label": "M9702 Plus",
+      "label": "Chinoppo M9702 Plus",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9702_plus",
+        "m9702-plus",
+        "m9702_plus"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false,
+      "dolby_vision": {
+        "capable": "yes",
+        "tv_led": "setup_sensitive",
+        "player_led": "available",
+        "confidence": "low"
+      }
+    },
+    {
+      "key": "VenPro-V203",
+      "hw": "venpro_v203",
+      "ui_label": "V203",
+      "label": "VenPro V203",
+      "brand": "venpro",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "venpro_v203",
+        "venpro-v203"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false,
+      "dolby_vision": {
+        "capable": "unknown",
+        "tv_led": "needs_validation",
+        "player_led": "not_assessed",
+        "confidence": "low"
+      }
     }
-  ]
+  ],
+  "global_dv_rule": {
+    "full_dv_tv_default": "tv_led",
+    "sony_or_lldv_tv_default": "player_led_or_auto",
+    "unknown_tv_test_order": [
+      "auto",
+      "tv_led",
+      "player_led"
+    ],
+    "proof_source": "uhd_iso_or_bdmv",
+    "avoid_as_proof": "mkv_dv"
+  }
 }

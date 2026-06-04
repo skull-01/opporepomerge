@@ -43,6 +43,33 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Add-on + Configurator — player DB: 5 OPPO-clone variants + Dolby Vision taxonomy (2026-06-04) → add-on v2.9.17 / configurator v0.9.7
+
+Enriches the OPPO/clone player taxonomy from the PlayBridge capability summary
+(`docs/configurator/players-db/PLAYBRIDGE_CAPABILITY_SUMMARY.md`), umbrella
+[ENH #341](https://github.com/skull-01/script.oppo203.iso.external/issues/341). Adds **5 clone
+variants** end-to-end (append-only `oppo_hardware_model` enum, mirroring base profiles):
+**M9205 V2/V3/V4** (→ M9205), **M9702 Plus** (→ M9702), **VenPro V203** (new `venpro` family →
+CineUltra); plus a **cross-area Dolby Vision data layer** — `resources/lib/oppo/dolby_vision.py`
+(`DOLBY_VISION_PROFILES` + `DOLBY_VISION_TV_RULE`) mirrored by `dolby_vision` fields +
+`global_dv_rule` in `players-models.json`, pinned by `tests/test_players_db_consistency.py`.
+Software-verified only; every row stays `validated: false`; DV stances are research-grade
+(S1-S9), not hardware-validated. Gate: add-on pytest -n auto + serial coverage 99% + ruff +
+mypy --strict; configurator `tsc -b` · vitest · `vite build`. Commits: `4d3ca13` (variants),
+`b34930f` (Dolby Vision), `<docs SHA>`.
+
+- **Phase C (real OPPO/clone + TV) — the new variants control correctly:** in the configurator
+  Step 2 picker, confirm **M9205 V2/V3/V4**, **M9702 Plus**, and **VenPro V203** appear and map to
+  `chinoppo_m9205_v2/_v3/_v4`, `chinoppo_m9702_plus`, `venpro_v203`; on a real clone confirm
+  eject-to-wake (`#EJT`) and clone-safe playback behave as the base device (M9205 / M9702 /
+  CineUltra). These are unvalidated clone variants — record results in the hardware tracker.
+- **Phase C (real DV TV) — the Dolby Vision guidance is sound:** validate DV with a **UHD ISO /
+  BDMV** FEL title (never MKV). On a full-DV TV (LG / Panasonic / Philips) confirm **TV-led**;
+  on a Sony / LLDV display confirm **Player-led / Auto**; for unknown TVs follow
+  **auto → tv_led → player_led**. Record exact-variant results (esp. M9205 V1-V4) before
+  promoting any `dolby_vision.confidence` above its research-grade value.
+- Ships in **add-on v2.9.17** (standalone ZIP) + **configurator v0.9.7** (bundles it, holds Latest).
+
 ### Configurator — rebrand to "Kodi Oppo External Player Configurator" (2026-06-04) → v0.9.6
 
 Renames the Windows configurator from **OppoKodiAddon Configurator** to **Kodi Oppo External Player Configurator** across the user-facing surfaces — `productName` + window title (`tauri.conf.json`), browser/tab title (`index.html`), i18n `app.title`, and the in-app `WinShell` title bar (now `Kodi Oppo External Player Configurator-v<version>`, with `<version>` injected at build time from `package.json` via a Vite `define` → `__APP_VERSION__`). Bundle **identifier unchanged** (`com.script-oppo203-iso-external.configurator`), so NSIS/MSI upgrade detection and `app_data_dir` are preserved. Shipped as **configurator v0.9.6** (tag `configurator-v0.9.6`, bundles add-on **v2.9.16**). PR: [#338](https://github.com/skull-01/script.oppo203.iso.external/pull/338) rebrand + the v0.9.6 bump. Gate: `tsc -b` · **vitest 359** · **cargo 57** · `vite build`; **a local `npm run dist` compiled the renamed `productName` into a working MSI + NSIS** (`Kodi Oppo External Player Configurator_0.9.6_x64_en-US.msi` / `…_x64-setup.exe`) before tagging — the configurator PR gate does not run `tauri build`.
