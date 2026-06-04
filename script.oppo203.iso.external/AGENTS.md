@@ -231,23 +231,33 @@ session. `tests/test_readme_current_release.py` pins the add-on fields to `versi
 if the front page is stale); the configurator line stays norm-enforced. This is a required step
 in the `release` runbook and the `done for the day` / handoff flow.
 
-## CI is a backstop, not the gate — local-first, claude-review off
+## CI runs locally — cloud CI is disabled
 
-- **`claude-review` is disabled and stays off.** It ran `anthropics/claude-code-action` (an
-  agentic Claude review) on every PR — it **consumes Claude credit** and adds ~5–6 min/PR for
-  low marginal value here (the building agent reviews inline and the operator reviews). Disabled
-  via `gh workflow disable "Claude Code Review"`. Do **not** re-enable without operator sign-off.
-- **Run the gates locally; treat cloud CI as a backstop.** All add-on gates (`pytest`, the serial
-  coverage gate, `mypy --gate`, `ruff`, `audit_release`) and configurator gates
-  (`tsc`/`vitest`/`cargo`) run locally — do them before pushing, and don't block a merge on a
-  **non-required** cloud re-run that's already green locally (a PR at `mergeStateStatus=UNSTABLE`
-  is mergeable).
-- **Releases can be built locally.** The add-on ZIP (`scripts/package_release.sh`) is POSIX — run
-  it under **WSL** (`wsl bash scripts/package_release.sh`); `*.sh` is pinned to **LF** in
-  `.gitattributes` so it doesn't break on a Windows checkout (`autocrlf=true` otherwise gives
-  CRLF and bash chokes on `set -o pipefail`). The configurator installer (`npm run dist`) builds
-  natively on Windows; publish with `gh release create/upload`. The cloud uniquely adds
-  clean-room reproducibility + the multi-Python matrix — keep it for those, not as the gate.
+The add-on + configurator gate and release run **entirely on the local Windows+WSL
+machine**; the cloud workflows are **disabled** (reversible). For a solo project the cloud's
+only residual value — an independent "passes CI" stamp — wasn't worth ~5–6 min/PR + Claude
+credit, and a WSL clean-room run across Python 3.9/3.10/3.12 catches the same issues.
+**Merge-on-local-green is the default** (don't wait on a cloud re-run; there isn't one).
+
+- **The gate is `scripts/ci-local.sh`** (`wsl bash scripts/ci-local.sh`) — a clean-room WSL
+  gate (fresh `git clone` of HEAD, `uv`-managed venvs) that runs the full add-on gate on
+  Python 3.12 (`ruff`, `mypy --gate`, full `pytest`, the **serial 99% coverage gate**,
+  `audit_release`, runtime-ZIP + dev-source audits) plus a targeted compat-smoke on 3.9/3.10.
+  It is a faithful superset of the old `ci.yml`; `tests/test_ci_local_gate.py` pins it to the
+  same gate commands g6 pins for `ci.yml`. `scripts/verify.sh` remains the quick in-place gate
+  and `scripts/hooks/pre-push` still enforces the coverage floor. One-time setup:
+  `curl -LsSf https://astral.sh/uv/install.sh | sh && uv python install 3.9 3.10 3.12`.
+- **Releases publish locally.** Add-on: `scripts/release-addon-local.ps1` (runtime ZIP + sha
+  via WSL → `gh release create v<X> --title "v<X> Final" --latest=false`; the configurator
+  holds Latest). Configurator: `scripts/release-configurator-local.ps1` (`npm run dist` →
+  MSI/NSIS + SHA256SUMS → `gh release create configurator-v<Y> --latest`). Both take `-DryRun`.
+  `*.sh` is pinned **LF** in `.gitattributes` so the WSL packaging runs on a Windows checkout.
+  See [`docs/developer-guide/release-process.md`](docs/developer-guide/release-process.md).
+- **The cloud workflow files stay in the repo, only disabled** (`gh workflow disable "CI"` /
+  `"Configurator CI"` / `"Package Installable ZIP"`) — they are pinned by
+  `tests/test_github_readiness_g6_ci_hardening.py`, so they are **never edited or deleted**;
+  re-enable with `gh workflow enable` if cloud CI is ever wanted again. `claude-review` +
+  `Claude Code` were already disabled. **Dependabot stays active.**
 
 ## Never edit operator-only / secret files
 

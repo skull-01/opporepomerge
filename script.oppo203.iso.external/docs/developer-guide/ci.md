@@ -1,5 +1,17 @@
 # Developer Guide — Continuous Integration
 
+> **Status (2026-06-05): CI runs locally; cloud CI is disabled.** The gate is
+> `scripts/ci-local.sh` (`wsl bash scripts/ci-local.sh`) — a clean-room WSL run (fresh
+> `git clone` of HEAD, `uv`-managed venvs) that runs the full add-on gate on Python 3.12 plus
+> a targeted compat-smoke on 3.9/3.10, a faithful superset of the cloud `ci.yml` described
+> below. Releases publish locally via `scripts/release-addon-local.ps1` +
+> `scripts/release-configurator-local.ps1` (see [release-process.md](release-process.md)).
+> The cloud workflows (`CI` / `Configurator CI` / `Package Installable ZIP`) are **disabled**
+> via `gh workflow disable` but **kept in the repo** (pinned by
+> `tests/test_github_readiness_g6_ci_hardening.py`); re-enable with `gh workflow enable`.
+> One-time local setup: `curl -LsSf https://astral.sh/uv/install.sh | sh && uv python install 3.9 3.10 3.12`.
+> The section below documents the (now-disabled) cloud workflow for reference.
+
 ## Purpose
 
 GitHub Readiness Build G6 adds a GitHub Actions workflow that mirrors the project release gates as closely as practical in a hosted Linux runner.

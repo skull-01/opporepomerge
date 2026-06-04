@@ -76,3 +76,12 @@ def test_ci_local_targeted_smoke_matches_compat_job() -> None:
         "tests/test_github_readiness_g8_final_packaging.py",
     ):
         assert name in text
+
+
+def test_go_local_tooling_is_documented() -> None:
+    # The developer docs must point at the local gate + release scripts.
+    ci_md = _read("docs/developer-guide/ci.md")
+    assert "scripts/ci-local.sh" in ci_md
+    release_md = _read("docs/developer-guide/release-process.md")
+    assert "scripts/release-addon-local.ps1" in release_md
+    assert "scripts/release-configurator-local.ps1" in release_md
