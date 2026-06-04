@@ -91,7 +91,7 @@ When the operator types **`resume`** (alone), do exactly this:
 | **`build plan`** | Show contents of [`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) (create as stub on first use). |
 | **`refresh the build plan`** | Regenerate `docs/BUILD_PLAN.md` from live open issues. |
 | **`plan`** / **`create a plan`** / **`scope this`** | Produce a plan in the **canonical Plan format** ([`AGENTS.md`](AGENTS.md) → "Plan format"): ground against the current code first (confirm `file:line` anchors, flag already-done work), then **theme → per-PR scope blocks → dependency chain → 📊 rollup → ⚠️ risk callouts → verification regime → ✅ Go / 🛑 Wait / 🔁 Replan**. STOP for a Go before building. |
-| **`dev note: <text>`** | Append `<text>` VERBATIM (dated, no editing, no summarizing) to §20. |
+| **`dev note: <text>`** | Append `<text>` VERBATIM (dated, no editing, no summarizing) to [`docs/ai-handoff/DEV_NOTES.md`](docs/ai-handoff/DEV_NOTES.md) (operator reference; not in the handoff). |
 | **`update AI_RESUME_HANDOFF.md`** | Run the maintenance recipe at the end of §2. |
 | **`protocol 1`** (full auth) | Operator grants full auth to run a theme end-to-end incl. merge + release. Batch ALL decisions up front (one `AskUserQuestion`), then execute uninterrupted. Hard rules still apply. See §4 + [[protocol-1-full-auth-autonomous]]. |
 
@@ -2427,14 +2427,10 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
 
 ---
 
-# §20 Dev notes (operator's verbatim instructions)
+# §20 Dev notes — moved
 
-_Append-only. Each entry: `### YYYY-MM-DD HH:MM — dev note` followed by the operator's
-text VERBATIM. No summarizing, no editing. Added via the `dev note:` trigger._
-
-### 2026-05-31 13:05 — dev note
-
-main's CI is red on ruff format --check — but it's pre-existing and unrelated to these PRs. Three add-on test files (tests/test_all.py, test_players_db_consistency.py, test_v2910_build2_player_taxonomy.py) have formatting drift; ruff check itself passes. None of the merged PRs touch Python, so they neither caused nor worsened it. I've queued a task chip to fix it (one ruff format run + full-suite re-verify, as a draft area:addon PR) — click to spin it off, or dismiss.
+Operator's verbatim dev notes now live in [`docs/ai-handoff/DEV_NOTES.md`](docs/ai-handoff/DEV_NOTES.md)
+— operator reference, kept out of the resume-read handoff. The `dev note:` trigger appends there.
 
 ---
 
