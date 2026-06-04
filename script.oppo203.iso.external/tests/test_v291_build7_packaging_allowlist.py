@@ -96,7 +96,7 @@ def test_runtime_allowlist_includes_only_root_runtime_files_and_resources():
 
 def test_created_runtime_zip_uses_allowlist_and_has_no_dev_artifacts(tmp_path):
     tool = _load_package_tool()
-    out = tmp_path / "script.oppo203.iso.external-2.9.16.zip"
+    out = tmp_path / "script.oppo203.iso.external-2.9.17.zip"
     names = set(tool.create_installable_zip(ROOT, out))
     assert "script.oppo203.iso.external/addon.xml" in names
     assert "script.oppo203.iso.external/default.py" in names
@@ -127,7 +127,7 @@ def test_created_runtime_zip_uses_allowlist_and_has_no_dev_artifacts(tmp_path):
 def test_package_release_script_defaults_to_active_build(tmp_path):
     out = tmp_path / "dist"
     env = {k: v for k, v in os.environ.items() if k != "BUILD_SUFFIX"}
-    env.update({"OUT_DIR": str(out), "VERSION": "2.9.16"})
+    env.update({"OUT_DIR": str(out), "VERSION": "2.9.17"})
     result = subprocess.run(
         ["bash", str(ROOT / "scripts" / "package_release.sh")],
         check=False,
@@ -137,9 +137,9 @@ def test_package_release_script_defaults_to_active_build(tmp_path):
         capture_output=True,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    runtime_zip = out / "script.oppo203.iso.external-2.9.16.zip"
-    dev_zip = out / "script.oppo203.iso.external-2.9.16-dev-source.zip"
-    checksum = out / "script.oppo203.iso.external-2.9.16.sha256"
+    runtime_zip = out / "script.oppo203.iso.external-2.9.17.zip"
+    dev_zip = out / "script.oppo203.iso.external-2.9.17-dev-source.zip"
+    checksum = out / "script.oppo203.iso.external-2.9.17.sha256"
     assert runtime_zip.exists()
     assert dev_zip.exists()
     assert checksum.exists()
@@ -147,7 +147,7 @@ def test_package_release_script_defaults_to_active_build(tmp_path):
 
 def test_release_audit_requires_build8_manifest_and_evidence():
     audit = _load_audit()
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.16")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.17")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -163,7 +163,7 @@ def test_addon_metadata_and_version_source_identify_build8():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.16 Final"
-    assert version.BUILD_NUMBER == 25
+    assert version.BUILD_ID == "v2.9.17 Final"
+    assert version.BUILD_NUMBER == 26
     assert "Version 2.9.1 Build 11" in addon_text
     assert "allowlist-driven packaging policy" in addon_text

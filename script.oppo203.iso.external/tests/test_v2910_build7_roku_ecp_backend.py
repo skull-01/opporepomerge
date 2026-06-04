@@ -153,8 +153,8 @@ def test_build7_settings_add_roku_backend_defaults_without_changing_player_behav
 
 def test_build7_docs_and_audit_evidence_identity():
     version = _load("version_build7", "resources/lib/kodi/version.py")
-    assert version.BUILD_ID == "v2.9.16 Final"
-    assert version.BUILD_NUMBER == 25
+    assert version.BUILD_ID == "v2.9.17 Final"
+    assert version.BUILD_NUMBER == 26
     for rel in ("addon.xml", "README.md", "reference.md", "web-references.md"):
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 11" in text
@@ -165,7 +165,7 @@ def test_build7_docs_and_audit_evidence_identity():
             assert "HTTP POST to /keypress/<key>" in text
         assert "Hardware validation is not claimed" in text
     audit = _load("audit_release_build7", "tools/audit_release.py")
-    results = audit.run_audit(ROOT, expected_version="2.9.16")
+    results = audit.run_audit(ROOT, expected_version="2.9.17")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

@@ -2,7 +2,7 @@
 
 A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Kodi to an external OPPO UDP-203/UDP-205-compatible player workflow while preserving normal Kodi playback for media that should stay internal.
 
-> **Current status:** add-on **v2.9.16 Final** plus the Windows **configurator v0.8.5** (the repository's [Latest release](https://github.com/skull-01/script.oppo203.iso.external/releases/latest), which bundles the add-on) are software-verified releases. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
+> **Current status:** add-on **v2.9.17 Final** plus the Windows **configurator v0.9.7** (the repository's [Latest release](https://github.com/skull-01/script.oppo203.iso.external/releases/latest), which bundles the add-on) are software-verified releases. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
 
 ## What this add-on does
 
@@ -25,10 +25,10 @@ A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Ko
 | Item | Value |
 |---|---|
 | Add-on ID | `script.oppo203.iso.external` |
-| Add-on version | `2.9.16` |
-| Build identity | `v2.9.16 Final` |
-| Runtime package | `script.oppo203.iso.external-2.9.16.zip` |
-| Windows configurator | `v0.8.5` — the repo's **Latest** release; bundles this add-on and sets it up |
+| Add-on version | `2.9.17` |
+| Build identity | `v2.9.17 Final` |
+| Runtime package | `script.oppo203.iso.external-2.9.17.zip` |
+| Windows configurator | `v0.9.7` — the repo's **Latest** release; bundles this add-on and sets it up |
 | Runtime behavior changed | `true` |
 | Hardware validation claimed | `false` |
 
@@ -2227,13 +2227,13 @@ Balanced Gate verification is used for this feature build. Full legacy pytest, f
 Build 16 adds AVR setup UI helpers, query-only AVR test actions, explicit user-action gates for power/input tests, sanitized AVR diagnostic export, and safety wording. AVR support remains disabled by default, AVR power-off and volume automation remain disabled by default, no AVR playback sequencing hook is added, diagnostics sanitize credentials and state `hardware_validation_claimed=false`, and hardware validation is not claimed.
 
 <!-- BEGIN GENERATED DOCS METADATA -->
-### Generated documentation metadata — v2.9.16 Final
+### Generated documentation metadata — v2.9.17 Final
 
 - Target document: `README.md`
-- Cleanup scope: Maintenance and hardening — AVR and Pure-HTTP correctness, monitor and transport hardening, settings schema guards, and coercion-crash fixes
+- Cleanup scope: Player database — five OPPO-clone variants (M9205 V2/V3/V4, M9702 Plus, VenPro V203) and a cross-area Dolby Vision capability layer
 - Runtime behavior changed: `true`
 - Hardware validation claimed: `false`
-- Source recommendation: v2.9.16 maintenance/hardening: AVR http_handoff eligibility + HTTP path translation, SVM3/eISCP transport hardening, configurator-owned settings schema guards, honest Pure-HTTP launch failures, distinct Samsung HDMI defaults, and property-test coercion-crash fixes
+- Source recommendation: v2.9.17 player database — five OPPO-clone variants added end-to-end plus a cross-area Dolby Vision taxonomy (per-player tv_led/player_led/confidence + a global DV rule), research-sourced and software-verified
 - Managed documents: `README.md`, `reference.md`, `web-references.md`
 
 Protected behavior preserved:

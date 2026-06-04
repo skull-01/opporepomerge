@@ -113,7 +113,7 @@ def test_runtime_zip_excludes_build16_i18n_development_tooling(tmp_path):
 
 def test_release_audit_requires_build16_manifest_and_i18n_evidence():
     audit = _load_audit()
-    results = audit.run_audit(ROOT, expected_version="2.9.16")
+    results = audit.run_audit(ROOT, expected_version="2.9.17")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -131,8 +131,8 @@ def test_addon_metadata_and_version_source_identify_build16():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.16 Final"
-    assert version.BUILD_NUMBER == 25
+    assert version.BUILD_ID == "v2.9.17 Final"
+    assert version.BUILD_NUMBER == 26
     assert "Version 2.9.10 Build 2" in addon_text
     assert "Babel/gettext extraction" in addon_text
     assert "tools/make_pot.py as a legacy compatibility alias" in addon_text

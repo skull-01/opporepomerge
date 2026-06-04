@@ -217,6 +217,20 @@ consistency guards): never add or remove a routing/monitor combo on one side wit
 the other side + its guards in the same change. The default install preset is
 `http_handoff_http` ([`docs/BUILD_PLAN.md`](docs/BUILD_PLAN.md) D-A).
 
+## The README front-page status is part of every release
+
+The repo front page (`README.md`) carries a hand-written **Current status** blurb and a
+**Current release** table — both *outside* the `render_docs` generated block, so
+`render_docs --write` does **not** touch them. Update them on **every release** to the shipped
+versions: the add-on version / build identity / runtime-ZIP name **and** the Windows
+configurator's new **Latest** tag, plus `Runtime behavior changed` / `Hardware validation
+claimed`. A stale front page (it lagged at add-on v2.9.16 / configurator v0.8.5 while Latest was
+v0.9.6) misleads users about what they're installing. The cut order is add-on first, configurator
+(the repo's Latest) second; set the configurator line to the configurator version you ship this
+session. `tests/test_readme_current_release.py` pins the add-on fields to `version.py` (CI fails
+if the front page is stale); the configurator line stays norm-enforced. This is a required step
+in the `release` runbook and the `done for the day` / handoff flow.
+
 ## Never edit operator-only / secret files
 
 - `.claude/settings.local.json`

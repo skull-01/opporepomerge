@@ -128,7 +128,7 @@ def test_build5_release_audit_requires_build5_evidence():
     audit = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.16")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.17")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -153,7 +153,7 @@ def test_runtime_zip_includes_readiness_helper_but_excludes_build5_evidence(tmp_
     assert "script.oppo203.iso.external/HARDWARE_VALIDATION_READINESS_v2.5.3_BUILD5.md" not in names
     with zipfile.ZipFile(out) as zf:
         addon_text = zf.read("script.oppo203.iso.external/addon.xml").decode("utf-8")
-    assert 'version="2.9.16"' in addon_text
+    assert 'version="2.9.17"' in addon_text
     assert "Build 5" in addon_text
 
 
