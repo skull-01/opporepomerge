@@ -1354,6 +1354,12 @@ live in the 2026-05-30 post-EOD session transcript.
   gate → merge → release → record — **uninterrupted**. Hard rules still apply (never close
   issues, never touch operator-only/secret files, honest signature, the cross-area guard
   contracts). See [[protocol-1-full-auth-autonomous]].
+- **CI is a backstop — claude-review off, local-first.** `claude-review` is **disabled** (it
+  consumes Claude credit + ~5–6 min/PR for low value here; re-enable only with operator
+  sign-off). Run the gates locally and don't block merges on a non-required cloud re-run that's
+  already green; build releases locally where possible — add-on ZIP under **WSL** (`*.sh` is
+  LF-pinned in `.gitattributes`), configurator installer via native `npm run dist`, publish with
+  `gh`. See AGENTS.md "CI is a backstop, not the gate".
 
 ---
 

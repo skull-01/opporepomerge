@@ -231,6 +231,24 @@ session. `tests/test_readme_current_release.py` pins the add-on fields to `versi
 if the front page is stale); the configurator line stays norm-enforced. This is a required step
 in the `release` runbook and the `done for the day` / handoff flow.
 
+## CI is a backstop, not the gate — local-first, claude-review off
+
+- **`claude-review` is disabled and stays off.** It ran `anthropics/claude-code-action` (an
+  agentic Claude review) on every PR — it **consumes Claude credit** and adds ~5–6 min/PR for
+  low marginal value here (the building agent reviews inline and the operator reviews). Disabled
+  via `gh workflow disable "Claude Code Review"`. Do **not** re-enable without operator sign-off.
+- **Run the gates locally; treat cloud CI as a backstop.** All add-on gates (`pytest`, the serial
+  coverage gate, `mypy --gate`, `ruff`, `audit_release`) and configurator gates
+  (`tsc`/`vitest`/`cargo`) run locally — do them before pushing, and don't block a merge on a
+  **non-required** cloud re-run that's already green locally (a PR at `mergeStateStatus=UNSTABLE`
+  is mergeable).
+- **Releases can be built locally.** The add-on ZIP (`scripts/package_release.sh`) is POSIX — run
+  it under **WSL** (`wsl bash scripts/package_release.sh`); `*.sh` is pinned to **LF** in
+  `.gitattributes` so it doesn't break on a Windows checkout (`autocrlf=true` otherwise gives
+  CRLF and bash chokes on `set -o pipefail`). The configurator installer (`npm run dist`) builds
+  natively on Windows; publish with `gh release create/upload`. The cloud uniquely adds
+  clean-room reproducibility + the multi-Python matrix — keep it for those, not as the gate.
+
 ## Never edit operator-only / secret files
 
 - `.claude/settings.local.json`

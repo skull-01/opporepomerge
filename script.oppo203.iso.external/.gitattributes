@@ -6,3 +6,7 @@ scripts/hooks/* text eol=lf
 # Windows checks out CRLF, cargo rewrites LF, and every cargo invocation
 # shows a phantom diff.
 Cargo.lock text eol=lf
+
+# Shell scripts must stay LF so they run under bash/WSL on a Windows checkout
+# (CRLF makes bash choke on `set -o pipefail` and the shebang).
+*.sh text eol=lf
