@@ -23,6 +23,18 @@ describe("playerHardwareModel", () => {
     ).toBe("chinoppo_m9205");
   });
 
+  it("maps the new clone variants (M9205 V2/V3/V4, M9702 Plus, VenPro V203) to enum values", () => {
+    expect(
+      playerHardwareModel(makeState({ playerBrand: "chinoppo", playerModel: "M9205 V4" })),
+    ).toBe("chinoppo_m9205_v4");
+    expect(
+      playerHardwareModel(makeState({ playerBrand: "chinoppo", playerModel: "M9702 Plus" })),
+    ).toBe("chinoppo_m9702_plus");
+    expect(
+      playerHardwareModel(makeState({ playerBrand: "venpro", playerModel: "V203" })),
+    ).toBe("venpro_v203");
+  });
+
   it("maps Reavon UBR-X110 to reavon_ubrx110", () => {
     expect(
       playerHardwareModel(makeState({ playerBrand: "reavon", playerModel: "UBR-X110" })),

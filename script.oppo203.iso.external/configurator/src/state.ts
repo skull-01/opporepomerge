@@ -31,6 +31,7 @@ export type PlayerBrand =
   | "cineultra"
   | "ipuk"
   | "giec"
+  | "venpro"
   | "other";
 
 export type InputAddress = number | "cec" | string | null;

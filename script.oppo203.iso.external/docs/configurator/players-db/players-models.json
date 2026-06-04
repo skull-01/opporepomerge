@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "db_version": "2026.05.31",
+  "db_version": "2026.06.04",
   "scope": {
     "purpose": "PlayBridge OPPO/clone player taxonomy for configurator Step 2 and add-on hardware-compatibility resolution.",
     "granularity": "player_model_family",
@@ -35,7 +35,12 @@
     "cineultra_v203",
     "cineultra_v204",
     "magnetar_udp900",
-    "chinoppo_m9205_v1"
+    "chinoppo_m9205_v1",
+    "chinoppo_m9205_v2",
+    "chinoppo_m9205_v3",
+    "chinoppo_m9205_v4",
+    "chinoppo_m9702_plus",
+    "venpro_v203"
   ],
   "families": [
     {
@@ -85,6 +90,13 @@
       "name": "Giec",
       "ch": "G",
       "color": "#C2410C",
+      "posture": "wake-rewrite"
+    },
+    {
+      "id": "venpro",
+      "name": "VenPro",
+      "ch": "V",
+      "color": "#7C3AED",
       "posture": "wake-rewrite"
     },
     {
@@ -736,6 +748,190 @@
         "chinoppo_m9205_v1",
         "m9205-v1",
         "m9205_v1"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9205-V2",
+      "hw": "chinoppo_m9205_v2",
+      "ui_label": "M9205 V2",
+      "label": "Chinoppo M9205 V2",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205_v2",
+        "m9205-v2",
+        "m9205_v2"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9205-V3",
+      "hw": "chinoppo_m9205_v3",
+      "ui_label": "M9205 V3",
+      "label": "Chinoppo M9205 V3",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205_v3",
+        "m9205-v3",
+        "m9205_v3"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9205-V4",
+      "hw": "chinoppo_m9205_v4",
+      "ui_label": "M9205 V4",
+      "label": "Chinoppo M9205 V4",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9205_v4",
+        "m9205-v4",
+        "m9205_v4"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "M9702-Plus",
+      "hw": "chinoppo_m9702_plus",
+      "ui_label": "M9702 Plus",
+      "label": "Chinoppo M9702 Plus",
+      "brand": "chinoppo",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "chinoppo_m9702_plus",
+        "m9702-plus",
+        "m9702_plus"
+      ],
+      "regions": [
+        "Asia"
+      ],
+      "validated": false
+    },
+    {
+      "key": "VenPro-V203",
+      "hw": "venpro_v203",
+      "ui_label": "V203",
+      "label": "VenPro V203",
+      "brand": "venpro",
+      "hardware_class": "chinoppo_clone",
+      "protocol_stance": "clone_safe",
+      "wake_behavior": "clone_eject_wake",
+      "wake_command": "#EJT",
+      "protocol_compatible": true,
+      "is_clone": true,
+      "is_reavon": false,
+      "is_successor": false,
+      "http_api_436": false,
+      "src_supported": [
+        "#SRC 0",
+        "#SRC 3",
+        "#SRC 4"
+      ],
+      "src_unsupported": [
+        "#SRC 1",
+        "#SRC 2",
+        "#SRC 5",
+        "#SRC 6"
+      ],
+      "nas_playback_candidate": true,
+      "aliases": [
+        "venpro_v203",
+        "venpro-v203"
       ],
       "regions": [
         "Asia"

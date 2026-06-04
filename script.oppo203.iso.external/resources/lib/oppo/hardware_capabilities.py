@@ -51,6 +51,11 @@ CHINOPPO_STYLE_MODELS = (
     "M9205C",
     "CineUltra-V203",
     "CineUltra-V204",
+    "M9205-V2",
+    "M9205-V3",
+    "M9205-V4",
+    "M9702-Plus",
+    "VenPro-V203",
 )
 
 EXPERIMENTAL_CLONE_MODELS = ("IPUK-UHD8592", "GIEC-BDP-G5300")
@@ -70,6 +75,11 @@ CHINOPPO_NAS_PLAYBACK_MODELS = (
     "CineUltra-V204",
     "IPUK-UHD8592",
     "GIEC-BDP-G5300",
+    "M9205-V2",
+    "M9205-V3",
+    "M9205-V4",
+    "M9702-Plus",
+    "VenPro-V203",
 )
 
 OPPO_LIKE_SUCCESSOR_WARNING_MODELS = (

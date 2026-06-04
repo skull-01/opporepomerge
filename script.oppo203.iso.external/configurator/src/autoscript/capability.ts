@@ -15,6 +15,7 @@ export const AUTOSCRIPT_VERBOSE_PUSH_WARNING =
 export const CHINOPPO_NAS_PLAYBACK_MODELS: readonly string[] = [
   "M9200", "M9201", "M9203", "M9205", "M9205-V1", "M9205C", "M9702",
   "CineUltra-V203", "CineUltra-V204", "IPUK-UHD8592", "GIEC-BDP-G5300",
+  "M9205-V2", "M9205-V3", "M9205-V4", "M9702-Plus", "VenPro-V203",
 ];
 
 /** Mirror of `_firmware_major_build`: the numeric 20X build component (65 for 20X-65-0131). */

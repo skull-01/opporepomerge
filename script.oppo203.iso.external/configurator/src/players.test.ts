@@ -20,6 +20,11 @@ const EXPECTED_HW: ReadonlyArray<[PlayerBrand, string, string]> = [
   ["chinoppo", "M9200", "chinoppo_m9200"],
   ["chinoppo", "M9205", "chinoppo_m9205"],
   ["chinoppo", "M9702", "chinoppo_m9702"],
+  ["chinoppo", "M9205 V2", "chinoppo_m9205_v2"],
+  ["chinoppo", "M9205 V3", "chinoppo_m9205_v3"],
+  ["chinoppo", "M9205 V4", "chinoppo_m9205_v4"],
+  ["chinoppo", "M9702 Plus", "chinoppo_m9702_plus"],
+  ["venpro", "V203", "venpro_v203"],
   ["magnetar", "UDP800", "magnetar_udp800"],
   ["magnetar", "UDP900", "magnetar_udp900"],
   ["reavon", "UBR-X100", "reavon_ubrx100"],
@@ -68,10 +73,10 @@ describe("players catalog (derived from players-models.json)", () => {
 });
 
 describe("players DB", () => {
-  it("has schema_version 1, 18 models, and an 18-id enum order", () => {
+  it("has schema_version 1, 23 models, and a 23-id enum order", () => {
     expect(BUNDLED_PLAYERS_DB.schema_version).toBe(1);
-    expect(BUNDLED_PLAYERS_DB.models.length).toBe(18);
-    expect(BUNDLED_PLAYERS_DB.enum_order.length).toBe(18);
+    expect(BUNDLED_PLAYERS_DB.models.length).toBe(23);
+    expect(BUNDLED_PLAYERS_DB.enum_order.length).toBe(23);
   });
 
   it("every model carries at least one region and a valid brand", () => {
