@@ -37,8 +37,8 @@ def _load_audit():
 def test_docs_sources_yaml_is_dependency_free_metadata_source():
     tool = _load_render_docs()
     data = tool.load_sources(ROOT / "docs" / "sources.yaml")
-    assert data["release"]["build_id"] == "v2.9.16 Final"
-    assert data["release"]["build_number"] == 25
+    assert data["release"]["build_id"] == "v2.9.17 Final"
+    assert data["release"]["build_number"] == 26
     assert data["release"]["runtime_behavior_changed"] is True
     assert data["release"]["hardware_validation_claimed"] is False
     assert "runtime-only installable ZIP policy" in data["protected_behavior"]
@@ -54,7 +54,7 @@ def test_rendered_metadata_blocks_are_present_and_current():
         assert tool.BEGIN in text
         assert tool.END in text
         assert block in text
-        assert "v2.9.16 Final" in block
+        assert "v2.9.17 Final" in block
         assert "Hardware validation claimed: `false`" in block
 
 
@@ -73,7 +73,7 @@ def test_render_docs_cli_check_passes_without_rewriting():
 
 def test_release_audit_requires_build13_manifest_docs_metadata_and_evidence():
     audit = _load_audit()
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.16")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.17")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}
@@ -100,8 +100,8 @@ def test_addon_metadata_and_version_source_identify_build13():
     from resources.lib import version
 
     addon_text = (ROOT / "addon.xml").read_text(encoding="utf-8")
-    assert version.BUILD_ID == "v2.9.16 Final"
-    assert version.BUILD_NUMBER == 25
+    assert version.BUILD_ID == "v2.9.17 Final"
+    assert version.BUILD_NUMBER == 26
     assert "Version 2.9.10 Build 2" in addon_text
     assert "docs/sources.yaml" in addon_text
     assert "tools/render_docs.py" in addon_text

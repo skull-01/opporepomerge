@@ -201,8 +201,8 @@ def test_build13_yamaha_metadata_defaults_and_other_families_remain_safe():
 
 
 def test_build13_metadata_and_documentation_identity():
-    assert version.BUILD_ID == "v2.9.16 Final"
-    assert version.BUILD_NUMBER == 25
+    assert version.BUILD_ID == "v2.9.17 Final"
+    assert version.BUILD_NUMBER == 26
     addon = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.9.10 Build 13" in addon
     assert "Yamaha MusicCast / YXC AVR driver" in addon

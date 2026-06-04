@@ -22,7 +22,7 @@ def _package_tool():
 
 def test_build2_metadata_preserves_v252_runtime_baseline():
     addon = ET.parse(ROOT / "addon.xml").getroot()
-    assert addon.attrib["version"] == "2.9.16"
+    assert addon.attrib["version"] == "2.9.17"
     text = (ROOT / "addon.xml").read_text(encoding="utf-8")
     assert "Version 2.5.2 Build 2" in text
     assert "optimized runtime installable package" in text
@@ -126,7 +126,7 @@ def test_build2_evidence_is_preserved_in_source_and_audit_not_installable_zip(tm
     )
     audit = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(audit)
-    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.16")
+    results = audit.run_audit(audit.project_root(audit.Path(ROOT)), expected_version="2.9.17")
     failed = [item for item in results if item["status"] != "ok"]
     assert failed == []
     names = {item["name"] for item in results}

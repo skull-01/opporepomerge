@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  EXPECTED_VERSION: "2.9.16"
+  EXPECTED_VERSION: "2.9.17"
   PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
 
 jobs:
@@ -85,7 +85,7 @@ jobs:
           import zipfile
 
           dist = Path(__import__("os").environ["RUNNER_TEMP"]) / "dist"
-          runtime_zip = dist / "script.oppo203.iso.external-2.9.16-ci.zip"
+          runtime_zip = dist / "script.oppo203.iso.external-2.9.17-ci.zip"
           forbidden_prefixes = (
               "script.oppo203.iso.external/tests/",
               "script.oppo203.iso.external/tools/",
@@ -107,7 +107,7 @@ jobs:
         run: |
           OUT_DIR="$RUNNER_TEMP/dist" BUILD_SUFFIX="ci" bash scripts/package_release.sh
           mkdir -p "$RUNNER_TEMP/post-unpack"
-          unzip -q "$RUNNER_TEMP/dist/script.oppo203.iso.external-2.9.16-ci-dev-source.zip" -d "$RUNNER_TEMP/post-unpack"
+          unzip -q "$RUNNER_TEMP/dist/script.oppo203.iso.external-2.9.17-ci-dev-source.zip" -d "$RUNNER_TEMP/post-unpack"
           cd "$RUNNER_TEMP/post-unpack/script.oppo203.iso.external"
           python tools/sync_version.py --check --expected-version "$EXPECTED_VERSION"
           python -m pytest -q tests/test_github_readiness_g5_tooling_config.py tests/test_github_readiness_g6_ci_hardening.py tests/test_github_readiness_g7_safe_format_cleanup.py tests/test_github_readiness_g8_final_packaging.py tests/test_v2910_final_release.py

@@ -91,8 +91,8 @@ def test_preset_registry_validates_command_tv_polish_without_warnings():
 
 
 def test_build8_metadata_and_documentation_identity():
-    assert version.BUILD_ID == "v2.9.16 Final"
-    assert version.BUILD_NUMBER == 25
+    assert version.BUILD_ID == "v2.9.17 Final"
+    assert version.BUILD_NUMBER == 26
     for rel in ("addon.xml", "README.md", "reference.md", "web-references.md"):
         text = read_project_file(ROOT, rel)
         assert "Version 2.9.10 Build 11" in text

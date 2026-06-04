@@ -22,7 +22,7 @@ class TestBuild10MergeComplianceCandidate(unittest.TestCase):
         return read_project_file(ROOT, rel)
 
     def test_addon_version_is_build10(self):
-        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.16")
+        self.assertEqual(ET.parse(ROOT / "addon.xml").getroot().attrib.get("version"), "2.9.17")
 
     def test_merge_compliance_matrix_exists_and_does_not_overclaim_completion(self):
         text = self.read("MERGE_COMPLIANCE_MATRIX_v2.2.0_BUILD10.md")
@@ -59,7 +59,7 @@ class TestBuild10MergeComplianceCandidate(unittest.TestCase):
         mod = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(mod)
-        results = mod.run_audit(mod.project_root(mod.Path(ROOT)), expected_version="2.9.16")
+        results = mod.run_audit(mod.project_root(mod.Path(ROOT)), expected_version="2.9.17")
         failed = [item for item in results if item["status"] != "ok"]
         self.assertEqual([], failed)
         names = {item["name"] for item in results}
