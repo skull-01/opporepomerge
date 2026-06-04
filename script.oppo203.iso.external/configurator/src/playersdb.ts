@@ -9,6 +9,21 @@ export type PlayerPosture = "stock" | "wake-rewrite" | "warning";
 
 export type PlayerRegion = "US" | "UK" | "EU" | "Asia";
 
+export type DolbyVision = {
+  capable: string;
+  tv_led: string;
+  player_led: string;
+  confidence: string;
+};
+
+export type DolbyVisionRule = {
+  full_dv_tv_default: string;
+  sony_or_lldv_tv_default: string;
+  unknown_tv_test_order: string[];
+  proof_source: string;
+  avoid_as_proof: string;
+};
+
 export type PlayersDbFamilyUiModel = { label: string; hw: string };
 
 export type PlayersDbFamily = {
@@ -41,6 +56,7 @@ export type PlayersDbModel = {
   aliases: string[];
   regions: PlayerRegion[];
   validated: boolean;
+  dolby_vision: DolbyVision;
 };
 
 export type PlayersDb = {
@@ -49,6 +65,7 @@ export type PlayersDb = {
   enum_order: string[];
   families: PlayersDbFamily[];
   models: PlayersDbModel[];
+  global_dv_rule: DolbyVisionRule;
 };
 
 export const BUNDLED_PLAYERS_DB = bundled as unknown as PlayersDb;

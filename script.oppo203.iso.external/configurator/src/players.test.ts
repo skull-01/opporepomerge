@@ -106,4 +106,13 @@ describe("players DB", () => {
     expect(parsePlayersDb(null)).toBeNull();
     expect(parsePlayersDb("nope")).toBeNull();
   });
+
+  it("carries a dolby_vision profile on every model and a global_dv_rule", () => {
+    for (const m of BUNDLED_PLAYERS_DB.models) {
+      expect(m.dolby_vision, m.key).toBeTruthy();
+      expect(["yes", "unknown", "no"]).toContain(m.dolby_vision.capable);
+    }
+    expect(BUNDLED_PLAYERS_DB.global_dv_rule.full_dv_tv_default).toBe("tv_led");
+    expect(playerModelByHw(BUNDLED_PLAYERS_DB, "udp_203")?.dolby_vision.tv_led).toBe("official");
+  });
 });
