@@ -1,9 +1,10 @@
 # Application icons
 
-Generated from the add-on artwork at the repository root (`icon.png`, 256×256) via:
+Generated from the configurator's purpose-built source artwork `icon-source.png`
+(1024×1024, committed alongside the generated set) via:
 
 ```
-cd configurator; npm run tauri -- icon ..\icon.png
+cd configurator; npm run tauri -- icon src-tauri/icons/icon-source.png
 ```
 
 The names here match `bundle.icon` in `../tauri.conf.json` (`32x32.png`,
@@ -13,10 +14,9 @@ Store assets).
 
 Notes:
 
-- The source is 256×256, so the larger macOS (`icon.icns`) and Store logo sizes
-  are upscaled. The Windows MSI/NSIS bundle only uses sizes ≤256, so its icons
-  are not upscaled.
+- The source is 1024×1024, so every generated size (including the macOS
+  `icon.icns` and the Store logos) is downscaled from it — nothing is upscaled.
 - `tauri icon` also emits `ios/` and `android/` folders; they are intentionally
   not committed — this is a Windows desktop app.
-- To swap in a purpose-built icon later, drop a 1024×1024 PNG and re-run the
-  command above.
+- To swap the icon again, replace `icon-source.png` with a new 1024×1024 PNG and
+  re-run the command above.
