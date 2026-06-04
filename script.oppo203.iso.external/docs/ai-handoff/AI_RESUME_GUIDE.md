@@ -16,14 +16,14 @@
 - **What this is:** a Kodi (Python) add-on, `script.oppo203.iso.external`, that hands off
   4K/UHD disc-style playback from Kodi to an OPPO UDP-203/205 (or compatible clone) over
   IP control, plus a first-run setup wizard. Repo: **`skull-01/script.oppo203.iso.external`**.
-- **Latest add-on release:** **v2.9.16 Final** (tag `v2.9.16`, merge `371c5ff`; built/published
-  by `package.yml`, 2026-06-03) — a software-verified maintenance & hardening release folding
-  the AVR/Pure-HTTP correctness, monitor/transport, settings-guard, honest-launch, Samsung-HDMI,
-  coercion (#275/#329), and cross-area AutoScript CR/LF fixes merged since v2.9.15. (v2.9.15
-  added the **7th** preset `http_handoff_http` / Pure-HTTP path.) The companion
-  **`configurator-v0.9.4`** holds the repo "Latest" badge and bundles this add-on (the bare
-  add-on tag does not). For live per-area WIP, the spine is
-  [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §3a/§3b. See [[configurator-release-is-manual]].
+- **Latest add-on release:** **v2.9.17 Final** (tag `v2.9.17`, merge `4a23f16`; built/published
+  by `package.yml`, 2026-06-04) — a software-verified release enriching the OPPO/clone player
+  taxonomy: five clone variants (M9205 V2/V3/V4, M9702 Plus, VenPro V203) + a cross-area Dolby
+  Vision data layer (`resources/lib/oppo/dolby_vision.py` ↔ the configurator players DB,
+  drift-guarded), from the PlayBridge capability summary. The companion **`configurator-v0.9.7`**
+  holds the repo "Latest" badge and bundles this add-on (the bare add-on tag does not). For live
+  per-area WIP, the spine is [`AI_RESUME_HANDOFF.md`](../../AI_RESUME_HANDOFF.md) §3a/§3b. See
+  [[configurator-release-is-manual]].
 - **Releases are tag-driven:** push a `v*` tag → `.github/workflows/package.yml` builds the
   installable ZIP + SHA256 and creates the GitHub Release. There is a canonical runbook:
   the **`/release`** slash command (`.claude/commands/release.md`).
@@ -56,7 +56,7 @@
 | Repo | `github.com/skull-01/script.oppo203.iso.external` |
 | Language | Python 3 (Kodi runtime; `requires-python >=3.9`) |
 | Default branch | `main` |
-| Latest add-on release | `v2.9.16` (2026-06-03; configurator companion `configurator-v0.9.4` holds repo "Latest") |
+| Latest add-on release | `v2.9.17` (2026-06-04; configurator companion `configurator-v0.9.7` holds repo "Latest") |
 | Provider | "Perplexity Computer" (per addon.xml) |
 | License | MIT |
 

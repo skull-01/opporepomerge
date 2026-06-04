@@ -93,6 +93,7 @@ When the operator types **`resume`** (alone), do exactly this:
 | **`plan`** / **`create a plan`** / **`scope this`** | Produce a plan in the **canonical Plan format** ([`AGENTS.md`](AGENTS.md) → "Plan format"): ground against the current code first (confirm `file:line` anchors, flag already-done work), then **theme → per-PR scope blocks → dependency chain → 📊 rollup → ⚠️ risk callouts → verification regime → ✅ Go / 🛑 Wait / 🔁 Replan**. STOP for a Go before building. |
 | **`dev note: <text>`** | Append `<text>` VERBATIM (dated, no editing, no summarizing) to §20. |
 | **`update AI_RESUME_HANDOFF.md`** | Run the maintenance recipe at the end of §2. |
+| **`protocol 1`** (full auth) | Operator grants full auth to run a theme end-to-end incl. merge + release. Batch ALL decisions up front (one `AskUserQuestion`), then execute uninterrupted. Hard rules still apply. See §4 + [[protocol-1-full-auth-autonomous]]. |
 
 Slash-command equivalents: `/resume`, `/done-for-the-day`, `/release`.
 
@@ -175,6 +176,12 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)
 > in that area.
 
 ## §3a Addon work — in progress
+
+**As of 2026-06-04 (player-DB enrichment — Protocol 1 run; add-on `v2.9.17` Final SHIPPED + published; clean slate).**
+**Clean stopping point — no addon work in flight; `main`@`4d553d8` (v2.9.17 + the cfg v0.9.7 bump merged); 0 open PRs; add-on suite 1219/3, serial coverage 99% (5922 stmts), mypy --strict 51/0, ruff clean, audit_release PASS 616/616.**
+Operator invoked **Protocol 1** ([[protocol-1-full-auth-autonomous]]) — full auth to run a theme end-to-end + release with all decisions batched up front. Built (umbrella ENH [#341](https://github.com/skull-01/script.oppo203.iso.external/issues/341)) and shipped **add-on v2.9.17**: five OPPO-clone player variants (M9205 V2/V3/V4 → mirror M9205, M9702 Plus → M9702, VenPro V203 → new `venpro` family → CineUltra), appended to the `oppo_hardware_model` enum + wired end-to-end across the registries via the M9205-V1-split template, plus a **cross-area Dolby Vision data layer** — new `resources/lib/oppo/dolby_vision.py` (`DOLBY_VISION_PROFILES` + `DOLBY_VISION_TV_RULE`, normalized enums) mirrored by `dolby_vision` fields + `global_dv_rule` in `players-models.json`, pinned both ways by `test_players_db_consistency.py`. New tests: `test_clone_variants_split.py`, `test_dolby_vision_capability.py`. Capability summary vendored at `docs/configurator/players-db/PLAYBRIDGE_CAPABILITY_SUMMARY.md`. Feature PR [#342](https://github.com/skull-01/script.oppo203.iso.external/pull/342) (`7633b0f`) → standalone **v2.9.17** release PR [#343](https://github.com/skull-01/script.oppo203.iso.external/pull/343) (merge `4a23f16`, tag `v2.9.17` published; ~73-file bump + 8-doc evidence). **New norm this session (operator-flagged):** the README front-page **Current status** + **Current release** must be refreshed every release (they'd gone stale at v2.9.16 / cfg-v0.8.5) — now pinned by `tests/test_readme_current_release.py` ([[readme-current-status-per-release]], AGENTS.md, §4). ENH #341 SHA-commented + **OPEN**; all player rows `validated:false`, DV/clone stances research-sourced, hardware validation not claimed. **Resume (addon): Phase-C** the new clone variants + Dolby Vision guidance on real hardware (the v2.9.17 checklist row), or the teaching-commentary pass (§3c, paused).
+
+---
 
 **As of 2026-06-03 (EOD #21 — add-on `v2.9.16` Final SHIPPED + published; clean slate).**
 **Clean stopping point — no addon work in flight; `main`@`15640a5`; 0 open PRs; add-on suite 1187/3 (`-n auto` re-run locally this session; serial coverage 99% per the v2.9.16 CI gate — no add-on code changed since).**
@@ -514,6 +521,12 @@ branch unprompted.
   PRs #129–#133; see the **current** candidate themes at the top of §3a.
 
 ## §3b Configurator work — in progress
+
+**As of 2026-06-04 (player-DB enrichment — Protocol 1 run; configurator `v0.9.7` SHIPPED; bundles add-on v2.9.17; holds "Latest").**
+**Clean stopping point — no configurator work in flight; `main`@`4d553d8`; 0 open PRs; cfg gate green (`tsc -b` · vitest 361 · `cargo test` on CI · vite build).**
+Configurator side of the **Protocol 1** player-DB run (§3a, ENH [#341](https://github.com/skull-01/script.oppo203.iso.external/issues/341)): the players DB (`players-models.json` ×2) gained the 5 clone variants + a `venpro` family + per-model `dolby_vision` blocks + a top-level `global_dv_rule`, with `playersdb.ts` types — the Step-2 picker + `mapping.ts` surface them automatically (**no UI code changed**). Shipped as **configurator v0.9.7** (bump PR [#344](https://github.com/skull-01/script.oppo203.iso.external/pull/344) merge `4d553d8` → tag `configurator-v0.9.7`; CI built MSI/NSIS + published as Latest, bundling the v2.9.17 add-on). **Branding fix:** `configurator-ci.yml` now titles releases **"Kodi Oppo External Player Configurator v\<version\>"** (was the stale generic "Configurator \<tag\>" that lagged the v0.9.6 rebrand); `configurator-v0.9.6` was retitled to match. **Deferred follow-up (operator CI-time question):** one reviewed CI-optimization PR — skip `claude-review` + the add-on `ci.yml` jobs on configurator-only / `release/*` PRs, and skip the configurator `gate` job on tag pushes (the tag's release job recompiles anyway) — to cut the ~5–6 min claude-review + ~4.5 min windows gate off release wall-clock (the ~8 min MSI/NSIS build is unavoidable). **Resume (configurator): Phase-C** v0.9.7 on a real Windows host (brand + upgrade from v0.9.6 + bundled add-on reports v2.9.17), the **CI-optimization follow-up**, or **i18n migration** (the still-queued grounded theme).
+
+---
 
 **As of 2026-06-03 (EOD #21 — installer single old-version prompt SHIPPED as configurator `v0.9.5`; clean slate).**
 **Clean stopping point — no configurator work in flight; `main`@`15640a5`; 0 open PRs; cfg gate green (`tsc -b` · vitest 359 · cargo 57 on CI · vite build); `configurator-v0.9.5` holds the repo "Latest".**
@@ -1328,6 +1341,19 @@ live in the 2026-05-30 post-EOD session transcript.
 - **Only the operator closes issues** — never `gh issue close`, never `Closes #N`. Comment
   the SHA on the issue and add a verification step to
   [`docs/MANUAL_VERIFICATION_CHECKLIST.md`](docs/MANUAL_VERIFICATION_CHECKLIST.md).
+- **README front-page status is part of every release.** The hand-written **Current status**
+  blurb + **Current release** table in `README.md` live *outside* the `render_docs` generated
+  block, so `render_docs --write` does NOT touch them — and they went stale (lagged at add-on
+  v2.9.16 / configurator v0.8.5 while Latest was v0.9.6). Refresh them on **every release**:
+  the add-on version / build / runtime-ZIP **and** the configurator's new **Latest** tag, plus
+  `Runtime behavior changed` / `Hardware validation claimed`. Pinned by
+  `tests/test_readme_current_release.py` (add-on fields); the configurator line is
+  norm-enforced. See AGENTS.md + [[readme-current-status-per-release]].
+- **Protocol 1 (full-auth autonomous run).** When the operator invokes it, batch ALL decisions
+  the run needs up front (one `AskUserQuestion`), then execute the theme end-to-end — build →
+  gate → merge → release → record — **uninterrupted**. Hard rules still apply (never close
+  issues, never touch operator-only/secret files, honest signature, the cross-area guard
+  contracts). See [[protocol-1-full-auth-autonomous]].
 
 ---
 
@@ -2378,6 +2404,20 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   session); cfg `tsc -b` / **vitest 359** / `vite build` + `cargo test 57` on CI. `main`@`15640a5`;
   **0 open PRs; working tree clean.** **Resume → operator Phase-C** (v2.9.16 Kodi install; v0.9.4→v0.9.5
   single-prompt upgrade on a Windows host) **or cfg i18n migration** (the remaining grounded theme).
+- **2026-06-04 (player-DB enrichment — Protocol 1 run)** — Operator invoked **Protocol 1**
+  (full auth; batch decisions up front; execute end-to-end + release). Shipped **add-on
+  v2.9.17 Final** + **configurator v0.9.7** (umbrella ENH #341): 5 OPPO-clone variants (M9205
+  V2/V3/V4, M9702 Plus, VenPro V203) + a cross-area Dolby Vision data layer
+  (`resources/lib/oppo/dolby_vision.py` ↔ `players-models.json`, drift-guarded). Feature #342 →
+  add-on release #343 (tag `v2.9.17`) → configurator bump #344 (tag `configurator-v0.9.7`,
+  Latest). Refreshed §3a/§3b; added two §4 norms (README front-page + Protocol 1) and the §1
+  `protocol 1` trigger row. New memories [[protocol-1-full-auth-autonomous]],
+  [[readme-current-status-per-release]]; new guard `tests/test_readme_current_release.py`. Fixed
+  the stale README front page (→ v2.9.17 / cfg-v0.9.7) and the configurator release-title
+  branding (`configurator-ci.yml` + the v0.9.6 release retitled). Gate: add-on pytest
+  **1219/3**, serial coverage **99%**, mypy 51/0, ruff clean, audit PASS 616/616; cfg
+  `tsc`/vitest 361/`cargo`/build green. `main`@`4d553d8`. Deferred: a reviewed CI-optimization
+  PR (skip claude-review + add-on gate on configurator/`release/*` PRs; skip cfg gate on tags).
 
 ---
 
