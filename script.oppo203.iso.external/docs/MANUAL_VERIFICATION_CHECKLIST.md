@@ -43,6 +43,22 @@ for the Phase-C steps; the detailed pre-merge rows below remain the per-PR recor
 
 ## Phase A — pre-merge
 
+### Configurator — dev-console + wizard honesty (2026-06-07) → [#353](https://github.com/skull-01/script.oppo203.iso.external/issues/353) / [#354](https://github.com/skull-01/script.oppo203.iso.external/issues/354) / [#355](https://github.com/skull-01/script.oppo203.iso.external/issues/355) / [#358](https://github.com/skull-01/script.oppo203.iso.external/issues/358)
+
+Two draft PRs from the Developer-mode audit; all software-verified (tsc · vitest 361 · cargo 57 ·
+`vite build`), all **hardware-pending** against the real stack (AM6B+ / TCL Q9L Pro / M9205).
+
+**PR [#356](https://github.com/skull-01/script.oppo203.iso.external/pull/356) — OPPO :436 HTTP signin** (`2cc56e3`). The OPPO console's HTTP tab now wakes (`NOTIFY OREMOTE LOGIN`→:7624) + `/signin?{appIconType,appIpAddress}` before commands, matching the working emby-chinoppo-bridge; `oppo_http_play` corrected too. TCP (:23) untouched.
+
+- **Phase C (real M9205):** `cd configurator; npm run tauri dev` → Developer Options → OPPO → HTTP (:436) → enter the player IP → **Sign in** → fire `/getglobalinfo`; confirm it returns data instead of refusing.
+
+**PR [#357](https://github.com/skull-01/script.oppo203.iso.external/pull/357) — dev ping + wizard test honesty** (`b71c757` / `7864178` / `60db493`).
+
+- **#358 (ping):** Developer Options → each panel (Kodi / TV / AVR / NAS) → enter IP → **Ping** → confirm `✓ reachable · N ms` for a live device and `✗ refused/timeout` for a dead one.
+- **#354 (Find on network):** Step 1 → **Find on network** → confirm it scans and lists the real Kodi box(es); picking one sets the IP (no fake `10.0.1.42` default).
+- **#353 (Step 1 checks):** Step 1 Tier A/B → **Test connection** against the real box → confirm the rows show *your* IP + real ping latency / key-auth / writable (no `10.0.1.42`, no fabricated OpenSSH fingerprint / ICMP).
+- **#355 (Step 4 mute):** Step 4 (ADB or Roku TV) → **Send test signal** → confirm a *real* mute actually fires and the rows show the real IP + true result (no instant fake "command transmitted · 124 ms").
+
 ### Tooling — go-local CI/release (2026-06-05) → ENH [#345](https://github.com/skull-01/script.oppo203.iso.external/issues/345)
 
 CI + release moved fully local; cloud CI disabled. PRs #346 (`c2c784f`) / #347 (`d78009a`) /

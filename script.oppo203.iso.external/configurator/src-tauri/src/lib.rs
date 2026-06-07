@@ -678,6 +678,27 @@ fn tcp_probe(host: String, port: u16, timeout_ms: Option<u64>) -> bool {
 }
 
 #[derive(serde::Serialize)]
+struct PingResult {
+    reachable: bool,
+    ms: u64,
+    port: u16,
+}
+
+/// TCP-connect "ping" for the Developer Options panels: measure the real round-trip to host:port (a
+/// successful connect), or report unreachable. Not ICMP -- a connect probe (no privilege/raw socket),
+/// the same primitive the dashboard liveness uses. The ms is the measured connect time.
+#[tauri::command]
+fn ping_host(host: String, port: u16, timeout_ms: Option<u64>) -> PingResult {
+    let t0 = std::time::Instant::now();
+    let reachable = connect_timeout(&host, port, timeout_ms.unwrap_or(1500)).is_ok();
+    PingResult {
+        reachable,
+        ms: t0.elapsed().as_millis() as u64,
+        port,
+    }
+}
+
+#[derive(serde::Serialize)]
 struct PortResult {
     port: u16,
     open: bool,
@@ -3393,6 +3414,7 @@ pub fn run() {
             smb_test_write,
             copy_to_share,
             tcp_probe,
+            ping_host,
             tv_port_probe,
             oppo_query,
             oppo_power,

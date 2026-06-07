@@ -6,6 +6,7 @@ import { sanitizeSettings } from "../../settings_diff";
 import { addonsDirForPlatform } from "../../generate";
 import type { AddonSettings } from "../../mapping";
 import type { DevPanelProps } from "./types";
+import { PingRow } from "./devControls";
 
 const ADDON_ID = "script.oppo203.iso.external";
 
@@ -225,6 +226,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
           </button>
         </div>
         <span className="field-hint">Probes :8080 across the /24 and confirms each hit via Kodi JSON-RPC (yields the version). Currently set: <span className="mono">{state.kodiIp}</span>.</span>
+        <PingRow label="Kodi box" host={state.kodiIp} port={8080} />
         {boxes.length > 0 && (
           <div className="model-list" style={{ marginTop: 12 }}>
             {boxes.map((b) => (

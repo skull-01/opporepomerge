@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Transcript, runAndLog, useTranscript } from "./devTranscript";
-import { BackendTabs, Field, RawRow } from "./devControls";
+import { BackendTabs, Field, PingRow, RawRow } from "./devControls";
 import type { DevPanelProps } from "./types";
 
 type Backend = "denon" | "eiscp" | "yamaha" | "sony";
@@ -123,6 +123,11 @@ export function AvrPanel({ state }: DevPanelProps) {
       <section className="card">
         <h3 style={{ marginTop: 0 }}>AV receiver console</h3>
         <Field id="dev-avr-ip" label="AVR IP" value={avrIp} setValue={setAvrIp} width={280} />
+        <PingRow
+          label="AVR"
+          host={avrIp}
+          port={backend === "denon" ? 23 : backend === "eiscp" ? 60128 : 80}
+        />
 
         <BackendTabs tabs={BACKENDS} active={backend} onPick={setBackend} label="AVR backend" />
 
