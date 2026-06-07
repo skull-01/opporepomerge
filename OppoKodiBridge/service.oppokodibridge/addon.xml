@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="service.oppokodibridge" name="OppoKodiBridge" version="2.0.2" provider-name="skull-01">
+<addon id="service.oppokodibridge" name="OppoKodiBridge" version="2.0.3" provider-name="skull-01">
   <requires>
     <import addon="xbmc.python" version="3.0.0"/>
   </requires>
@@ -10,6 +10,6 @@
     <platform>all</platform>
     <license>MIT</license>
     <source>https://github.com/skull-01/OppoKodiBridge</source>
-    <news>v2.0.2 — prefilled the OPPO IP (192.168.10.10) so the Ugoos/M9205/TCL chain is fully preconfigured out of the box; just install and play. v2.0.1 — URL-decode NFS/SMB paths so spaces and parentheses in filenames work; prefilled NFS path-mapping defaults. v2.0.0 — clean-slate v2. One chain only (Ugoos/CoreELEC + M9205 V1 + TCL Q9L Pro). Pure-HTTP handoff to the OPPO; CEC One Touch Play switches the TV; Kodi reclaims via CECActivateSource. All config in Kodi; no Windows configurator.</news>
+    <news>v2.0.3 — packaging fix: the install zip now uses spec-correct forward-slash paths (the previous Compress-Archive build wrote backslashes that broke extraction on Linux/CoreELEC). No add-on code change. v2.0.2 — prefilled the OPPO IP (192.168.10.10) so the Ugoos/M9205/TCL chain is fully preconfigured out of the box; just install and play. v2.0.1 — URL-decode NFS/SMB paths so spaces and parentheses in filenames work; prefilled NFS path-mapping defaults. v2.0.0 — clean-slate v2. One chain only (Ugoos/CoreELEC + M9205 V1 + TCL Q9L Pro). Pure-HTTP handoff to the OPPO; CEC One Touch Play switches the TV; Kodi reclaims via CECActivateSource. All config in Kodi; no Windows configurator.</news>
   </extension>
 </addon>
