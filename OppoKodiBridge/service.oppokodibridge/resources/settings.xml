@@ -32,14 +32,14 @@
       <group id="1">
         <setting id="path_from" type="string" label="30011">
           <level>0</level>
-          <default/>
+          <default>nfs://192.168.10.20/srv/nfs/media</default>
           <control type="edit" format="string">
             <heading>30011</heading>
           </control>
         </setting>
         <setting id="path_to" type="string" label="30012">
           <level>0</level>
-          <default/>
+          <default>/srv/nfs/media</default>
           <control type="edit" format="string">
             <heading>30012</heading>
           </control>
