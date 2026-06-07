@@ -5,7 +5,7 @@
       <group id="1">
         <setting id="oppo_ip" type="string" label="30001">
           <level>0</level>
-          <default/>
+          <default>192.168.10.10</default>
           <control type="edit" format="string">
             <heading>30001</heading>
           </control>
