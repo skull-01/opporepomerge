@@ -1,30 +1,30 @@
 """Pure-HTTP handoff to the OPPO/M9205 app API.
 
-This mirrors the API the M9205 actually speaks, as implemented by the working
-emby-chinoppo-bridge (`lib/oppo.py`):
+Verified live against the operator's M9205 (2026-06-07). The exact sequence the device needs:
 
-  * `/signin?{"appIconType":1,"appIpAddress":"<app-ip>"}`
-  * `/loginNfsServer?{"serverName":"<server>"}`
-  * `/mountNfsSharedFolder?{"server":"<server>","folder":"<folder>"}` — mounts at `/mnt/nfs1`
-  * `/playnormalfile?{...}` with `"path":"/mnt/nfs1/<relative>"` and the server in `"extraNetPath"`
+  1. wake   -- UDP b"NOTIFY OREMOTE LOGIN" to :7624 starts the :436 app API (it sleeps after boot)
+  2. init   -- /getmainfirmwareversion, /getsetupmenu, /signin (appIconType/appIpAddress), /getglobalinfo
+  3. login  -- /loginNfsServer for the OPPO's OWN NFS server (read from /getdevicelist)
+  4. mount  -- /mountNfsSharedFolder of the FILE'S FOLDER -> the OPPO mounts it at /mnt/nfs1
+  5. play   -- /playnormalfile?{...} with path "/mnt/nfs1/<basename>" and the server in extraNetPath
 
-The server is the OPPO's OWN NFS device (from `/getdevicelist`) — the address the OPPO can reach,
-which on a dual-homed NAS is not the address Kodi uses. Playback is confirmed by polling
-`/getglobalinfo` for `is_video_playing` (etc.). Community-reverse-engineered; not an official OPPO
-protocol; verified live against one M9205 on 2026-06-07.
+Two hard rules learned on hardware: mount the file's folder and play the bare filename (the OPPO
+won't play sub-paths of a mount), and NEVER mount a non-exported folder (it hard-crashes the OPPO).
+Mirrors the working emby-chinoppo-bridge; community-reverse-engineered, not an official protocol.
 """
 from __future__ import annotations
 
 import json
 import socket
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any, Optional, Tuple
 
-# The NFS login/mount/play calls can be slow; quick calls use config.socket_timeout.
-MOUNT_TIMEOUT = 20.0
+MOUNT_TIMEOUT = 25.0
 PLAY_TIMEOUT = 15.0
+OREMOTE_PORT = 7624
 
 IDLE_STATUSES = {"STOP", "STOPPED", "IDLE", "END", "ENDED", "NO_MEDIA", "NO MEDIA", "HOME"}
 PLAY_STATUSES = {
@@ -41,8 +41,7 @@ PLAY_STATUSES = {
     "SREV",
 }
 
-# The M9205 /getglobalinfo reports playback via these booleans (confirmed on hardware), not a
-# single status string: e.g. {"is_video_playing": true, "is_audio_playing": false, ...}.
+# The M9205 /getglobalinfo reports playback via these booleans (confirmed on hardware).
 _PLAYING_FLAGS = (
     "is_playing",
     "is_video_playing",
@@ -57,12 +56,7 @@ class OppoError(RuntimeError):
 
 
 def parse_media_path(media_file: str) -> Tuple[str, str, str]:
-    """Split a Kodi/network path into ``(server, folder, filename)`` like the bridge.
-
-    ``nfs://192.168.1.177/mnt/Super3/Super3Share/A/B/file.mkv`` ->
-    ``("192.168.1.177", "mnt/Super3/Super3Share/A/B", "file.mkv")``. The OPPO mounts ``folder`` at
-    ``/mnt/nfs1`` and plays ``filename`` from there.
-    """
+    """Split a Kodi/network path into ``(server, folder, filename)``."""
     movie = str(media_file).replace("\\\\", "\\").replace("\\", "/")
     if "://" in movie:
         movie = movie.split("://", 1)[1]
@@ -73,6 +67,38 @@ def parse_media_path(media_file: str) -> Tuple[str, str, str]:
     filename = parts[-1] if len(parts) > 1 else ""
     folder = "/".join(parts[1:-1]) if len(parts) > 2 else ""
     return (server, folder, filename)
+
+
+def split_share_relative(media_file: str, path_from: str) -> Tuple[Optional[str], Optional[str]]:
+    """``(folder, basename)`` for the file's location WITHIN the share, after stripping ``path_from``.
+
+    ``nfs://192.168.1.177/mnt/Super3/Super3Share/A/B/file.mkv`` with path_from
+    ``nfs://192.168.1.177/mnt/Super3/Super3Share`` -> ``("A/B", "file.mkv")``; ``(None, None)`` if the
+    prefix doesn't match. Network URLs are URL-decoded so spaces/parens come through literal.
+    """
+    text = str(media_file)
+    if text.lower().startswith(("nfs://", "smb://")):
+        text = urllib.parse.unquote(text)
+    prefix = (path_from or "").strip().rstrip("/")
+    if not prefix or not text.startswith(prefix):
+        return (None, None)
+    rel = text[len(prefix):].lstrip("/")
+    if not rel:
+        return (None, None)
+    if "/" in rel:
+        folder, basename = rel.rsplit("/", 1)
+    else:
+        folder, basename = "", rel
+    return (folder, basename)
+
+
+def oppo_mount_folder(folder: Optional[str], path_to: str) -> str:
+    """The OPPO export folder to mount = the OPPO export root (``path_to``) + the in-share folder."""
+    base = (path_to or "").strip().strip("/")
+    rel = (folder or "").strip("/")
+    if base and rel:
+        return base + "/" + rel
+    return base or rel
 
 
 def local_ip_toward(host: str, port: int = 436) -> str:
@@ -153,8 +179,6 @@ class OppoClient:
                 return body
         except OppoError:
             raise
-        # OSError covers URLError, socket.timeout/TimeoutError, and connection errors — all must
-        # become OppoError so the handoff treats them as non-fatal instead of crashing.
         except OSError as exc:
             raise OppoError("OPPO HTTP request failed for {}: {}".format(url, exc)) from exc
 
@@ -166,12 +190,44 @@ class OppoClient:
         except ValueError:
             return {"raw": body}
 
+    def _port_open(self, port: int, timeout: float = 3.0) -> bool:
+        try:
+            conn = socket.create_connection((self.cfg.oppo_ip, int(port)), timeout=timeout)
+            conn.close()
+            return True
+        except OSError:
+            return False
+
+    def send_oremote_notify(self) -> None:
+        """The wake packet that starts the :436 app API."""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            try:
+                sock.sendto(b"NOTIFY OREMOTE LOGIN", (self.cfg.oppo_ip, OREMOTE_PORT))
+            finally:
+                sock.close()
+        except OSError:
+            pass
+
+    def wake_and_wait(self, attempts: int = 8, interval: float = 3.0) -> bool:
+        """Send the OREMOTE notify until the :436 API answers. Returns True if it came up."""
+        port = int(self.cfg.oppo_http_port)
+        for _ in range(max(1, attempts)):
+            self.send_oremote_notify()
+            if self._port_open(port):
+                return True
+            time.sleep(interval)
+        return self._port_open(port)
+
+    def get_firmware_version(self) -> str:
+        return self._get("/getmainfirmwareversion")
+
+    def get_setup_menu(self) -> str:
+        return self._get("/getsetupmenu")
+
     def signin(self, app_ip: str = "127.0.0.1") -> str:
         payload = urllib.parse.quote('{"appIconType":1,"appIpAddress":"%s"}' % app_ip)
-        return self._get("/signin?" + payload)
-
-    def send_remote_key(self, key: str) -> str:
-        return self._get("/sendremotekey?" + urllib.parse.quote('{"key":"%s"}' % key))
+        return self._get("/signin?" + payload, timeout=15)
 
     def get_device_list(self) -> dict:
         return self._get_json("/getdevicelist")
@@ -182,6 +238,9 @@ class OppoClient:
     def login_nfs(self, server: str) -> dict:
         return self._get_json("/loginNfsServer?" + urllib.parse.quote('{"serverName":"%s"}' % server))
 
+    def get_nfs_share_list(self) -> str:
+        return self._get("/getNfsShareFolderlist", timeout=12)
+
     def mount_nfs(self, server: str, folder: str) -> dict:
         endpoint = '/mountNfsSharedFolder?{"server":"%s","folder":"%s"}' % (
             server,
@@ -189,21 +248,11 @@ class OppoClient:
         )
         return self._get_json(endpoint, timeout=MOUNT_TIMEOUT)
 
-    def login_smb(self, server: str) -> dict:
-        return self._get_json("/loginSambaWithOutID?" + urllib.parse.quote('{"serverName":"%s"}' % server))
-
-    def mount_smb(self, server: str, folder: str, username: str = "", password: str = "") -> dict:
-        endpoint = (
-            '/mountSharedFolder?{"server":"%s","bWithID":0,"folder":"%s","userName":"%s","password":"%s","bRememberID":0}'
-            % (server, urllib.parse.quote(folder), username, password)
-        )
-        return self._get_json(endpoint, timeout=MOUNT_TIMEOUT)
-
-    def play_file(self, server: str, filename: str, index: str = "0", nfs: bool = True) -> dict:
+    def play_file(self, server: str, rel_path: str, index: str = "0", nfs: bool = True) -> dict:
         mount_path = "nfs1" if nfs else "cifs1"
         inner = (
             '"path":"/mnt/%s/%s","index":%s,"type":1,"appDeviceType":2,"extraNetPath":"%s","playMode":0'
-            % (mount_path, filename, index, server)
+            % (mount_path, rel_path, index, server)
         )
         endpoint = "/playnormalfile?{" + urllib.parse.quote(inner) + "}"
         return self._get_json(endpoint, timeout=PLAY_TIMEOUT)

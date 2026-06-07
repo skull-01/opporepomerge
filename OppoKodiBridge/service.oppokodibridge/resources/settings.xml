@@ -32,7 +32,7 @@
       <group id="1">
         <setting id="path_from" type="string" label="30011">
           <level>0</level>
-          <default>nfs://192.168.10.20/srv/nfs/media</default>
+          <default>nfs://192.168.1.177/mnt/Super3/Super3Share</default>
           <control type="edit" format="string">
             <heading>30011</heading>
           </control>

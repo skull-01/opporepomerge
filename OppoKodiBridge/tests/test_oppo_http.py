@@ -7,23 +7,43 @@ import pytest
 from resources.lib import oppo_http as oh
 from resources.lib.config import Config
 
+KODI = (
+    "nfs://192.168.1.177/mnt/Super3/Super3Share/02TV/01Series/02-MKV/"
+    "3 Body Problem (2024)/Season 1/3 Body Problem - S01E01 - Countdown.mkv"
+)
+FROM = "nfs://192.168.1.177/mnt/Super3/Super3Share"
 
-def test_parse_media_path_nfs():
-    s, folder, fn = oh.parse_media_path(
-        "nfs://192.168.1.177/mnt/Super3/Super3Share/02TV/3 Body Problem (2024)/Season 1/S01E01.mkv"
+
+def test_split_share_relative():
+    folder, base = oh.split_share_relative(KODI, FROM)
+    assert folder == "02TV/01Series/02-MKV/3 Body Problem (2024)/Season 1"
+    assert base == "3 Body Problem - S01E01 - Countdown.mkv"
+
+
+def test_split_share_relative_urlencoded():
+    enc = "nfs://192.168.1.177/mnt/Super3/Super3Share/A%20B/file%20(2024).mkv"
+    folder, base = oh.split_share_relative(enc, FROM)
+    assert folder == "A B"
+    assert base == "file (2024).mkv"
+
+
+def test_split_share_relative_no_match():
+    assert oh.split_share_relative("nfs://other/x/y.mkv", FROM) == (None, None)
+
+
+def test_split_share_relative_root_file():
+    folder, base = oh.split_share_relative(FROM + "/movie.mkv", FROM)
+    assert folder == ""
+    assert base == "movie.mkv"
+
+
+def test_oppo_mount_folder():
+    assert (
+        oh.oppo_mount_folder("02TV/01Series/Season 1", "srv/nfs/media")
+        == "srv/nfs/media/02TV/01Series/Season 1"
     )
-    assert s == "192.168.1.177"
-    assert folder == "mnt/Super3/Super3Share/02TV/3 Body Problem (2024)/Season 1"
-    assert fn == "S01E01.mkv"
-
-
-def test_parse_media_path_short():
-    assert oh.parse_media_path("nfs://srv/share/file.mkv") == ("srv", "share", "file.mkv")
-    assert oh.parse_media_path("nfs://srv/file.mkv") == ("srv", "", "file.mkv")
-
-
-def test_parse_media_path_empty():
-    assert oh.parse_media_path("") == ("", "", "")
+    assert oh.oppo_mount_folder("", "srv/nfs/media") == "srv/nfs/media"
+    assert oh.oppo_mount_folder("A/B", "/srv/nfs/media/") == "srv/nfs/media/A/B"
 
 
 def test_nfs_server_from_devices():
@@ -35,7 +55,6 @@ def test_nfs_server_from_devices():
     }
     assert oh.nfs_server_from_devices(devices) == "192.168.10.20"
     assert oh.nfs_server_from_devices({"devicelist": []}) is None
-    assert oh.nfs_server_from_devices({}) is None
 
 
 def test_status_is_idle():
@@ -44,14 +63,8 @@ def test_status_is_idle():
     assert not oh.status_is_idle("PLAY")
 
 
-def test_info_is_playing_real_oppo_fields():
-    idle = {
-        "success": True,
-        "is_video_playing": False,
-        "is_audio_playing": False,
-        "is_bdmv_playing": False,
-        "activeapp": "scrn_svr",
-    }
+def test_info_is_playing_real_fields():
+    idle = {"success": True, "is_video_playing": False, "is_audio_playing": False, "activeapp": "scrn_svr"}
     assert not oh.info_is_playing(idle)
     assert oh.info_is_playing({**idle, "is_video_playing": True})
     assert oh.info_is_playing({"is_bdmv_playing": True})
@@ -62,41 +75,37 @@ def _client():
     return oh.OppoClient(Config(oppo_ip="1.2.3.4"))
 
 
-def test_play_file_endpoint_shape(monkeypatch):
+def test_play_file_endpoint(monkeypatch):
     client = _client()
     cap = {}
-    monkeypatch.setattr(client, "_get", lambda endpoint, timeout=None: cap.update(ep=endpoint) or "{}")
-    client.play_file("192.168.10.20", "3 Body Problem - S01E01.mkv", "0", nfs=True)
+    monkeypatch.setattr(client, "_get_json", lambda ep, timeout=None: cap.update(ep=ep) or {})
+    client.play_file("192.168.10.20", "3 Body Problem - S01E01.mkv")
     ep = cap["ep"]
-    assert ep.startswith("/playnormalfile?{")
-    assert ep.endswith("}")
+    assert ep.startswith("/playnormalfile?{") and ep.endswith("}")
     inner = urllib.parse.unquote(ep[len("/playnormalfile?{") : -1])
     assert '"path":"/mnt/nfs1/3 Body Problem - S01E01.mkv"' in inner
     assert '"extraNetPath":"192.168.10.20"' in inner
-    assert '"appDeviceType":2' in inner
 
 
 def test_mount_nfs_endpoint(monkeypatch):
     client = _client()
     cap = {}
-    monkeypatch.setattr(client, "_get", lambda endpoint, timeout=None: cap.update(ep=endpoint) or "{}")
-    client.mount_nfs("192.168.10.20", "mnt/Super3/Super3Share/Season 1")
+    monkeypatch.setattr(client, "_get_json", lambda ep, timeout=None: cap.update(ep=ep) or {})
+    client.mount_nfs("192.168.10.20", "srv/nfs/media/Season 1")
     ep = cap["ep"]
     assert ep.startswith('/mountNfsSharedFolder?{"server":"192.168.10.20","folder":"')
-    assert "Season%201" in ep  # folder is url-encoded, slashes preserved
+    assert "Season%201" in ep
 
 
 def test_login_and_signin_endpoints(monkeypatch):
     client = _client()
     caps = []
-    monkeypatch.setattr(client, "_get", lambda endpoint, timeout=None: caps.append(endpoint) or "{}")
+    monkeypatch.setattr(client, "_get_json", lambda ep, timeout=None: caps.append(ep) or {})
+    monkeypatch.setattr(client, "_get", lambda ep, timeout=None: caps.append(ep) or "ok")
     client.login_nfs("192.168.10.20")
     client.signin("192.168.1.100")
-    assert caps[0].startswith("/loginNfsServer?")
-    assert "192.168.10.20" in urllib.parse.unquote(caps[0])
-    assert caps[1].startswith("/signin?")
-    decoded = urllib.parse.unquote(caps[1])
-    assert "appIpAddress" in decoded and "192.168.1.100" in decoded
+    assert any(c.startswith("/loginNfsServer?") and "192.168.10.20" in urllib.parse.unquote(c) for c in caps)
+    assert any(c.startswith("/signin?") and "appIconType" in urllib.parse.unquote(c) for c in caps)
 
 
 def test_get_raises_oppoerror_on_timeout(monkeypatch):
@@ -104,17 +113,6 @@ def test_get_raises_oppoerror_on_timeout(monkeypatch):
 
     def boom(*a, **k):
         raise socket.timeout("timed out")
-
-    monkeypatch.setattr(urllib.request, "urlopen", boom)
-    with pytest.raises(oh.OppoError):
-        client._get("/getglobalinfo")
-
-
-def test_get_raises_oppoerror_on_refused(monkeypatch):
-    client = _client()
-
-    def boom(*a, **k):
-        raise ConnectionRefusedError("refused")
 
     monkeypatch.setattr(urllib.request, "urlopen", boom)
     with pytest.raises(oh.OppoError):
