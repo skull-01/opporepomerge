@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { invoke } from "../../ipc";
 import { Transcript, useTranscript } from "./devTranscript";
-import { Field } from "./devControls";
+import { Field, PingRow } from "./devControls";
 import type { DevPanelProps } from "./types";
 
 type NasHost = { ip: string; protocols: string[] };
@@ -131,6 +131,7 @@ export function NasPanel(_props: DevPanelProps) {
             </select>
           </div>
         </div>
+        <PingRow label="NAS host" host={nasHost} port={protocol === "nfs" ? 2049 : 445} />
         {protocol === "smb" && (
           <div className="row wrap" style={{ gap: 12, alignItems: "flex-end", marginTop: 4 }}>
             <Field id="dev-nas-user" label="User (optional)" value={user} setValue={setUser} width={160} />

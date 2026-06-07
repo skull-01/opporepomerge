@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Transcript, runAndLog, useTranscript } from "./devTranscript";
 import { planSwitch, type SwitchExtras } from "../../step5_switch";
 import type { DevPanelProps } from "./types";
+import { PingRow } from "./devControls";
 
 type Backend = "roku" | "adb" | "sony" | "external" | "smartthings";
 
@@ -140,6 +141,11 @@ export function TvPanel({ state }: DevPanelProps) {
           <label className="field-label" htmlFor="dev-tv-ip">TV IP</label>
           <input id="dev-tv-ip" className="input" value={tvIp} spellCheck={false} onChange={(e) => setTvIp(e.target.value)} />
         </div>
+        <PingRow
+          label="TV"
+          host={tvIp}
+          port={backend === "roku" ? 8060 : backend === "adb" ? Number(tvPort) || 5555 : backend === "sony" ? 20060 : null}
+        />
 
         <div className="dev-tabs" role="tablist" aria-label="TV backend" style={{ marginTop: 16 }}>
           {BACKENDS.map((b) => (

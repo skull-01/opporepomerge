@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { invoke } from "../../ipc";
+
 // Small shared form controls for the Developer Options device consoles (AVR / NAS).
 
 export function Field({
@@ -71,6 +74,66 @@ export function RawRow({
           Send
         </button>
       </div>
+    </div>
+  );
+}
+
+type PingPhase = "idle" | "running" | "ok" | "fail";
+
+/**
+ * A reachability ping for a device console: enter the IP, probe its control port, show the real
+ * result + measured latency (✓ reachable · N ms / ✗ no response). `port` is null for backends with
+ * no plain TCP control port (e.g. SmartThings / LG), and the row says so honestly.
+ */
+export function PingRow({ label, host, port }: { label: string; host: string; port: number | null }) {
+  const [phase, setPhase] = useState<PingPhase>("idle");
+  const [text, setText] = useState("");
+  async function ping() {
+    const h = host.trim();
+    if (!h) {
+      setPhase("fail");
+      setText("Enter an IP first.");
+      return;
+    }
+    if (port == null) {
+      setPhase("fail");
+      setText("No plain TCP control port for this backend.");
+      return;
+    }
+    setPhase("running");
+    setText("");
+    try {
+      const r = await invoke<{ reachable: boolean; ms: number; port: number }>("ping_host", {
+        host: h,
+        port,
+      });
+      if (r.reachable) {
+        setPhase("ok");
+        setText(`reachable at ${h}:${r.port} · ${r.ms} ms`);
+      } else {
+        setPhase("fail");
+        setText(`no response from ${h}:${r.port} (timeout / refused)`);
+      }
+    } catch (e) {
+      setPhase("fail");
+      setText(String(e));
+    }
+  }
+  return (
+    <div className="row" style={{ alignItems: "center", gap: 10, marginTop: 4 }}>
+      <button className="btn outline" disabled={phase === "running"} onClick={() => void ping()}>
+        {phase === "running" ? "Pinging…" : `Ping ${label}`}
+      </button>
+      {text && (
+        <span
+          className={phase === "ok" ? "success-text" : phase === "fail" ? "danger-text" : "field-hint"}
+          style={{ margin: 0 }}
+          role="status"
+        >
+          {phase === "ok" ? "✓ " : phase === "fail" ? "✗ " : ""}
+          {text}
+        </span>
+      )}
     </div>
   );
 }
