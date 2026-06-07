@@ -20,6 +20,7 @@ export function CecPanel({ state }: DevPanelProps) {
   const [oppoIp, setOppoIp] = useState(state.playerIp);
   const [kodiIp, setKodiIp] = useState(state.kodiIp);
   const [busy, setBusy] = useState(false);
+  const [testPath, setTestPath] = useState("");
 
   const [sshKey, setSshKey] = useState<SshKeyInfo | null>(null);
   const [sshOk, setSshOk] = useState<boolean | null>(null);
@@ -39,6 +40,17 @@ export function CecPanel({ state }: DevPanelProps) {
       command: "#PLA",
       port: 23,
     });
+
+  const playTestFile = () => {
+    if (!testPath.trim()) {
+      tx.push({ dir: "err", text: "Enter an OPPO-visible file path first." });
+      return;
+    }
+    void runAndLog(tx, `play test file (/playnormalfile) ${testPath.trim()}`, "oppo_http_play", {
+      host: oppoIp,
+      oppoPath: testPath.trim(),
+    });
+  };
 
   async function powerCycleOppo() {
     setBusy(true);
@@ -137,6 +149,24 @@ export function CecPanel({ state }: DevPanelProps) {
             One Touch Play fires on power-<em>up</em>, so an already-on OPPO won't re-claim the TV from a
             plain wake. The power cycle re-fires it; Play asserts active source via playback. If neither
             switches the TV, the M9205 clone doesn't assert CEC active source.
+          </span>
+
+          <h4 className="dev-subhead" style={{ marginTop: 14 }}>Play a real file (test CEC-on-play)</h4>
+          <div className="row" style={{ gap: 6 }}>
+            <input
+              className="input mono"
+              placeholder="smb://10.0.1.10/Media/test.mkv — an OPPO-visible path"
+              value={testPath}
+              spellCheck={false}
+              onChange={(e) => setTestPath(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button className="btn" onClick={() => playTestFile()}>Play test file</button>
+          </div>
+          <span className="field-hint">
+            Fires the OPPO's <span className="mono">/playnormalfile</span> over the HTTP API — the same call
+            the add-on's handoff makes (activate → signin → play). There is <strong>no direct CEC command</strong>;
+            playing real content is the trigger, so if the OPPO asserts CEC on play, the TV switches to it.
           </span>
         </section>
 
