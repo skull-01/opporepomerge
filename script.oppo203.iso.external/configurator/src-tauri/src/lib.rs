@@ -913,6 +913,62 @@ fn ssh_test(host: String, user: String) -> Result<(), String> {
     run_ssh(&format!("{user}@{host}"), "echo ok")
 }
 
+#[derive(serde::Serialize)]
+struct SshKeyInfo {
+    public_key: String,
+    path: String,
+    exists: bool,
+}
+
+/// Read (or generate, when `generate`) the local user's SSH public key, for setting up passwordless
+/// auth to the Kodi box. Prefers ed25519, falls back to RSA. The user appends the returned key to
+/// the box's authorized_keys; the configurator's own SSH is key-only (BatchMode, no password), so
+/// without it every box command fails with "Permission denied". Windows-native (%USERPROFILE%\.ssh).
+#[tauri::command]
+fn ssh_public_key(generate: Option<bool>) -> Result<SshKeyInfo, String> {
+    let home = std::env::var("USERPROFILE")
+        .or_else(|_| std::env::var("HOME"))
+        .map_err(|_| "could not resolve the home directory".to_string())?;
+    let ssh_dir = std::path::Path::new(&home).join(".ssh");
+    let ed_pub = ssh_dir.join("id_ed25519.pub");
+    let rsa_pub = ssh_dir.join("id_rsa.pub");
+    for p in [&ed_pub, &rsa_pub] {
+        if p.exists() {
+            let key = fs::read_to_string(p).map_err(|e| e.to_string())?;
+            return Ok(SshKeyInfo {
+                public_key: key.trim().to_string(),
+                path: p.to_string_lossy().into_owned(),
+                exists: true,
+            });
+        }
+    }
+    if generate.unwrap_or(false) {
+        fs::create_dir_all(&ssh_dir).map_err(|e| e.to_string())?;
+        let ed = ssh_dir.join("id_ed25519");
+        let out = std::process::Command::new("ssh-keygen")
+            .args(["-t", "ed25519", "-f", &ed.to_string_lossy(), "-N", "", "-q"])
+            .output()
+            .map_err(|e| format!("could not launch ssh-keygen: {e}"))?;
+        if !out.status.success() {
+            return Err(format!(
+                "ssh-keygen failed: {}",
+                String::from_utf8_lossy(&out.stderr).trim()
+            ));
+        }
+        let key = fs::read_to_string(&ed_pub).map_err(|e| e.to_string())?;
+        return Ok(SshKeyInfo {
+            public_key: key.trim().to_string(),
+            path: ed_pub.to_string_lossy().into_owned(),
+            exists: true,
+        });
+    }
+    Ok(SshKeyInfo {
+        public_key: String::new(),
+        path: ed_pub.to_string_lossy().into_owned(),
+        exists: false,
+    })
+}
+
 /// Read a file under the Kodi userdata dir over SSH, if present (None when absent).
 #[tauri::command]
 fn read_ssh_file(
@@ -3434,6 +3490,7 @@ pub fn run() {
             oppo_query,
             oppo_power,
             ssh_test,
+            ssh_public_key,
             deploy_ssh,
             kodi_now_playing,
             oppo_http_play,
