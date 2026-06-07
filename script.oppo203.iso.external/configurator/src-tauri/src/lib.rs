@@ -1344,6 +1344,28 @@ fn oppo_http_get(
 
 const ADDON_ID: &str = "script.oppo203.iso.external";
 
+/// Add-on ids the dev tools recognise: the v1 add-on (bundled in this configurator) and the v2
+/// OppoKodiBridge service add-on. Anything else is rejected by the zip validator.
+const ACCEPTED_ADDON_IDS: &[&str] = &["script.oppo203.iso.external", "service.oppokodibridge"];
+
+/// The accepted add-on id whose `<id>/addon.xml` is present among `names`, if any.
+fn detect_addon_id(names: &[String]) -> Option<&'static str> {
+    ACCEPTED_ADDON_IDS
+        .iter()
+        .copied()
+        .find(|id| names.iter().any(|n| n == &format!("{id}/addon.xml")))
+}
+
+/// Read the add-on id from a zip by matching its top-level `<id>/addon.xml` against the accepted set.
+fn read_addon_id_from_zip(zip_path: &Path) -> Result<&'static str, String> {
+    let file = fs::File::open(zip_path).map_err(|e| e.to_string())?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| e.to_string())?;
+    let names: Vec<String> = (0..zip.len())
+        .filter_map(|i| zip.by_index(i).ok().map(|e| e.name().replace('\\', "/")))
+        .collect();
+    detect_addon_id(&names).ok_or_else(|| "zip is not one of our add-ons".to_string())
+}
+
 /// Pull the `version="..."` off the first `<addon ...>` element of an addon.xml string.
 fn parse_addon_version(xml: &str) -> Option<String> {
     let start = xml.find("<addon")?;
@@ -1540,10 +1562,20 @@ fn kodi_enable_ok(reply: &str) -> bool {
 /// sit disabled (D-3). Returns true on Kodi's `"result":"OK"`; the caller falls back to a manual
 /// Kodi restart on false/Err. Hardware-pending.
 #[tauri::command]
-fn kodi_set_addon_enabled(host: String, user: String) -> Result<bool, String> {
+fn kodi_set_addon_enabled(host: String, user: String, addon_id: Option<String>) -> Result<bool, String> {
     validate_ssh_target(&host, &user)?;
+    // Only enable a known add-on id; the id goes into a JSON-RPC body run over SSH, so reject
+    // anything outside the accepted set rather than interpolating an arbitrary string.
+    let id = match addon_id.as_deref() {
+        None => ADDON_ID,
+        Some(s) => ACCEPTED_ADDON_IDS
+            .iter()
+            .copied()
+            .find(|x| *x == s)
+            .ok_or_else(|| format!("unknown add-on id: {s}"))?,
+    };
     let target = format!("{user}@{host}");
-    let cmd = kodi_jsonrpc_cmd(&kodi_enable_body(ADDON_ID));
+    let cmd = kodi_jsonrpc_cmd(&kodi_enable_body(id));
     Ok(kodi_enable_ok(&run_ssh_capture(&target, &cmd)?))
 }
 
@@ -1591,10 +1623,11 @@ fn install_addon_zip(
         return Err(format!("zip not found: {zip_path}"));
     }
     let version = read_addon_version_from_zip(&zip)?;
+    let addon_id = read_addon_id_from_zip(&zip)?;
     let ssh_target = format!("{user}@{host}");
     let base = addons_path.trim_end_matches('/');
-    let remote_dir = format!("{base}/{ADDON_ID}");
-    let remote_zip = format!("{base}/.{ADDON_ID}.oppocfg.zip");
+    let remote_dir = format!("{base}/{addon_id}");
+    let remote_zip = format!("{base}/.{addon_id}.oppocfg.zip");
     let stamp = backup_suffix();
     let bytes = fs::read(&zip).map_err(|e| e.to_string())?;
     run_ssh_stdin(
@@ -1611,7 +1644,7 @@ fn install_addon_zip(
         .find(|l| l.starts_with("BAK:"))
         .map(|l| l.trim_start_matches("BAK:").to_string());
     Ok(InstallReport {
-        addon_id: ADDON_ID.to_string(),
+        addon_id: addon_id.to_string(),
         version,
         files: 0,
         target: remote_dir,
@@ -2712,12 +2745,20 @@ struct AddonZipInfo {
     /// "signed" (build tag present + matches), "unsigned" (no tag — an older build), or "mismatch"
     /// (tag present but the content hash differs — modified after build; the upload is blocked).
     signature_state: String,
+    /// Which accepted add-on the zip is (e.g. "service.oppokodibridge"), set only when valid.
+    addon_id: Option<String>,
 }
 
 /// An identity+structure result with no build-tag knowledge yet (signature_state filled by the
 /// caller). `valid:false` short-circuits before the tag is even read.
 fn addon_id_result(valid: bool, version: Option<String>, reason: impl Into<String>) -> AddonZipInfo {
-    AddonZipInfo { valid, version, reason: reason.into(), signature_state: "unsigned".into() }
+    AddonZipInfo {
+        valid,
+        version,
+        reason: reason.into(),
+        signature_state: "unsigned".into(),
+        addon_id: None,
+    }
 }
 
 /// SHA-256 of `data` as lowercase hex.
@@ -2749,28 +2790,34 @@ fn addon_manifest_sig(members: &[(String, Vec<u8>)]) -> String {
 /// (default.py / service.py / resources/lib), and a parseable version. Not cryptographic -- the
 /// project ships unsigned, so this guards against a wrong/corrupt zip, not a determined forger.
 fn validate_addon_contents(names: &[String], addon_xml: Option<&str>) -> AddonZipInfo {
-    let want = |rel: &str| names.iter().any(|n| n == &format!("{ADDON_ID}/{rel}"));
-    if !want("addon.xml") {
-        return addon_id_result(false, None, format!("not the {ADDON_ID} add-on (no {ADDON_ID}/addon.xml)"));
-    }
+    let id = match detect_addon_id(names) {
+        Some(id) => id,
+        None => {
+            return addon_id_result(false, None, "not one of our add-ons (no <id>/addon.xml for a known id)")
+        }
+    };
+    let want = |rel: &str| names.iter().any(|n| n == &format!("{id}/{rel}"));
     let xml = match addon_xml {
         Some(x) => x,
         None => return addon_id_result(false, None, "could not read addon.xml"),
     };
     let version = parse_addon_version(xml);
-    if !xml.contains(&format!("id=\"{ADDON_ID}\"")) {
-        return addon_id_result(false, version, "addon.xml id is not script.oppo203.iso.external");
+    if !xml.contains(&format!("id=\"{id}\"")) {
+        return addon_id_result(false, version, format!("addon.xml id is not {id}"));
     }
     if version.is_none() {
         return addon_id_result(false, None, "could not parse the add-on version from addon.xml");
     }
-    let entry_points = want("default.py")
-        && want("service.py")
-        && names.iter().any(|n| n.starts_with(&format!("{ADDON_ID}/resources/lib/")));
+    // v1 ships default.py + service.py; the v2 OppoKodiBridge is service-only. Require at least one
+    // entry point plus the resources/lib package.
+    let entry_points = (want("default.py") || want("service.py"))
+        && names.iter().any(|n| n.starts_with(&format!("{id}/resources/lib/")));
     if !entry_points {
-        return addon_id_result(false, version, "missing default.py / service.py / resources/lib");
+        return addon_id_result(false, version, "missing default.py/service.py + resources/lib");
     }
-    addon_id_result(true, version, "valid OppoKodiAddon zip")
+    let mut info = addon_id_result(true, version, "valid OppoKodiAddon zip");
+    info.addon_id = Some(id.to_string());
+    info
 }
 
 /// Validate that `path` is one of our add-on zips, so the dev-console upload is enabled only for a
@@ -2791,7 +2838,11 @@ fn validate_addon_zip(path: String) -> Result<AddonZipInfo, String> {
         Ok(z) => z,
         Err(e) => return Ok(addon_id_result(false, None, format!("not a valid zip: {e}"))),
     };
-    let sig_arcname = format!("{ADDON_ID}/resources/oppokodiaddon.sig");
+    let is_sig_name = |name: &str| {
+        ACCEPTED_ADDON_IDS
+            .iter()
+            .any(|id| name == format!("{id}/resources/oppokodiaddon.sig"))
+    };
     // Read every member's bytes once (needed for both the identity check and the manifest hash);
     // the sig file is kept aside, not counted in the manifest.
     let mut names: Vec<String> = Vec::with_capacity(zip.len());
@@ -2808,17 +2859,19 @@ fn validate_addon_zip(path: String) -> Result<AddonZipInfo, String> {
         // entry is truncated, so its hash won't match -> reported mismatch, never "signed".
         let mut data = Vec::new();
         let _ = (&mut e).take(MAX_ADDON_ENTRY_BYTES).read_to_end(&mut data);
-        if name == sig_arcname {
+        if is_sig_name(&name) {
             sig_json = Some(String::from_utf8_lossy(&data).into_owned());
         } else {
             names.push(name.clone());
             members.push((name, data));
         }
     }
-    let xml = members
-        .iter()
-        .find(|(n, _)| n == &format!("{ADDON_ID}/addon.xml"))
-        .map(|(_, d)| String::from_utf8_lossy(d).into_owned());
+    let xml = ACCEPTED_ADDON_IDS.iter().find_map(|id| {
+        members
+            .iter()
+            .find(|(n, _)| n == &format!("{id}/addon.xml"))
+            .map(|(_, d)| String::from_utf8_lossy(d).into_owned())
+    });
     let mut info = validate_addon_contents(&names, xml.as_deref());
     if !info.valid {
         return Ok(info);
@@ -3093,6 +3146,21 @@ mod tests {
         );
         // our id + entry points but no parseable version
         assert!(!validate_addon_contents(&addon_names(), Some(r#"<addon id="script.oppo203.iso.external" name="x"/>"#)).valid);
+    }
+
+    #[test]
+    fn validate_addon_contents_accepts_oppokodibridge_v2() {
+        // The v2 OppoKodiBridge add-on is service-only (no default.py) under its own id.
+        let names = vec![
+            "service.oppokodibridge/addon.xml".to_string(),
+            "service.oppokodibridge/service.py".to_string(),
+            "service.oppokodibridge/resources/lib/__init__.py".to_string(),
+        ];
+        let xml = r#"<addon id="service.oppokodibridge" version="2.0.2" name="OppoKodiBridge"/>"#;
+        let r = validate_addon_contents(&names, Some(xml));
+        assert!(r.valid, "{}", r.reason);
+        assert_eq!(r.version.as_deref(), Some("2.0.2"));
+        assert_eq!(r.addon_id.as_deref(), Some("service.oppokodibridge"));
     }
 
     #[test]
