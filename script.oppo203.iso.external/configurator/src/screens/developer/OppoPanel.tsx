@@ -44,6 +44,7 @@ export function OppoPanel({ state }: DevPanelProps) {
   const [httpEndpoint, setHttpEndpoint] = useState("/getmovieplayinfo");
   const [httpQuery, setHttpQuery] = useState("");
   const [busy, setBusy] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
 
   const [lines, setLines] = useState<TranscriptLine[]>([]);
   const idRef = useRef(0);
@@ -102,9 +103,25 @@ export function OppoPanel({ state }: DevPanelProps) {
     }
   }
 
+  async function signIn(): Promise<boolean> {
+    push({ dir: "tx", text: "wake (OREMOTE :7624) + /signin" });
+    try {
+      const r = await invoke<string>("oppo_http_signin", { host });
+      push({ dir: "rx", text: r ? `session: ${r}` : "session opened" });
+      setSignedIn(true);
+      return true;
+    } catch (e) {
+      push({ dir: "err", text: `signin failed: ${String(e)}` });
+      setSignedIn(false);
+      return false;
+    }
+  }
+
   async function fireHttp() {
     const q = httpQuery.trim();
     setBusy(true);
+    // The :436 app API refuses commands until a session is opened; wake + sign in first.
+    if (!signedIn) await signIn();
     push({ dir: "tx", text: httpRequestLabel(httpEndpoint, q) });
     try {
       const body = await invoke<string>("oppo_http_get", {
@@ -115,6 +132,7 @@ export function OppoPanel({ state }: DevPanelProps) {
       push({ dir: "rx", text: body || "(empty body)" });
     } catch (e) {
       push({ dir: "err", text: String(e) });
+      setSignedIn(false); // force a fresh wake + signin on the next command
     } finally {
       setBusy(false);
     }
@@ -132,6 +150,7 @@ export function OppoPanel({ state }: DevPanelProps) {
         push({ dir: "err", text: `could not start verbose monitor: ${String(e)}` });
       }
     } else {
+      if (!signedIn) await signIn();
       setLive(true);
       push({ dir: "info", text: `HTTP poll started (every ${pollSeconds}s)` });
       const tick = async () => {
@@ -185,7 +204,7 @@ export function OppoPanel({ state }: DevPanelProps) {
             id="dev-oppo-host"
             className="input"
             value={host}
-            onChange={(e) => setHost(e.target.value)}
+            onChange={(e) => { setHost(e.target.value); setSignedIn(false); }}
             spellCheck={false}
           />
           <span className="field-hint">
@@ -259,6 +278,16 @@ export function OppoPanel({ state }: DevPanelProps) {
           </div>
         ) : (
           <div className="stack">
+            <div className="row" style={{ alignItems: "center", gap: 10 }}>
+              <button className="btn outline" onClick={() => void signIn()}>
+                {signedIn ? "Re-sign in" : "Sign in"}
+              </button>
+              <span className="field-hint" style={{ margin: 0 }}>
+                {signedIn
+                  ? "Session open ✓ — commands re-sign-in automatically if it drops."
+                  : "The :436 app API needs a wake + /signin first (done automatically on Send GET)."}
+              </span>
+            </div>
             <div className="field">
               <label className="field-label" htmlFor="dev-oppo-ep">
                 Endpoint
