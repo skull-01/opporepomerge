@@ -1064,13 +1064,15 @@ fn kodi_now_playing(host: String, user: String) -> Result<Option<String>, String
 // OPPO HTTP play (Phase 1b verify-by-playing; ported from oppo_control.py:346-445)
 // ============================================================
 //
-// The undocumented OPPO community HTTP "app" API on port 436: a 6-byte 0x55 UDP broadcast
-// "activate" wakes the API, /signin opens a session, and /playnormalfile?payload=<urlencoded
-// JSON> starts a network file. Ported as raw HTTP/1.0 over TCP (the tv_switch_roku shape) so the
-// verify step can fire a play and then confirm real playback via SVM3 @UPL PLAY. The handshake
-// and payload are undocumented -> verified on a real OPPO, not in-session.
+// The undocumented OPPO community HTTP "app" API on port 436. The OREMOTE app wakes it with a UDP
+// "NOTIFY OREMOTE LOGIN" datagram to the player on :7624, then GET /signin?{"appIconType":1,
+// "appIpAddress":<app-ip>} opens a session (keyed to the caller's source IP), after which
+// /playnormalfile?payload=<urlencoded JSON> etc. work. This wake + signin shape mirrors the working
+// emby-chinoppo-bridge (lib/oppo.py); the earlier 0x55->:436 broadcast + user/password signin did
+// not wake real clone hardware. Ported as raw HTTP/1.0 over TCP (the tv_switch_roku shape).
 
 const OPPO_HTTP_PORT: u16 = 436;
+const OPPO_OREMOTE_PORT: u16 = 7624;
 
 /// Percent-encode every byte that is not RFC3986-unreserved (matches Python's
 /// urllib.parse.quote(s, safe="")), so a JSON payload survives as one query value.
@@ -1119,11 +1121,33 @@ fn oppo_http_get_request(host: &str, endpoint: &str, query: &str) -> String {
     }
 }
 
-fn oppo_signin_request(host: &str) -> String {
+/// Wake the OPPO :436 app API the way the OREMOTE app does -- a UDP "NOTIFY OREMOTE LOGIN" datagram
+/// to the player on :7624 (best-effort; the API may already be awake).
+fn oppo_oremote_notify(host: &str) {
+    if let Ok(sock) = UdpSocket::bind("0.0.0.0:0") {
+        let _ = sock.send_to(b"NOTIFY OREMOTE LOGIN", (host, OPPO_OREMOTE_PORT));
+    }
+}
+
+/// The LAN IP this machine uses to reach `host`, for the signin `appIpAddress`. Falls back to
+/// 127.0.0.1 (which the bridge uses successfully -- the session is keyed to the TCP source IP, so
+/// the declared address is just metadata).
+fn local_ip_toward(host: &str) -> String {
+    if let Ok(sock) = UdpSocket::bind("0.0.0.0:0") {
+        if sock.connect((host, OPPO_HTTP_PORT)).is_ok() {
+            if let Ok(addr) = sock.local_addr() {
+                return addr.ip().to_string();
+            }
+        }
+    }
+    "127.0.0.1".to_string()
+}
+
+fn oppo_signin_request(host: &str, app_ip: &str) -> String {
     oppo_http_request(
         host,
         "/signin",
-        &percent_encode(r#"{"user":"","password":""}"#),
+        &percent_encode(&format!(r#"{{"appIconType":1,"appIpAddress":"{app_ip}"}}"#)),
     )
 }
 
@@ -1152,7 +1176,7 @@ fn oppo_http_exchange(host: &str, request: &str, timeout_ms: u64) -> Result<Stri
 }
 
 /// Fire a network-file play on the OPPO over the undocumented HTTP app API
-/// (activate broadcast -> /signin -> /playnormalfile). `oppo_path` is the OPPO-visible path
+/// (OREMOTE notify -> /signin -> /playnormalfile). `oppo_path` is the OPPO-visible path
 /// (already rewritten via oppo_http_path_from/to). Phase 1b verify-by-playing calls this, then
 /// confirms real playback via SVM3 @UPL PLAY. Best-effort + hardware-pending.
 #[tauri::command]
@@ -1161,15 +1185,28 @@ fn oppo_http_play(host: String, oppo_path: String) -> Result<String, String> {
     if oppo_path.trim().is_empty() {
         return Err("oppo_path is empty".to_string());
     }
-    // 1) activate: a 6-byte 0x55 UDP broadcast wakes the HTTP API (non-fatal).
-    if let Ok(sock) = UdpSocket::bind("0.0.0.0:0") {
-        let _ = sock.set_broadcast(true);
-        let _ = sock.send_to(&[0x55u8; 6], ("255.255.255.255", OPPO_HTTP_PORT));
-    }
+    // 1) wake: a UDP "NOTIFY OREMOTE LOGIN" to the player on :7624 (non-fatal).
+    oppo_oremote_notify(&host);
     // 2) signin: open a session (non-fatal -- some firmware needs it, some doesn't).
-    let _ = oppo_http_exchange(&host, &oppo_signin_request(&host), 5000);
+    let _ = oppo_http_exchange(&host, &oppo_signin_request(&host, &local_ip_toward(&host)), 5000);
     // 3) play.
     oppo_http_exchange(&host, &oppo_play_request(&host, &oppo_path), 10000)
+}
+
+/// Wake (OREMOTE notify) + sign in to the OPPO :436 app API, opening the session that stateful
+/// commands need (the dev OPPO console's HTTP tab calls this before its first command). Mirrors the
+/// working emby-chinoppo-bridge handshake. Returns the signin response body (often empty -- the
+/// session is established device-side). Best-effort + hardware-pending.
+#[tauri::command]
+fn oppo_http_signin(host: String, timeout_ms: Option<u64>) -> Result<String, String> {
+    validate_ssh_component("host", &host)?;
+    oppo_oremote_notify(&host);
+    let req = oppo_signin_request(&host, &local_ip_toward(&host));
+    let raw = oppo_http_exchange(&host, &req, timeout_ms.unwrap_or(5000))?;
+    Ok(raw
+        .split_once("\r\n\r\n")
+        .map(|(_, body)| body.to_string())
+        .unwrap_or(raw))
 }
 
 /// Raw HTTP/1.0 GET for the OPPO /getmovieplayinfo now-playing endpoint (no query).
@@ -3246,8 +3283,13 @@ mod tests {
 
     #[test]
     fn oppo_signin_request_targets_signin() {
-        let req = oppo_signin_request("10.0.0.9");
+        let req = oppo_signin_request("10.0.0.9", "10.0.0.5");
         assert!(req.starts_with("GET /signin?%7B"));
+        // The OREMOTE app signin shape: appIconType + appIpAddress, not user/password.
+        assert!(req.contains("appIconType"));
+        assert!(req.contains("appIpAddress"));
+        assert!(req.contains("10.0.0.5"));
+        assert!(!req.contains("password"));
         assert!(req.contains("Host: 10.0.0.9:436\r\n"));
     }
 
@@ -3360,6 +3402,7 @@ pub fn run() {
             oppo_http_play,
             oppo_playback_info,
             oppo_http_get,
+            oppo_http_signin,
             bundled_addon_info,
             install_addon,
             install_addon_zip,
