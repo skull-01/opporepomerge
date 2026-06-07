@@ -7,12 +7,14 @@ import { TvPanel } from "./TvPanel";
 import { AvrPanel } from "./AvrPanel";
 import { NasPanel } from "./NasPanel";
 import { AutoScriptPanel } from "./AutoScriptPanel";
+import { CecPanel } from "./CecPanel";
 
 // Tab order leads with OPPO (the device the whole add-on drives), then the rest of the chain.
 const TABS: readonly { id: DevTab; label: string }[] = [
   { id: "oppo", label: "OPPO" },
   { id: "kodi", label: "Kodi" },
   { id: "tv", label: "TV" },
+  { id: "cec", label: "CEC" },
   { id: "avr", label: "AV receiver" },
   { id: "nas", label: "NAS" },
   { id: "autoscript", label: "AutoScript" },
@@ -57,6 +59,7 @@ export function DeveloperScreen({ go, state, set }: ScreenProps) {
         {tab === "oppo" && <OppoPanel {...panelProps} />}
         {tab === "kodi" && <KodiPanel {...panelProps} />}
         {tab === "tv" && <TvPanel {...panelProps} />}
+        {tab === "cec" && <CecPanel {...panelProps} />}
         {tab === "avr" && <AvrPanel {...panelProps} />}
         {tab === "nas" && <NasPanel {...panelProps} />}
         {tab === "autoscript" && <AutoScriptPanel {...panelProps} />}
