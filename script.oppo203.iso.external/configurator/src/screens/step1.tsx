@@ -11,7 +11,27 @@ import type { ScreenProps } from "./types";
 // STEP 1 — Kodi box (tier select)
 // ============================================================
 export function Step1Intro({ go, state, set }: ScreenProps) {
-  const ip = state.kodiIp || "10.0.1.42";
+  const [scanning, setScanning] = useState(false);
+  const [found, setFound] = useState<{ ip: string; version: string | null }[]>([]);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
+
+  async function findOnNetwork() {
+    setScanning(true);
+    setScanMsg(null);
+    setFound([]);
+    try {
+      const hosts = await invoke<{ ip: string; version: string | null }[]>("scan_kodi_hosts", {});
+      setFound(hosts);
+      setScanMsg(
+        hosts.length ? `Found ${hosts.length} Kodi box(es) — pick one.` : "No Kodi boxes answered on :8080."
+      );
+    } catch (e) {
+      setScanMsg(`Scan failed: ${String(e)}`);
+    } finally {
+      setScanning(false);
+    }
+  }
+
   return (
     <div className="screen">
       <div className="screen-header">
@@ -27,17 +47,42 @@ export function Step1Intro({ go, state, set }: ScreenProps) {
           <div className="row" style={{ gap: 8 }}>
             <input
               className="input"
-              value={ip}
+              value={state.kodiIp}
+              placeholder="192.168.1.x"
               onChange={(e) => set({ kodiIp: e.target.value })}
               style={{ flex: 1 }}
             />
-            <button className="btn outline">
-              <Icon name="search" size={14} /> Find on network
+            <button className="btn outline" disabled={scanning} onClick={() => void findOnNetwork()}>
+              <Icon name="search" size={14} /> {scanning ? "Scanning…" : "Find on network"}
             </button>
           </div>
           <div className="field-hint">
             Reachable from this Windows PC. Reserve it on DHCP if you can.
           </div>
+          {scanMsg && (
+            <div className="field-hint" role="status" style={{ marginTop: 6 }}>
+              {scanMsg}
+            </div>
+          )}
+          {found.length > 0 && (
+            <div className="model-list" style={{ marginTop: 8 }}>
+              {found.map((b) => (
+                <button
+                  key={b.ip}
+                  className="model-row"
+                  onClick={() => {
+                    set({ kodiIp: b.ip });
+                    setScanMsg(`Kodi IP set to ${b.ip}.`);
+                    setFound([]);
+                  }}
+                  style={{ background: "none", border: "none", font: "inherit", textAlign: "left", cursor: "pointer", width: "100%" }}
+                >
+                  <span className="mono">{b.ip}</span>
+                  <span className="model-row-meta">{b.version ? `Kodi ${b.version}` : "Kodi (version n/a)"}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -154,11 +199,18 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
   const [tested, setTested] = useState(false);
   const [testing, setTesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pingMs, setPingMs] = useState<number | null>(null);
 
   const testConnection = async () => {
     setTesting(true);
     setError(null);
     try {
+      const p = await invoke<{ reachable: boolean; ms: number }>("ping_host", {
+        host: state.kodiIp,
+        port: 22,
+      });
+      if (!p.reachable) throw new Error(`no response on ${state.kodiIp || "the box"}:22 (powered off / wrong IP)`);
+      setPingMs(p.ms);
       await invoke("ssh_test", { host: state.kodiIp, user: state.sshUser });
       setTested(true);
     } catch (e) {
@@ -171,14 +223,12 @@ export function Step1TierA({ go, state, set }: ScreenProps) {
 
   const checks: DiagCheck[] = tested
     ? [
-        { status: "pass", label: "SSH reachable at 10.0.1.42:22", detail: "OpenSSH_8.0 · ed25519 fingerprint OK" },
-        { status: "pass", label: "userdata located & writable", detail: "/storage/.kodi/userdata/ · 4 KB temp write OK" },
-        { status: "pass", label: "Kodi restart command available", detail: "systemctl restart kodi" },
+        { status: "pass", label: `SSH reachable at ${state.kodiIp || "the box"}:22`, detail: pingMs != null ? `TCP connect ${pingMs} ms` : "reachable" },
+        { status: "pass", label: "Key auth accepted", detail: "non-interactive key login OK (echo ok)" },
       ]
     : [
-        { status: "pending", label: "SSH reachable at 10.0.1.42:22", detail: "" },
-        { status: "pending", label: "userdata located & writable", detail: "" },
-        { status: "pending", label: "Kodi restart command available", detail: "" },
+        { status: "pending", label: `SSH reachable at ${state.kodiIp || "the box"}:22`, detail: "" },
+        { status: "pending", label: "Key auth accepted", detail: "" },
       ];
   return (
     <div className="screen">
@@ -297,14 +347,10 @@ export function Step1TierB({ go, state, set }: ScreenProps) {
 
   const checks: DiagCheck[] = tested
     ? [
-        { status: "pass", label: "Box reachable at 10.0.1.42", detail: "ICMP 0.4 ms · 0% loss" },
-        { status: "pass", label: "userdata share accessible", detail: "\\\\10.0.1.42\\Kodi · creds OK" },
-        { status: "pass", label: "Write test passed", detail: "temp file created + removed" },
+        { status: "pass", label: "Share writable", detail: `${smbUserdataPath(state.smbSharePath)} — temp file created + removed` },
       ]
     : [
-        { status: "pending", label: "Box reachable at 10.0.1.42", detail: "" },
-        { status: "pending", label: "userdata share accessible", detail: "" },
-        { status: "pending", label: "Write test passed", detail: "" },
+        { status: "pending", label: "Share writable", detail: "" },
       ];
   return (
     <div className="screen">
