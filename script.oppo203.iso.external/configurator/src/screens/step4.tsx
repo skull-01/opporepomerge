@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Icon, type IconName } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
@@ -457,43 +457,88 @@ export function Step4AdbWarn(props: ScreenProps) {
 // ============================================================
 // STEP 5 —Control test
 // ============================================================
-type TestPhase = "ready" | "sending" | "sent";
+type TestPhase = "ready" | "running" | "done";
+type TestResult = {
+  reachable: boolean | null;
+  ms: number;
+  port: number | null;
+  sent: string | null;
+  error: string | null;
+};
 
 export function Step4Test({ go, state, set }: ScreenProps) {
   const [phase, setPhase] = useState<TestPhase>("ready");
-  useEffect(() => {
-    if (phase === "sending") {
-      const t = setTimeout(() => setPhase("sent"), 1500);
-      return () => clearTimeout(t);
+  const [result, setResult] = useState<TestResult | null>(null);
+
+  const backend = state.tvBackend;
+  const port =
+    backend === "roku_ecp" ? 8060 : backend === "adb" ? 5555 : backend === "sony_bravia" ? 20060 : null;
+
+  async function runTest() {
+    setPhase("running");
+    const res: TestResult = { reachable: null, ms: 0, port, sent: null, error: null };
+    try {
+      if (port != null) {
+        const p = await invoke<{ reachable: boolean; ms: number }>("ping_host", { host: state.tvIp, port });
+        res.reachable = p.reachable;
+        res.ms = p.ms;
+      }
+      if (res.reachable !== false) {
+        if (backend === "roku_ecp") {
+          await invoke("tv_switch_roku", { host: state.tvIp, key: "VolumeMute" });
+          res.sent = "Roku ECP VolumeMute";
+        } else if (backend === "adb") {
+          await invoke("tv_switch_adb", {
+            sshHost: state.kodiIp,
+            sshUser: state.sshUser,
+            adbPath: "adb",
+            tvHost: state.tvIp,
+            tvPort: 5555,
+            adbCommand: "input keyevent KEYCODE_VOLUME_MUTE",
+          });
+          res.sent = "adb input keyevent KEYCODE_VOLUME_MUTE";
+        }
+      }
+    } catch (e) {
+      res.error = String(e);
     }
-  }, [phase]);
+    setResult(res);
+    setPhase("done");
+  }
 
   const checks: DiagCheck[] =
-    phase === "sending"
+    phase === "ready"
       ? [
-          { status: "pass", label: "ADB connected to 10.0.1.51:5555", detail: "RSA pairing accepted" },
-          { status: "run",  label: "Send KEYCODE_VOLUME_MUTE",        detail: "test command (no input change)" },
-          { status: "pending", label: "Confirm with you",             detail: "waiting for you" },
+          { status: "pending", label: port != null ? `Reach the TV at ${state.tvIp || "the TV"}:${port}` : "Reach the TV", detail: "" },
+          { status: "pending", label: "Send a real mute command", detail: "" },
         ]
-      : phase === "sent"
+      : phase === "running"
         ? [
-            { status: "pass", label: "ADB connected to 10.0.1.51:5555", detail: "RSA pairing accepted" },
-            { status: "pass", label: "Send KEYCODE_VOLUME_MUTE",        detail: "command transmitted · 124 ms" },
-            { status: "run",  label: "Did your TV mute / unmute?",      detail: "waiting for your answer" },
+            { status: "run", label: "Reaching the TV…", detail: "" },
+            { status: "pending", label: "Send a real mute command", detail: "" },
           ]
         : [
-            { status: "pending", label: "ADB connected to 10.0.1.51:5555", detail: "" },
-            { status: "pending", label: "Send KEYCODE_VOLUME_MUTE",        detail: "" },
-            { status: "pending", label: "Confirm with you",                detail: "" },
+            result?.reachable === true
+              ? { status: "pass", label: `TV reachable at ${state.tvIp}:${result.port}`, detail: `TCP connect ${result.ms} ms` }
+              : result?.reachable === false
+                ? { status: "fail", label: `No response at ${state.tvIp}:${result?.port}`, detail: "timeout / refused — wrong IP or backend off" }
+                : { status: "pass", label: "Reachability not checkable here", detail: `${backend ?? "no backend"} has no plain TCP port` },
+            result?.error
+              ? { status: "fail", label: "Command failed", detail: result.error }
+              : result?.sent
+                ? { status: "pass", label: "Real mute command sent", detail: result.sent }
+                : { status: "run", label: "No auto-mute for this backend", detail: "press mute on the remote to test by hand" },
           ];
+
+  const done = phase === "done";
 
   return (
     <div className="screen">
       <div className="screen-header">
         <h1 className="screen-title">Can we control your TV?</h1>
         <p className="screen-subtitle">
-          Quick test — we'll send a mute blip. No inputs change, no OPPO wake. Just
-          answers one question: <em>can we drive this TV at all?</em>
+          Quick test — we reach the TV and, where the backend supports it, send a <em>real</em> mute.
+          It answers one question: can we drive this TV at all?
         </p>
       </div>
       <div className="grid-2" style={{ alignItems: "start" }}>
@@ -504,20 +549,20 @@ export function Step4Test({ go, state, set }: ScreenProps) {
             footer={
               phase === "ready" ? (
                 <span className="muted">Click "Send test signal" when you're ready.</span>
-              ) : phase === "sending" ? (
-                <>Listen for the mute click or watch the on-screen indicator.</>
+              ) : phase === "running" ? (
+                <>Reaching the TV…</>
               ) : (
                 <strong>Did your TV react?</strong>
               )
             }
-            footerKind={phase === "sent" ? "success" : ""}
+            footerKind={done ? "success" : ""}
           />
           {phase === "ready" && (
-            <button className="btn primary lg" onClick={() => setPhase("sending")}>
+            <button className="btn primary lg" onClick={() => void runTest()}>
               <Icon name="play" size={14} /> Send test signal
             </button>
           )}
-          {phase === "sent" && (
+          {done && (
             <div className="row" style={{ gap: 10 }}>
               <button
                 className="btn primary lg"
@@ -536,17 +581,17 @@ export function Step4Test({ go, state, set }: ScreenProps) {
         </div>
         <div className="tv-mockup">
           <div className="tv-mockup-screen">
-            {phase === "sending" ? (
+            {phase === "running" ? (
               <>
-                <div className="tv-mockup-text bright">🔇 MUTE</div>
+                <div className="tv-mockup-text bright">📡 …</div>
                 <div className="tv-mockup-text" style={{ fontSize: 10 }}>
-                  sent · {state.tvModel || "your TV"}
+                  reaching · {state.tvModel || "your TV"}
                 </div>
               </>
-            ) : phase === "sent" ? (
+            ) : done ? (
               <>
                 <div className="tv-mockup-text bright">— check your TV —</div>
-                <div className="tv-mockup-text">did you hear it?</div>
+                <div className="tv-mockup-text">{result?.sent ? "did it mute?" : "press mute — did it react?"}</div>
               </>
             ) : (
               <>
