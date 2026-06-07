@@ -59,6 +59,19 @@ def apply_path_rewrite(media_file: str, path_from: str, path_to: str) -> str:
     return media_file
 
 
+def translate_play_path(media_file: str, path_from: str, path_to: str) -> str:
+    """Map a Kodi media path to the path the OPPO plays.
+
+    Kodi hands network files to us percent-encoded (``nfs://host/a%20b``); the OPPO's player
+    wants the literal path. So URL-decode network URLs first, then apply the prefix rewrite.
+    Local paths are left byte-for-byte (no decode) so a literal ``%`` in a filename survives.
+    """
+    text = str(media_file)
+    if text.lower().startswith(("nfs://", "smb://")):
+        text = urllib.parse.unquote(text)
+    return apply_path_rewrite(text, path_from, path_to)
+
+
 def build_play_payload(path: str, media_type: int = 1, app_device_type: int = 2) -> dict:
     """The JSON body for ``/playnormalfile?payload=<urlencoded JSON>`` (M9205 json mode)."""
     return {
@@ -179,7 +192,7 @@ class OppoClient:
             self.mount_smb(server, share)
 
     def play(self, media_file: str) -> str:
-        translated = apply_path_rewrite(media_file, self.cfg.path_from, self.cfg.path_to)
+        translated = translate_play_path(media_file, self.cfg.path_from, self.cfg.path_to)
         if self.cfg.use_json_payload:
             payload = build_play_payload(translated, self.cfg.media_type, self.cfg.app_device_type)
             encoded = urllib.parse.quote(json.dumps(payload, ensure_ascii=False), safe="")
