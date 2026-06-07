@@ -2,7 +2,7 @@
 
 A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Kodi to an external OPPO UDP-203/UDP-205-compatible player workflow while preserving normal Kodi playback for media that should stay internal.
 
-> **Current status:** add-on **v2.9.17 Final** plus the Windows **configurator v0.9.10** (the repository's [Latest release](https://github.com/skull-01/script.oppo203.iso.external/releases/latest), which bundles the add-on) are software-verified releases. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
+> **Current status:** add-on **v2.9.17 Final** plus the Windows **configurator v0.9.11** (the repository's [Latest release](https://github.com/skull-01/script.oppo203.iso.external/releases/latest), which bundles the add-on) are software-verified releases. Real hardware validation has not been performed or claimed unless separate tester evidence is later recorded.
 
 ## What this add-on does
 
@@ -28,7 +28,7 @@ A Kodi add-on for handing off eligible 4K UHD / Blu-ray disc-style media from Ko
 | Add-on version | `2.9.17` |
 | Build identity | `v2.9.17 Final` |
 | Runtime package | `script.oppo203.iso.external-2.9.17.zip` |
-| Windows configurator | `v0.9.10` — the repo's **Latest** release; bundles this add-on and sets it up |
+| Windows configurator | `v0.9.11` — the repo's **Latest** release; bundles this add-on and sets it up |
 | Runtime behavior changed | `true` |
 | Hardware validation claimed | `false` |
 
