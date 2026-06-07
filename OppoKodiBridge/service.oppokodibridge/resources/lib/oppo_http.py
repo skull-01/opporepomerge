@@ -102,15 +102,27 @@ def status_is_idle(status: object) -> bool:
     return s == "" or s in IDLE_STATUSES
 
 
+# The M9205 /getglobalinfo reports playback via these booleans (confirmed on hardware), not a
+# single status string: e.g. {"is_video_playing": true, "is_audio_playing": false, ...}.
+_PLAYING_FLAGS = (
+    "is_playing",
+    "is_video_playing",
+    "is_audio_playing",
+    "is_bdmv_playing",
+    "is_disc_playing",
+)
+
+
 def info_is_playing(info: Any) -> bool:
     """True when a ``/getglobalinfo`` payload indicates active (or loading) playback."""
     for container in _containers(info):
-        flag = container.get("is_playing")
-        if isinstance(flag, bool):
-            if flag:
+        for key in _PLAYING_FLAGS:
+            flag = container.get(key)
+            if isinstance(flag, bool):
+                if flag:
+                    return True
+            elif flag is not None and str(flag).strip().lower() in ("1", "true", "yes", "playing"):
                 return True
-        elif flag is not None and str(flag).strip().lower() in ("1", "true", "yes", "playing"):
-            return True
         for key in ("status", "state", "play_status", "e_play_status", "playStatus"):
             value = container.get(key)
             if value is not None and not status_is_idle(value):

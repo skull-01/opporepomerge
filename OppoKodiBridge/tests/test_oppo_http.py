@@ -59,6 +59,21 @@ def test_info_is_playing():
     assert not oh.info_is_playing({})
 
 
+def test_info_is_playing_real_oppo_globalinfo_fields():
+    # The actual M9205 /getglobalinfo shape (captured on hardware).
+    idle = {
+        "success": True,
+        "is_audio_playing": False,
+        "is_video_playing": False,
+        "is_bdmv_playing": False,
+        "is_disc_playing": False,
+        "activeapp": "scrn_svr",
+    }
+    assert not oh.info_is_playing(idle)
+    assert oh.info_is_playing({**idle, "is_video_playing": True})
+    assert oh.info_is_playing({**idle, "is_bdmv_playing": True})
+
+
 def test_play_builds_json_payload(monkeypatch):
     cfg = Config(
         oppo_ip="1.2.3.4",
