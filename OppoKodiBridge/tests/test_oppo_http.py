@@ -1,165 +1,121 @@
-import json
+import socket
 import urllib.parse
+import urllib.request
+
+import pytest
 
 from resources.lib import oppo_http as oh
 from resources.lib.config import Config
 
 
-def test_parse_network_share_nfs():
-    assert oh.parse_network_share("nfs://192.168.10.20/srv/nfs/media/Gina.mp4") == (
-        "nfs",
-        "192.168.10.20",
-        "srv",
+def test_parse_media_path_nfs():
+    s, folder, fn = oh.parse_media_path(
+        "nfs://192.168.1.177/mnt/Super3/Super3Share/02TV/3 Body Problem (2024)/Season 1/S01E01.mkv"
     )
+    assert s == "192.168.1.177"
+    assert folder == "mnt/Super3/Super3Share/02TV/3 Body Problem (2024)/Season 1"
+    assert fn == "S01E01.mkv"
 
 
-def test_parse_network_share_smb():
-    assert oh.parse_network_share("smb://nas/Movies/x.mkv") == ("smb", "nas", "Movies")
+def test_parse_media_path_short():
+    assert oh.parse_media_path("nfs://srv/share/file.mkv") == ("srv", "share", "file.mkv")
+    assert oh.parse_media_path("nfs://srv/file.mkv") == ("srv", "", "file.mkv")
 
 
-def test_parse_network_share_local_is_none():
-    assert oh.parse_network_share("/mnt/nas/media/x.mkv") is None
+def test_parse_media_path_empty():
+    assert oh.parse_media_path("") == ("", "", "")
 
 
-def test_apply_path_rewrite_matches_prefix():
-    out = oh.apply_path_rewrite(
-        "nfs://192.168.10.20/srv/nfs/media/Gina.mp4",
-        "nfs://192.168.10.20/srv/nfs/media",
-        "/mnt/nas/media",
-    )
-    assert out == "/mnt/nas/media/Gina.mp4"
-
-
-def test_apply_path_rewrite_no_match_passthrough():
-    assert oh.apply_path_rewrite("/local/x", "nfs://a/b", "/mnt") == "/local/x"
-
-
-def test_build_play_payload_shape():
-    assert oh.build_play_payload("/mnt/nas/media/Gina.mp4", 1, 2) == {
-        "path": "/mnt/nas/media/Gina.mp4",
-        "index": 0,
-        "type": 1,
-        "appDeviceType": 2,
-        "extraNetPath": "",
-        "playMode": 0,
+def test_nfs_server_from_devices():
+    devices = {
+        "devicelist": [
+            {"sub_type": "cifs", "name": "OPPO-PROXY"},
+            {"sub_type": "nfs", "name": "192.168.10.20"},
+        ]
     }
+    assert oh.nfs_server_from_devices(devices) == "192.168.10.20"
+    assert oh.nfs_server_from_devices({"devicelist": []}) is None
+    assert oh.nfs_server_from_devices({}) is None
 
 
 def test_status_is_idle():
     assert oh.status_is_idle("STOP")
     assert oh.status_is_idle("")
     assert not oh.status_is_idle("PLAY")
-    assert not oh.status_is_idle("loading")
 
 
-def test_info_is_playing():
-    assert oh.info_is_playing({"is_playing": True})
-    assert oh.info_is_playing({"result": {"status": "PLAY"}})
-    assert not oh.info_is_playing({"result": {"status": "STOP"}})
-    assert not oh.info_is_playing({})
-
-
-def test_info_is_playing_real_oppo_globalinfo_fields():
-    # The actual M9205 /getglobalinfo shape (captured on hardware).
+def test_info_is_playing_real_oppo_fields():
     idle = {
         "success": True,
-        "is_audio_playing": False,
         "is_video_playing": False,
+        "is_audio_playing": False,
         "is_bdmv_playing": False,
-        "is_disc_playing": False,
         "activeapp": "scrn_svr",
     }
     assert not oh.info_is_playing(idle)
     assert oh.info_is_playing({**idle, "is_video_playing": True})
-    assert oh.info_is_playing({**idle, "is_bdmv_playing": True})
+    assert oh.info_is_playing({"is_bdmv_playing": True})
+    assert not oh.info_is_playing({})
 
 
-def test_play_builds_json_payload(monkeypatch):
-    cfg = Config(
-        oppo_ip="1.2.3.4",
-        use_json_payload=True,
-        path_from="nfs://192.168.10.20/srv/nfs/media",
-        path_to="/mnt/nas/media",
-    )
-    client = oh.OppoClient(cfg)
-    captured = {}
-
-    def fake_get(endpoint, query=None, timeout=None):
-        captured["endpoint"] = endpoint
-        captured["query"] = query
-        return "OK"
-
-    monkeypatch.setattr(client, "_get", fake_get)
-    client.play("nfs://192.168.10.20/srv/nfs/media/Gina.mp4")
-    assert captured["endpoint"] == "/playnormalfile"
-    assert captured["query"].startswith("payload=")
-    payload = json.loads(urllib.parse.unquote(captured["query"][len("payload="):]))
-    assert payload["path"] == "/mnt/nas/media/Gina.mp4"
+def _client():
+    return oh.OppoClient(Config(oppo_ip="1.2.3.4"))
 
 
-def test_play_builds_raw_path(monkeypatch):
-    cfg = Config(oppo_ip="1.2.3.4", use_json_payload=False)
-    client = oh.OppoClient(cfg)
-    captured = {}
-
-    def fake_get(endpoint, query=None, timeout=None):
-        captured["endpoint"] = endpoint
-        captured["query"] = query
-        return "OK"
-
-    monkeypatch.setattr(client, "_get", fake_get)
-    client.play("/mnt/nas/media/Gina.mp4")
-    assert captured["endpoint"] == "/playnormalfile"
-    assert captured["query"].startswith("path=")
+def test_play_file_endpoint_shape(monkeypatch):
+    client = _client()
+    cap = {}
+    monkeypatch.setattr(client, "_get", lambda endpoint, timeout=None: cap.update(ep=endpoint) or "{}")
+    client.play_file("192.168.10.20", "3 Body Problem - S01E01.mkv", "0", nfs=True)
+    ep = cap["ep"]
+    assert ep.startswith("/playnormalfile?{")
+    assert ep.endswith("}")
+    inner = urllib.parse.unquote(ep[len("/playnormalfile?{") : -1])
+    assert '"path":"/mnt/nfs1/3 Body Problem - S01E01.mkv"' in inner
+    assert '"extraNetPath":"192.168.10.20"' in inner
+    assert '"appDeviceType":2' in inner
 
 
-def test_ensure_share_mounted_nfs(monkeypatch):
-    client = oh.OppoClient(Config(oppo_ip="1.2.3.4"))
-    calls = []
-
-    def fake_get_json(endpoint, query=None, timeout=None):
-        calls.append((endpoint, query))
-        return {}
-
-    monkeypatch.setattr(client, "_get_json", fake_get_json)
-    client.ensure_share_mounted("nfs://192.168.10.20/srv/nfs/media/Gina.mp4")
-    endpoints = [c[0] for c in calls]
-    assert "/login_nfs" in endpoints
-    assert "/mount_nfs" in endpoints
+def test_mount_nfs_endpoint(monkeypatch):
+    client = _client()
+    cap = {}
+    monkeypatch.setattr(client, "_get", lambda endpoint, timeout=None: cap.update(ep=endpoint) or "{}")
+    client.mount_nfs("192.168.10.20", "mnt/Super3/Super3Share/Season 1")
+    ep = cap["ep"]
+    assert ep.startswith('/mountNfsSharedFolder?{"server":"192.168.10.20","folder":"')
+    assert "Season%201" in ep  # folder is url-encoded, slashes preserved
 
 
-def test_ensure_share_mounted_local_is_noop(monkeypatch):
-    client = oh.OppoClient(Config(oppo_ip="1.2.3.4"))
-    calls = []
-    monkeypatch.setattr(client, "_get_json", lambda *a, **k: calls.append(a) or {})
-    client.ensure_share_mounted("/mnt/nas/media/Gina.mp4")
-    assert calls == []
+def test_login_and_signin_endpoints(monkeypatch):
+    client = _client()
+    caps = []
+    monkeypatch.setattr(client, "_get", lambda endpoint, timeout=None: caps.append(endpoint) or "{}")
+    client.login_nfs("192.168.10.20")
+    client.signin("192.168.1.100")
+    assert caps[0].startswith("/loginNfsServer?")
+    assert "192.168.10.20" in urllib.parse.unquote(caps[0])
+    assert caps[1].startswith("/signin?")
+    decoded = urllib.parse.unquote(caps[1])
+    assert "appIpAddress" in decoded and "192.168.1.100" in decoded
 
 
-def test_translate_decodes_encoded_nfs_url():
-    encoded = "nfs://192.168.10.20/srv/nfs/media/3%20Body%20Problem%20(2024)/S01E01%20-%20Countdown.mkv"
-    out = oh.translate_play_path(encoded, "nfs://192.168.10.20", "")
-    assert out == "/srv/nfs/media/3 Body Problem (2024)/S01E01 - Countdown.mkv"
+def test_get_raises_oppoerror_on_timeout(monkeypatch):
+    client = _client()
+
+    def boom(*a, **k):
+        raise socket.timeout("timed out")
+
+    monkeypatch.setattr(urllib.request, "urlopen", boom)
+    with pytest.raises(oh.OppoError):
+        client._get("/getglobalinfo")
 
 
-def test_translate_literal_spaces_unchanged():
-    literal = "nfs://192.168.10.20/srv/nfs/media/3 Body Problem (2024)/S01E01 - Countdown.mkv"
-    out = oh.translate_play_path(literal, "nfs://192.168.10.20", "")
-    assert out == "/srv/nfs/media/3 Body Problem (2024)/S01E01 - Countdown.mkv"
+def test_get_raises_oppoerror_on_refused(monkeypatch):
+    client = _client()
 
+    def boom(*a, **k):
+        raise ConnectionRefusedError("refused")
 
-def test_translate_local_path_not_decoded():
-    local = "/mnt/nas/media/100%/file.mkv"
-    assert oh.translate_play_path(local, "nfs://x", "/y") == "/mnt/nas/media/100%/file.mkv"
-
-
-def test_play_decodes_spaces_end_to_end(monkeypatch):
-    cfg = Config(oppo_ip="1.2.3.4", use_json_payload=True, path_from="nfs://192.168.10.20", path_to="")
-    client = oh.OppoClient(cfg)
-    captured = {}
-    monkeypatch.setattr(
-        client, "_get", lambda endpoint, query=None, timeout=None: captured.update(query=query) or "OK"
-    )
-    client.play("nfs://192.168.10.20/srv/nfs/media/3%20Body%20Problem%20(2024)/S01E01.mkv")
-    payload = json.loads(urllib.parse.unquote(captured["query"][len("payload="):]))
-    assert payload["path"] == "/srv/nfs/media/3 Body Problem (2024)/S01E01.mkv"
+    monkeypatch.setattr(urllib.request, "urlopen", boom)
+    with pytest.raises(oh.OppoError):
+        client._get("/getglobalinfo")
