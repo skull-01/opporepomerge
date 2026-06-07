@@ -1,7 +1,7 @@
 import type { WizardState } from "../../state";
 
 /** The device sub-sections of the Developer Options console, in tab order. */
-export type DevTab = "oppo" | "kodi" | "tv" | "avr" | "nas" | "autoscript";
+export type DevTab = "oppo" | "kodi" | "tv" | "cec" | "avr" | "nas" | "autoscript";
 
 /**
  * Props each device panel receives. Panels read the configured device IPs / backends from the

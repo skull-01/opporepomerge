@@ -1499,6 +1499,21 @@ fn kodi_restart(host: String, user: String) -> Result<(), String> {
     run_ssh(&format!("{user}@{host}"), "systemctl restart kodi")
 }
 
+/// Tell the Kodi box to claim the TV via CEC: run `kodi-send --action=CECActivateSource` over SSH,
+/// so Kodi asserts itself as the CEC active source and the TV switches to the Kodi input. The
+/// Developer Options CEC behaviour test pairs this with waking the OPPO (which asserts its own
+/// active source). Best-effort + hardware-pending.
+#[tauri::command]
+fn kodi_cec_activate(host: String, user: String) -> Result<String, String> {
+    validate_ssh_target(&host, &user)?;
+    let out = run_ssh_capture(&format!("{user}@{host}"), "kodi-send --action=CECActivateSource")?;
+    Ok(if out.trim().is_empty() {
+        "sent CECActivateSource".to_string()
+    } else {
+        out.trim().to_string()
+    })
+}
+
 /// Deploy a user-picked add-on `.zip` onto the box over SSH and expand it (Developer Options
 /// upload-any-version), backing up any existing copy first. Unlike `install_addon` this takes an
 /// arbitrary local zip rather than the bundled one and never restarts -- the dev workflow
@@ -3429,6 +3444,7 @@ pub fn run() {
             install_addon,
             install_addon_zip,
             kodi_restart,
+            kodi_cec_activate,
             kodi_set_addon_enabled,
             tv_switch_roku,
             avr_switch_denon,
