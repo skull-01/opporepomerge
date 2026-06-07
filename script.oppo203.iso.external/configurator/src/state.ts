@@ -156,7 +156,7 @@ export function coerceScreenId(value: unknown): ScreenId {
 }
 
 export const INITIAL_STATE: WizardState = {
-  kodiIp: "10.0.1.42",
+  kodiIp: "",
   tier: null,
   kodiVerified: false,
   topology: null,

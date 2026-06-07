@@ -50,12 +50,12 @@ describe("chainNodeViews", () => {
 
   it("maps probe results to up/down/checking and uses each node's host", () => {
     const views = chainNodeViews(
-      make({ topology: "kodi_tv_player", tvIp: "10.0.1.55" }),
+      make({ topology: "kodi_tv_player", kodiIp: "10.0.1.50", tvIp: "10.0.1.55" }),
       { kodi: up, player: down, tv: checking },
       null
     );
     const byId = Object.fromEntries(views.map((v) => [v.id, v]));
-    expect(byId.kodi).toMatchObject({ liveness: "up", host: INITIAL_STATE.kodiIp });
+    expect(byId.kodi).toMatchObject({ liveness: "up", host: "10.0.1.50" });
     expect(byId.player).toMatchObject({ liveness: "down", host: INITIAL_STATE.playerIp });
     expect(byId.tv).toMatchObject({ liveness: "checking", host: "10.0.1.55" });
   });

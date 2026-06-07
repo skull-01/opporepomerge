@@ -213,20 +213,27 @@ export function KodiPanel({ state, set }: DevPanelProps) {
   return (
     <div className="stack-lg">
       <section className="card">
-        <h3 style={{ marginTop: 0 }}>Find the Kodi box</h3>
+        <h3 style={{ marginTop: 0 }}>Kodi box</h3>
+        <div className="field" style={{ maxWidth: 280 }}>
+          <label className="field-label" htmlFor="dev-kodi-ip">Kodi box IP</label>
+          <input id="dev-kodi-ip" className="input" value={state.kodiIp} placeholder="192.168.1.x" spellCheck={false} onChange={(e) => set({ kodiIp: e.target.value })} />
+          <span className="field-hint">Used by every action on this panel — version, settings, the SSH box ops, and the Ping below.</span>
+        </div>
+        <PingRow label="Kodi box" host={state.kodiIp} port={8080} />
+
+        <h4 className="dev-subhead" style={{ marginTop: 16 }}>Don't know the IP? Scan the subnet</h4>
         <div className="row wrap" style={{ alignItems: "flex-end", gap: 12 }}>
           <div className="field" style={{ maxWidth: 280 }}>
             <label className="field-label" htmlFor="dev-kodi-scanbase">
               Base IP (optional — defaults to this host's subnet)
             </label>
-            <input id="dev-kodi-scanbase" className="input" value={scanBase} placeholder="10.0.1.0" spellCheck={false} onChange={(e) => setScanBase(e.target.value)} />
+            <input id="dev-kodi-scanbase" className="input" value={scanBase} placeholder="192.168.1.0" spellCheck={false} onChange={(e) => setScanBase(e.target.value)} />
           </div>
           <button className="btn" disabled={scanning} onClick={() => void scanForBoxes()}>
             {scanning ? "Scanning…" : "Scan network"}
           </button>
         </div>
-        <span className="field-hint">Probes :8080 across the /24 and confirms each hit via Kodi JSON-RPC (yields the version). Currently set: <span className="mono">{state.kodiIp}</span>.</span>
-        <PingRow label="Kodi box" host={state.kodiIp} port={8080} />
+        <span className="field-hint">Probes :8080 across the /24 and confirms each hit via Kodi JSON-RPC (yields the version).</span>
         {boxes.length > 0 && (
           <div className="model-list" style={{ marginTop: 12 }}>
             {boxes.map((b) => (
