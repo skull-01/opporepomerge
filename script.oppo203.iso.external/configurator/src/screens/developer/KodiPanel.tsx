@@ -9,6 +9,8 @@ import type { DevPanelProps } from "./types";
 import { PingRow } from "./devControls";
 
 const ADDON_ID = "script.oppo203.iso.external";
+// Add-on ids the dev tools recognise: the v2 OppoKodiBridge service add-on and the v1 add-on.
+const ACCEPTED_ADDON_IDS = ["service.oppokodibridge", ADDON_ID];
 
 type KodiHost = { ip: string; version: string | null };
 
@@ -44,6 +46,8 @@ export function KodiPanel({ state, set }: DevPanelProps) {
   const [zipReason, setZipReason] = useState("");
   const [zipVersion, setZipVersion] = useState<string | null>(null);
   const [zipSig, setZipSig] = useState<string>("");
+  const [zipAddonId, setZipAddonId] = useState<string | null>(null);
+  const [installedId, setInstalledId] = useState<string | null>(null);
 
   async function scanForBoxes() {
     setScanning(true);
@@ -73,15 +77,26 @@ export function KodiPanel({ state, set }: DevPanelProps) {
       setVersErr(`Bundled version: ${String(e)}`);
     }
     try {
-      const xml = await invoke<string | null>("read_ssh_file", {
-        host: state.kodiIp,
-        user: state.sshUser,
-        userdataPath: addonsDir,
-        rel: `${ADDON_ID}/addon.xml`,
-      });
-      setInstalled(xml ? (parseAddonVersion(xml) ?? "unknown") : "not installed");
+      let foundId: string | null = null;
+      let foundVer: string | null = null;
+      for (const id of ACCEPTED_ADDON_IDS) {
+        const xml = await invoke<string | null>("read_ssh_file", {
+          host: state.kodiIp,
+          user: state.sshUser,
+          userdataPath: addonsDir,
+          rel: `${id}/addon.xml`,
+        });
+        if (xml) {
+          foundId = id;
+          foundVer = parseAddonVersion(xml) ?? "unknown";
+          break;
+        }
+      }
+      setInstalledId(foundId);
+      setInstalled(foundVer ?? "not installed");
     } catch (e) {
       setInstalled(null);
+      setInstalledId(null);
       setVersErr(`Installed version (SSH): ${String(e)}`);
     } finally {
       setBusy(false);
@@ -116,6 +131,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
       const ok = await invoke<boolean>("kodi_set_addon_enabled", {
         host: state.kodiIp,
         user: state.sshUser,
+        addonId: zipAddonId ?? installedId ?? undefined,
       });
       setActionMsg(ok ? "Add-on enabled via Kodi JSON-RPC (no restart)." : "Kodi did not confirm the enable — try a restart.");
     } catch (e) {
@@ -146,19 +162,22 @@ export function KodiPanel({ state, set }: DevPanelProps) {
       setZipReason("");
       setZipVersion(null);
       setZipSig("");
+      setZipAddonId(null);
       return;
     }
     try {
-      const r = await invoke<{ valid: boolean; version: string | null; reason: string; signature_state: string }>("validate_addon_zip", { path: p });
+      const r = await invoke<{ valid: boolean; version: string | null; reason: string; signature_state: string; addon_id: string | null }>("validate_addon_zip", { path: p });
       setZipValid(r.valid);
       setZipReason(r.reason);
       setZipVersion(r.version);
       setZipSig(r.signature_state);
+      setZipAddonId(r.addon_id);
     } catch (e) {
       setZipValid(false);
       setZipReason(String(e));
       setZipVersion(null);
       setZipSig("");
+      setZipAddonId(null);
     }
   }
 
@@ -185,16 +204,17 @@ export function KodiPanel({ state, set }: DevPanelProps) {
     setBusy(true);
     setActionMsg(null);
     try {
-      const rep = await invoke<{ version: string; target: string; backed_up?: string | null }>(
+      const rep = await invoke<{ version: string; target: string; backed_up?: string | null; addon_id: string }>(
         "install_addon_zip",
         { host: state.kodiIp, user: state.sshUser, addonsPath: addonsDir, zipPath: p }
       );
-      let msg = `Uploaded add-on ${rep.version} to ${rep.target}.`;
+      let msg = `Uploaded add-on ${rep.addon_id} ${rep.version} to ${rep.target}.`;
       if (rep.backed_up) msg += ` Backed up the previous copy to ${rep.backed_up}.`;
       try {
         const ok = await invoke<boolean>("kodi_set_addon_enabled", {
           host: state.kodiIp,
           user: state.sshUser,
+          addonId: rep.addon_id,
         });
         msg += ok ? " Enabled it via Kodi (no restart)." : " Enable it in Kodi → Add-ons, or restart.";
       } catch {
@@ -266,15 +286,18 @@ export function KodiPanel({ state, set }: DevPanelProps) {
           </div>
           <div>
             <div className="field-label">Installed (on the box)</div>
-            <div className="mono">{installed ?? "—"}</div>
+            <div className="mono">
+              {installed ?? "—"}
+              {installedId && installed && installed !== "not installed" ? ` (${installedId})` : ""}
+            </div>
           </div>
-          {bundled && installed && installed !== "not installed" && installed !== "unknown" && (
+          {bundled && installed && installed !== "not installed" && installed !== "unknown" && installedId === ADDON_ID && (
             <span className={`chip ${bundled === installed ? "success" : "warn"}`}>
               {bundled === installed ? "match" : "differ"}
             </span>
           )}
         </div>
-        <span className="field-hint">Installed version is read from {addonsDir}/{ADDON_ID}/addon.xml over SSH.</span>
+        <span className="field-hint">Installed version is read over SSH from the installed add-on's addon.xml under {addonsDir} (OppoKodiBridge or the v1 add-on).</span>
         {versErr && (
           <p className="danger-text" style={{ marginBottom: 0 }} role="status">
             {versErr}
@@ -358,6 +381,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
                 setZipReason("");
                 setZipVersion(null);
                 setZipSig("");
+                setZipAddonId(null);
               }}
               onBlur={() => void validateZip(zipPath)}
             />
@@ -372,7 +396,7 @@ export function KodiPanel({ state, set }: DevPanelProps) {
           {zipValid !== null && (
             <p className={zipValid ? "success-text" : "danger-text"} style={{ marginBottom: 0 }} role="status">
               {zipValid
-                ? `✓ Valid add-on${zipVersion ? ` v${zipVersion}` : ""}${zipSig === "signed" ? " — build tag verified ✓" : zipSig === "unsigned" ? " — no build tag (older build)" : ""}`
+                ? `✓ Valid add-on${zipAddonId ? ` ${zipAddonId}` : ""}${zipVersion ? ` v${zipVersion}` : ""}${zipSig === "signed" ? " — build tag verified ✓" : zipSig === "unsigned" ? " — no build tag (older build)" : ""}`
                 : `✗ ${zipReason}`}
             </p>
           )}
