@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="service.oppokodibridge" name="OppoKodiBridge" version="2.0.0" provider-name="skull-01">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.service" library="service.py"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Browse in Kodi, play on your OPPO/M9205 over HTTP, switch the TV by CEC.</summary>
+    <description lang="en_GB">OppoKodiBridge v2 is a clean-slate rewrite that supports exactly one chain: Kodi on a Ugoos AM6B+ (CoreELEC), an M9205 V1 OPPO clone as the player, and a TCL Q9L Pro as the TV. You browse and pick a file in Kodi; the add-on hands the file to the M9205 over its HTTP API and the OPPO plays it. Input switching is by HDMI-CEC: the OPPO asserts itself as the active source when it starts playing (One Touch Play) so the TV switches to it, and when playback ends Kodi reclaims the TV with CECActivateSource. All configuration lives here in Kodi — there is no companion Windows app. The OPPO HTTP API is community-reverse-engineered, not an official protocol, and this add-on is software-verified only — hardware validation is not claimed.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+    <source>https://github.com/skull-01/OppoKodiBridge</source>
+    <news>v2.0.0 — clean-slate v2. One chain only (Ugoos/CoreELEC + M9205 V1 + TCL Q9L Pro). Pure-HTTP handoff to the OPPO; CEC One Touch Play switches the TV; Kodi reclaims via CECActivateSource. All config in Kodi; no Windows configurator.</news>
+  </extension>
+</addon>
