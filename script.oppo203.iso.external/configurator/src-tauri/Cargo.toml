@@ -1,6 +1,6 @@
 [package]
 name = "oppokodiaddon-configurator"
-version = "0.9.10"
+version = "0.9.11"
 description = "Windows configurator for the script.oppo203.iso.external Kodi add-on"
 authors = ["Kodi OPPO 203 ISO External Player maintainers"]
 license = "MIT"

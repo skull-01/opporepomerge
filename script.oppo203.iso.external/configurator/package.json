@@ -1,7 +1,7 @@
 {
   "name": "oppokodiaddon-configurator",
   "private": true,
-  "version": "0.9.10",
+  "version": "0.9.11",
   "type": "module",
   "description": "Windows configurator for the script.oppo203.iso.external Kodi add-on.",
   "scripts": {
