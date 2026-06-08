@@ -8,8 +8,8 @@ resume. The OPPO HTTP API here is community-reverse-engineered (mirrors the oper
 
 ## 0. Where we are (resume point)
 
-- **Built + deployed to the box: v2.0.11** (filter, below). v2.0.9 is still the GitHub "Latest" —
-  no v2.0.10/v2.0.11 GitHub release published yet (pending the operator's CEC re-confirm).
+- **Shipped: v2.0.11 is the GitHub "Latest"** (disc/ISO filter + power-cycle TV switch). **The box
+  runs v2.0.13** = identical behaviour to 2.0.11 (the v2.0.12 "fast switch" was reverted — see §4).
 - **Working, hardware-verified:** browse + play in Kodi → the OPPO plays it (MKV, ISO, m2ts/4K,
   and **BDMV Blu-ray disc folders** all confirmed) → the TCL switches to the OPPO → on stop the TV
   returns to Kodi.
@@ -20,12 +20,13 @@ resume. The OPPO HTTP API here is community-reverse-engineered (mirrors the oper
   only m2ts *within* a BDMV disc folder routes to the OPPO.
 - **TV switch mechanism = OPPO power-cycle** (`#POF`/`#PON`) so CEC One-Touch-Play fires on power-on.
   Cost: ~24 s per play. Reclaim on stop = Kodi `CECActivateSource`.
-- **Open #1 (faster TV switch):** a `cec-client` "route from the Kodi box" (v2.0.9) worked instantly
-  BUT opened a 2nd libCEC client and **broke Kodi's CEC** (reclaim stopped switching back; the input
-  kept getting re-grabbed). Reverted in v2.0.10. The promising non-conflicting path is writing the
-  CEC frame straight to **`/sys/class/aocec/cmd`** (Amlogic driver) — no 2nd libCEC client. UNTESTED.
-- **Open #2 (just reverted, needs operator re-confirm):** after v2.0.10 + Kodi restart, confirm
-  (a) stop → TV returns to Kodi, (b) switching to HDMI 2 mid-play no longer gets re-grabbed.
+- **CLOSED — a faster TV switch is a dead end; CEC injection breaks the shared bus.** Two attempts,
+  both reverted: cec-client (v2.0.9 — opened a 2nd libCEC client, broke Kodi's CEC) and the aocec
+  `/sys/class/aocec/cmd` inject (v2.0.12 — **cross-controlled OTHER devices**: a Mi Box S on another
+  HDMI input got controlled, because the injected `<Active Source>` carries a spoofed initiator
+  logical address that collides on the bus). **Only a device may announce its own active source** →
+  the OPPO power-cycle (One-Touch-Play) is the only safe switch, and its ~24 s is mostly the OPPO's
+  unavoidable boot-for-playback anyway. **Do NOT retry CEC injection on this bus.** See §4.
 
 ---
 
@@ -119,11 +120,17 @@ play `/mnt/nfs1/3 Body Problem - S01E01 - Countdown.mkv`.
   `cec-client -s` sending `<Active Source>` (`tx 4F:82:10:00` for HDMI 1) switched the TCL
   *instantly* — but `cec-client` is a 2nd libCEC client and **corrupted Kodi's CEC**: the reclaim
   stopped working and the input kept getting re-grabbed. Reverted.
-- **Next idea for fast switch:** CoreELEC here is **Amlogic aocec** (no `/dev/cec`; there IS
-  `/sys/class/aocec/cmd`). Writing the raw CEC frame to `/sys/class/aocec/cmd` injects via the driver
-  **without** a 2nd libCEC client, so it shouldn't disturb Kodi. Frame for `<Active Source>` HDMI 1:
-  header `4f` (src 4 → broadcast f), opcode `82`, operand `10 00` (phys 1.0.0.0). Format of the sysfs
-  write is unconfirmed — TEST it (and re-verify reclaim + no re-grab) before shipping.
+- **FAILED too (v2.0.12) — aocec `/sys/class/aocec/cmd` inject.** `echo 4f 82 10 00 > /sys/class/aocec/cmd`
+  (or a Python write) DID switch the TV and did NOT open a 2nd libCEC client — the sysfs write format
+  works. BUT it still broke the bus: the frame's **spoofed initiator logical address (4)** collides
+  with other playback devices, so the TV's CEC remote passthrough mis-routed and a **Mi Box S on
+  another HDMI input got cross-controlled**. Reverted in v2.0.13. (Kodi here = phys `4.0.0.0`, LA `8`;
+  OPPO = `1.0.0.0`. `/sys/class/aocec/cmd` is write-only; there is no `/dev/cec`.)
+- **CONCLUSION: never inject CEC to switch the TV.** Announcing an active source you don't own — by
+  cec-client, aocec, or anything — corrupts logical-address allocation and remote routing on a
+  multi-device bus. The only safe switch is a device announcing its OWN source: the OPPO's
+  One-Touch-Play on power-on (= the power-cycle). The ~24 s is the OPPO's boot time, needed for
+  playback regardless, so there is essentially nothing to optimise away.
 
 ---
 
@@ -198,19 +205,21 @@ key). Trigger an end-to-end test with Kodi JSON-RPC `Player.Open` and watch
 - **2.0.9** cec-client TV route — **reverted** (broke Kodi CEC).
 - **2.0.10** revert to power-cycle.
 - **2.0.11** handoff filter — only `.iso` + disc folders (BDMV/VIDEO_TS) route to the OPPO; the rest
-  stays in Kodi (`is_oppo_target`, toggle `disc_iso_only`, default on). Current; deployed to the box.
+  stays in Kodi (`is_oppo_target`, toggle `disc_iso_only`, default on). **GitHub "Latest".**
+- **2.0.12** fast TV switch via aocec inject when OPPO already on — **reverted** (cross-controlled a
+  Mi Box S on the shared CEC bus).
+- **2.0.13** revert of 2.0.12 → back to power-cycle only (= 2.0.11 behaviour). Current on the box.
 
 ---
 
 ## 9. Next steps
 
-1. Operator confirms v2.0.11 on the box: (a) play an MKV → stays in Kodi (no handoff); (b) play an
-   ISO / a BDMV folder → handed to the OPPO; (c) the v2.0.10 CEC revert — stop→reclaim works, no
-   input re-grab. Then publish a GitHub release to supersede v2.0.9 ("Latest").
-2. Faster TV switch: try the `/sys/class/aocec/cmd` raw-frame inject (no 2nd libCEC client). Verify
-   reclaim + no re-grab before shipping. If it works, it replaces the ~24 s power-cycle.
-3. Optional: skip the TV-grab when the OPPO is already the active source (binge / back-to-back).
-4. Optional: a Windows-free dev loop (currently deploy/test is driven over SSH from Windows+PuTTY).
+1. Faster TV switching is CLOSED (see §4) — power-cycle is the only safe path. Don't reopen it with
+   CEC injection; if ever revisited, the only legitimate angle is TV-side control (TCL Google TV via
+   network/ADB), never spoofing CEC active-source on the shared bus.
+2. v2.0.13 (= 2.0.11 behaviour) is on the box; v2.0.11 is the published "Latest". No new release
+   needed unless the disc/ISO filter or a real fix lands.
+3. Optional: a Windows-free dev loop (currently deploy/test is driven over SSH from Windows+PuTTY).
 
 This add-on is software-verified + hardware-verified for playback and CEC switching on the one
 supported chain. It is not a general-purpose OPPO/Kodi bridge and makes no claims beyond that chain.
