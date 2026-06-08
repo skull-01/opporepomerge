@@ -276,6 +276,17 @@ optional space-separated params + CR (`\r`). Useful ones for an integration:
 > **None of these load a file.** `#PLA` plays *what is already selected*; there is no path parameter
 > anywhere in the protocol. This is the limitation from the [TL;DR](#tldr--the-one-fact-that-determines-your-whole-design).
 
+**USB-serial adapter — the chipset matters (if you use the *wired* RS-232 path).** These `#`-commands
+also run over the OPPO's physical RS-232 port, but that needs a USB-serial adapter on the controlling
+host — and **the chipset is not interchangeable on older kernels.** On CoreELEC's Linux **4.9**, the
+newer **Prolific PL2303-GC** (USB `067b:23a3`, "HXN") is **not driveable**: the driver can't configure
+it (`pl2303_vendor_write … -32` errors; `/dev/ttyUSB0` attaches via a `new_id` hack but **no bytes
+actually flow**). Use a **CH340 / CH341 (WCH)** or **FTDI FT232** adapter instead — both bind cleanly on
+4.9 with no hacks (CH340 is the cheap sure bet); avoid the newer Prolific. Serial line settings are the
+documented **9600 8N1, no flow control**. Note this path is **optional**: the OPPO is already on the
+network for playback, so the network `:23` socket usually suffices — the wired serial is only worth it
+if you specifically want a non-network control channel.
+
 ---
 
 ## Live monitoring strategies
