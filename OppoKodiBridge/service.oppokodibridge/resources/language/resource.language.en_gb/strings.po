@@ -23,6 +23,10 @@ msgctxt "#30003"
 msgid "Hand off playback to the OPPO"
 msgstr ""
 
+msgctxt "#30004"
+msgid "Only hand discs & ISO files to the OPPO (else: everything)"
+msgstr ""
+
 msgctxt "#30010"
 msgid "NAS path mapping"
 msgstr ""

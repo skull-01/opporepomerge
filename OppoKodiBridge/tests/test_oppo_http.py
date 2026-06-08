@@ -126,6 +126,26 @@ def test_is_disc_path():
     assert not oh.is_disc_path("01Movies/Crouching Tiger (2000).iso")
 
 
+def test_is_iso():
+    assert oh.is_iso("01Movies/Crouching Tiger (2000).iso")
+    assert oh.is_iso("X/Y.ISO")
+    assert not oh.is_iso("02TV/Show/S01E01.mkv")
+    assert not oh.is_iso("X/disc/BDMV/index.bdmv")
+
+
+def test_is_oppo_target():
+    # Disc images and disc folders -> OPPO.
+    assert oh.is_oppo_target(FROM + "/01Movies/Dune (2021).iso")
+    assert oh.is_oppo_target("01Movies/Ant-Man (2015)/BDMV/index.bdmv")
+    assert oh.is_oppo_target(FROM + "/01Movies/Ant-Man (2015)/BDMV/STREAM/00800.m2ts")
+    assert oh.is_oppo_target("X/VIDEO_TS/VIDEO_TS.IFO")
+    assert oh.is_oppo_target(FROM + "/01Movies/Dune%20(2021).iso")  # url-encoded
+    # Everything else stays in Kodi.
+    assert not oh.is_oppo_target(KODI)
+    assert not oh.is_oppo_target(FROM + "/01Movies/film.mp4")
+    assert not oh.is_oppo_target("Movies/looseclip/STREAM/0080.m2ts")  # no BDMV folder
+
+
 def test_disc_folder():
     assert (
         oh.disc_folder("01Movies/01-4kDisc/Ant-Man (2015)/BDMV/index.bdmv")

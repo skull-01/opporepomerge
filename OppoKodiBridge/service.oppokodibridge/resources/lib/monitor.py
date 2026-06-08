@@ -14,6 +14,7 @@ from . import cec
 from . import config as config_mod
 from .handoff import play_on_oppo
 from .kodilog import log
+from .oppo_http import is_oppo_target
 
 _SKIP_PREFIXES = ("plugin://", "pvr://", "addons://", "script://")
 
@@ -59,6 +60,11 @@ class BridgeService(xbmc.Monitor):
             log("could not read settings: {!r}".format(exc))
             return
         if not cfg.handoff_enabled or not cfg.configured:
+            return
+        # Filter: only disc images (.iso) and disc folders (BDMV/VIDEO_TS) go to the OPPO; let Kodi
+        # play everything else (MKV, MP4, loose m2ts, ...) itself.
+        if cfg.disc_iso_only and not is_oppo_target(path):
+            log("Not a disc/ISO file; leaving playback in Kodi: {}".format(path))
             return
         with self._lock:
             if self._busy.is_set():

@@ -124,6 +124,22 @@ def disc_folder(path: str) -> str:
     return text
 
 
+def is_iso(path: str) -> bool:
+    """True for a disc-image file (.iso)."""
+    return str(path).strip().lower().endswith(".iso")
+
+
+def is_oppo_target(path: str) -> bool:
+    """The handoff filter. Route to the OPPO ONLY for disc content: disc images (.iso) and disc
+    folders (BDMV / VIDEO_TS / HVDVD_TS). Everything else (MKV, MP4, loose m2ts, ...) stays in
+    Kodi -- this is the only kind of file Kodi will send to the OPPO.
+    """
+    text = str(path)
+    if text.lower().startswith(("nfs://", "smb://")):
+        text = urllib.parse.unquote(text)
+    return is_iso(text) or is_disc_path(text)
+
+
 def local_ip_toward(host: str, port: int = 436) -> str:
     """The local source IP the box uses to reach ``host`` — for signin's ``appIpAddress``."""
     try:

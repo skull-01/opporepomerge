@@ -16,6 +16,7 @@ class Config:
     oppo_http_broadcast: str = "255.255.255.255"
     socket_timeout: float = 4.0
     handoff_enabled: bool = True
+    disc_iso_only: bool = True
     use_json_payload: bool = True
     media_type: int = 1
     app_device_type: int = 2
@@ -61,6 +62,7 @@ def from_addon() -> "Config":
         oppo_http_port=i("oppo_http_port", 436),
         socket_timeout=float(i("socket_timeout", 4)),
         handoff_enabled=b("handoff_enabled", True),
+        disc_iso_only=b("disc_iso_only", True),
         use_json_payload=b("use_json_payload", True),
         media_type=i("media_type", 1),
         app_device_type=i("app_device_type", 2),

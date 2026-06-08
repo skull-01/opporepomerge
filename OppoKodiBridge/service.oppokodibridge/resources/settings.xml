@@ -26,6 +26,11 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="disc_iso_only" type="boolean" label="30004">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
       </group>
     </category>
     <category id="paths" label="30010">
