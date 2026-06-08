@@ -245,8 +245,12 @@ stable mounts. (The HTTP API *does* expose CIFS too — the mount lands at `/mnt
 | `/checkfolderhasBDMV?{"folderpath":"/mnt/nfs1/<disc>"}` | **Start a BDMV disc folder** |
 | `/sendremotekey?{"key":"STP"}` | Stop (also: any remote key, e.g. `POW`, `MUT`) |
 
-(`/sendremotekey` is the only one of these the wider community has published — see References; the NFS
-mount/play chain came from the `emby-chinoppo-bridge` reverse engineering.)
+**Note on `/sendremotekey`:** it carries the **same 3-letter remote-key mnemonics** as the TCP `#XXX`
+control commands — so HTTP `/sendremotekey?{"key":"STP"}` is the *stop* command over HTTP, equivalent to
+TCP `#STP`. In this guide, stop appears as `/sendremotekey?{"key":"STP"}` inside the HTTP playback flow
+and as `#STP` in the TCP table — same command, two transports. (`/sendremotekey` is the only one of
+these endpoints the wider community has published — see References; the NFS mount/play chain came from
+the `emby-chinoppo-bridge` reverse engineering.)
 
 ---
 
@@ -309,7 +313,7 @@ playback begins).
 | Wake with a `0x55` "activate" packet, or a broadcast | API never wakes | UDP `NOTIFY OREMOTE LOGIN` → **:7624** (unicast) |
 | **Mount a folder the NAS does not export** (e.g. the path *your PC* uses, against the OPPO's own server) | **HARD-CRASHES the OPPO** — both `:436` and `:23` die; needs a mains power-cycle | Only mount a real export (from `/getNfsShareFolderlist`) or a subfolder of it |
 | Mount the file and play it, or play a **sub-path** of a mount | Won't play | Mount the **folder**, play the **bare basename** |
-| Play a Blu-ray by pointing at `index.bdmv` | Won't play | `/checkfolderhasBDMV` on the **disc folder** (after a `STP`) |
+| Play a Blu-ray by pointing at `index.bdmv` | Won't play | `/checkfolderhasBDMV` on the **disc folder** (after a `/sendremotekey?{"key":"STP"}`) |
 | Load a new disc while `bd_is_playing` is stuck | Mount/parse hangs | Send `/sendremotekey?{"key":"STP"}` first |
 | Use *your PC's* NAS address as the NFS server | Mount fails (dual-homed NAS) | Use the OPPO's own server from `/getdevicelist` |
 
