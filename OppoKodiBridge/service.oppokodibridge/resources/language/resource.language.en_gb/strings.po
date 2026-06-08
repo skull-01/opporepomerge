@@ -59,10 +59,6 @@ msgctxt "#30024"
 msgid "OPPO HDMI physical address (e.g. 1.0.0.0 = HDMI 1)"
 msgstr ""
 
-msgctxt "#30025"
-msgid "Fast TV switch when the OPPO is already on (CEC inject)"
-msgstr ""
-
 msgctxt "#30030"
 msgid "Advanced"
 msgstr ""

@@ -52,34 +52,24 @@ def _phys_to_operand(phys_addr: str) -> str:
     return "%02X:%02X" % ((nib[0] << 4) | nib[1], (nib[2] << 4) | nib[3])
 
 
-AOCEC_CMD = "/sys/class/aocec/cmd"
-
-
-def _aocec_active_source_frame(phys_addr: str = "1.0.0.0", initiator: int = 4) -> str:
-    """The aocec ``/cmd`` write for a CEC <Active Source> broadcast: '<init>f 82 <hi> <lo>'.
-
-    phys 1.0.0.0 -> '4f 82 10 00' (initiator 4 -> broadcast f, opcode 0x82, then the phys operands).
-    """
-    operands = _phys_to_operand(phys_addr).replace(":", " ").lower()
-    return "%x%x 82 %s" % (int(initiator) & 0xF, 0xF, operands)
-
-
 def switch_tv_to_oppo(phys_addr: str = "1.0.0.0") -> bool:
-    """Switch the TV to the OPPO's HDMI input by injecting a CEC <Active Source> straight through the
-    Amlogic aocec driver (``/sys/class/aocec/cmd``). Unlike running cec-client this opens NO second
-    libCEC client, so it does not disturb Kodi's own CEC.
-
-    Use only when the OPPO is already powered on (it can't display while in standby). When the OPPO
-    is off, power it on instead -- the power-on fires One-Touch-Play and switches the TV for free.
-    """
-    frame = _aocec_active_source_frame(phys_addr)
+    """Switch the TV to the OPPO's HDMI input by broadcasting CEC <Active Source> for its physical
+    address from the Kodi box -- instant, no OPPO power-cycle. Uses cec-client (Amlogic aocec)."""
+    frame = "tx 4F:82:" + _phys_to_operand(phys_addr) + "\n"
     try:
-        with open(AOCEC_CMD, "w") as handle:
-            handle.write(frame + "\n")
-        log("Switched the TV to the OPPO via aocec inject ({}): {}".format(phys_addr, frame))
+        import subprocess
+
+        subprocess.run(
+            ["/usr/bin/cec-client", "-s", "-d", "1"],
+            input=frame.encode("ascii"),
+            timeout=15,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        log("Routed the TV to the OPPO via CEC (Active Source {}).".format(phys_addr))
         return True
-    except OSError as exc:  # pragma: no cover - exercised on hardware
-        log("switch_tv_to_oppo (aocec) failed: {!r}".format(exc))
+    except Exception as exc:  # pragma: no cover - exercised on hardware
+        log("switch_tv_to_oppo failed: {!r}".format(exc))
         return False
 
 

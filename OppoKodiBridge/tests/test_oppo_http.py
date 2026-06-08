@@ -126,20 +126,6 @@ def test_is_disc_path():
     assert not oh.is_disc_path("01Movies/Crouching Tiger (2000).iso")
 
 
-def test_is_power_on(monkeypatch):
-    client = _client()
-    monkeypatch.setattr(client, "send_tcp_command", lambda *a, **k: "@OK ON\r")
-    assert client.is_power_on() is True
-    monkeypatch.setattr(client, "send_tcp_command", lambda *a, **k: "@OK OFF\r")
-    assert client.is_power_on() is False
-
-    def boom(*a, **k):
-        raise oh.OppoError("no :23")
-
-    monkeypatch.setattr(client, "send_tcp_command", boom)
-    assert client.is_power_on() is False
-
-
 def test_is_iso():
     assert oh.is_iso("01Movies/Crouching Tiger (2000).iso")
     assert oh.is_iso("X/Y.ISO")

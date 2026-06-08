@@ -36,12 +36,6 @@ def test_reclaim_tv_calls_builtin(fake_xbmc):
     assert "CECActivateSource" in fake_xbmc.builtins
 
 
-def test_aocec_active_source_frame():
-    assert cec._aocec_active_source_frame("1.0.0.0") == "4f 82 10 00"
-    assert cec._aocec_active_source_frame("2.0.0.0") == "4f 82 20 00"
-    assert cec._aocec_active_source_frame("1.1.0.0") == "4f 82 11 00"
-
-
 def test_ensure_enables_when_off(fake_xbmc):
     applied = []
 
