@@ -19,27 +19,58 @@ back. There are three ways to do it, and two of them are far more painful than t
 ## 1. TV network control (per-brand) — proprietary and inconsistent
 
 Most smart TVs expose *some* LAN control, but **every brand does it differently**, and many **don't
-expose it at all until you enable a developer/debug mode**:
+expose it at all until you enable a developer/debug mode**. The headline trap: **Chinese domestic
+models of TCL and Hisense need a completely different path to enable ADB** than their international
+(Google TV) counterparts — see the callout below.
 
-| Brand | Protocol | Catch |
-|---|---|---|
-| **LG (webOS)** | WebSocket (secure `wss://` on newer firmware) | requires turning on **Developer Mode** (install the Dev Mode app, sign in with an LG developer account, toggle it on) + a pairing prompt |
-| **Sony (Bravia)** | REST / IRCC-over-IP | needs a **Pre-Shared Key** or PIN pairing enabled in the TV |
-| **Samsung (Tizen)** | WebSocket (`ws://…:8001/8002`) or the SmartThings cloud | the local socket needs an on-screen **allow** prompt + a token; newer models push you to the cloud API |
-| **TCL / Google TV** | **ADB** (or Google's protocols) | needs **USB/network debugging** turned on in developer options |
-| **Roku** | ECP (`http://tv:8060/…`) | the easy one — but Roku-only |
-| **Vizio (SmartCast)** | local HTTPS API | requires a **PIN-pairing** handshake to get a token |
+### Per-brand requirements
 
-The consequences:
-- **You maintain a backend per brand** — different transport, different auth, different command set.
-  (This project's v1 had exactly that: Sony PSK, LG, Samsung, SmartThings, ADB-keyevent, Roku ECP, and
-  a "custom" fallback — that's the real maintenance cost.)
-- **Many don't offer a discrete "switch to HDMI 3."** You often only get an "Input/Source" toggle or a
-  picker, so you end up sending blind navigation, which is fragile.
-- **Debug/developer modes can reset** (after updates, factory resets, or time-outs), silently breaking
+| Brand / OS | Control protocol | How to enable / authenticate | Discrete "HDMI N"? |
+|---|---|---|---|
+| **LG (webOS)** | WebSocket — `ws://…:3000`, secure `wss://…:3001` on newer firmware | first connect raises an **on-screen pairing** prompt → client key; some features need **Developer Mode** (install the Dev Mode app, sign in with an LG developer account, toggle it on) | **yes** (`ssap://tv/switchInput`) |
+| **Samsung (Tizen)** | local WebSocket — `:8001` (plain, info + keys), `:8002` (secure, token); or the **SmartThings cloud** API | `:8002` needs an on-screen **"Allow"** + a **token** you store; SmartThings needs a token with *Devices* permission. Strict simultaneous-connection limits | partial (key codes; input/state via SmartThings) |
+| **Sony (Bravia)** | **REST (Scalar) API + IRCC-IP** | a **Pre-Shared Key** (`X-Auth-PSK` header), set in **Settings → Network → Home network → IP Control → Authentication → Normal + Pre-Shared Key**; newer Bravia are Google TV so **ADB** also works | **yes** (`setPlayContent` with `extInput:hdmi?port=N`) |
+| **Google TV / Android TV** (Sony, Philips, **TCL-intl**, **Hisense-Android**, **Xiaomi-intl**…) | **ADB over TCP `:5555`** (+ the Android TV Remote v2 pairing protocol for keys) | **Settings → System → About → Build number ×7** → Developer options → enable **(Wireless) ADB debugging** → `adb connect <ip>:5555`; first connect raises an on-screen **RSA "Allow USB debugging?"** prompt | **no** discrete switch — you send key-events / `am start` intents and navigate |
+| **Roku** (some US TCL / Hisense) | **ECP** — `http://tv:8060/…` | on by default (no auth) — the easy one, but Roku-only | **yes** (`launch`/`tv` input HDMI) |
+| **Hisense (VIDAA)** | **MQTT on `:36669`** (the RemoteNOW app's broker, mosquitto) | creds `hisenseservice` / `multimqttservice`; **pair via an auth code shown on the TV**; some sets require a **client certificate** | via source/key commands |
+| **Xiaomi (Mi TV, intl)** | Android TV / Google TV → **ADB** | dev mode by tapping the **model name ×7**, then the ADB toggle lives under **Settings → Account & Security → ADB debug → Allow** (note: *not* under Developer options) | no discrete switch |
+
+### Gotchas that bite
+- **Android 13+:** *Wireless* debugging was split from *USB* debugging — enable the right one for a
+  networked TV.
+- **Android 14:** ADB security **randomises the port after sleep/reboot**, so `:5555` is no longer fixed
+  — you need an auto-re-enable helper.
+- **Many TVs have no discrete "switch to HDMI 3"** — only an Input/Source toggle or picker, so you end
+  up sending blind navigation.
+- **Dev/debug modes reset** after firmware updates, factory resets, or time-outs — silently breaking
   your integration.
+- **You maintain a backend per brand** — different transport, auth, and command set. (This project's v1
+  literally shipped Sony-PSK / LG / Samsung / SmartThings / ADB-keyevent / Roku-ECP / custom backends.)
 
-Net: precise when it works, but **proprietary, gated, and inconsistent** across a mixed-brand world.
+### ⚠️ Chinese domestic models (TCL / Hisense / Xiaomi) — a *different* path to ADB
+
+This is the part that catches people out. On an **international** Google TV / Android TV set you just
+tap *Build number ×7* and flip on ADB. **Chinese domestic models deliberately hide or remove that** —
+manufacturers disable developer mode to block rooting / bootloader unlock, and the Chinese firmware
+often ships a **stripped settings menu** (only Wi-Fi / storage / permissions; *no* developer options).
+To get ADB you go through a **hidden service / factory menu**:
+
+- **Generic (CVTE-board sets):** key combo `MENU → 1 → 1 → 4 → 7` on the remote → **Debug → Enable ADB →
+  ON** (and it's **Wireless** debugging, not USB).
+- **Hisense (VIDAA China):** **Settings → Sound → Volume Balance**, then quickly press the sequence
+  **Menu → Confirm → Options → Confirm**; switch the **`u` mode to `m` mode** to unlock the debug
+  options, then enable ADB.
+- **TCL / FFALCON (雷鸟, TCL's China sub-brand):** Android-based but locked down — developer options are
+  often not exposed through normal settings; you need the model's **service menu**, and some require a
+  **package-verification** tweak before ADB installs work.
+- **Xiaomi (PatchWall / MIUI for TV):** dev mode via *model name ×7*, ADB under **Account & Security**
+  (as above); China firmware drops Google services and re-lays the menus.
+
+Net: a China-domestic set can need a **remote key-combo into an engineering menu plus a mode switch**
+just to expose ADB — while the *international model of the very same TV* enables it with a trivial
+*Build-number ×7*. That inconsistency (same brand, same panel, different firmware, different unlock) is
+exactly why a generic "just hit the TV's network API" strategy is fragile. **It's also a strong reason
+to prefer an IR blaster, which doesn't care what firmware the TV runs.**
 
 ---
 
@@ -153,8 +184,14 @@ Concrete results from building this on a Ugoos (CoreELEC/Kodi) + M9205 (OPPO clo
   [What Hi-Fi? explainer](https://www.whathifi.com/advice/what-is-quick-media-switching-qms-the-latest-hdmi-21-feature-explained) ·
   [FlatpanelsHD guide + support list](https://www.flatpanelshd.com/guide.php?subaction=showfull&id=1679669681)
 - **Per-brand TV network control:**
-  [LG webOS developer docs](https://webostv.developer.lge.com/develop/references/webostvjs-webos) (Developer Mode + WebSocket) ·
-  [awesome-smart-tv](https://github.com/vitalets/awesome-smart-tv) (per-brand control protocols)
+  - **LG webOS** — [developer docs](https://webostv.developer.lge.com/develop/references/webostvjs-webos) (Developer Mode + WebSocket)
+  - **Samsung Tizen** — [ha-samsungtv-smart](https://github.com/ollo69/ha-samsungtv-smart) (`:8001`/`:8002` token), [openHAB Samsung TV binding](https://www.openhab.org/addons/bindings/samsungtv/)
+  - **Sony Bravia** — [official IP-control: REST API + Pre-Shared Key](https://pro-bravia.sony.net/develop/integrate/ip-control/index.html)
+  - **Hisense VIDAA** — [mqtt-hisensetv (port 36669)](https://github.com/Krazy998/mqtt-hisensetv), [hisensetv API docs](https://hisensetv.readthedocs.io/en/latest/api.html)
+  - **Android TV / Google TV ADB** — [ADB on Google TV guide](https://allaboutchromecast.com/using-adb-on-google-tv-streamer/), [Android 14 port-randomisation note](https://www.techdoctoruk.com/auto-enable-adb-on-port-5555-android-tv-14/)
+  - **Xiaomi Mi TV** — [official "enable ADB debug" article](https://www.mi.com/global/support/article/KA-06513/)
+  - **Chinese-domestic ADB (service/factory menu)** — [XDA: alternative ways to enable dev mode when blocked](https://xdaforums.com/t/help-what-alternative-methods-to-enable-developer-mode-if-the-manufacturer-prevents-the-user-from-doing-so.4633715/), [XDA: Chinese CVTE TV (`MENU 1 1 4 7`)](https://xdaforums.com/t/chinese-cvte-tv-performance-help.4667141/); Hisense factory menu — [Hisense system guide](https://www.oreateai.com/blog/guide-to-deep-optimization-and-streamlining-of-hisense-tv-system/384455a755b3ef6e5fa143af2124bf2e)
+  - **Aggregate** — [awesome-smart-tv](https://github.com/vitalets/awesome-smart-tv)
 - **HDMI-CEC:** the CEC One Touch Play / active-source behaviour is part of the HDMI CEC spec; brand
   names are *Bravia Sync / Anynet+ / SimpLink / T-Link / VIERA Link*.
 - **This project's CEC saga:** OppoKodiBridge `DEV_NOTES` / memory (the cec-client + aocec failures and
