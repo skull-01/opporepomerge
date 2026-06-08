@@ -36,6 +36,8 @@ Kodi play (.iso / BDMV) ─▶ playercorefactory routes it to pcf_player.py (ext
 The OPPO control is pure network, so the external player needs no Kodi APIs and v3 is **CEC-free by
 design** (no `CECActivateSource`).
 
+📐 **Full walkthrough + diagrams:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
 ## Install & configure
 
 1. Build the zip: `powershell -File packaging\make_addon_zip.ps1` → `dist/service.oppokodibridge.v3-<ver>.zip`.
