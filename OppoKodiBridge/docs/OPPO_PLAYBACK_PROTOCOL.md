@@ -107,13 +107,18 @@ with only the path value encoded. The exact byte-level encoding is in `oppo_http
    7624**, then poll until `:436` answers. (It is *not* an HTTP call and *not* a broadcast.)
 2. **Init handshake.** On a *fresh* (just-woken) API session, replaying the MediaControl app's startup
    sequence avoids sign-in/mount failures: `/getmainfirmwareversion` → `/getsetupmenu` →
-   `/signin?{"appIconType":1,"appIpAddress":"<you>"}` → `/getglobalinfo`. Of these, **`/signin` is the
-   one that matters** — it registers your app as a controller. `/getmainfirmwareversion` and
-   `/getglobalinfo` are **informational** (firmware string / current state) and almost certainly
-   skippable; `/getsetupmenu` is also informational but the app calls it repeatedly, so it *may* double
-   as a "keep the API awake" poke. We replay the whole sequence because the working reference does and
-   the calls are cheap and harmless — but we have **not** isolated exactly which are essential on a cold
-   session, so treat firmware/getglobalinfo as droppable and `signin` as load-bearing.
+   `/signin?{"appIconType":1,"appIpAddress":"<you>"}` → `/getglobalinfo`. **`/signin` is the
+   load-bearing one** — it registers your app as a controller. `/getmainfirmwareversion`,
+   `/getsetupmenu` and `/getglobalinfo` are **informational** (firmware string / settings menu / current
+   state) and not strictly required — but they are **practically free, so keep them as cheap insurance**
+   for fresh or flaky sessions.
+
+   *Measured overhead* (warm M9205 clone): `getmainfirmwareversion` + `getsetupmenu` together **≈2–9 ms**;
+   `getglobalinfo` / `getdevicelist` / `getNfsShareFolderlist` **≈1–3 ms** each; **`signin` ≈1.0 s** (the
+   only init call with real cost — looks like a fixed delay in the OPPO's signin handler, so give it a
+   generous timeout). The whole handshake is **≈1 s, almost all of it `signin`** — negligible next to the
+   NFS mount and the OPPO's ~10 s pre-playback buffer. (We have not isolated which calls are strictly
+   essential on a *cold* session; given the cost is ~0, there's little reason to drop any but firmware.)
 3. **Resolve the NFS server the OPPO can reach** (it may differ from the address your PC uses):
    `/getdevicelist` → the entry with `"sub_type":"nfs"` is the server; `/getNfsShareFolderlist` → the
    export root.
