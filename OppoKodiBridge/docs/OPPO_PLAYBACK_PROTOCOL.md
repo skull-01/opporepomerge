@@ -162,6 +162,13 @@ play       =  /mnt/nfs1/Dune.iso
               → mountNfsSharedFolder(server=192.168.10.20, folder="srv/nfs/media/01Movies/Dune (2021)")
               → playnormalfile(path="/mnt/nfs1/Dune.iso", extraNetPath="192.168.10.20")
 ```
+**Why the play path is `/mnt/nfs1/Dune.iso`, not the full path:** `/mnt/nfs1` is the OPPO's **fixed
+local mount point** — `mountNfsSharedFolder` always mounts the folder you give it *there*. So once you
+mount the file's folder, the file sits **directly** under it at `/mnt/nfs1/<basename>`. (Mount the
+export root `srv/nfs/media` instead and the file would be at `/mnt/nfs1/01Movies/Dune (2021)/Dune.iso`
+— but the OPPO **won't play a sub-path of a mount**, which is exactly why we mount the *folder* and
+play the *basename*.)
+
 The server `192.168.10.20` is **not** typed in — resolve it at runtime from `/getdevicelist`
 (`sub_type:"nfs"`), because it is the OPPO's view of the NAS, not yours. Percent-encode spaces and
 parentheses in the path values.
