@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings version="1">
+  <section id="service.oppokodibridge.v3">
+    <category id="oppo" label="30000">
+      <group id="1">
+        <setting id="oppo_ip" type="string" label="30001">
+          <level>0</level>
+          <default>192.168.10.10</default>
+          <control type="edit" format="string">
+            <heading>30001</heading>
+          </control>
+        </setting>
+        <setting id="oppo_http_port" type="integer" label="30002">
+          <level>0</level>
+          <default>436</default>
+          <constraints>
+            <minimum>1</minimum>
+            <maximum>65535</maximum>
+          </constraints>
+          <control type="edit" format="integer">
+            <heading>30002</heading>
+          </control>
+        </setting>
+        <setting id="handoff_enabled" type="boolean" label="30003">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+    </category>
+    <category id="paths" label="30010">
+      <group id="1">
+        <setting id="path_from" type="string" label="30011">
+          <level>0</level>
+          <default>nfs://192.168.1.177/mnt/Super3/Super3Share</default>
+          <control type="edit" format="string">
+            <heading>30011</heading>
+          </control>
+        </setting>
+        <setting id="path_to" type="string" label="30012">
+          <level>0</level>
+          <default>/srv/nfs/media</default>
+          <control type="edit" format="string">
+            <heading>30012</heading>
+          </control>
+        </setting>
+      </group>
+    </category>
+    <category id="switching" label="30060">
+      <group id="1">
+        <setting id="broadlink_ip" type="string" label="30062">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string">
+            <heading>30062</heading>
+          </control>
+        </setting>
+        <setting id="ir_code_oppo" type="string" label="30063">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string">
+            <heading>30063</heading>
+          </control>
+        </setting>
+        <setting id="ir_code_kodi" type="string" label="30064">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string">
+            <heading>30064</heading>
+          </control>
+        </setting>
+        <setting id="grab_tv_on_play" type="boolean" label="30061">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+    </category>
+    <category id="advanced" label="30030">
+      <group id="1">
+        <setting id="poll_interval" type="integer" label="30032">
+          <level>0</level>
+          <default>5</default>
+          <constraints>
+            <minimum>2</minimum>
+            <maximum>60</maximum>
+          </constraints>
+          <control type="edit" format="integer">
+            <heading>30032</heading>
+          </control>
+        </setting>
+        <setting id="socket_timeout" type="integer" label="30033">
+          <level>0</level>
+          <default>4</default>
+          <constraints>
+            <minimum>1</minimum>
+            <maximum>30</maximum>
+          </constraints>
+          <control type="edit" format="integer">
+            <heading>30033</heading>
+          </control>
+        </setting>
+      </group>
+    </category>
+  </section>
+</settings>

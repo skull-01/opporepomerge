@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="service.oppokodibridge.v3" name="OppoKodiBridge v3 (playercorefactory)" version="3.0.0" provider-name="skull-01">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.service" library="service.py"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">v3: route ISO/Blu-ray to the OPPO via playercorefactory — no Kodi pre-play blip.</summary>
+    <description lang="en_GB">OppoKodiBridge v3 is a fork of v2 that intercepts playback with Kodi's playercorefactory instead of a service monitor. Kodi routes disc content (.iso, BDMV, VIDEO_TS) to an external player that hands the file to the OPPO/M9205 over its HTTP app API — so Kodi never starts the file itself and there is no brief "Kodi plays, then hands off" blip that v2 has. TV input switching is meant to be CEC-free via a network IR blaster (Broadlink RM4 mini); until one is configured it falls back to an interim OPPO power-cycle, and there is no CEC reclaim (v3 is CEC-free by design). It installs alongside v2 (different add-on id) so the two interception approaches can be compared directly. The OPPO HTTP API is community-reverse-engineered, not an official protocol.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+    <source>https://github.com/skull-01/OppoKodiBridge-v3</source>
+    <news>v3.0.0 — first cut of the playercorefactory fork. The service writes a playercorefactory.xml routing .iso + BDMV/VIDEO_TS to an external OPPO player (pcf_player.py), so there is no pre-play blip. Playback state is polled over HTTP /getglobalinfo; TV switch is Broadlink IR when configured (CEC-free), else an interim OPPO power-cycle with no CEC reclaim. Installs beside v2 for A/B comparison.</news>
+  </extension>
+</addon>
