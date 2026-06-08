@@ -58,6 +58,11 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="grab_tv_on_play" type="boolean" label="30023">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
       </group>
     </category>
     <category id="advanced" label="30030">

@@ -55,6 +55,16 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
         return False
 
     client = OppoClient(config)
+
+    # Switch the TV to the OPPO: it asserts CEC active source on power-ON only (not on a
+    # play-while-already-on), so standby -> on the player. wake_and_wait then waits out the boot.
+    if config.grab_tv_on_play:
+        log("Switching TV to the OPPO via power-on (CEC One-Touch-Play)")
+        try:
+            client.power_cycle()
+        except OppoError as exc:
+            log("TV grab (power-cycle) failed (non-fatal): {}".format(exc))
+
     if not client.wake_and_wait():
         log("OPPO app API ({}:{}) did not wake".format(config.oppo_ip, config.oppo_http_port))
         _notify("OPPO not responding")

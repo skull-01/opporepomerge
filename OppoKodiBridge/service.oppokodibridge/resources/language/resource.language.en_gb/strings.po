@@ -47,6 +47,10 @@ msgctxt "#30022"
 msgid "Reclaim the TV when playback ends"
 msgstr ""
 
+msgctxt "#30023"
+msgid "Switch the TV to the OPPO on play (power-cycles the OPPO)"
+msgstr ""
+
 msgctxt "#30030"
 msgid "Advanced"
 msgstr ""

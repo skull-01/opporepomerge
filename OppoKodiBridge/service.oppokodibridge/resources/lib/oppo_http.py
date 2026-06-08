@@ -209,7 +209,7 @@ class OppoClient:
         except OSError:
             pass
 
-    def wake_and_wait(self, attempts: int = 8, interval: float = 3.0) -> bool:
+    def wake_and_wait(self, attempts: int = 18, interval: float = 3.0) -> bool:
         """Send the OREMOTE notify until the :436 API answers. Returns True if it came up."""
         port = int(self.cfg.oppo_http_port)
         for _ in range(max(1, attempts)):
@@ -262,3 +262,27 @@ class OppoClient:
             return info_is_playing(self.get_global_info())
         except OppoError:
             return False
+
+    def send_tcp_command(self, command: str, timeout: float = 5.0) -> str:
+        """Send an OPPO IP-control command on :23 (e.g. #PON / #POF) and return the reply."""
+        try:
+            conn = socket.create_connection((self.cfg.oppo_ip, 23), timeout=timeout)
+        except OSError as exc:
+            raise OppoError("OPPO :23 connect failed: {}".format(exc)) from exc
+        try:
+            conn.sendall((command.strip() + "\r").encode("ascii"))
+            time.sleep(0.5)
+            conn.settimeout(2.0)
+            try:
+                return conn.recv(128).decode("ascii", errors="replace")
+            except OSError:
+                return ""
+        finally:
+            conn.close()
+
+    def power_cycle(self, delay: float = 5.0) -> None:
+        """Standby then power on -- the power-ON fires CEC One-Touch-Play so the TV switches to the
+        OPPO (it does NOT assert active source on a play-while-already-on). Verified on a TCL Q9L."""
+        self.send_tcp_command("#POF")
+        time.sleep(delay)
+        self.send_tcp_command("#PON")
