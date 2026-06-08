@@ -7,6 +7,9 @@ one hardware chain and nothing else. No Windows configurator, no TV-control back
 seven-preset playback matrix. You browse and press play in Kodi; the file plays on the
 OPPO; the TV switches itself by HDMI-CEC.
 
+📖 **Guide:** [Playing ISO & Blu-ray (BDMV) discs to an OPPO over the network](docs/PLAYING_DISCS_FROM_NETWORK.md)
+— covers both the add-on and the raw HTTP method.
+
 ## The one supported chain
 
 | Role | Device |
