@@ -68,6 +68,11 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="fast_tv_switch" type="boolean" label="30025">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="oppo_hdmi_phys" type="string" label="30024">
           <level>0</level>
           <default>1.0.0.0</default>

@@ -339,3 +339,14 @@ class OppoClient:
         self.send_tcp_command("#POF")
         time.sleep(delay)
         self.send_tcp_command("#PON")
+
+    def query_power(self) -> str:
+        """OPPO power state over :23 -- '#QPW' replies '@OK ON' / '@OK OFF'."""
+        return self.send_tcp_command("#QPW")
+
+    def is_power_on(self) -> bool:
+        """True if the OPPO reports it is powered on, so we can switch the TV without a power-cycle."""
+        try:
+            return "ON" in self.query_power().upper().split()
+        except OppoError:
+            return False
