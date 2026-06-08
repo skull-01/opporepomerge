@@ -134,8 +134,62 @@ By default the add-on **only** hands **disc content** to the OPPO — `.iso` fil
 disc folders. Everything else (MKV, MP4, …) keeps playing in Kodi as normal. (Toggle: *"Only hand discs
 & ISO files to the OPPO"*.)
 
-**TV switching** is by HDMI-CEC: the OPPO asserts itself as the active source when it powers on, so the
-TV switches to it; when playback stops, Kodi reclaims the TV. Turn CEC on at both the TV and the OPPO.
+**TV switching** is by HDMI-CEC — see the next section for how it works and the sharp edges.
+
+---
+
+## TV / HDMI switching — how it works, and what NOT to do
+
+Getting the TV to switch to the OPPO (and back to Kodi) is done with **HDMI-CEC**, and it has some
+genuinely dangerous pitfalls. The short version: **let the OPPO switch the TV itself; never try to force
+the switch from the Kodi box.**
+
+### How it works (the safe way)
+- **To the OPPO:** the OPPO declares itself the HDMI **active source** when it **powers on** (CEC "One
+  Touch Play"). So the add-on briefly **power-cycles** the OPPO (`#POF` → `#PON` over `:23`) at the start
+  of a handoff, and the TV follows it. The OPPO only asserts on a power-**on** transition — *not* when it
+  starts playing while already on — so the power-cycle is what triggers the switch. Cost: ~20–24 s,
+  which is mostly the OPPO's boot time (it has to boot to play anyway).
+- **Back to Kodi:** when playback stops, Kodi reclaims the TV with the `CECActivateSource` builtin.
+- Both need **CEC enabled** on the TV and the OPPO — hardware toggles the add-on can't flip:
+  - **TCL:** Settings → System → **CEC / T-Link → On**
+  - **OPPO:** Setup → HDMI → **CEC → On**
+
+### ⚠️ Do NOT inject CEC to "force" the switch
+It is tempting to make the switch instant by having the **Kodi box** broadcast a CEC `<Active Source>`
+for the OPPO's HDMI input. **Don't** — two different ways of doing this were tried and both broke things:
+
+- **`cec-client`** opens a *second* libCEC client, which corrupts Kodi's own CEC: the stop-reclaim stops
+  working and the input starts fighting.
+- **Writing the frame to the Amlogic driver** (`/sys/class/aocec/cmd`) avoids a second client, but the
+  injected `<Active Source>` carries a **spoofed initiator logical address** that collides with other
+  devices on the shared CEC bus — it **cross-controlled an unrelated streaming box** (a Mi Box on another
+  HDMI input started responding to the TV remote).
+
+The rule behind both failures: **only a device may announce its own active source.** Spoofing it from
+somewhere else corrupts CEC logical-address allocation and remote-control routing across the **whole**
+bus, not just your two devices. So the OPPO's own One-Touch-Play (the power-cycle) is the only safe
+switch — and since the ~24 s is mostly unavoidable boot time, there's little to gain anyway.
+
+### Recovering from a stuck / confused CEC bus
+If devices start getting cross-controlled, or inputs fight:
+1. Put the OPPO in **standby** (`#POF`) so it stops asserting active source.
+2. **Restart Kodi** — it re-allocates CEC logical addresses cleanly.
+3. If a *sibling* device (a streaming stick on another input) is **still** misbehaving, its CEC state is
+   cached inside it — **cold-start everything**, and crucially **unplug the TV from mains for ~30–60 s**.
+   CEC state often survives *standby*; only a real power-off flushes the TV's routing table. Then power
+   the TV on first, and the rest after.
+
+### Faster, CEC-free alternative (optional, not built in yet)
+A **network IR blaster** (e.g. a Broadlink RM4 mini) can switch the TV's input by sending the TV's own
+**IR** codes — **instant** and completely **off the CEC bus**, so it can't disturb other devices. If the
+~24 s power-cycle bothers you, that's the path: switch by IR and drop the CEC dance entirely. (A USB
+*Flirc* won't do this — it's an IR *receiver*, not a blaster.)
+
+### Note on `input.enablecec`
+Kodi's `input.enablecec` setting is **invalid on CoreELEC** (JSON-RPC returns `-32602`); the add-on's
+"auto-enable Kodi CEC" is a graceful no-op there. CEC is on by default on CoreELEC — you only need to
+enable it on the **TV** and the **OPPO**.
 
 ---
 
