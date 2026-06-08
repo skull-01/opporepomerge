@@ -83,6 +83,22 @@ msgctxt "#30035"
 msgid "Play payload: app device type"
 msgstr ""
 
+msgctxt "#30050"
+msgid "Serial control (RS-232)"
+msgstr ""
+
+msgctxt "#30051"
+msgid "Use serial cable for OPPO control (instead of network)"
+msgstr ""
+
+msgctxt "#30052"
+msgid "Serial device (e.g. /dev/ttyUSB0)"
+msgstr ""
+
+msgctxt "#30053"
+msgid "Serial baud rate (OPPO default 9600)"
+msgstr ""
+
 msgctxt "#30040"
 msgid "Internal"
 msgstr ""

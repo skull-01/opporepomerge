@@ -119,6 +119,31 @@ def test_get_raises_oppoerror_on_timeout(monkeypatch):
         client._get("/getglobalinfo")
 
 
+def test_send_control_command_tcp_by_default(monkeypatch):
+    client = _client()
+    calls = []
+    monkeypatch.setattr(client, "send_tcp_command", lambda cmd, timeout=5.0: calls.append(cmd) or "@OK ON")
+    assert client.send_control_command("#QPW") == "@OK ON"
+    assert calls == ["#QPW"]
+
+
+def test_send_control_command_serial_when_configured(monkeypatch):
+    client = oh.OppoClient(Config(oppo_ip="1.2.3.4", serial_control=True, serial_port="/dev/ttyUSB9", serial_baud=9600))
+    cap = {}
+    monkeypatch.setattr(oh, "serial_command", lambda port, baud, cmd, read_timeout=2.0: cap.update(port=port, baud=baud, cmd=cmd) or "@OK OFF")
+    assert client.send_control_command("#QPW") == "@OK OFF"
+    assert cap == {"port": "/dev/ttyUSB9", "baud": 9600, "cmd": "#QPW"}
+
+
+def test_power_cycle_uses_control_transport(monkeypatch):
+    client = _client()
+    sent = []
+    monkeypatch.setattr(client, "send_control_command", lambda cmd, timeout=5.0: sent.append(cmd) or "")
+    monkeypatch.setattr(oh.time, "sleep", lambda *a, **k: None)
+    client.power_cycle(delay=0)
+    assert sent == ["#POF", "#PON"]
+
+
 def test_is_disc_path():
     assert oh.is_disc_path("01Movies/Ant-Man (2015)/BDMV/index.bdmv")
     assert oh.is_disc_path("x/VIDEO_TS/VIDEO_TS.IFO")

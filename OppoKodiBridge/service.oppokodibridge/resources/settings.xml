@@ -77,6 +77,29 @@
         </setting>
       </group>
     </category>
+    <category id="serial" label="30050">
+      <group id="1">
+        <setting id="serial_control" type="boolean" label="30051">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="serial_port" type="string" label="30052">
+          <level>0</level>
+          <default>/dev/ttyUSB0</default>
+          <control type="edit" format="string">
+            <heading>30052</heading>
+          </control>
+        </setting>
+        <setting id="serial_baud" type="integer" label="30053">
+          <level>0</level>
+          <default>9600</default>
+          <control type="edit" format="integer">
+            <heading>30053</heading>
+          </control>
+        </setting>
+      </group>
+    </category>
     <category id="advanced" label="30030">
       <group id="1">
         <setting id="use_json_payload" type="boolean" label="30031">

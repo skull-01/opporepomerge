@@ -197,6 +197,52 @@ def info_is_playing(info: Any) -> bool:
     return False
 
 
+_BAUD_CONSTS = {
+    2400: "B2400", 4800: "B4800", 9600: "B9600", 19200: "B19200",
+    38400: "B38400", 57600: "B57600", 115200: "B115200",
+}
+
+
+def serial_command(port: str, baud: int, command: str, read_timeout: float = 2.0) -> str:
+    """Send an OPPO #-control command (e.g. #PON) over an RS-232 serial port; return the reply.
+
+    Stdlib only (termios) -- no pyserial dependency. termios is imported lazily so this module still
+    imports on non-POSIX hosts (the Windows test runner). Same CR framing as send_tcp_command.
+    """
+    import os
+    import select
+    import termios
+
+    baud_const = getattr(termios, _BAUD_CONSTS.get(int(baud), "B9600"))
+    try:
+        fd = os.open(port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+    except OSError as exc:
+        raise OppoError("serial open {} failed: {}".format(port, exc)) from exc
+    try:
+        attrs = termios.tcgetattr(fd)
+        attrs[0] = 0  # iflag
+        attrs[1] = 0  # oflag
+        attrs[3] = 0  # lflag -> raw
+        attrs[2] = (attrs[2] & ~termios.CSIZE & ~termios.PARENB & ~termios.CSTOPB) | termios.CS8 | termios.CREAD | termios.CLOCAL
+        attrs[4] = baud_const
+        attrs[5] = baud_const
+        termios.tcsetattr(fd, termios.TCSANOW, attrs)
+        termios.tcflush(fd, termios.TCIOFLUSH)
+        os.write(fd, (command.strip() + "\r").encode("ascii"))
+        time.sleep(0.3)
+        ready, _, _ = select.select([fd], [], [], read_timeout)
+        if ready:
+            try:
+                return os.read(fd, 128).decode("ascii", errors="replace")
+            except OSError:
+                return ""
+        return ""
+    except OSError as exc:
+        raise OppoError("serial I/O on {} failed: {}".format(port, exc)) from exc
+    finally:
+        os.close(fd)
+
+
 class OppoClient:
     """Live HTTP client for one OPPO. All calls raise OppoError on a transport failure."""
 
@@ -333,9 +379,23 @@ class OppoClient:
         finally:
             conn.close()
 
+    def send_control_command(self, command: str, timeout: float = 5.0) -> str:
+        """Send an OPPO #-control command over the configured transport: the RS-232 serial cable when
+        ``serial_control`` is set, otherwise the network IP-control port (:23). The OPPO speaks the
+        same #-command protocol on both wires (file playback stays on the HTTP app API regardless)."""
+        if getattr(self.cfg, "serial_control", False):
+            return serial_command(
+                getattr(self.cfg, "serial_port", "/dev/ttyUSB0") or "/dev/ttyUSB0",
+                getattr(self.cfg, "serial_baud", 9600) or 9600,
+                command,
+                read_timeout=min(float(timeout), 3.0),
+            )
+        return self.send_tcp_command(command, timeout)
+
     def power_cycle(self, delay: float = 5.0) -> None:
         """Standby then power on -- the power-ON fires CEC One-Touch-Play so the TV switches to the
-        OPPO (it does NOT assert active source on a play-while-already-on). Verified on a TCL Q9L."""
-        self.send_tcp_command("#POF")
+        OPPO (it does NOT assert active source on a play-while-already-on). Verified on a TCL Q9L.
+        Uses the configured control transport (network :23 or the RS-232 serial cable)."""
+        self.send_control_command("#POF")
         time.sleep(delay)
-        self.send_tcp_command("#PON")
+        self.send_control_command("#PON")
