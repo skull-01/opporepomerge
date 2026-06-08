@@ -13,6 +13,9 @@ OPPO; the TV switches itself by HDMI-CEC.
 - [OPPO / M9205 network-playback developer guide](docs/OPPO_PLAYBACK_PROTOCOL.md) — protocol-level:
   HTTP vs TCP, the play-by-path limitation, endpoint reference, monitoring strategies, failed
   approaches, and references.
+- [TV input switching (CEC vs network vs IR)](docs/TV_INPUT_SWITCHING.md) — why CEC and per-brand
+  network control are painful (ownership contention, remote bleed, QMS), and why an external IR
+  blaster usually wins.
 
 ## The one supported chain
 

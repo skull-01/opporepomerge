@@ -2,7 +2,7 @@
 
 A protocol-level guide for developers integrating with an **OPPO UDP-203/205** (or an **M9205**-style
 clone) to **play a specific file from a network share**. This guide is **only about playback**. HDMI /
-TV-input switching is a separate concern (see the CEC guide).
+TV-input switching is a separate concern — see **[TV input switching (CEC vs network vs IR)](TV_INPUT_SWITCHING.md)**.
 
 Everything here is verified live against an **M9205 clone** (the OppoKodiBridge reference
 implementation, `service.oppokodibridge/resources/lib/oppo_http.py`). The OPPO HTTP "app API" is
