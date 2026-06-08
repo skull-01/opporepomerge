@@ -15,8 +15,10 @@ implementation, `service.oppokodibridge/resources/lib/oppo_http.py`). The OPPO H
 > **To play a specific network file by path, you must use the OPPO's HTTP "app API" on TCP `:436`.
 > The documented RS-232 / IP-control protocol (serial cable or net control on TCP `:23`) cannot do it.**
 
-The `#XXX` control protocol is a *remote control*: power, transport (play/pause/stop), cursor
-navigation, and status queries. **No command takes a file path or URL** — there is no "load this
+The control protocol is a *remote control* — every command is `#` plus a 3-letter code (e.g. `#PON`
+power on, `#STP` stop, `#QPW` query power; written `#XXX` for short). It covers power, transport
+(play/pause/stop), cursor navigation, and status queries. **No command takes a file path or URL** —
+there is no "load this
 file", "open this URL", or "play /path/to/movie.iso". Starting a specific file is the one thing you
 **cannot** do with it. So:
 
