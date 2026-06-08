@@ -105,9 +105,15 @@ with only the path value encoded. The exact byte-level encoding is in `oppo_http
 
 1. **Wake.** The `:436` API sleeps after boot. Send the UDP datagram `NOTIFY OREMOTE LOGIN` to **port
    7624**, then poll until `:436` answers. (It is *not* an HTTP call and *not* a broadcast.)
-2. **Init handshake — required**, or sign-in/mount fail on a fresh session:
-   `/getmainfirmwareversion` → `/getsetupmenu` → `/signin?{"appIconType":1,"appIpAddress":"<you>"}` →
-   `/getglobalinfo`.
+2. **Init handshake.** On a *fresh* (just-woken) API session, replaying the MediaControl app's startup
+   sequence avoids sign-in/mount failures: `/getmainfirmwareversion` → `/getsetupmenu` →
+   `/signin?{"appIconType":1,"appIpAddress":"<you>"}` → `/getglobalinfo`. Of these, **`/signin` is the
+   one that matters** — it registers your app as a controller. `/getmainfirmwareversion` and
+   `/getglobalinfo` are **informational** (firmware string / current state) and almost certainly
+   skippable; `/getsetupmenu` is also informational but the app calls it repeatedly, so it *may* double
+   as a "keep the API awake" poke. We replay the whole sequence because the working reference does and
+   the calls are cheap and harmless — but we have **not** isolated exactly which are essential on a cold
+   session, so treat firmware/getglobalinfo as droppable and `signin` as load-bearing.
 3. **Resolve the NFS server the OPPO can reach** (it may differ from the address your PC uses):
    `/getdevicelist` → the entry with `"sub_type":"nfs"` is the server; `/getNfsShareFolderlist` → the
    export root.
