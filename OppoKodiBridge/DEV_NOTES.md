@@ -8,10 +8,16 @@ resume. The OPPO HTTP API here is community-reverse-engineered (mirrors the oper
 
 ## 0. Where we are (resume point)
 
-- **Shipped: v2.0.10** (GitHub releases), deployed + enabled on the operator's box.
+- **Built + deployed to the box: v2.0.11** (filter, below). v2.0.9 is still the GitHub "Latest" —
+  no v2.0.10/v2.0.11 GitHub release published yet (pending the operator's CEC re-confirm).
 - **Working, hardware-verified:** browse + play in Kodi → the OPPO plays it (MKV, ISO, m2ts/4K,
   and **BDMV Blu-ray disc folders** all confirmed) → the TCL switches to the OPPO → on stop the TV
   returns to Kodi.
+- **v2.0.11 handoff filter (default on):** only **disc images (`.iso`)** and **disc folders
+  (BDMV / VIDEO_TS / HVDVD_TS)** are handed to the OPPO; everything else (MKV, MP4, loose m2ts, …)
+  just plays in Kodi. Gated at the interception point in `monitor.py` by `is_oppo_target(path)`;
+  toggle `disc_iso_only`. NOTE: a *loose* `.m2ts` (not inside a `BDMV/` path) now stays in Kodi —
+  only m2ts *within* a BDMV disc folder routes to the OPPO.
 - **TV switch mechanism = OPPO power-cycle** (`#POF`/`#PON`) so CEC One-Touch-Play fires on power-on.
   Cost: ~24 s per play. Reclaim on stop = Kodi `CECActivateSource`.
 - **Open #1 (faster TV switch):** a `cec-client` "route from the Kodi box" (v2.0.9) worked instantly
@@ -150,6 +156,7 @@ play `/mnt/nfs1/3 Body Problem - S01E01 - Countdown.mkv`.
 | `cec_reclaim_on_stop` | `true` | `CECActivateSource` on stop |
 | `oppo_hdmi_phys` | `1.0.0.0` | for the (currently unused) CEC-route path |
 | `handoff_enabled` | `true` | master on/off for interception |
+| `disc_iso_only` | `true` | **filter**: only `.iso` + disc folders go to the OPPO; off = hand off everything |
 
 The server (`192.168.10.20`) is auto-resolved from `/getdevicelist` — not configured.
 
@@ -164,10 +171,18 @@ plink -ssh -pw <pw> -hostkey SHA256:NjtpCJrUYHx+8Qe+81gagec2qz4hZ0NIqJYrWS0vIN4 
 pscp -pw <pw> -hostkey SHA256:... -batch <local.zip> root@192.168.1.100:/tmp/okb.zip
 ```
 Deploy: `pscp` the zip → on the box `python3 -m zipfile -e /tmp/okb.zip /storage/.kodi/addons/` →
-overwrite stored settings if needed → `systemctl restart kodi` → re-enable via JSON-RPC
-(`Addons.SetAddonEnabled`). Trigger an end-to-end test with Kodi JSON-RPC `Player.Open` (localhost
-:8080) and watch `/storage/.kodi/temp/kodi.log` + the OPPO `/getglobalinfo`. Note: `cec-client` and
-`cec-ctl` exist at `/usr/bin`; CEC interface is `/sys/class/aocec/cmd` (no `/dev/cec`).
+overwrite stored settings if needed → `systemctl restart kodi` → re-enable. The re-enable +
+verify that works (no auth needed on localhost; pipe scripts through `tr -d '\r'` for line-endings):
+```
+curl -s http://localhost:8080/jsonrpc -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"Addons.SetAddonEnabled","params":{"addonid":"service.oppokodibridge","enabled":true}}'
+curl -s http://localhost:8080/jsonrpc -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"Addons.GetAddonDetails","params":{"addonid":"service.oppokodibridge","properties":["enabled","broken","version"]}}'
+```
+New settings keys default from `resources/settings.xml` (no stored-settings edit needed for a fresh
+key). Trigger an end-to-end test with Kodi JSON-RPC `Player.Open` and watch
+`/storage/.kodi/temp/kodi.log` + the OPPO `/getglobalinfo`. Note: `cec-client` and `cec-ctl` exist at
+`/usr/bin`; CEC interface is `/sys/class/aocec/cmd` (no `/dev/cec`).
 
 ---
 
@@ -181,13 +196,17 @@ overwrite stored settings if needed → `systemctl restart kodi` → re-enable v
 - **2.0.7** TV switch via OPPO power-cycle (CEC One-Touch-Play) → **switch + reclaim verified**.
 - **2.0.8** BDMV/disc folders via `/checkfolderhasBDMV`.
 - **2.0.9** cec-client TV route — **reverted** (broke Kodi CEC).
-- **2.0.10** revert to power-cycle (current).
+- **2.0.10** revert to power-cycle.
+- **2.0.11** handoff filter — only `.iso` + disc folders (BDMV/VIDEO_TS) route to the OPPO; the rest
+  stays in Kodi (`is_oppo_target`, toggle `disc_iso_only`, default on). Current; deployed to the box.
 
 ---
 
 ## 9. Next steps
 
-1. Operator re-confirms v2.0.10: stop→reclaim works, no input re-grab.
+1. Operator confirms v2.0.11 on the box: (a) play an MKV → stays in Kodi (no handoff); (b) play an
+   ISO / a BDMV folder → handed to the OPPO; (c) the v2.0.10 CEC revert — stop→reclaim works, no
+   input re-grab. Then publish a GitHub release to supersede v2.0.9 ("Latest").
 2. Faster TV switch: try the `/sys/class/aocec/cmd` raw-frame inject (no 2nd libCEC client). Verify
    reclaim + no re-grab before shipping. If it works, it replaces the ~24 s power-cycle.
 3. Optional: skip the TV-grab when the OPPO is already the active source (binge / back-to-back).
