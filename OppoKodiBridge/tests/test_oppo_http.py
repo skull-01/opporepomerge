@@ -117,3 +117,28 @@ def test_get_raises_oppoerror_on_timeout(monkeypatch):
     monkeypatch.setattr(urllib.request, "urlopen", boom)
     with pytest.raises(oh.OppoError):
         client._get("/getglobalinfo")
+
+
+def test_is_disc_path():
+    assert oh.is_disc_path("01Movies/Ant-Man (2015)/BDMV/index.bdmv")
+    assert oh.is_disc_path("x/VIDEO_TS/VIDEO_TS.IFO")
+    assert not oh.is_disc_path("02TV/Show/S01E01.mkv")
+    assert not oh.is_disc_path("01Movies/Crouching Tiger (2000).iso")
+
+
+def test_disc_folder():
+    assert (
+        oh.disc_folder("01Movies/01-4kDisc/Ant-Man (2015)/BDMV/index.bdmv")
+        == "01Movies/01-4kDisc/Ant-Man (2015)"
+    )
+    assert oh.disc_folder("x/VIDEO_TS/VIDEO_TS.IFO") == "x"
+
+
+def test_play_bdmv_endpoint(monkeypatch):
+    client = _client()
+    cap = {}
+    monkeypatch.setattr(client, "_get_json", lambda ep, timeout=None: cap.update(ep=ep) or {})
+    client.play_bdmv("Ant-Man (2015)")
+    ep = cap["ep"]
+    assert ep.startswith('/checkfolderhasBDMV?{"folderpath":"/mnt/nfs1/')
+    assert "Ant-Man" in urllib.parse.unquote(ep)

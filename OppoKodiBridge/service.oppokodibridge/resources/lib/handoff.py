@@ -15,6 +15,8 @@ from .kodilog import log
 from .oppo_http import (
     OppoClient,
     OppoError,
+    disc_folder,
+    is_disc_path,
     local_ip_toward,
     nfs_server_from_devices,
     oppo_mount_folder,
@@ -54,6 +56,19 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
         _notify("Path mapping not set for this share")
         return False
 
+    # Disc folders (BDMV / VIDEO_TS): the OPPO plays the disc FOLDER, not the index file. Mount the
+    # disc folder's parent and play the disc folder itself via /checkfolderhasBDMV.
+    rel = (folder + "/" + basename) if folder else basename
+    is_disc = is_disc_path(rel)
+    if is_disc:
+        droot = disc_folder(rel)
+        if "/" in droot:
+            mount_rel, play_name = droot.rsplit("/", 1)
+        else:
+            mount_rel, play_name = "", droot
+    else:
+        mount_rel, play_name = folder, basename
+
     client = OppoClient(config)
 
     # Switch the TV to the OPPO: it asserts CEC active source on power-ON only (not on a
@@ -87,8 +102,8 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
     _interruptible_sleep(2.0, should_abort)
     _best_effort(client.get_setup_menu, "setup")
 
-    mount_folder = oppo_mount_folder(folder, config.path_to)
-    log("Handoff: server={} mount={!r} play={!r}".format(server, mount_folder, basename))
+    mount_folder = oppo_mount_folder(mount_rel, config.path_to)
+    log("Handoff: server={} disc={} mount={!r} play={!r}".format(server, is_disc, mount_folder, play_name))
     mount = _best_effort(lambda: client.mount_nfs(server, mount_folder), "mount")
     if isinstance(mount, dict) and mount.get("success") is False:
         log("mount failed ({}); re-login and retry".format(mount.get("retInfo") or mount.get("msg")))
@@ -97,7 +112,12 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
         _best_effort(client.get_setup_menu, "setup")
         _best_effort(lambda: client.mount_nfs(server, mount_folder), "mount retry")
 
-    reply = _best_effort(lambda: client.play_file(server, basename), "play")
+    if is_disc:
+        _best_effort(client.stop, "stop")  # clear any stuck bd_is_playing
+        _interruptible_sleep(2.0, should_abort)
+        reply = _best_effort(lambda: client.play_bdmv(play_name), "play-bdmv")
+    else:
+        reply = _best_effort(lambda: client.play_file(server, play_name), "play")
     log("Play reply: {!r}".format(reply))
     if isinstance(reply, dict) and reply.get("success") is False:
         _notify("OPPO rejected the file: {}".format(reply.get("retInfo") or reply.get("msg") or ""))

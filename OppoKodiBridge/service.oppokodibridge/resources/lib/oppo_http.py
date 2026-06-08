@@ -101,6 +101,29 @@ def oppo_mount_folder(folder: Optional[str], path_to: str) -> str:
     return base or rel
 
 
+_DISC_MARKERS = ("/bdmv/", "/video_ts/", "/hvdvd_ts/")
+
+
+def is_disc_path(path: str) -> bool:
+    """True for a Blu-ray / DVD disc-folder path (BDMV/VIDEO_TS structure)."""
+    low = str(path).replace("\\", "/").lower()
+    return low.endswith((".bdmv", ".ifo")) or any(m in low for m in _DISC_MARKERS)
+
+
+def disc_folder(path: str) -> str:
+    """The disc folder (the dir that CONTAINS BDMV/VIDEO_TS) from a disc-structure path.
+
+    ``…/Ant-Man (2015)/BDMV/index.bdmv`` -> ``…/Ant-Man (2015)``.
+    """
+    text = str(path).replace("\\", "/")
+    low = text.lower()
+    for marker in _DISC_MARKERS:
+        idx = low.find(marker)
+        if idx >= 0:
+            return text[:idx]
+    return text
+
+
 def local_ip_toward(host: str, port: int = 436) -> str:
     """The local source IP the box uses to reach ``host`` — for signin's ``appIpAddress``."""
     try:
@@ -255,6 +278,20 @@ class OppoClient:
             % (mount_path, rel_path, index, server)
         )
         endpoint = "/playnormalfile?{" + urllib.parse.quote(inner) + "}"
+        return self._get_json(endpoint, timeout=PLAY_TIMEOUT)
+
+    def stop(self) -> dict:
+        """Send STOP (clears a stuck 'bd_is_playing' before loading a new disc)."""
+        return self._get_json("/sendremotekey?" + urllib.parse.quote('{"key":"STP"}'))
+
+    def play_bdmv(self, disc_folder_name: str, nfs: bool = True) -> dict:
+        """Play a Blu-ray disc FOLDER (one containing BDMV). On this OPPO ``/checkfolderhasBDMV``
+        doesn't just check -- it starts the disc. ``disc_folder_name`` is relative to the mount."""
+        mount_path = "nfs1" if nfs else "cifs1"
+        endpoint = '/checkfolderhasBDMV?{"folderpath":"/mnt/%s/%s"}' % (
+            mount_path,
+            urllib.parse.quote(disc_folder_name),
+        )
         return self._get_json(endpoint, timeout=PLAY_TIMEOUT)
 
     def is_playing(self) -> bool:
