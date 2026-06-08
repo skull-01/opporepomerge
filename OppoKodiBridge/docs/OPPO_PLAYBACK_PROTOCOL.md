@@ -120,15 +120,27 @@ trick.
 
 ### The same file, seen from each system
 
-For one file at in-share path `01Movies/Dune (2021)/Dune.iso`:
+Take one file whose path *inside the share* is `01Movies/Dune (2021)/Dune.iso`. Here is the **full
+address** of that exact file from every system that touches it (no truncation):
 
-| Seen from | Address of that file | Notes |
-|---|---|---|
-| **NAS (the truth)** | NFS export `/mnt/Super3/Super3Share` · SMB share `Super3Share` | export = filesystem path; share = alias |
-| **Linux / Kodi** (CoreELEC) | `nfs://192.168.1.177/mnt/Super3/Super3Share/01Movies/Dune (2021)/Dune.iso` | scheme + IP + **full export path**, `/` |
-| **Windows — SMB** | `\\192.168.1.177\Super3Share\01Movies\Dune (2021)\Dune.iso` (or mapped `Z:\…`) | UNC, **share name** (not the fs path), `\` |
-| **Windows — NFS** (Services for NFS) | `\\192.168.1.177\mnt\Super3\Super3Share\01Movies\…` | rare; addresses the export path |
-| **OPPO — NFS** | server `192.168.10.20`, export `srv/nfs/media` → `/mnt/nfs1/01Movies/Dune (2021)/Dune.iso` | **dual-homed**: different IP *and* root than Kodi |
+| Seen from | Full address of the file |
+|---|---|
+| **NAS — NFS export** (the truth) | export `/mnt/Super3/Super3Share` on host `192.168.1.177` — a server *filesystem path* |
+| **NAS — SMB share** (the truth) | share `Super3Share` on host `192.168.1.177` — a *named alias* for that export, **not** a path |
+| **Linux / Kodi** (NFS) | `nfs://192.168.1.177/mnt/Super3/Super3Share/01Movies/Dune (2021)/Dune.iso` |
+| **Windows — SMB** (UNC) | `\\192.168.1.177\Super3Share\01Movies\Dune (2021)\Dune.iso` |
+| **Windows — SMB** (mapped drive `Z:`) | `Z:\01Movies\Dune (2021)\Dune.iso`  — where `Z:` = `\\192.168.1.177\Super3Share` |
+| **Windows — NFS** (Services for NFS) | `\\192.168.1.177\mnt\Super3\Super3Share\01Movies\Dune (2021)\Dune.iso` |
+| **OPPO — NFS** | host `192.168.10.20`, mount folder `srv/nfs/media/01Movies/Dune (2021)`, then play `/mnt/nfs1/Dune.iso` |
+
+Two things to read off this table:
+
+- **The tail `01Movies/Dune (2021)/Dune.iso` is identical everywhere.** Only the **host**, the
+  **share/export root**, the **scheme** (`nfs://` vs UNC `\\`), and the **`/` vs `\` separators** change.
+- **The OPPO is the odd one out, in two ways:** (1) it reaches the NAS on a **different host *and*
+  export root** than Kodi — `192.168.10.20` · `srv/nfs/media` vs `192.168.1.177` ·
+  `/mnt/Super3/Super3Share` (the dual-homed NAS); and (2) it **mounts the folder, then plays the bare
+  basename** (`/mnt/nfs1/Dune.iso`) rather than one long path.
 
 ### The translation (any source → OPPO)
 
