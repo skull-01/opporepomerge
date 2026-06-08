@@ -42,6 +42,37 @@ def reclaim_tv() -> bool:
         return False
 
 
+def _phys_to_operand(phys_addr: str) -> str:
+    """'1.0.0.0' -> '10:00' (the two CEC operand bytes for a physical address)."""
+    parts = (str(phys_addr or "1.0.0.0").split(".") + ["0", "0", "0", "0"])[:4]
+    try:
+        nib = [int(p) & 0xF for p in parts]
+    except ValueError:
+        nib = [1, 0, 0, 0]
+    return "%02X:%02X" % ((nib[0] << 4) | nib[1], (nib[2] << 4) | nib[3])
+
+
+def switch_tv_to_oppo(phys_addr: str = "1.0.0.0") -> bool:
+    """Switch the TV to the OPPO's HDMI input by broadcasting CEC <Active Source> for its physical
+    address from the Kodi box -- instant, no OPPO power-cycle. Uses cec-client (Amlogic aocec)."""
+    frame = "tx 4F:82:" + _phys_to_operand(phys_addr) + "\n"
+    try:
+        import subprocess
+
+        subprocess.run(
+            ["/usr/bin/cec-client", "-s", "-d", "1"],
+            input=frame.encode("ascii"),
+            timeout=15,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        log("Routed the TV to the OPPO via CEC (Active Source {}).".format(phys_addr))
+        return True
+    except Exception as exc:  # pragma: no cover - exercised on hardware
+        log("switch_tv_to_oppo failed: {!r}".format(exc))
+        return False
+
+
 def ensure_kodi_cec_enabled() -> bool:
     """Best-effort: turn Kodi's CEC adapter on if a settable flag exists. Never raises."""
     try:

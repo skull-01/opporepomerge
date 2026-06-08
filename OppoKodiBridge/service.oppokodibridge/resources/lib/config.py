@@ -24,6 +24,7 @@ class Config:
     cec_auto_enable: bool = True
     cec_reclaim_on_stop: bool = True
     grab_tv_on_play: bool = True
+    oppo_hdmi_phys: str = "1.0.0.0"
     poll_interval: float = 5.0
     idle_confirmations: int = 2
 
@@ -68,5 +69,6 @@ def from_addon() -> "Config":
         cec_auto_enable=b("cec_auto_enable", True),
         cec_reclaim_on_stop=b("cec_reclaim_on_stop", True),
         grab_tv_on_play=b("grab_tv_on_play", True),
+        oppo_hdmi_phys=s("oppo_hdmi_phys") or "1.0.0.0",
         poll_interval=float(i("poll_interval", 5)),
     )

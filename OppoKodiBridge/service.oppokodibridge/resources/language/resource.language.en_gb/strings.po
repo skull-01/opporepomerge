@@ -48,7 +48,11 @@ msgid "Reclaim the TV when playback ends"
 msgstr ""
 
 msgctxt "#30023"
-msgid "Switch the TV to the OPPO on play (power-cycles the OPPO)"
+msgid "Switch the TV to the OPPO on play (CEC)"
+msgstr ""
+
+msgctxt "#30024"
+msgid "OPPO HDMI physical address (e.g. 1.0.0.0 = HDMI 1)"
 msgstr ""
 
 msgctxt "#30030"

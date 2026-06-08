@@ -63,6 +63,13 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="oppo_hdmi_phys" type="string" label="30024">
+          <level>0</level>
+          <default>1.0.0.0</default>
+          <control type="edit" format="string">
+            <heading>30024</heading>
+          </control>
+        </setting>
       </group>
     </category>
     <category id="advanced" label="30030">
