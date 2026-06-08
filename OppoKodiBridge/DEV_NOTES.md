@@ -161,11 +161,25 @@ play `/mnt/nfs1/3 Body Problem - S01E01 - Countdown.mkv`.
 | `path_to` | `srv/nfs/media` | OPPO export root to mount under |
 | `grab_tv_on_play` | `true` | power-cycle the OPPO to switch the TV |
 | `cec_reclaim_on_stop` | `true` | `CECActivateSource` on stop |
-| `oppo_hdmi_phys` | `1.0.0.0` | for the (currently unused) CEC-route path |
+| `oppo_hdmi_phys` | `1.0.0.0` | unused (the CEC-inject route is closed — see §4) |
 | `handoff_enabled` | `true` | master on/off for interception |
 | `disc_iso_only` | `true` | **filter**: only `.iso` + disc folders go to the OPPO; off = hand off everything |
+| `serial_control` | `false` | OPPO #-commands over RS-232 serial (true) vs network :23 (false). See §6b |
+| `serial_port` | `/dev/ttyUSB0` | serial device when `serial_control` is on |
+| `serial_baud` | `9600` | serial baud (OPPO default 9600) |
 
 The server (`192.168.10.20`) is auto-resolved from `/getdevicelist` — not configured.
+
+## 6b. Control transport (serial) + IR hardware (2.0.14 + findings)
+
+**The OPPO speaks two protocols; only one can leave HTTP:**
+- **#-control commands** (`#PON`/`#POF`/`#QPW`/`#STP`) run over network `:23` **or** RS-232 serial, identically. `send_control_command()` in `oppo_http.py` dispatches by `serial_control`; `serial_command()` is a stdlib-termios (no pyserial) 9600-8N1 sender. Only `power_cycle` uses it today.
+- **Playback** (mount NFS + play the exact file) is the **HTTP app API only** — RS-232 has no "play a network file by path" command. So playback is always HTTP regardless of `serial_control`.
+
+**Hardware reality on this box (kernel `4.9.269`):**
+- **Flirc (`1915:1025`, Nordic) is an IR RECEIVER (HID keyboard), NOT a blaster** — it cannot transmit IR to the TV. For a CEC-free IR TV switch you need a real transmitter: **Broadlink RM4 mini** (WiFi, easiest to integrate), USB-UIRT, or an IguanaIR/LIRC IR LED. (IR switching not built yet — operator getting a device.)
+- **USB-serial: the Prolific PL2303-GC (`067b:23a3`, "ATEN") is NOT usable on kernel 4.9** — `pl2303_vendor_write … -32` errors; `new_id` attaches `/dev/ttyUSB0` but no data flows. **Use a CH340/CH341 or FTDI adapter instead** (those bind cleanly on 4.9; CH340 needs no `new_id`). The OPPO answers `#QPW`→`@OK ON` over IP, so the OPPO/its RS-232 isn't the problem — the adapter is.
+- Serial value is modest: it's a more-reliable *transport* for the OPPO's power commands; the TV switch still rides the OPPO's own (safe) One-Touch-Play. The real CEC-free win is the IR blaster.
 
 ---
 
@@ -208,7 +222,9 @@ key). Trigger an end-to-end test with Kodi JSON-RPC `Player.Open` and watch
   stays in Kodi (`is_oppo_target`, toggle `disc_iso_only`, default on). **GitHub "Latest".**
 - **2.0.12** fast TV switch via aocec inject when OPPO already on — **reverted** (cross-controlled a
   Mi Box S on the shared CEC bus).
-- **2.0.13** revert of 2.0.12 → back to power-cycle only (= 2.0.11 behaviour). Current on the box.
+- **2.0.13** revert of 2.0.12 → back to power-cycle only (= 2.0.11 behaviour).
+- **2.0.14** serial (RS-232) transport option for the OPPO #-control commands (`serial_control`); HTTP
+  playback unchanged; default OFF/network. Current on the box. (Needs a CH340/FTDI adapter — see §6b.)
 
 ---
 
