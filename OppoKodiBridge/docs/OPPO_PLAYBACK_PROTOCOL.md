@@ -34,6 +34,35 @@ and not a real play-by-path. Treat it as **not possible**.
 
 ---
 
+## Background — playing a network file manually vs. from code
+
+The OPPO can play a network file two different ways, and they behave **differently**. The difference is
+the whole reason the API path has to be "flattened", so it's worth understanding up front.
+
+**1. Manually, on the OPPO itself (interactive browsing).** On the player you open **Home → Network**,
+hit **Search** to list the network shares, then **browse into a share** folder-by-folder until you find
+the title:
+- an **ISO** — you click the `.iso` file and it plays;
+- a **Blu-ray disc folder (BDMV)** — you click the **folder**, and the OPPO recognises the disc
+  structure inside it and starts the disc.
+
+Here the OPPO walks the directory tree *for you*, one level at a time, and plays whatever you select —
+**deep paths are no problem, because a human is navigating interactively.**
+
+**2. From code, over the HTTP API (what this guide is about).** There is **no "browse to and click this
+file" call** — the API is not an interactive browser. Instead you **mount a folder** and **play a file
+that sits under the mount.** So a path your program already holds (e.g. the one Kodi gives you) has to
+be **translated and flattened** first: resolve the OPPO's own NFS server, mount the file's *folder* at
+`/mnt/nfs1`, and then play `/mnt/nfs1/<basename>` (ISO) or call `checkfolderhasBDMV` on the disc folder.
+
+> **In one line:** the OPPO understands deep network paths fine when *it* does the browsing; the API
+> just doesn't expose that browser, so a program has to flatten the path into a **mount + basename** for
+> the play command. That translation is the [Path translation](#path-translation--kodi--windows--linux-paths-vs-oppo-paths)
+> section below, and it's needed only when software drives the OPPO — never when a person browses on the
+> device.
+
+---
+
 ## The playback flow (HTTP app API)
 
 ```mermaid
