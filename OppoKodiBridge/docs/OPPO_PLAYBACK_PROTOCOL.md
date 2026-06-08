@@ -17,8 +17,8 @@ implementation, `service.oppokodibridge/resources/lib/oppo_http.py`). The OPPO H
 
 The `#XXX` control protocol is a *remote control*: power, transport (play/pause/stop), cursor
 navigation, and status queries. **No command takes a file path or URL** — there is no "load this
-file", "open this URL", or "play /path/to/movie.iso". The only way to start a specific file you can
-**not** do with it. So:
+file", "open this URL", or "play /path/to/movie.iso". Starting a specific file is the one thing you
+**cannot** do with it. So:
 
 | Control plane | Transport | Documented? | Can it **play a file by path**? | Can it **control / monitor**? |
 |---|---|---|---|---|
