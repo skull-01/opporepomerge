@@ -92,6 +92,87 @@ A success reply looks like `{"success":true,"msg":""}`.
 
 ---
 
+## Path translation — Kodi / Windows / Linux paths vs OPPO paths
+
+> This is the single biggest integration gotcha. The file you want to play has a **different address on
+> every system that touches it**, and the OPPO's view is usually *not* the one your app starts from.
+
+### Why the same file has many addresses
+
+Two independent things vary:
+
+1. **The server + share root.** A NAS can expose the *same* folder tree under different roots and even
+   different IPs:
+   - an **NFS export** is a server **filesystem path** (e.g. `/mnt/Super3/Super3Share`);
+   - an **SMB share** is a **named alias** for that path (e.g. `Super3Share`) — the name is *not* the
+     filesystem path;
+   - on a **dual-homed NAS** (two NICs / two subnets), the OPPO may reach it on a *different IP and a
+     different export* than your PC does. In our setup the PC/Kodi sees
+     `192.168.1.177:/mnt/Super3/Super3Share` while the **OPPO's own NFS device** is
+     `192.168.10.20:srv/nfs/media` — *same files, different server and root.*
+2. **The scheme + separators.** `nfs://…` and Linux use `/`; Windows SMB uses UNC `\\server\share\…`
+   with `\`.
+
+The **relative path inside the share is the constant** — only the prefix changes. That is the whole
+trick.
+
+### The same file, seen from each system
+
+For one file at in-share path `01Movies/Dune (2021)/Dune.iso`:
+
+| Seen from | Address of that file | Notes |
+|---|---|---|
+| **NAS (the truth)** | NFS export `/mnt/Super3/Super3Share` · SMB share `Super3Share` | export = filesystem path; share = alias |
+| **Linux / Kodi** (CoreELEC) | `nfs://192.168.1.177/mnt/Super3/Super3Share/01Movies/Dune (2021)/Dune.iso` | scheme + IP + **full export path**, `/` |
+| **Windows — SMB** | `\\192.168.1.177\Super3Share\01Movies\Dune (2021)\Dune.iso` (or mapped `Z:\…`) | UNC, **share name** (not the fs path), `\` |
+| **Windows — NFS** (Services for NFS) | `\\192.168.1.177\mnt\Super3\Super3Share\01Movies\…` | rare; addresses the export path |
+| **OPPO — NFS** | server `192.168.10.20`, export `srv/nfs/media` → `/mnt/nfs1/01Movies/Dune (2021)/Dune.iso` | **dual-homed**: different IP *and* root than Kodi |
+
+### The translation (any source → OPPO)
+
+Three steps — implemented by `split_share_relative()` + `oppo_mount_folder()` in `oppo_http.py`:
+
+1. **Strip the source prefix** (`path_from`, the share root your app starts from) → the in-share
+   **relative** path. (URL-decode it first so spaces/parens come through.)
+2. **Rebase onto the OPPO's export root** (`path_to`, from `/getNfsShareFolderlist`).
+3. **Split** into the **folder to mount** and the **basename to play** — the OPPO mounts a folder and
+   plays the bare basename; it won't play a sub-path of a mount.
+
+```
+Kodi gives:   nfs://192.168.1.177/mnt/Super3/Super3Share/01Movies/Dune (2021)/Dune.iso
+path_from  =  nfs://192.168.1.177/mnt/Super3/Super3Share      ← strip
+relative   =  01Movies/Dune (2021)/Dune.iso                   ← the constant
+path_to    =  srv/nfs/media                                   ← rebase onto OPPO export
+mount      =  srv/nfs/media/01Movies/Dune (2021)
+play       =  /mnt/nfs1/Dune.iso
+              → mountNfsSharedFolder(server=192.168.10.20, folder="srv/nfs/media/01Movies/Dune (2021)")
+              → playnormalfile(path="/mnt/nfs1/Dune.iso", extraNetPath="192.168.10.20")
+```
+The server `192.168.10.20` is **not** typed in — resolve it at runtime from `/getdevicelist`
+(`sub_type:"nfs"`), because it is the OPPO's view of the NAS, not yours. Percent-encode spaces and
+parentheses in the path values.
+
+### Why NFS, not SMB, with the OPPO
+
+We use **NFS only**, deliberately — the OPPO's SMB support is a minefield:
+
+- **OPPO players only speak SMB1 (NT1).** Modern Windows, TrueNAS, Synology DSM 7+ etc. **disable SMBv1
+  by default** (it's the EternalBlue/WannaCry protocol), so the OPPO often **can't even discover or
+  mount** a modern SMB share unless you re-enable SMBv1 — a real security downgrade.
+- **Flaky discovery & reliability.** Owners report SMB shares not being discovered (e.g. with a single
+  Windows node), needing `guest` permissions and explicit `NT1` / `min protocol = NT1` lines in
+  `smb.conf`, and **session-to-session inconsistency** — whereas the same content over **NFS "just
+  works"** (confirmed by owners, configured read-only).
+- **Share-name-vs-path quirk.** Over SMB the OPPO wants the **share name alone**, not a full folder
+  path — another translation trap.
+
+NFS sidesteps all of it: host-based access (no per-user auth), lower overhead for high-bitrate 4K, and
+stable mounts. (The HTTP API *does* expose CIFS too — the mount lands at `/mnt/cifs1` instead of
+`/mnt/nfs1` — but it isn't recommended.) Field tip: if the OPPO won't see a fresh NFS export, toggle
+**Settings → Network Setup → My Network OFF/ON**.
+
+---
+
 ## HTTP commands that work (`:436` endpoint reference)
 
 | Endpoint | Purpose |
@@ -189,6 +270,9 @@ playback begins).
 - **openHAB community — "OPPO UDP-203 IP control / HTTP binding"** — community reverse-engineering of
   the `:436` API (`sendremotekey`, GET + URL-encoded JSON, `{"success":true}`):
   <https://community.openhab.org/t/oppo-udp-203-ip-control-http-binding/40374>
+- **OPPO SMB-vs-NFS community evidence** — that OPPO players are SMB1-only and owners fall back to NFS:
+  [QuadraphonicQuad — "connect an Oppo 203 to a network SMB mount?"](https://www.quadraphonicquad.com/forums/threads/has-anyone-here-successfully-connected-an-oppo-203-to-a-network-smb-mount.36059/)
+  · [Unofficial OPPO UDP-203 FAQ](https://watershade.net/wmcclain/UDP-203-faq.html)
 - **`emby-chinoppo-bridge`** — the project the NFS login/mount/`playnormalfile`/`checkfolderhasBDMV`
   sequence was reverse-engineered from (our primary reference for the playback chain).
 - **OppoKodiBridge `oppo_http.py`** — the working reference implementation of everything above
