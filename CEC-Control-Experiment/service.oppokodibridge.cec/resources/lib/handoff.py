@@ -88,6 +88,12 @@ def play(config, client, kodi_file: str, should_abort=None) -> bool:
     else:
         reply = _best_effort(lambda: client.play_file(server, play_name), "play")
     log("Play reply: {!r}".format(reply))
+    if reply is None:
+        # the play HTTP call itself failed (OppoError -> _best_effort returned None); don't claim the
+        # OPPO accepted it, or the monitor would poll for ~grace*interval seconds for playback that
+        # will never start.
+        log("OPPO play call failed (no reply); not waiting for playback")
+        return False
     if isinstance(reply, dict) and reply.get("success") is False:
         log("OPPO rejected the file: {}".format(reply.get("retInfo") or reply.get("msg") or ""))
         return False

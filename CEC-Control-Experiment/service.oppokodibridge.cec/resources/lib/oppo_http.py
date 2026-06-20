@@ -90,7 +90,9 @@ def split_share_relative(media_file: str, path_from: str) -> Tuple[Optional[str]
     if text.lower().startswith(("nfs://", "smb://")):
         text = urllib.parse.unquote(text)
     prefix = (path_from or "").strip().rstrip("/")
-    if not prefix or not text.startswith(prefix):
+    # Require a path boundary after the prefix, so a sibling share whose name EXTENDS the configured
+    # one (e.g. ".../Super3Share-4K" vs path_from ".../Super3Share") is not mis-matched and mis-mapped.
+    if not prefix or not (text == prefix or text.startswith(prefix + "/")):
         return (None, None)
     rel = text[len(prefix):].lstrip("/")
     if not rel:

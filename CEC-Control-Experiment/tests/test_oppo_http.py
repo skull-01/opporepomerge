@@ -31,6 +31,13 @@ def test_split_share_relative_no_match():
     assert oh.split_share_relative("nfs://other/x/y.mkv", FROM) == (None, None)
 
 
+def test_split_share_relative_sibling_share_not_matched():
+    # a sibling share whose name EXTENDS the prefix must NOT match (path-boundary check)
+    assert oh.split_share_relative(FROM + "-4K/Dune.iso", FROM) == (None, None)
+    # the exact prefix (no file under it) also does not produce a bogus mapping
+    assert oh.split_share_relative(FROM, FROM) == (None, None)
+
+
 def test_split_share_relative_root_file():
     folder, base = oh.split_share_relative(FROM + "/movie.mkv", FROM)
     assert folder == ""
