@@ -1535,6 +1535,20 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by
   form + a `.NOTES` warning (pinned by `tests/test_release_scripts.py`) — resolves the §3b
   script nit. Refreshed §3b + the "Latest release" line + this header. No issues
   opened/closed → §17a cache unchanged.
+- **2026-06-21 (EOD)** — Session spent ENTIRELY on a sibling repo, not this one. Built the
+  **CEC Control Experiment** (`github.com/skull-01/CEC-Control-Experiment`) — a clean-room fork
+  exploring no-blip OPPO→Kodi disc handoff with pure, spec-legitimate HDMI-CEC switching: the OPPO
+  grabs the TV via its OWN One-Touch-Play (a `#POF`→`#PON` power-cycle), Kodi reclaims via its OWN
+  `CECActivateSource` (triggered over localhost JSON-RPC → a `script.cecreclaim` helper); single-shot
+  per event, never a standing re-asserter (see [[cec-never-reassert]]). Took it through a 5-module
+  rebuild (detector / handoff / cec / monitor / orchestrator) to **v0.4.0**; two adversarial review
+  workflows + a whole-add-on bug hunt found **15 real bugs (2 manual + 13 verified)** — all fixed +
+  pinned by regression tests (63 off-box green); built installable zips
+  (`service.oppokodibridge.cec-0.4.0` + `script.cecreclaim-0.1.0`) for operator **hardware
+  verification** (the resume point). Also preserved the earlier **Broadlink-IR** exploration on
+  `OppoKodiBridge-v3` branch `ir-blaster-integration` (47 tests; superseded by the pure-CEC decision).
+  **This repo was untouched — working tree clean, `main`@`5b0d08c`; no add-on/configurator work, so
+  §3a/§3b unchanged.**
 
 ---
 
