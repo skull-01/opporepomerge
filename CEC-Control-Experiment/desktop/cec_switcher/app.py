@@ -114,7 +114,13 @@ class App:
     # --- actions ---
     def on_save(self) -> None:
         self.cfg = self._current()
-        save_config(self.cfg)
+        try:
+            save_config(self.cfg)
+        except OSError as exc:
+            # The only persistence path -- surface a write failure in the log (the app is packaged
+            # --noconsole, so an unhandled exception would vanish and silently lose the settings).
+            self._log("Save FAILED: {}".format(exc))
+            return
         self._log("Saved settings.")
 
     def on_test(self) -> None:

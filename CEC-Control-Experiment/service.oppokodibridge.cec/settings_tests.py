@@ -36,15 +36,17 @@ def _tcp_open(host, port, timeout=4.0):
 
 
 def cmd_ping(cfg, dlg):
-    ctrl = _tcp_open(cfg.oppo_ip, 23)
     http = _tcp_open(cfg.oppo_ip, cfg.oppo_http_port)
+    if getattr(cfg, "serial_control", False):
+        # Serial control drives the OPPO over RS-232, not the network :23 port -- report the cable,
+        # not a misleading ":23 UNREACHABLE".
+        port = getattr(cfg, "serial_port", "/dev/ttyUSB0")
+        control = "Serial control {}  ->  {}".format(port, "present" if os.path.exists(port) else "MISSING")
+    else:
+        control = "Control port :23  ->  {}".format("OK" if _tcp_open(cfg.oppo_ip, 23) else "UNREACHABLE")
     dlg.ok(
         "OPPO ping",
-        "Control port :23  ->  {}\nHTTP API :{}  ->  {}".format(
-            "OK" if ctrl else "UNREACHABLE",
-            cfg.oppo_http_port,
-            "OK" if http else "UNREACHABLE",
-        ),
+        "{}\nHTTP API :{}  ->  {}".format(control, cfg.oppo_http_port, "OK" if http else "UNREACHABLE"),
     )
 
 
@@ -66,7 +68,10 @@ def cmd_control(cfg, dlg):
 
 
 def cmd_cec(cfg, dlg):
-    if not _tcp_open(cfg.oppo_ip, 23):
+    # The grab uses the configured control transport. Only gate on the network :23 port when NOT in
+    # serial mode -- a serial-control user's :23 is irrelevant (and usually closed), and gating on it
+    # would permanently block this test for them even though the serial grab works.
+    if not getattr(cfg, "serial_control", False) and not _tcp_open(cfg.oppo_ip, 23):
         dlg.ok("CEC switch-over test", "OPPO control port :23 is unreachable -- run Ping first.")
         return
     if not dlg.yesno("CEC switch-over test", "This power-cycles the OPPO so it grabs the TV.\nReady?"):

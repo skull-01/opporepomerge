@@ -31,6 +31,8 @@ class Config:
     serial_baud: int = 9600
     poll_interval: float = 5.0
     idle_confirmations: int = 2
+    max_read_failures: int = 5
+    max_watch_seconds: float = 21600.0
     kodi_rpc_port: int = 8080
     kodi_rpc_user: str = ""
     kodi_rpc_pass: str = ""

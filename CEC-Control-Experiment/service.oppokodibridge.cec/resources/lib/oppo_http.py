@@ -31,6 +31,7 @@ from .detector import (  # noqa: F401
     is_iso,
     is_oppo_target,
 )
+from .kodilog import log
 
 MOUNT_TIMEOUT = 25.0
 PLAY_TIMEOUT = 15.0
@@ -200,14 +201,27 @@ def serial_command(port: str, baud: int, command: str, read_timeout: float = 2.0
 
     Stdlib only (termios) -- no pyserial dependency. termios is imported lazily so this module still
     imports on non-POSIX hosts (the Windows test runner). Same CR framing as send_tcp_command.
+
+    EVERY failure surfaces as OppoError so callers (grab_oppo, the settings tests) stay non-fatal: a
+    missing termios (serial enabled on a non-POSIX host), absent POSIX open-flags, a bad baud value,
+    or a termios.error (the fd is not a usable tty) -- none of which are OSError -- must not escape as
+    a raw exception that crashes the handoff or the RunScript.
     """
     import os
     import select
-    import termios
 
-    baud_const = getattr(termios, _BAUD_CONSTS.get(int(baud), "B9600"))
     try:
-        fd = os.open(port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+        import termios
+    except ImportError as exc:
+        raise OppoError("serial control needs POSIX termios (unavailable here): {}".format(exc)) from exc
+    try:
+        baud_const = getattr(termios, _BAUD_CONSTS.get(int(baud), "B9600"))
+        open_flags = os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK
+    except (ValueError, AttributeError) as exc:
+        raise OppoError("serial config invalid for {} (baud={!r}): {}".format(port, baud, exc)) from exc
+
+    try:
+        fd = os.open(port, open_flags)
     except OSError as exc:
         raise OppoError("serial open {} failed: {}".format(port, exc)) from exc
     try:
@@ -229,7 +243,7 @@ def serial_command(port: str, baud: int, command: str, read_timeout: float = 2.0
             except OSError:
                 return ""
         return ""
-    except OSError as exc:
+    except (OSError, termios.error) as exc:
         raise OppoError("serial I/O on {} failed: {}".format(port, exc)) from exc
     finally:
         os.close(fd)
@@ -354,6 +368,18 @@ class OppoClient:
         except OppoError:
             return False
 
+    def playback_state(self) -> str:
+        """Tri-state playback probe for the stop-watcher: ``"playing"`` / ``"idle"`` / ``"unknown"``.
+
+        Unlike is_playing() (which collapses a transport failure to False), this distinguishes a
+        confirmed-idle read from an unreadable one, so the monitor never mistakes a network blip for a
+        stop (a premature mid-playback reclaim) nor loops forever on an unreachable OPPO."""
+        try:
+            info = self.get_global_info()
+        except OppoError:
+            return "unknown"
+        return "playing" if info_is_playing(info) else "idle"
+
     def verbose_watch_until_stop(self, should_abort=None) -> bool:
         """Hold a verbose-mode (``#SVM 3``) connection on :23 and block until the OPPO reports
         playback stopped (``@UPL STOP`` / ``HOME``). Push-based, so stop is detected within line
@@ -377,8 +403,10 @@ class OppoClient:
                         chunk = conn.recv(512).decode("ascii", errors="replace")
                     except socket.timeout:
                         if time.time() - last_data > 6.0:  # heartbeat quiet -> confirm via HTTP
-                            if not self.is_playing():
-                                return True
+                            if self.playback_state() == "idle":
+                                return True  # only a CONFIRMED idle read ends the watch
+                            # "playing" or "unknown" (a transient HTTP blip during the stall) -> keep
+                            # watching; never reclaim the TV on an unconfirmed read.
                             last_data = time.time()
                         continue
                     if not chunk:
@@ -436,6 +464,11 @@ class OppoClient:
         """Standby then power on -- the power-ON fires CEC One-Touch-Play so the TV switches to the
         OPPO (it does NOT assert active source on a play-while-already-on). Verified on a TCL Q9L.
         Uses the configured control transport (network :23 or the RS-232 serial cable)."""
-        self.send_control_command("#POF")
+        try:
+            self.send_control_command("#POF")
+        except OppoError as exc:
+            # A transient first-send failure must NOT skip #PON -- the power-ON is the leg that fires
+            # the OPPO's One-Touch-Play and grabs the TV. (#PON's own failure still raises.)
+            log("OPPO #POF failed (continuing to #PON): {}".format(exc))
         time.sleep(delay)
         self.send_control_command("#PON")

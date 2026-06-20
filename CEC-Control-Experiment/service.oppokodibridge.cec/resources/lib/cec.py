@@ -23,11 +23,15 @@ RECLAIM_ADDON = "script.cecreclaim"
 
 
 def grab_oppo(client) -> bool:
-    """Power-cycle the OPPO so its own One-Touch-Play grabs the TV. Single-shot, non-fatal on failure."""
+    """Power-cycle the OPPO so its own One-Touch-Play grabs the TV. Single-shot, non-fatal on failure.
+
+    Catches any exception, not just OppoError: grab runs BEFORE the orchestrator's try/finally, so an
+    escape here would skip the stop-side reclaim and strand the TV. The control transport normally
+    raises OppoError, but the serial path can surface other types -- none may abort the handoff."""
     try:
         client.power_cycle()
         return True
-    except OppoError as exc:
+    except Exception as exc:  # noqa: BLE001 - non-fatal by contract (see docstring)
         log("OPPO grab (power-cycle) failed (non-fatal): {}".format(exc))
         return False
 

@@ -1,4 +1,8 @@
+import itertools
+import os
 import socket
+import sys
+import types
 import urllib.parse
 import urllib.request
 
@@ -242,3 +246,101 @@ def test_play_bdmv_endpoint(monkeypatch):
     ep = cap["ep"]
     assert ep.startswith('/checkfolderhasBDMV?{"folderpath":"/mnt/nfs1/')
     assert "Ant-Man" in urllib.parse.unquote(ep)
+
+
+# --- serial transport hardening (b9 / b12): every failure must surface as OppoError ---
+def _install_fake_termios(monkeypatch, tcgetattr):
+    """Inject a fake POSIX termios + os flags so serial_command runs on any host (the Windows test
+    runner has no termios)."""
+    fake = types.ModuleType("termios")
+
+    class error(Exception):
+        pass
+
+    fake.error = error
+    for name in ("CSIZE", "PARENB", "CSTOPB", "CS8", "CREAD", "CLOCAL", "TCSANOW", "TCIOFLUSH", "B9600"):
+        setattr(fake, name, 0)
+    fake.tcgetattr = tcgetattr
+    fake.tcsetattr = lambda *a, **k: None
+    fake.tcflush = lambda *a, **k: None
+    monkeypatch.setitem(sys.modules, "termios", fake)
+    for flag in ("O_RDWR", "O_NOCTTY", "O_NONBLOCK"):
+        monkeypatch.setattr(os, flag, getattr(os, flag, 0), raising=False)
+    monkeypatch.setattr(os, "open", lambda *a, **k: 7)
+    monkeypatch.setattr(os, "close", lambda fd: None)
+    return fake
+
+
+def test_serial_command_missing_termios_becomes_oppoerror(monkeypatch):
+    # b9: serial control on a non-POSIX host (no termios) must raise OppoError, not ImportError.
+    monkeypatch.setitem(sys.modules, "termios", None)  # forces `import termios` -> ImportError
+    with pytest.raises(oh.OppoError):
+        oh.serial_command("/dev/ttyUSB0", 9600, "#PON")
+
+
+def test_serial_command_termios_error_becomes_oppoerror(monkeypatch):
+    # b12: termios.error (NOT an OSError) from configuring a non-tty fd must surface as OppoError.
+    def boom(fd):
+        import termios  # the injected fake
+
+        raise termios.error("Inappropriate ioctl for device")
+
+    _install_fake_termios(monkeypatch, tcgetattr=boom)
+    with pytest.raises(oh.OppoError):
+        oh.serial_command("/dev/ttyUSB0", 9600, "#PON")
+
+
+def test_serial_command_bad_baud_becomes_oppoerror(monkeypatch):
+    # b12 (secondary): a non-numeric baud must not escape as a raw ValueError.
+    _install_fake_termios(monkeypatch, tcgetattr=lambda fd: [0, 0, 0, 0, 0, 0, 0])
+    with pytest.raises(oh.OppoError):
+        oh.serial_command("/dev/ttyUSB0", "not-a-number", "#PON")
+
+
+# --- power_cycle must still fire #PON when #POF fails (b6) ---
+def test_power_cycle_sends_pon_when_poff_fails(monkeypatch):
+    client = _client()
+    sent = []
+
+    def ctrl(cmd, timeout=5.0):
+        if cmd == "#POF":
+            raise oh.OppoError("transient :23 reset on #POF")
+        sent.append(cmd)
+        return ""
+
+    monkeypatch.setattr(client, "send_control_command", ctrl)
+    monkeypatch.setattr(oh.time, "sleep", lambda *a, **k: None)
+    client.power_cycle(delay=0)
+    assert sent == ["#PON"]  # #PON fired despite the #POF leg failing
+
+
+# --- verbose heartbeat: a transient HTTP failure is NOT a stop (b1) ---
+def test_verbose_heartbeat_transient_failure_is_not_a_stop(monkeypatch):
+    client = _client()
+
+    class _Sock:
+        def sendall(self, data):
+            pass
+
+        def settimeout(self, t):
+            pass
+
+        def recv(self, n):
+            raise socket.timeout()  # always quiet -> hit the heartbeat branch every loop
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(oh.socket, "create_connection", lambda addr, timeout=None: _Sock())
+    clock = itertools.count(0, 100)  # each read delta > 6s, so the heartbeat fires every iteration
+    monkeypatch.setattr(oh.time, "time", lambda: next(clock))
+    states = iter(["unknown", "unknown", "idle"])
+    calls = {"n": 0}
+
+    def fake_state():
+        calls["n"] += 1
+        return next(states)
+
+    monkeypatch.setattr(client, "playback_state", fake_state)
+    assert client.verbose_watch_until_stop(lambda: False) is True
+    assert calls["n"] == 3  # ended only on the confirmed 'idle'; the two 'unknown's did not stop it

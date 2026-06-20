@@ -81,3 +81,13 @@ def test_reclaim_kodi_false_on_non_json_body(monkeypatch):
         lambda req, timeout=None: _Resp("<html>401 Unauthorized</html>"),
     )
     assert cec.reclaim_kodi(Config(oppo_ip="x")) is False
+
+
+def test_grab_oppo_nonfatal_on_non_oppoerror():
+    # the serial transport can surface non-OppoError types; grab runs before the orchestrator's
+    # try/finally, so any escape would skip the reclaim. grab_oppo must absorb them all.
+    class Boom:
+        def power_cycle(self):
+            raise ImportError("No module named termios")
+
+    assert cec.grab_oppo(Boom()) is False

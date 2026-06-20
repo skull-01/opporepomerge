@@ -3,6 +3,7 @@ a fake TCP server; the Kodi side monkeypatches urlopen. The GUI (app.py) is not 
 import json
 import os
 import socket
+import struct
 import sys
 import threading
 import time
@@ -146,3 +147,44 @@ def test_kodi_error_raises(monkeypatch):
     )
     with pytest.raises(OSError):
         cec_core.kodi_take_tv("x")
+
+
+def test_oppo_take_tv_sends_pon_when_poff_fails(monkeypatch):
+    # b6 parity: a failed #POF must not skip #PON (the leg that fires the One-Touch-Play).
+    sent = []
+
+    def fake_send(ip, command, port=cec_core.OPPO_TCP_PORT, timeout=4.0, read=True):
+        if command == "#POF":
+            raise ConnectionResetError("reset")
+        sent.append(command)
+        return ""
+
+    monkeypatch.setattr(cec_core, "_oppo_send", fake_send)
+    msg = cec_core.oppo_take_tv("127.0.0.1", gap=0, sleep=lambda s: None)
+    assert sent == ["#PON"]
+    assert "power-cycle" in msg.lower()
+
+
+def test_ping_oppo_true_when_peer_resets_before_reply():
+    # b11: a peer that accepts then RSTs before replying is still reachable -> ping True (was False).
+    srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    srv.bind(("127.0.0.1", 0))
+    srv.listen(1)
+    port = srv.getsockname()[1]
+
+    def serve():
+        conn, _ = srv.accept()
+        try:
+            conn.recv(64)  # read the #QPW so the client's send succeeds
+        except OSError:
+            pass
+        conn.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+        conn.close()  # force an RST
+
+    t = threading.Thread(target=serve, daemon=True)
+    t.start()
+    try:
+        assert cec_core.ping_oppo("127.0.0.1", port=port, timeout=1.0) is True
+    finally:
+        srv.close()

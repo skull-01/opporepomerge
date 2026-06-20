@@ -36,7 +36,9 @@ def _oppo_send(ip: str, command: str, port: int = OPPO_TCP_PORT, timeout: float 
         sock.settimeout(timeout)
         try:
             data = sock.recv(64)
-        except socket.timeout:
+        except OSError:
+            # A timeout OR a post-connect reset/abortive close: the connection itself succeeded, so the
+            # OPPO is reachable -- we just got no reply. (Mirrors the add-on's send_tcp_command.)
             return ""
         return data.decode("ascii", "replace").strip()
 
@@ -58,7 +60,11 @@ def oppo_take_tv(ip: str, port: int = OPPO_TCP_PORT, gap: float = 3.0, timeout: 
     If the OPPO is already off the ``#POF`` is a harmless no-op and ``#PON`` alone fires the OTP; if it
     is on, the cycle forces the power-ON transition it needs. Returns a short human status string.
     """
-    _oppo_send(ip, "#POF", port=port, timeout=timeout, read=False)
+    try:
+        _oppo_send(ip, "#POF", port=port, timeout=timeout, read=False)
+    except OSError:
+        pass  # an already-off OPPO or a transient :23 hiccup can fail the #POF; #PON alone still
+        # fires the One-Touch-Play, so never let a failed #POF skip it.
     sleep(gap)
     _oppo_send(ip, "#PON", port=port, timeout=timeout, read=False)
     return "OPPO power-cycled (#POF -> #PON); the TV follows when its HDMI comes up (~20-24s)."

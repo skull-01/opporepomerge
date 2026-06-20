@@ -56,15 +56,36 @@ def watch_playback(config, client, should_abort=None) -> bool:
 
 
 def _http_watch_until_idle(config, client, should_abort) -> None:
-    """Fallback for phase 2: poll /getglobalinfo until idle for N consecutive reads."""
+    """Fallback for phase 2: poll /getglobalinfo until the OPPO is idle for N consecutive reads.
+
+    Uses the tri-state ``playback_state`` so a transport blip ("unknown") is NOT mistaken for a stop:
+    only a confirmed-idle read counts toward the idle confirmations, so a brief network/HTTP failure
+    can't trigger a premature reclaim mid-playback. To guarantee this loop always returns -- so the
+    orchestrator's finally still reclaims the TV and the external-player process can never hang -- it
+    also gives up after a run of unreadable polls (the OPPO went away) and after an absolute
+    watch-time ceiling (a stuck 'still playing' flag that never clears).
+    """
     interval = max(2.0, float(config.poll_interval))
     needed = max(1, int(config.idle_confirmations))
-    idle = 0
+    max_unknown = max(needed, int(config.max_read_failures))
+    max_polls = max(1, int(float(config.max_watch_seconds) / interval))
+    idle = unknown = polls = 0
     while not should_abort():
-        if client.is_playing():
-            idle = 0
-        else:
+        state = client.playback_state()
+        if state == "playing":
+            idle = unknown = 0
+        elif state == "idle":
+            unknown = 0
             idle += 1
             if idle >= needed:
                 return
+        else:  # "unknown" -- could not read the OPPO; never treat as a stop
+            unknown += 1
+            if unknown >= max_unknown:
+                log("OPPO unreadable for {} polls; ending watch so the TV is reclaimed.".format(unknown))
+                return
+        polls += 1
+        if polls >= max_polls:
+            log("HTTP watch hit the {}-poll ceiling; ending so the TV is reclaimed.".format(max_polls))
+            return
         interruptible_sleep(interval, should_abort)
