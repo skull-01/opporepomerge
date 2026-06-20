@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest a focused improvement or future enhancement.
+title: '[Feature]: '
+labels:
+- enhancement
+- triage
+body:
+- type: markdown
+  attributes:
+    value: Please keep requests narrow. New features should not destabilize the v2.9.10 Final protected playback/routing behavior.
+- type: textarea
+  id: problem
+  attributes:
+    label: Problem or use case
+    description: What problem would this solve?
+  validations:
+    required: true
+- type: textarea
+  id: proposal
+  attributes:
+    label: Proposed solution
+    description: Describe the smallest useful change.
+  validations:
+    required: true
+- type: dropdown
+  id: area
+  attributes:
+    label: Area affected
+    options:
+    - Documentation only
+    - Setup wizard / settings
+    - OPPO / external player routing
+    - TV control
+    - AVR sequencing
+    - NAS / AutoScript
+    - Diagnostics / logging
+    - Packaging / release process
+    - Tests / tooling
+    - Other
+  validations:
+    required: true
+- type: checkboxes
+  id: safety
+  attributes:
+    label: Safety checklist
+    options:
+    - label: This request does not require claiming hardware validation without real tester evidence.
+      required: true
+    - label: I understand protected playback/routing changes require tests and clear scope.
+      required: true
+- type: textarea
+  id: alternatives
+  attributes:
+    label: Alternatives considered

@@ -1,0 +1,13 @@
+# Development-only dependencies for local validation and GitHub CI.
+# Kodi runtime users do not need to install this file.
+pytest>=8,<9
+pytest-xdist>=3.8.0,<4
+pytest-cov>=7.1.0,<8
+# Local fast-test loop (tools/dev_test.py); testmon 2.2+ needs py>=3.10, so it is
+# skipped on the 3.9 compat-smoke run. The suite never imports it.
+pytest-testmon>=2.2,<3; python_version >= "3.10"
+coverage[toml]>=7,<8
+PyYAML>=6,<7
+ruff>=0.5,<1
+mypy>=1,<2
+typing-extensions>=4.12,<5

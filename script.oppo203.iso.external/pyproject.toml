@@ -1,0 +1,164 @@
+[build-system]
+requires = []
+build-backend = "_kodi_addon_no_build_backend"
+
+[project]
+name = "script-oppo203-iso-external"
+version = "2.9.17"
+description = "Kodi add-on for OPPO 203/205-compatible external-player handoff workflows."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Kodi OPPO 203 ISO External Player maintainers" }
+]
+keywords = [
+  "kodi",
+  "oppo",
+  "external-player",
+  "uhd",
+  "blu-ray",
+  "home-theater"
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Plugins",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Topic :: Multimedia :: Video",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<9",
+  "coverage[toml]>=7,<8",
+  "PyYAML>=6,<7",
+  "ruff>=0.5,<1",
+  "mypy>=1,<2",
+  "typing-extensions>=4.12,<5",
+]
+
+# Formatting is handled by `ruff format`. This [tool.ruff] block is the single
+# source of truth (the standalone ruff.toml was removed); black was retired in
+# favor of ruff format per docs/testing-strategy.md.
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+exclude = [
+  ".git",
+  ".pytest_cache",
+  "__pycache__",
+  "build",
+  "dist",
+  "output",
+  ".venv",
+  "configurator",
+]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "B", "I", "UP", "C4"]
+ignore = [
+  "E501",   # line length handled by formatter
+  "E402",   # module-level imports not at top; tests/tools use sys.path setup
+  "UP015",  # preserve explicit open() mode for Python 3.9 compatibility
+]
+
+[tool.ruff.lint.per-file-ignores]
+"resources/lib/*.py" = ["B008"]  # default-arg factory pattern
+# Tests legitimately import-for-side-effect (F401), redefine fixtures (F811),
+# and use `assert False` patterns (B011).
+"tests/**" = ["F401", "F811", "B011"]
+
+[tool.coverage.run]
+branch = true
+source = ["resources/lib"]
+# Floor restored to 99% with the UI/glue modules back in measurement; kept in
+# sync with .coveragerc (which is the config coverage actually loads). See
+# docs/testing-strategy.md.
+
+[tool.coverage.report]
+fail_under = 99
+show_missing = true
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+]
+
+# Mirror of mypy.ini (which stays authoritative). ENH-#51 rolls out mypy --strict
+# across resources/lib incrementally; only the modules in `files` are gate-enforced
+# and the rest are followed silently until a later batch annotates them.
+[tool.mypy]
+python_version = "3.9"
+strict = true
+follow_imports = "silent"
+ignore_missing_imports = true
+warn_unused_configs = true
+namespace_packages = true
+explicit_package_bases = true
+show_error_codes = true
+pretty = true
+files = [
+  "resources/lib/__init__.py",
+  "resources/lib/avr/avr_control.py",
+  "resources/lib/avr/avr_denon_marantz.py",
+  "resources/lib/avr/avr_diagnostics.py",
+  "resources/lib/avr/avr_onkyo_eiscp.py",
+  "resources/lib/avr/avr_presets.py",
+  "resources/lib/avr/avr_sequence.py",
+  "resources/lib/avr/avr_sony_audio.py",
+  "resources/lib/avr/avr_types.py",
+  "resources/lib/avr/avr_yamaha.py",
+  "resources/lib/kodi/arch_benchmark.py",
+  "resources/lib/kodi/diagnostic_logging.py",
+  "resources/lib/kodi/diagnostic_summary.py",
+  "resources/lib/kodi/diagnostics.py",
+  "resources/lib/kodi/disc_classification.py",
+  "resources/lib/kodi/external_player.py",
+  "resources/lib/kodi/i18n.py",
+  "resources/lib/kodi/installer.py",
+  "resources/lib/kodi/intercept.py",
+  "resources/lib/kodi/keymap_skin.py",
+  "resources/lib/kodi/logging_v116.py",
+  "resources/lib/kodi/playback_session.py",
+  "resources/lib/kodi/playercorefactory_merge.py",
+  "resources/lib/kodi/preset_manager.py",
+  "resources/lib/kodi/settings_reader.py",
+  "resources/lib/kodi/settings_schema.py",
+  "resources/lib/kodi/version.py",
+  "resources/lib/oppo/autoscript_helper.py",
+  "resources/lib/oppo/command_map.py",
+  "resources/lib/oppo/constants.py",
+  "resources/lib/oppo/discovery.py",
+  "resources/lib/oppo/hardware_capabilities.py",
+  "resources/lib/oppo/hardware_presets.py",
+  "resources/lib/oppo/hardware_profiles.py",
+  "resources/lib/oppo/hardware_validation_readiness.py",
+  "resources/lib/oppo/nas_playback_adapter.py",
+  "resources/lib/oppo/oppo_control.py",
+  "resources/lib/oppo/oppo_remote.py",
+  "resources/lib/oppo/oppo_tcp_client.py",
+  "resources/lib/oppo/path_mapper.py",
+  "resources/lib/oppo/playback_monitor_svm3.py",
+  "resources/lib/oppo/reconnect_backoff.py",
+  "resources/lib/tv/tv_adb_control.py",
+  "resources/lib/tv/tv_roku_ecp_control.py",
+  "resources/lib/tv/tv_smartthings_control.py",
+  "resources/lib/tv/tv_backends.py",
+  "resources/lib/tv/tv_control.py",
+  "resources/lib/tv/tv_diagnostics.py",
+  "resources/lib/tv/tv_presets.py",
+  "default.py",
+  "service.py",
+]
+
+[tool.github-readiness]
+baseline = "v2.9.10 Final"
+build = "G8 GitHub Ready Final Packaging"
+runtime_behavior_changed = false
+hardware_validation = "not_performed_not_claimed"
+notes = "G8 finalizes the GitHub-ready source layout, publication checklist, final packaging, checksums, and AI handoff/reconstruction package without changing runtime behavior."

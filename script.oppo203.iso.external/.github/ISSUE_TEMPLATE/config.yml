@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+- name: Support and troubleshooting
+  url: https://github.com/OWNER/REPOSITORY/discussions
+  about: Ask setup and troubleshooting questions in Discussions when available.
+- name: Security vulnerability
+  url: https://github.com/OWNER/REPOSITORY/security/policy
+  about: Please report security vulnerabilities through the security policy instead of public issues.

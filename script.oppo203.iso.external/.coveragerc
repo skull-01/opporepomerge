@@ -1,0 +1,14 @@
+[run]
+branch = True
+source = resources/lib
+
+[report]
+# Coverage floor: 99% across resources/lib. UI/glue modules are exercised by
+# the suite; only a handful of on-device package-import shims remain uncovered
+# via `# pragma: no cover`. See docs/testing-strategy.md.
+fail_under = 99
+show_missing = True
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+    if __name__ == .__main__.:

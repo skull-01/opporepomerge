@@ -1,0 +1,48 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test and coverage output
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+
+# pytest-testmon impact map (local fast-test loop; see tools/dev_test.py)
+.testmondata*
+
+# Build/package output
+dist/
+build/
+*.egg-info/
+
+# Local IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.venv/
+venv/
+
+# Windows configurator (Tauri 2 + Vite + React)
+configurator/node_modules/
+configurator/dist/
+configurator/src-tauri/target/
+configurator/src-tauri/gen/schemas/
+
+# Local agent/preview scratch (the tracked .claude/commands + skills stay committed)
+.claude/launch.json
+.claude/worktrees/
+
+# Generated source-reconstruction snapshots (not part of the runtime tree)
+/ADDON_RESOURCES_RECONSTRUCTION.md
+/CONFIGURATOR_SRC_RECONSTRUCTION.md

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "description": "Canonical playback-architecture preset matrix. The base is the cross-product of 3 routing modes x 2 monitor modes (legacy, svm3) = 6 presets; the 7th, http_handoff_http, is an asymmetric cell -- the http monitor (pure-HTTP /getglobalinfo polling) exists ONLY for the http_handoff routing, not as a full column. Single cross-language source of truth, shared by the add-on (resources/lib/kodi/settings_reader.py) and the configurator (presetsdb.ts / mapping.ts). Pinned to the add-on's Python registries by tests/test_playback_presets_consistency.py and to the configurator's emitted presets by mapping.test.ts. Changing this set is a deliberate cross-area contract change - update both sides + this file in lock-step (AGENTS.md: 'six playback-architecture presets are a maintained matrix').",
+  "routing_modes": ["playercorefactory", "service_interception", "http_handoff"],
+  "monitor_modes": ["legacy", "svm3", "http"],
+  "presets": [
+    "playercorefactory_legacy",
+    "service_interception_legacy",
+    "playercorefactory_svm3",
+    "service_interception_svm3",
+    "http_handoff_legacy",
+    "http_handoff_svm3",
+    "http_handoff_http"
+  ],
+  "preset_by_axes": [
+    { "routing": "playercorefactory", "monitor": "legacy", "preset": "playercorefactory_legacy" },
+    { "routing": "service_interception", "monitor": "legacy", "preset": "service_interception_legacy" },
+    { "routing": "playercorefactory", "monitor": "svm3", "preset": "playercorefactory_svm3" },
+    { "routing": "service_interception", "monitor": "svm3", "preset": "service_interception_svm3" },
+    { "routing": "http_handoff", "monitor": "legacy", "preset": "http_handoff_legacy" },
+    { "routing": "http_handoff", "monitor": "svm3", "preset": "http_handoff_svm3" },
+    { "routing": "http_handoff", "monitor": "http", "preset": "http_handoff_http" }
+  ],
+  "routing_aliases": [
+    { "alias": "external_player", "routing": "playercorefactory" },
+    { "alias": "playercorefactory", "routing": "playercorefactory" },
+    { "alias": "service_interception", "routing": "service_interception" },
+    { "alias": "http_handoff", "routing": "http_handoff" }
+  ]
+}

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Pre-push gate: run the full test suite with the 99% coverage gate before any
+# push, so a coverage regression (e.g. new installer/service code without tests)
+# is caught locally instead of in CI.
+#
+# Enable once per clone:   git config core.hooksPath scripts/hooks
+# Bypass intentionally:    git push --no-verify
+set -u
+
+root="$(git rev-parse --show-toplevel)"
+cd "$root" || exit 1
+
+py=".venv/Scripts/python.exe"          # Windows venv
+[ -x "$py" ] || py=".venv/bin/python"  # POSIX fallback
+if [ ! -x "$py" ]; then
+  echo "pre-push: no .venv found. Create it with:" >&2
+  echo "  python -m venv .venv && .venv/Scripts/python.exe -m pip install -r requirements-dev.txt" >&2
+  exit 1
+fi
+
+# Windows pytest temp workaround (repo-local TEMP + basetemp); deterministic
+# plugin set to match CI, with xdist + pytest-cov loaded explicitly.
+mkdir -p build/_tmp build/_pt
+export TEMP="$root/build/_tmp" TMP="$root/build/_tmp"
+export PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+
+echo "pre-push: running coverage gate (99% floor)..."
+"$py" -m pytest -q -p xdist -p pytest_cov -n auto --dist worksteal \
+  --cov=resources/lib --cov-report=term-missing --basetemp=build/_pt
+status=$?
+
+if [ "$status" -ne 0 ]; then
+  echo "" >&2
+  echo "pre-push BLOCKED: tests failed or coverage is below the .coveragerc floor (99%)." >&2
+  echo "Add tests for the new code, or bypass intentionally with: git push --no-verify" >&2
+fi
+exit "$status"

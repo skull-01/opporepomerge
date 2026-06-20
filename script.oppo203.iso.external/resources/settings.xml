@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings version="1">
+    <category id="connection" label="32100">  <!-- Connection -->
+        <setting id="config_owner_hint" label="30290" type="lsep"/>
+        <setting id="oppo_ip" type="string" label="30101" default="192.168.1.50"/>
+        <setting id="oppo_port" type="integer" label="30102" default="23"/>
+        <setting id="oppo_socket_timeout" type="number" label="30103" default="3.0"/>
+        <setting id="oppo_mac" type="string" label="30116" default="" help="30117">
+            <dependencies>
+                <dependency type="visible" setting="oppo_use_wol" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_use_wol" type="bool" label="30118" default="false"/>
+        <setting id="oppo_wol_broadcast" type="string" label="30119" default="255.255.255.255">
+            <dependencies>
+                <dependency type="visible" setting="oppo_use_wol" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_port" type="integer" label="30120" default="436"/>
+        <setting id="oppo_http_activate" type="bool" label="30121" default="true" help="30122"/>
+        <setting id="oppo_http_broadcast" type="string" label="30123" default="255.255.255.255">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_payload_mode" type="enum" label="30135" values="raw_path|json_payload" default="0" help="30136">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_app_device_type" type="integer" label="30137" default="2" help="30138">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_media_type" type="integer" label="30139" default="1" help="30140">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_path_from" type="string" label="30124" default="" help="30125">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_path_to" type="string" label="30126" default="" help="30127">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_urlencode_path" type="bool" label="30128" default="true">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="oppo_http_disc_folder_root" type="bool" label="30129" default="true" help="30130">
+            <dependencies>
+                <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="reconnect_enabled" type="bool" label="30960" default="true"/>
+        <setting id="reconnect_max_retries" type="number" label="30961" default="8" visible="eq(-1,true)">
+            <dependencies>
+                <dependency type="visible" setting="reconnect_enabled" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="reconnect_base_delay" type="number" label="30962" default="1" visible="eq(-2,true)">
+            <dependencies>
+                <dependency type="visible" setting="reconnect_enabled" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="reconnect_cap_delay" type="number" label="30963" default="30" visible="eq(-3,true)">
+            <dependencies>
+                <dependency type="visible" setting="reconnect_enabled" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="reconnect_jitter_pct" type="slider" label="30964" default="25" range="0,100,5" option="percent" visible="eq(-4,true)">
+            <dependencies>
+                <dependency type="visible" setting="reconnect_enabled" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+    </category>
+    <category id="hardware" label="32101">  <!-- Hardware and commands -->
+        <setting id="oppo_hardware_model" type="enum" label="30150" values="udp_203|udp_205|chinoppo_m9201|chinoppo_m9203|chinoppo_m9205c|chinoppo_m9702|ipuk_uhd8592|giec_bdp_g5300|magnetar_udp800|reavon_ubrx100|reavon_ubrx110|reavon_ubrx200|chinoppo_m9200|chinoppo_m9205|cineultra_v203|cineultra_v204|magnetar_udp900|chinoppo_m9205_v1|chinoppo_m9205_v2|chinoppo_m9205_v3|chinoppo_m9205_v4|chinoppo_m9702_plus|venpro_v203" default="0" help="30151"/>
+        <setting id="oppo_jailbreak_enabled" type="bool" label="30160" default="false" help="30161"/>
+        <setting id="oppo_autoscript_shell_handler" type="bool" label="30162" default="false" help="30163"/>
+        <setting id="oppo_start_mode" type="enum" label="30114" values="tcp_commands|http_api|tcp_then_http" default="0" help="30115"/>
+        <setting id="oppo_start_commands" type="string" label="30104" default="#PON
+#PLA" help="30105"/>
+        <setting id="oppo_stop_commands" type="string" label="30106" default="#STP"/>
+        <setting id="oppo_command_delay" type="number" label="30107" default="0.1"/>
+        <setting id="oppo_already_on_mode" type="bool" label="30108" default="false" help="30109"/>
+        <setting id="oppo_preflight_enabled" type="bool" label="30131" default="false" help="30132"/>
+        <setting id="oppo_verbose_mode" type="enum" label="30133" values="0 (off)|2|3" default="0" help="30134"/>
+        <setting id="oppo_remote_command_map" type="string" label="30112" default="" help="30113"/>
+        <setting id="remote_bridge_only_when_active" type="bool" label="30110" default="true" help="30111"/>
+        <setting id="tv_backend" type="enum" label="30209" values="adb|sony_bravia|lg_command|samsung_command|custom_command|roku_ecp|smartthings" default="0" help="30210"/>
+        <setting id="tv_switching_enabled" type="bool" label="30222" default="true" help="30223"/>
+        <setting id="adb_path" type="string" label="30201" default="adb"/>
+        <setting id="tv_ip" type="string" label="30202" default="192.168.1.60"/>
+        <setting id="tv_adb_port" type="integer" label="30203" default="5555"/>
+        <setting id="adb_connect_before_switch" type="bool" label="30204" default="true"/>
+        <setting id="tv_adb_preset" type="string" label="30220" default="" help="30221"/>
+        <setting id="oppo_input_adb_shell" type="string" label="30205" default="am start -a android.intent.action.VIEW -d content://com.tcl.tvpassthrough/.TvPassThroughService/HW15 -n com.tcl.tv/.TVActivity -f 0x10000000" help="30206"/>
+        <setting id="kodi_input_adb_shell" type="string" label="30207" default="am start -a android.intent.action.VIEW -d content://com.tcl.tvpassthrough/.TvPassThroughService/HW16 -n com.tcl.tv/.TVActivity -f 0x10000000" help="30208"/>
+        <setting id="sony_psk" type="string" label="30211" default=""/>
+        <setting id="sony_oppo_hdmi_port" type="integer" label="30212" default="1"/>
+        <setting id="sony_kodi_hdmi_port" type="integer" label="30213" default="2"/>
+        <setting id="lg_oppo_command" type="string" label="30214" default="lgtv --ssl setInput HDMI_1"/>
+        <setting id="lg_kodi_command" type="string" label="30215" default="lgtv --ssl setInput HDMI_2"/>
+        <setting id="samsung_oppo_command" type="string" label="30216" default="samsungctl --host {tv_ip} KEY_HDMI1"/>
+        <setting id="samsung_kodi_command" type="string" label="30217" default="samsungctl --host {tv_ip} KEY_HDMI2"/>
+        <setting id="custom_oppo_command" type="string" label="30218" default=""/>
+        <setting id="custom_kodi_command" type="string" label="30219" default=""/>
+        <setting id="roku_ecp_port" type="integer" label="30224" default="8060" help="30225"/>
+        <setting id="roku_oppo_key" type="string" label="30226" default="InputHDMI1" help="30228"/>
+        <setting id="roku_kodi_key" type="string" label="30227" default="InputHDMI2" help="30228"/>
+        <setting id="smartthings_experimental_acknowledged" type="bool" label="30229" default="false" help="30230"/>
+        <setting id="smartthings_token" type="string" label="30231" default="" help="30232"/>
+        <setting id="smartthings_device_id" type="string" label="30233" default="" help="30234"/>
+        <setting id="smartthings_oppo_input_id" type="string" label="30235" default="" help="30236"/>
+        <setting id="smartthings_kodi_input_id" type="string" label="30237" default="" help="30236"/>
+        <setting id="avr_control_enabled" type="bool" label="30238" default="false" help="30239"/>
+        <setting id="avr_backend" type="enum" label="30240" values="disabled|denon_marantz|yamaha_yxc|onkyo_eiscp|pioneer_eiscp|sony_audio_api" default="0" help="30241"/>
+        <setting id="selected_avr_preset_id" type="string" label="30242" default="disabled" visible="false"/>
+        <setting id="avr_host" type="string" label="30243" default="" help="30244"/>
+        <setting id="avr_port" type="integer" label="30245" default="" help="30246"/>
+        <setting id="avr_player_input" type="string" label="30247" default="" help="30248"/>
+        <setting id="avr_restore_enabled" type="bool" label="30249" default="false" help="30250"/>
+        <setting id="avr_restore_input" type="string" label="30251" default="" help="30252"/>
+        <setting id="avr_power_on_enabled" type="bool" label="30253" default="false" help="30254"/>
+        <setting id="avr_power_off_enabled" type="bool" label="30255" default="false" help="30256"/>
+        <setting id="avr_volume_automation_enabled" type="bool" label="30257" default="false" help="30258"/>
+        <setting id="avr_sound_mode" type="string" label="30259" default="" help="30260"/>
+        <setting id="sony_avr_experimental_acknowledged" type="bool" label="30261" default="false" help="30262"/>
+        <setting id="sony_avr_psk" type="string" label="30263" default="" help="30264"/>
+        <setting id="sony_avr_api_path" type="string" label="30265" default="/sony/audio" help="30266"/>
+        <setting id="sony_avr_player_input_uri" type="string" label="30267" default="" help="30268"/>
+        <setting id="sony_avr_restore_input_uri" type="string" label="30269" default="" help="30270"/>
+    </category>
+    <category id="autopoweron" label="32102">  <!-- Auto-power-on -->
+        <setting id="kodi_startup_power_on" type="bool" label="30900" default="false"/>
+        <setting id="kodi_startup_power_on_delay" type="number" label="30902" default="5">
+            <dependencies>
+                <dependency type="visible" setting="kodi_startup_power_on" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="kodi_startup_power_on_retries" type="integer" label="30904" default="3">
+            <dependencies>
+                <dependency type="visible" setting="kodi_startup_power_on" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+        <setting id="kodi_startup_power_on_use_wol" type="bool" label="30906" default="true">
+            <dependencies>
+                <dependency type="visible" setting="kodi_startup_power_on" operator="is">true</dependency>
+            </dependencies>
+        </setting>
+    </category>
+    <category id="playback" label="32103">  <!-- Playback -->
+        <setting id="python_path" type="string" label="30001" default="/usr/bin/python3" help="30002"/>
+        <setting id="include_disc_folder_rules" type="bool" label="30312" default="true" help="30313"/>
+        <setting id="fast_changeover" type="bool" label="30307" default="true" help="30308"/>
+        <setting id="startup_delay" type="integer" label="30301" default="0"/>
+        <setting id="hold_mode" type="enum" label="30302" values="fixed_timeout|manual_file|http_poll|tcp_qpl_poll|verbose_push" default="3" help="30303"/>
+        <setting id="fixed_timeout_minutes" type="integer" label="30304" default="180"/>
+        <setting id="manual_stop_file" type="string" label="30305" default="/tmp/oppo203_iso_stop"/>
+        <setting id="http_poll_interval" type="integer" label="30309" default="5"/>
+        <setting id="http_poll_timeout_minutes" type="integer" label="30310" default="240"/>
+        <setting id="http_poll_idle_confirmations" type="integer" label="30311" default="2"/>
+        <setting id="trickplay_suppress_seconds" type="integer" label="30318" default="45" help="30319"/>
+        <setting id="qpl_poll_interval" type="integer" label="30314" default="3" help="30315"/>
+        <setting id="qpl_poll_timeout_minutes" type="integer" label="30316" default="240"/>
+        <setting id="qpl_poll_idle_confirmations" type="integer" label="30317" default="2"/>
+        <setting id="verbose_push_timeout_minutes" type="integer" label="30320" default="240" help="30321"/>
+        <setting id="switch_back_on_exit" type="bool" label="30306" default="true"/>
+        <!-- Configurator-owned playback architecture / HDMI timing (audit M3): hidden so a Kodi
+             settings save preserves the configurator's values instead of dropping them. -->
+        <setting id="playback_architecture" type="string" label="30000" default="external_player" visible="false"/>
+        <setting id="architecture_choice_made" type="string" label="30000" default="false" visible="false"/>
+        <setting id="playback_monitor_mode" type="string" label="30000" default="legacy" visible="false"/>
+        <setting id="playback_architecture_preset" type="string" label="30000" default="" visible="false"/>
+        <setting id="hdmi_switch_mode" type="string" label="30000" default="immediate" visible="false"/>
+        <setting id="play_delay_hdmi" type="string" label="30000" default="2" visible="false"/>
+        <setting id="av_delay_hdmi" type="string" label="30000" default="0" visible="false"/>
+        <setting id="oppo_http_refresh_seconds" type="string" label="30000" default="5" visible="false"/>
+        <setting id="oppo_bdmv_checkfolder" type="string" label="30000" default="true" visible="false"/>
+    </category>
+    <category id="diagnostics" label="32104">  <!-- Diagnostics and experimental -->
+        <setting id="oppo_experimental_filelist_enabled" type="bool" label="30501" default="false" help="30502"/>
+        <!-- Hidden: persisted by the in-add-on language menu (i18n.LANGUAGE_SETTING); label reused, never shown. -->
+        <setting id="addon_language" type="string" label="30000" default="follow_kodi" visible="false"/>
+    </category>
+</settings>

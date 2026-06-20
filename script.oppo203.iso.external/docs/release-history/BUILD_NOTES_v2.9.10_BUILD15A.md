@@ -1,0 +1,3 @@
+# Build Notes — v2.9.10 Build 15A
+
+Build 15A adds a Sony Audio Control API experimental skeleton behind the existing disabled-by-default AVR framework. It adds Sony AVR preset metadata, explicit experimental acknowledgement gating, settings placeholders, validation helpers, sanitized diagnostics metadata, and tests. No live Sony API calls are performed. Sony AVR execution is refused unless experimental acknowledgement is enabled. Sony PSKs, passwords, credentials, tokens, and secrets are redacted from diagnostics. No playback sequencing hook is added. Hardware validation is not performed or claimed.

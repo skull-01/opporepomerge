@@ -1,0 +1,26 @@
+[package]
+name = "oppokodiaddon-configurator"
+version = "0.9.15"
+description = "Windows configurator for the script.oppo203.iso.external Kodi add-on"
+authors = ["Kodi OPPO 203 ISO External Player maintainers"]
+license = "MIT"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "oppokodiaddon_configurator_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+rfd = "0.15"
+sha2 = "0.10"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

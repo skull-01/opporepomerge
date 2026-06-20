@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.vite/
+
+# tsc -b emit (vite.config.ts is the source of truth)
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js

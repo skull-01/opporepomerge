@@ -1,0 +1,110 @@
+name: Hardware validation report
+description: Record real hardware test evidence for supported or experimental paths.
+title: '[Hardware Validation]: '
+labels:
+- hardware-validation
+- evidence
+body:
+- type: markdown
+  attributes:
+    value: Use this form only for real hardware testing. A report does not become a supported claim until maintainers review the evidence and update the hardware-validation matrix.
+- type: checkboxes
+  id: evidence_ack
+  attributes:
+    label: Evidence acknowledgement
+    options:
+    - label: This report is based on real hardware testing, not simulation or code review only.
+      required: true
+    - label: I included exact models, firmware versions where known, connection method, media type, and pass/fail result.
+      required: true
+    - label: I removed credentials, tokens, passwords, private keys, and personal data from logs and screenshots.
+      required: true
+- type: input
+  id: addon_version
+  attributes:
+    label: Add-on version / build tested
+    placeholder: v2.9.10 Final
+  validations:
+    required: true
+- type: dropdown
+  id: player_family
+  attributes:
+    label: Player / target family
+    options:
+    - OPPO UDP-203 / UDP-205
+    - Chinoppo / M9205 V1
+    - M9205 V2 / V3 / V4 / C
+    - Magnetar
+    - Reavon
+    - Kodi native / CoreELEC
+    - Other
+  validations:
+    required: true
+- type: input
+  id: exact_model
+  attributes:
+    label: Exact player model and firmware
+    placeholder: OPPO UDP-203 firmware version, M9205 version, etc.
+  validations:
+    required: true
+- type: dropdown
+  id: connection_method
+  attributes:
+    label: Control connection method
+    options:
+    - IP / TCP
+    - RS-232 serial
+    - IR
+    - ADB
+    - HDMI-CEC / TV API
+    - Not applicable
+    - Other
+  validations:
+    required: true
+- type: input
+  id: tv_model
+  attributes:
+    label: TV model and firmware, if involved
+    placeholder: LG / Samsung / Sony / Roku / Panasonic / Vizio model and firmware
+- type: input
+  id: avr_model
+  attributes:
+    label: AVR / processor model and firmware, if involved
+    placeholder: Denon / Marantz / Yamaha / Anthem / other
+- type: dropdown
+  id: media_type
+  attributes:
+    label: Test media type
+    options:
+    - 4K UHD ISO
+    - Blu-ray ISO
+    - 4K UHD disc folder / BDMV
+    - Non-4K disc folder / BDMV
+    - MKV / MP4
+    - Other
+  validations:
+    required: true
+- type: dropdown
+  id: result
+  attributes:
+    label: Result
+    options:
+    - Pass
+    - Fail
+    - Partial pass
+    - Inconclusive
+  validations:
+    required: true
+- type: textarea
+  id: test_steps
+  attributes:
+    label: Test steps and observed result
+    description: Include the exact file selected, expected route, device response, TV/AVR behavior, and whether playback started.
+  validations:
+    required: true
+- type: textarea
+  id: evidence
+  attributes:
+    label: Evidence notes / redacted logs
+    description: Paste logs, screenshots description, serial output, or other evidence. Redact private values.
+    render: text
