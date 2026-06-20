@@ -1,15 +1,16 @@
-"""v3 playback handoff -- runs in the playercorefactory EXTERNAL-player process.
+"""Playback handoff -- runs in the playercorefactory EXTERNAL-player process.
 
-Key difference from v2: this runs outside Kodi, so there are NO xbmc / CEC APIs. Everything is
-network:
-  * switch the TV to the OPPO -- by Broadlink IR if configured (CEC-free), else an interim OPPO
-    power-cycle (the OPPO's own One-Touch-Play on power-on);
-  * play the file on the OPPO over the HTTP app API (identical to v2);
-  * block until the OPPO goes idle;
-  * switch the TV back to Kodi -- by Broadlink IR if configured, otherwise rely on Kodi re-asserting
-    itself as the active source when this external player exits.
+This runs outside Kodi, so there are NO xbmc / CEC APIs -- everything is network:
+  * switch the TV to the OPPO by power-cycling it over TCP -- the OPPO's OWN One-Touch-Play on the
+    power-ON transition grabs the TV (legitimate CEC: no injection, no spoofed initiator);
+  * play the file on the OPPO over the HTTP app API;
+  * block until the OPPO goes idle.
 
-There is deliberately no ``CECActivateSource`` reclaim -- v3 is CEC-free by design.
+The stop-side Kodi reclaim is NOT done here (this process has no libCEC): when the handoff ends,
+``pcf_player`` drops a single-shot reclaim request that the in-Kodi service consumes ONCE
+(``CECActivateSource``, Kodi re-asserting its OWN active source). It fires exactly once per stop event
+-- never a standing re-asserter, which would fight a manual input change (see
+``resources/lib/cec_reclaim.py``).
 """
 from __future__ import annotations
 
@@ -115,12 +116,10 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
 
     started = _watch_playback(config, client, should_abort)
 
-    # --- stop-side TV reclaim: Kodi re-asserts ITS OWN active source ---
-    # The legitimate reclaim is Kodi's own libCEC SetActiveSource (it announces its own HDMI-4
-    # source) -- but that needs in-Kodi APIs this external player process does not have. For now we
-    # rely on Kodi re-asserting active source when this player exits; PR3 makes the reclaim explicit
-    # (an in-Kodi monitor calling CECActivateSource). No CEC injection, no foreign-initiator spoof.
-    log("Playback ended; relying on Kodi to re-assert its own active source as this player exits")
+    # --- stop-side TV reclaim ---
+    # Not done here: this external process has no libCEC. When this function returns, pcf_player drops
+    # a one-shot reclaim request that the in-Kodi service consumes once (CECActivateSource -- Kodi
+    # re-asserts its OWN active source). Single-shot per stop event; never re-asserted.
     return started
 
 
