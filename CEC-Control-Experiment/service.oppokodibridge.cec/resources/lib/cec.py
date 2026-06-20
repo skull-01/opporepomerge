@@ -56,7 +56,10 @@ def reclaim_kodi(config) -> bool:
     try:
         with urllib.request.urlopen(req, timeout=5.0) as resp:
             body = json.loads(resp.read().decode("utf-8", "replace"))
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
+        # OSError = unreachable / timeout / HTTPError (e.g. 401); ValueError (json.JSONDecodeError) = a
+        # non-JSON 200 body, e.g. a misconfigured Kodi web server returning an HTML login/error page.
+        # Either way: log and give up -- never raise into the orchestrator's finally or the settings test.
         log("Kodi reclaim failed (JSON-RPC {}:{}): {}".format(host, port, exc))
         return False
     if isinstance(body, dict) and body.get("error"):

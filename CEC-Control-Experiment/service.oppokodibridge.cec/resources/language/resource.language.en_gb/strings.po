@@ -119,6 +119,14 @@ msgctxt "#30065"
 msgid "Kodi JSON-RPC port (for the CEC reclaim; default 8080)"
 msgstr ""
 
+msgctxt "#30066"
+msgid "Kodi JSON-RPC username (only if Kodi web control has a password)"
+msgstr ""
+
+msgctxt "#30067"
+msgid "Kodi JSON-RPC password (only if Kodi web control has a password)"
+msgstr ""
+
 msgctxt "#30070"
 msgid "Setup & tests"
 msgstr ""

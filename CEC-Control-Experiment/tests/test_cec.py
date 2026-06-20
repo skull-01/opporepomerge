@@ -71,3 +71,13 @@ def test_reclaim_kodi_false_on_rpc_error(monkeypatch):
         lambda req, timeout=None: _Resp(json.dumps({"jsonrpc": "2.0", "id": 1, "error": {"message": "no"}})),
     )
     assert cec.reclaim_kodi(Config(oppo_ip="x")) is False
+
+
+def test_reclaim_kodi_false_on_non_json_body(monkeypatch):
+    # a misconfigured Kodi web server can return HTTP 200 with an HTML login/error page; json.loads
+    # raises a ValueError, which must be caught -> False, never propagate (would abort the settings test).
+    monkeypatch.setattr(
+        cec.urllib.request, "urlopen",
+        lambda req, timeout=None: _Resp("<html>401 Unauthorized</html>"),
+    )
+    assert cec.reclaim_kodi(Config(oppo_ip="x")) is False

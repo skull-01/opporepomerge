@@ -120,6 +120,20 @@
             <heading>30065</heading>
           </control>
         </setting>
+        <setting id="kodi_rpc_user" type="string" label="30066">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string">
+            <heading>30066</heading>
+          </control>
+        </setting>
+        <setting id="kodi_rpc_pass" type="string" label="30067">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string">
+            <heading>30067</heading>
+          </control>
+        </setting>
       </group>
     </category>
   </section>
