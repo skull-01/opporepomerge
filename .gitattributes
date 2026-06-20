@@ -1,0 +1,2 @@
+# Keep shell scripts LF so they don't break under a CRLF checkout on Windows.
+*.sh text eol=lf

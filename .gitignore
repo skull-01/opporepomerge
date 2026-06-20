@@ -1,0 +1,6 @@
+# Local Claude Code config (not part of the project)
+.claude/
+
+# OS / editor junk
+Thumbs.db
+.DS_Store
