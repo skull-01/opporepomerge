@@ -84,6 +84,10 @@ def main() -> None:
             _install_pcf()
 
     data_dir = os.path.dirname(_runtime_config_path())
+    # A reclaim flag present at startup is STALE (written before this restart): at boot we cannot know
+    # the user did not deliberately switch to another input, so drop it WITHOUT firing. Only flags that
+    # appear while this service is running map to a real stop event -> never assert active source at boot.
+    cec_reclaim.discard(data_dir)
 
     def _reclaim_once():
         # The ONE place the service asserts active source: a single CECActivateSource per stop event
@@ -94,7 +98,10 @@ def main() -> None:
 
     monitor = _Monitor()
     while not monitor.abortRequested():
-        cec_reclaim.consume(data_dir, _reclaim_once)
+        try:
+            cec_reclaim.consume(data_dir, _reclaim_once)
+        except Exception as exc:  # never let a reclaim error kill the service loop
+            log("reclaim error (non-fatal): {!r}".format(exc))
         if monitor.waitForAbort(1):
             break
     # Do NOT remove playercorefactory.xml on shutdown: Kodi loads it at STARTUP, before this service

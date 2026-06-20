@@ -44,3 +44,17 @@ def consume(data_dir: str, fire) -> bool:
         return False
     fire()
     return True
+
+
+def discard(data_dir: str) -> None:
+    """Remove a pending request WITHOUT firing.
+
+    Used at service startup to drop a STALE boot-time flag: a flag left over from before a restart must
+    NOT assert active source at boot, because we cannot know the user did not deliberately switch to a
+    different input in the meantime. Only flags that appear while the service is already running map to
+    a real stop event this session.
+    """
+    try:
+        os.remove(_flag(data_dir))
+    except OSError:
+        pass

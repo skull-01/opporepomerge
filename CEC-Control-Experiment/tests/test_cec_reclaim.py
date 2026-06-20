@@ -42,3 +42,20 @@ def test_flag_removed_before_fire_so_an_error_cannot_refire():
         fired = []
         assert cec_reclaim.consume(d, lambda: fired.append(1)) is False
         assert fired == []
+
+
+def test_discard_removes_a_stale_flag_without_firing():
+    # Startup purge: a flag present at service start (left over across a restart) is dropped WITHOUT
+    # asserting -- it must NOT fire CECActivateSource at boot and override a manual input choice.
+    with tempfile.TemporaryDirectory() as d:
+        cec_reclaim.request(d)
+        cec_reclaim.discard(d)
+        assert not os.path.exists(os.path.join(d, cec_reclaim.RECLAIM_FLAG))
+        fired = []
+        assert cec_reclaim.consume(d, lambda: fired.append(1)) is False
+        assert fired == []
+
+
+def test_discard_is_a_noop_without_a_flag():
+    with tempfile.TemporaryDirectory() as d:
+        cec_reclaim.discard(d)  # must not raise when there is nothing to drop
