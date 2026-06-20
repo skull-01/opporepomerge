@@ -1,27 +1,18 @@
-"""Playback handoff -- runs in the playercorefactory EXTERNAL-player process.
+"""Hand a disc file to the OPPO over the HTTP app API -- pure OPPO playback.
 
-This runs outside Kodi, so there are NO xbmc / CEC APIs -- everything is network:
-  * switch the TV to the OPPO by power-cycling it over TCP -- the OPPO's OWN One-Touch-Play on the
-    power-ON transition grabs the TV (legitimate CEC: no injection, no spoofed initiator);
-  * play the file on the OPPO over the HTTP app API;
-  * block until the OPPO goes idle.
-
-The stop-side Kodi reclaim is NOT done here (this process has no libCEC): when the handoff ends,
-``pcf_player`` drops a single-shot reclaim request that the in-Kodi service consumes ONCE
-(``CECActivateSource``, Kodi re-asserting its OWN active source). It fires exactly once per stop event
--- never a standing re-asserter, which would fight a manual input change (see
-``resources/lib/cec_reclaim.py``).
+No TV/CEC switching (that is ``cec.py``) and no playback monitoring (that is ``monitor.py``); the
+orchestrator wires the three together. The exact device sequence (verified live on the M9205):
+wake (UDP NOTIFY -> :7624) -> init (firmware/setupmenu/signin/globalinfo) -> login the OPPO's own NFS
+server -> mount the FILE'S FOLDER -> play the bare basename (or ``checkfolderhasBDMV`` for a disc
+folder). Mount the file's folder and play the bare name; never mount a non-exported folder.
 """
 from __future__ import annotations
 
-import time
-
+from . import detector
 from .kodilog import log
+from .monitor import interruptible_sleep
 from .oppo_http import (
-    OppoClient,
     OppoError,
-    disc_folder,
-    is_disc_path,
     local_ip_toward,
     nfs_server_from_devices,
     oppo_mount_folder,
@@ -38,8 +29,10 @@ def _best_effort(fn, label: str):
         return None
 
 
-def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
-    """Hand ``kodi_file`` to the OPPO and block until it stops. Returns True if playback was seen."""
+def play(config, client, kodi_file: str, should_abort=None) -> bool:
+    """Wake the OPPO, run the init dance, mount the file's folder, and start playback.
+
+    Returns True if the OPPO accepted the file (playback not yet confirmed -- ``monitor`` does that)."""
     if should_abort is None:
         should_abort = lambda: False
 
@@ -51,27 +44,12 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
     # Disc folders (BDMV / VIDEO_TS): mount the disc folder's parent and play the disc folder via
     # /checkfolderhasBDMV. Single files: mount the file's folder and play the bare basename.
     rel = (folder + "/" + basename) if folder else basename
-    is_disc = is_disc_path(rel)
+    is_disc = detector.is_disc_path(rel)
     if is_disc:
-        droot = disc_folder(rel)
+        droot = detector.disc_folder(rel)
         mount_rel, play_name = droot.rsplit("/", 1) if "/" in droot else ("", droot)
     else:
         mount_rel, play_name = folder, basename
-
-    client = OppoClient(config)
-
-    # --- play-side TV switch: the OPPO grabs its HDMI input via its OWN One-Touch-Play ---
-    # CEC routing is grab-only: a device may announce only ITS OWN active source, and only the TV may
-    # send <Set Stream Path>. There is no in-spec way for the Kodi box to push the TV to the OPPO's
-    # input, so we force the OPPO's own One-Touch-Play by power-cycling it (#POF -> #PON) -- the OPPO
-    # only asserts active source on a power-ON transition (an already-on OPPO told to play does NOT
-    # switch). PR2 makes this power-cycle unconditional.
-    if config.grab_tv_on_play:
-        log("Switching the TV to the OPPO via its own One-Touch-Play (power-cycle)")
-        try:
-            client.power_cycle()
-        except OppoError as exc:
-            log("TV grab (power-cycle) failed (non-fatal): {}".format(exc))
 
     if not client.wake_and_wait():
         log("OPPO app API ({}:{}) did not wake".format(config.oppo_ip, config.oppo_http_port))
@@ -91,7 +69,7 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
 
     _best_effort(lambda: client.login_nfs(server), "login")
     _best_effort(client.get_nfs_share_list, "share list")
-    _interruptible_sleep(2.0, should_abort)
+    interruptible_sleep(2.0, should_abort)
     _best_effort(client.get_setup_menu, "setup")
 
     mount_folder = oppo_mount_folder(mount_rel, config.path_to)
@@ -100,12 +78,12 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
     if isinstance(mount, dict) and mount.get("success") is False:
         log("mount failed ({}); re-login and retry".format(mount.get("retInfo") or mount.get("msg")))
         _best_effort(lambda: client.login_nfs(server), "re-login")
-        _interruptible_sleep(2.0, should_abort)
+        interruptible_sleep(2.0, should_abort)
         _best_effort(lambda: client.mount_nfs(server, mount_folder), "mount retry")
 
     if is_disc:
         _best_effort(client.stop, "stop")  # clear any stuck bd_is_playing
-        _interruptible_sleep(2.0, should_abort)
+        interruptible_sleep(2.0, should_abort)
         reply = _best_effort(lambda: client.play_bdmv(play_name), "play-bdmv")
     else:
         reply = _best_effort(lambda: client.play_file(server, play_name), "play")
@@ -113,71 +91,4 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
     if isinstance(reply, dict) and reply.get("success") is False:
         log("OPPO rejected the file: {}".format(reply.get("retInfo") or reply.get("msg") or ""))
         return False
-
-    started = _watch_playback(config, client, should_abort)
-
-    # --- stop-side TV reclaim ---
-    # Not done here: this external process has no libCEC. When this function returns, pcf_player drops
-    # a one-shot reclaim request that the in-Kodi service consumes once (CECActivateSource -- Kodi
-    # re-asserts its OWN active source). Single-shot per stop event; never re-asserted.
-    return started
-
-
-def _watch_playback(config, client, should_abort) -> bool:
-    """Two-phase wait, per the design:
-
-      Phase 1 (pre-playback) -- HTTP /getglobalinfo polling until playback STARTS. Verbose mode only
-        carries useful info once the OPPO is actually playing, and the NFS mount + buffer can take a
-        while, so the latency-tolerant HTTP poll owns the startup window.
-      Phase 2 (playing) -- open a fresh verbose ``#SVM 3`` connection and block until ``@UPL STOP``,
-        which is pushed the instant playback ends (no poll lag). The connection is terminated on stop.
-
-    Returns True if playback was observed.
-    """
-    interval = max(2.0, float(config.poll_interval))
-    grace = max(int(config.idle_confirmations), 10)  # NFS mount + buffer can be slow to start
-    _interruptible_sleep(interval, should_abort)
-    idle = 0
-    while not should_abort():
-        if client.is_playing():
-            break
-        idle += 1
-        if idle >= grace:
-            log("OPPO never reported playback after {} HTTP polls; giving up.".format(idle))
-            return False
-        _interruptible_sleep(interval, should_abort)
-    else:
-        return False
-
-    log("Playback started; opening verbose (#SVM 3) for instant stop detection.")
-    try:
-        client.verbose_watch_until_stop(should_abort)
-    except OppoError as exc:
-        log("verbose watch failed ({}); falling back to HTTP polling".format(exc))
-        _http_watch_until_idle(config, client, should_abort)
     return True
-
-
-def _http_watch_until_idle(config, client, should_abort) -> None:
-    """Fallback for phase 2: poll /getglobalinfo until idle for N consecutive reads."""
-    interval = max(2.0, float(config.poll_interval))
-    needed = max(1, int(config.idle_confirmations))
-    idle = 0
-    while not should_abort():
-        if client.is_playing():
-            idle = 0
-        else:
-            idle += 1
-            if idle >= needed:
-                return
-        _interruptible_sleep(interval, should_abort)
-
-
-def _interruptible_sleep(seconds: float, should_abort) -> None:
-    waited = 0.0
-    step = 0.5
-    while waited < seconds:
-        if should_abort():
-            return
-        time.sleep(min(step, seconds - waited))
-        waited += step

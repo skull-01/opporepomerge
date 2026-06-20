@@ -22,6 +22,16 @@ import urllib.parse
 import urllib.request
 from typing import Any, Optional, Tuple
 
+# Disc detection is the single source of truth in detector.py (shared with pcf.py). Re-exported here
+# for backwards-compatible importers/tests (``oppo_http.is_disc_path`` etc.).
+from .detector import (  # noqa: F401
+    disc_folder,
+    is_disc_path,
+    is_handoff_target,
+    is_iso,
+    is_oppo_target,
+)
+
 MOUNT_TIMEOUT = 25.0
 PLAY_TIMEOUT = 15.0
 OREMOTE_PORT = 7624
@@ -99,45 +109,6 @@ def oppo_mount_folder(folder: Optional[str], path_to: str) -> str:
     if base and rel:
         return base + "/" + rel
     return base or rel
-
-
-_DISC_MARKERS = ("/bdmv/", "/video_ts/", "/hvdvd_ts/")
-
-
-def is_disc_path(path: str) -> bool:
-    """True for a Blu-ray / DVD disc-folder path (BDMV/VIDEO_TS structure)."""
-    low = str(path).replace("\\", "/").lower()
-    return low.endswith((".bdmv", ".ifo")) or any(m in low for m in _DISC_MARKERS)
-
-
-def disc_folder(path: str) -> str:
-    """The disc folder (the dir that CONTAINS BDMV/VIDEO_TS) from a disc-structure path.
-
-    ``…/Ant-Man (2015)/BDMV/index.bdmv`` -> ``…/Ant-Man (2015)``.
-    """
-    text = str(path).replace("\\", "/")
-    low = text.lower()
-    for marker in _DISC_MARKERS:
-        idx = low.find(marker)
-        if idx >= 0:
-            return text[:idx]
-    return text
-
-
-def is_iso(path: str) -> bool:
-    """True for a disc-image file (.iso)."""
-    return str(path).strip().lower().endswith(".iso")
-
-
-def is_oppo_target(path: str) -> bool:
-    """The handoff filter. Route to the OPPO ONLY for disc content: disc images (.iso) and disc
-    folders (BDMV / VIDEO_TS / HVDVD_TS). Everything else (MKV, MP4, loose m2ts, ...) stays in
-    Kodi -- this is the only kind of file Kodi will send to the OPPO.
-    """
-    text = str(path)
-    if text.lower().startswith(("nfs://", "smb://")):
-        text = urllib.parse.unquote(text)
-    return is_iso(text) or is_disc_path(text)
 
 
 def local_ip_toward(host: str, port: int = 436) -> str:

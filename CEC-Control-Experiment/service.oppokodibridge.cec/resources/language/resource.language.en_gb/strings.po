@@ -114,3 +114,23 @@ msgstr ""
 msgctxt "#30041"
 msgid "CEC setup guidance already shown"
 msgstr ""
+
+msgctxt "#30065"
+msgid "Kodi JSON-RPC port (for the CEC reclaim; default 8080)"
+msgstr ""
+
+msgctxt "#30070"
+msgid "Setup & tests"
+msgstr ""
+
+msgctxt "#30071"
+msgid "Ping the OPPO (network reachability)"
+msgstr ""
+
+msgctxt "#30072"
+msgid "Control test (query the OPPO's power state)"
+msgstr ""
+
+msgctxt "#30073"
+msgid "CEC switch-over test (grab the OPPO, then reclaim Kodi)"
+msgstr ""

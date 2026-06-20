@@ -28,6 +28,31 @@
         </setting>
       </group>
     </category>
+    <category id="tests" label="30070">
+      <group id="1">
+        <setting id="test_ping" type="action" label="30071">
+          <level>0</level>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+          <data>RunScript(special://home/addons/service.oppokodibridge.cec/settings_tests.py,ping)</data>
+        </setting>
+        <setting id="test_control" type="action" label="30072">
+          <level>0</level>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+          <data>RunScript(special://home/addons/service.oppokodibridge.cec/settings_tests.py,control)</data>
+        </setting>
+        <setting id="test_cec" type="action" label="30073">
+          <level>0</level>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+          <data>RunScript(special://home/addons/service.oppokodibridge.cec/settings_tests.py,cec)</data>
+        </setting>
+      </group>
+    </category>
     <category id="paths" label="30010">
       <group id="1">
         <setting id="path_from" type="string" label="30011">
@@ -49,6 +74,11 @@
     <category id="switching" label="30060">
       <group id="1">
         <setting id="grab_tv_on_play" type="boolean" label="30061">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="cec_reclaim_on_stop" type="boolean" label="30022">
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
@@ -77,6 +107,17 @@
           </constraints>
           <control type="edit" format="integer">
             <heading>30033</heading>
+          </control>
+        </setting>
+        <setting id="kodi_rpc_port" type="integer" label="30065">
+          <level>0</level>
+          <default>8080</default>
+          <constraints>
+            <minimum>1</minimum>
+            <maximum>65535</maximum>
+          </constraints>
+          <control type="edit" format="integer">
+            <heading>30065</heading>
           </control>
         </setting>
       </group>

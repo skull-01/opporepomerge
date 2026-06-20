@@ -27,9 +27,8 @@ Mi Box cross-control that motivated this fork).
 Each TV-input assertion is **single-shot, tied to an event**: the OPPO grabs HDMI-1 once on play, Kodi
 reclaims once on stop. There is **no standing monitor** re-asserting active source -- that would override a
 manual input change and make the TV un-leaveable (CEC is open-loop; it can't tell "the TV missed my frame"
-from "the user switched away"). So if you manually switch the TV input, your choice **stays**. The reclaim is
-single-shot by construction (`service.oppokodibridge.cec/resources/lib/cec_reclaim.py`): a request is consumed
-once and removed before it fires.
+from "the user switched away"). So if you manually switch the TV input, your choice **stays**. The orchestrator
+fires the grab once on play and the reclaim once on stop -- and nothing else ever touches the TV.
 
 ### Why this is the *legitimate* path (primary sources)
 
@@ -43,15 +42,35 @@ enforcement (`"only the TV is allowed to send CEC_OPCODE_SET_STREAM_PATH"`).
 The OPPO power-cycle costs **~20-24 s** on every handoff -- the deliberate price for no IR hardware and a clean
 bus. (v2 = CEC but blips; v3 = no blip but needs IR; this = no blip, pure CEC, slow grab.)
 
+## Architecture
+
+Five single-responsibility modules under `resources/lib/`, wired by the orchestrator (which runs in the
+playercorefactory external-player process, so there is still no blip):
+
+| Module | Responsibility |
+|--------|----------------|
+| `detector` | which files qualify for handoff (ISO + BDMV/VIDEO_TS) -- one source of truth; `pcf` builds its routing rules from it |
+| `handoff` | tell the OPPO to play (wake → init → mount → play); pure OPPO HTTP |
+| `cec` | trigger the switch-over -- `grab_oppo` (power-cycle) + `reclaim_kodi` (JSON-RPC → `script.cecreclaim` → `CECActivateSource`) |
+| `monitor` | watch playback state (HTTP poll → playing; `#SVM 3` → stop) |
+| `orchestrator` | the flow: detect → grab → play → watch → reclaim |
+
+The in-Kodi service only installs `playercorefactory.xml` and publishes config. The Kodi reclaim goes
+straight from the orchestrator to Kodi over **localhost JSON-RPC**, so there is no flag and no stale-flag
+bug -- still single-shot, still never re-asserting.
+
+## Setup
+
+1. **OPPO:** enable IP/serial control (TCP `:23`); set the OPPO IP + NAS paths in the add-on settings.
+2. **Kodi:** enable **Settings → Services → Control → Allow remote control via HTTP** (port `8080`), and
+   install the [`script.cecreclaim`](desktop/kodi-helper/script.cecreclaim) helper (the reclaim target).
+3. **Settings → Setup & tests:** **Ping the OPPO**, then **Control test** (`#QPW`), then the guided
+   **CEC switch-over test** — it grabs the OPPO, asks if the TV switched, reclaims Kodi, and asks again.
+
 ## Status
 
-Experimental, software-verified only. Pure-logic tests run off-box: `python -m pytest -q`. Installs alongside
-v2 and v3 (add-on id `service.oppokodibridge.cec`) for direct A/B/C comparison.
-
-- **PR1:** fork of v3 with IR removed; switching reduced to power-cycle (play) + a reclaim stub (stop).
-- **PR3 (done):** explicit **single-shot** Kodi reclaim -- `pcf_player` drops a one-shot request when the handoff ends; the in-Kodi service consumes it once and calls `CECActivateSource`. Never a standing re-asserter.
-- **PR2:** make the power-cycle unconditional (cover the already-on case every time).
-- **PR4:** experiment harness + measurements (grab/reclaim latency, blip, bus-clean) vs v2 / v3.
+Experimental, software-verified only (44 off-box tests: `python -m pytest -q`). Installs alongside v2 and v3
+(add-on id `service.oppokodibridge.cec`) for direct A/B/C comparison. Hardware validation pending.
 
 ## License
 

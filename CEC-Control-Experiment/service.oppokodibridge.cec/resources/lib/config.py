@@ -31,6 +31,9 @@ class Config:
     serial_baud: int = 9600
     poll_interval: float = 5.0
     idle_confirmations: int = 2
+    kodi_rpc_port: int = 8080
+    kodi_rpc_user: str = ""
+    kodi_rpc_pass: str = ""
 
     @property
     def configured(self) -> bool:
@@ -87,4 +90,7 @@ def from_addon() -> "Config":
         serial_port=s("serial_port") or "/dev/ttyUSB0",
         serial_baud=i("serial_baud", 9600),
         poll_interval=float(i("poll_interval", 5)),
+        kodi_rpc_port=i("kodi_rpc_port", 8080),
+        kodi_rpc_user=s("kodi_rpc_user").strip(),
+        kodi_rpc_pass=s("kodi_rpc_pass").strip(),
     )

@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 
+from . import detector
 from .kodilog import log
 
 PLAYER_NAME = "OppoKodiBridge"
@@ -29,22 +30,26 @@ _TEMPLATE = """<playercorefactory>
     </player>
   </players>
   <rules action="prepend">
-    <rule filetypes="iso" player="__NAME__"/>
-    <rule filename="(?i).*/bdmv/.*" player="__NAME__"/>
-    <rule filename="(?i).*/video_ts/.*" player="__NAME__"/>
-    <rule filename="(?i).*\\.bdmv$" player="__NAME__"/>
-    <rule filename="(?i).*\\.iso$" player="__NAME__"/>
-  </rules>
+__RULES__  </rules>
 </playercorefactory>
 """
 
 
 def build_xml(player_script_path: str, python_bin: str = "python3") -> str:
-    """The playercorefactory.xml content routing disc content to ``player_script_path``."""
+    """The playercorefactory.xml content routing disc content to ``player_script_path``.
+
+    The routing rules come from ``detector.PCF_RULES`` -- the same definition the runtime classifier
+    uses -- so the XML and the in-process ``is_handoff_target`` can never drift apart.
+    """
+    rules = "".join(
+        '    <rule {}="{}" player="{}"/>\n'.format(kind, pattern, PLAYER_NAME)
+        for kind, pattern in detector.PCF_RULES
+    )
     return (
         _TEMPLATE.replace("__NAME__", PLAYER_NAME)
         .replace("__PY__", python_bin)
         .replace("__SCRIPT__", player_script_path)
+        .replace("__RULES__", rules)
     )
 
 

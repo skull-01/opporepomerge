@@ -16,7 +16,6 @@ import dataclasses
 import json
 import os
 
-from . import cec_reclaim
 from . import config as config_mod
 from . import pcf
 from .kodilog import log
@@ -83,26 +82,12 @@ def main() -> None:
             _publish_config()
             _install_pcf()
 
-    data_dir = os.path.dirname(_runtime_config_path())
-    # A reclaim flag present at startup is STALE (written before this restart): at boot we cannot know
-    # the user did not deliberately switch to another input, so drop it WITHOUT firing. Only flags that
-    # appear while this service is running map to a real stop event -> never assert active source at boot.
-    cec_reclaim.discard(data_dir)
-
-    def _reclaim_once():
-        # The ONE place the service asserts active source: a single CECActivateSource per stop event
-        # (driven by the one-shot request pcf_player drops). NEVER a standing re-asserter -- a manual
-        # input change must stick (see resources/lib/cec_reclaim.py).
-        xbmc.executebuiltin("CECActivateSource")
-        log("Kodi reclaim: CECActivateSource (single-shot, one per playback stop)")
-
+    # The CEC reclaim is no longer the service's job: the orchestrator triggers it directly via
+    # JSON-RPC (cec.reclaim_kodi -> script.cecreclaim) when the handoff ends. This service only
+    # installs the playercorefactory.xml and publishes the resolved config, then idles.
     monitor = _Monitor()
     while not monitor.abortRequested():
-        try:
-            cec_reclaim.consume(data_dir, _reclaim_once)
-        except Exception as exc:  # never let a reclaim error kill the service loop
-            log("reclaim error (non-fatal): {!r}".format(exc))
-        if monitor.waitForAbort(1):
+        if monitor.waitForAbort(5):
             break
     # Do NOT remove playercorefactory.xml on shutdown: Kodi loads it at STARTUP, before this service
     # runs, so the file must already be on disk at boot -> it has to persist across restarts. It is
