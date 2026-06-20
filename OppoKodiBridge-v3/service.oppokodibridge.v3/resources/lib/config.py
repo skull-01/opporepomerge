@@ -90,4 +90,7 @@ def from_addon() -> "Config":
         serial_port=s("serial_port") or "/dev/ttyUSB0",
         serial_baud=i("serial_baud", 9600),
         poll_interval=float(i("poll_interval", 5)),
+        broadlink_ip=s("broadlink_ip").strip(),
+        ir_code_oppo=s("ir_code_oppo").strip(),
+        ir_code_kodi=s("ir_code_kodi").strip(),
     )

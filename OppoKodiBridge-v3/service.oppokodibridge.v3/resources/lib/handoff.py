@@ -13,6 +13,7 @@ There is deliberately no ``CECActivateSource`` reclaim -- v3 is CEC-free by desi
 """
 from __future__ import annotations
 
+import threading
 import time
 
 from . import ir
@@ -28,6 +29,12 @@ from .oppo_http import (
     parse_media_path,
     split_share_relative,
 )
+
+
+# Optional pause after the OPPO first reports playing, before the IR switch fires, to let the OPPO's
+# HDMI output settle so the TCL eats ONE input/HDCP handshake instead of two back-to-back. Kept a
+# module constant (0 = off) until hardware tuning justifies promoting it to a UI setting.
+IR_SETTLE_MS = 0
 
 
 def _best_effort(fn, label: str):
@@ -60,11 +67,12 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
 
     client = OppoClient(config)
 
-    # --- switch the TV to the OPPO ---
-    if ir.configured(config):
-        log("Switching the TV to the OPPO via Broadlink IR")
-        ir.switch_to_oppo(config)
-    elif config.grab_tv_on_play:
+    # --- play-side TV switch ---
+    # The IR switch is deferred to the moment the OPPO actually reports PLAYING (see _on_started),
+    # so the TV lands on a LIVE HDMI input instead of a no-signal one during wake/init/mount/buffer.
+    # Only the interim power-cycle stays up front: the OPPO's One-Touch-Play needs the power-ON
+    # transition before it can grab the TV, and it is reached only when IR is NOT configured.
+    if not ir.configured(config) and config.grab_tv_on_play:
         log("No IR configured; interim switch via OPPO power-cycle (One-Touch-Play)")
         try:
             client.power_cycle()
@@ -112,18 +120,35 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
         log("OPPO rejected the file: {}".format(reply.get("retInfo") or reply.get("msg") or ""))
         return False
 
-    started = _watch_playback(config, client, should_abort)
+    def _on_started():
+        # Fire the play-side IR switch the instant the OPPO first reports playback. Do it in a daemon
+        # thread so a multi-key IR nav sequence (which can take a second or two) cannot delay opening
+        # the verbose #SVM 3 stop-watch -- a very short clip must still be caught when it stops.
+        if not ir.configured(config):
+            return
 
-    # --- switch the TV back to Kodi ---
+        def _go():
+            if IR_SETTLE_MS:
+                time.sleep(IR_SETTLE_MS / 1000.0)
+            log("OPPO is playing; switching the TV to the OPPO via Broadlink IR")
+            if not ir.switch_to_oppo(config):
+                log("IR switch to OPPO failed (non-fatal); the OPPO is still playing")
+
+        threading.Thread(target=_go, name="ir-switch-oppo", daemon=True).start()
+
+    started = _watch_playback(config, client, should_abort, on_started=_on_started)
+
+    # --- switch the TV back to Kodi (HDMI 4 never stopped outputting, so this is just the TV's own
+    # input handshake, not a wake) ---
     if ir.configured(config):
-        log("Switching the TV back to Kodi via Broadlink IR")
-        ir.switch_to_kodi(config)
+        if not ir.switch_to_kodi(config):
+            log("IR reclaim to Kodi failed (non-fatal); the TV may be left on the OPPO input")
     else:
         log("No IR: relying on Kodi re-asserting active source when this player exits")
     return started
 
 
-def _watch_playback(config, client, should_abort) -> bool:
+def _watch_playback(config, client, should_abort, on_started=None) -> bool:
     """Two-phase wait, per the design:
 
       Phase 1 (pre-playback) -- HTTP /getglobalinfo polling until playback STARTS. Verbose mode only
@@ -148,6 +173,9 @@ def _watch_playback(config, client, should_abort) -> bool:
         _interruptible_sleep(interval, should_abort)
     else:
         return False
+
+    if on_started is not None:
+        on_started()
 
     log("Playback started; opening verbose (#SVM 3) for instant stop detection.")
     try:
