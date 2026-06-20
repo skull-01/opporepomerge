@@ -23,6 +23,12 @@ def run(config, kodi_file: str, should_abort=None) -> bool:
         log("Not a disc handoff target; leaving it to Kodi: {!r}".format(kodi_file))
         return False
 
+    if not getattr(config, "configured", False):
+        # No OPPO IP -- e.g. the service never published runtime_config.json (or did so under a
+        # different Kodi profile). Don't power-cycle / reclaim against an empty config.
+        log("No OPPO configured (runtime config missing?); leaving it to Kodi")
+        return False
+
     client = OppoClient(config)
 
     # play-side: the OPPO grabs the TV via its OWN One-Touch-Play (a single power-cycle).

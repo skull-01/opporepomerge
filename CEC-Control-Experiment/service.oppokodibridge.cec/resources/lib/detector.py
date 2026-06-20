@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import urllib.parse
 
-_DISC_MARKERS = ("/bdmv/", "/video_ts/", "/hvdvd_ts/")
+_DISC_SEGMENTS = ("bdmv", "video_ts", "hvdvd_ts")
 
 # The playercorefactory <rule> patterns that route a file to the OPPO external player. (kind, pattern)
 # where kind is "filetypes" or "filename". One definition shared by pcf.py's XML and is_handoff_target.
@@ -22,6 +22,18 @@ PCF_RULES = (
 )
 
 
+def _disc_marker_index(low_path: str) -> int:
+    """Index where a disc-structure segment (BDMV/VIDEO_TS/HVDVD_TS) begins as a whole path component,
+    or -1. Matches the segment at the START of the path too (a disc folder at the share root)."""
+    for seg in _DISC_SEGMENTS:
+        if low_path.startswith(seg + "/"):
+            return 0
+        idx = low_path.find("/" + seg + "/")
+        if idx >= 0:
+            return idx + 1  # the segment starts just after the leading slash
+    return -1
+
+
 def is_iso(path: str) -> bool:
     """True for a disc-image file (``.iso``)."""
     return str(path).strip().lower().endswith(".iso")
@@ -30,20 +42,19 @@ def is_iso(path: str) -> bool:
 def is_disc_path(path: str) -> bool:
     """True for a Blu-ray / DVD disc-folder path (BDMV / VIDEO_TS / HVDVD_TS structure)."""
     low = str(path).replace("\\", "/").lower()
-    return low.endswith((".bdmv", ".ifo")) or any(m in low for m in _DISC_MARKERS)
+    return low.endswith((".bdmv", ".ifo")) or _disc_marker_index(low) >= 0
 
 
 def disc_folder(path: str) -> str:
     """The disc folder (the dir that CONTAINS BDMV/VIDEO_TS) from a disc-structure path.
 
-    ``…/Ant-Man (2015)/BDMV/index.bdmv`` -> ``…/Ant-Man (2015)``.
+    ``…/Ant-Man (2015)/BDMV/index.bdmv`` -> ``…/Ant-Man (2015)``; a disc structure at the root
+    (``BDMV/index.bdmv``) -> ``""`` (the export root itself).
     """
     text = str(path).replace("\\", "/")
-    low = text.lower()
-    for marker in _DISC_MARKERS:
-        idx = low.find(marker)
-        if idx >= 0:
-            return text[:idx]
+    idx = _disc_marker_index(text.lower())
+    if idx >= 0:
+        return text[:idx].rstrip("/")
     return text
 
 

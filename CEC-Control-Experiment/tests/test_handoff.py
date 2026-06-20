@@ -65,3 +65,37 @@ def test_play_returns_false_when_unmappable(monkeypatch):
     monkeypatch.setattr(handoff, "interruptible_sleep", lambda *a, **k: None)
     # path_from doesn't match -> can't map -> False before the client is ever used
     assert handoff.play(_cfg(), _FakeClient(play_reply={"success": True}), "nfs://other/x.iso") is False
+
+
+class _RecordingClient(_FakeClient):
+    def __init__(self, play_reply=None):
+        super().__init__(play_reply if play_reply is not None else {"success": True})
+        self.calls = []
+
+    def mount_nfs(self, server, folder):
+        self.calls.append(("mount", folder))
+        return {}
+
+    def play_file(self, server, name):
+        self.calls.append(("play_file", name))
+        return self._reply
+
+    def play_bdmv(self, name):
+        self.calls.append(("play_bdmv", name))
+        return self._reply
+
+
+def test_play_trailing_slash_disc_folder_routes_to_bdmv(monkeypatch):
+    monkeypatch.setattr(handoff, "interruptible_sleep", lambda *a, **k: None)
+    client = _RecordingClient()
+    assert handoff.play(_cfg(), client, "nfs://h/s/Movies/Dune/VIDEO_TS/") is True
+    assert ("play_bdmv", "Dune") in client.calls       # the disc folder, not the bare basename
+    assert ("mount", "srv/Movies") in client.calls      # mounts the disc folder's parent
+
+
+def test_play_iso_under_a_bdmv_dir_uses_the_file_branch(monkeypatch):
+    monkeypatch.setattr(handoff, "interruptible_sleep", lambda *a, **k: None)
+    client = _RecordingClient()
+    assert handoff.play(_cfg(), client, "nfs://h/s/Movies/BDMV/backup.iso") is True
+    assert ("play_file", "backup.iso") in client.calls
+    assert not any(kind == "play_bdmv" for kind, _ in client.calls)

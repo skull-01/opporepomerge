@@ -23,6 +23,17 @@ def test_disc_folder():
     assert detector.disc_folder("x/VIDEO_TS/VIDEO_TS.IFO") == "x"
 
 
+def test_disc_folder_at_share_root():
+    # a disc structure directly at the export root -> "" (mount the export root itself)
+    assert detector.disc_folder("BDMV/index.bdmv") == ""
+    assert detector.disc_folder("VIDEO_TS/VIDEO_TS.IFO") == ""
+
+
+def test_is_disc_path_detects_a_root_level_disc_segment():
+    assert detector.is_disc_path("BDMV/STREAM/00800.m2ts")  # root-level BDMV stream now detected
+    assert detector.is_disc_path("VIDEO_TS/VTS_01_1.VOB")
+
+
 def test_pcf_rules_drive_the_xml():
     xml = pcf.build_xml("/path/to/pcf_player.py", "python3")
     # the iso filetype rule and the bdmv/iso filename rules from detector.PCF_RULES are emitted

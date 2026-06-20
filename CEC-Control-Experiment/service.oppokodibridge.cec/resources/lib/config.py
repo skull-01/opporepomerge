@@ -61,12 +61,16 @@ def from_addon() -> "Config":
 
     def b(key: str, default: bool) -> bool:
         try:
+            if not addon.getSetting(key):  # undeclared / unset id -> use the dataclass default
+                return default
             return bool(addon.getSettingBool(key))
         except Exception:
             return default
 
     def i(key: str, default: int) -> int:
         try:
+            if not addon.getSetting(key):  # undeclared / unset id -> use the dataclass default
+                return default
             return int(addon.getSettingInt(key))
         except Exception:
             return default

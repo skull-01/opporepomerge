@@ -147,10 +147,10 @@ def _containers(info: Any) -> list:
 
 
 def status_is_idle(status: object) -> bool:
-    s = str(status).strip().upper()
-    if s in PLAY_STATUSES:
-        return False
-    return s == "" or s in IDLE_STATUSES
+    # Only an explicit PLAY token counts as "not idle". Everything else -- "", "0"/"false"/"off",
+    # STOP/HOME, and any UNKNOWN / no-disc token (NODISC, STANDBY, CLOSE, ...) -- is idle, so the HTTP
+    # fallback watcher terminates instead of looping forever on a status string it does not recognise.
+    return str(status).strip().upper() not in PLAY_STATUSES
 
 
 def info_is_playing(info: Any) -> bool:
@@ -367,28 +367,31 @@ class OppoClient:
         except OSError as exc:
             raise OppoError("verbose :23 connect failed: {}".format(exc)) from exc
         try:
-            conn.sendall(b"#SVM 3\r")
-            conn.settimeout(1.0)
-            buf = ""
-            last_data = time.time()
-            while not should_abort():
-                try:
-                    chunk = conn.recv(512).decode("ascii", errors="replace")
-                except socket.timeout:
-                    if time.time() - last_data > 6.0:  # heartbeat quiet -> confirm via HTTP
-                        if not self.is_playing():
-                            return True
-                        last_data = time.time()
-                    continue
-                if not chunk:
-                    return True  # connection dropped -> treat as ended
+            try:
+                conn.sendall(b"#SVM 3\r")
+                conn.settimeout(1.0)
+                buf = ""
                 last_data = time.time()
-                buf += chunk
-                while "\r" in buf:
-                    line, buf = buf.split("\r", 1)
-                    if upl_means_ended(line):
-                        return True
-            return True
+                while not should_abort():
+                    try:
+                        chunk = conn.recv(512).decode("ascii", errors="replace")
+                    except socket.timeout:
+                        if time.time() - last_data > 6.0:  # heartbeat quiet -> confirm via HTTP
+                            if not self.is_playing():
+                                return True
+                            last_data = time.time()
+                        continue
+                    if not chunk:
+                        return True  # connection dropped -> treat as ended
+                    last_data = time.time()
+                    buf += chunk
+                    while "\r" in buf:
+                        line, buf = buf.split("\r", 1)
+                        if upl_means_ended(line):
+                            return True
+                return True
+            except OSError as exc:  # a dropped :23 connection -> OppoError so the monitor's HTTP fallback runs
+                raise OppoError("verbose :23 dropped: {}".format(exc)) from exc
         finally:
             try:
                 conn.sendall(b"#SVM 0\r")
@@ -403,9 +406,12 @@ class OppoClient:
         except OSError as exc:
             raise OppoError("OPPO :23 connect failed: {}".format(exc)) from exc
         try:
-            conn.sendall((command.strip() + "\r").encode("ascii"))
-            time.sleep(0.5)
-            conn.settimeout(2.0)
+            try:
+                conn.sendall((command.strip() + "\r").encode("ascii"))
+                time.sleep(0.5)
+                conn.settimeout(2.0)
+            except OSError as exc:  # a mid-send reset must surface as OppoError (grab_oppo catches it)
+                raise OppoError("OPPO :23 send failed: {}".format(exc)) from exc
             try:
                 return conn.recv(128).decode("ascii", errors="replace")
             except OSError:

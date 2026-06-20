@@ -36,17 +36,20 @@ def play(config, client, kodi_file: str, should_abort=None) -> bool:
     if should_abort is None:
         should_abort = lambda: False
 
-    folder, basename = split_share_relative(kodi_file, config.path_from)
+    folder, basename = split_share_relative(kodi_file.rstrip("/"), config.path_from)
     if not basename:
         log("Cannot map {!r} with path_from={!r}".format(kodi_file, config.path_from))
         return False
 
     # Disc folders (BDMV / VIDEO_TS): mount the disc folder's parent and play the disc folder via
-    # /checkfolderhasBDMV. Single files: mount the file's folder and play the bare basename.
+    # /checkfolderhasBDMV. Single files: mount the file's folder and play the bare basename. Detect on
+    # the slash-bearing form too, so a disc FOLDER path (e.g. .../VIDEO_TS, with a trailing slash
+    # stripped above) is still recognised. An .iso always takes the file branch, even under a
+    # BDMV/VIDEO_TS directory.
     rel = (folder + "/" + basename) if folder else basename
-    is_disc = detector.is_disc_path(rel)
+    is_disc = (detector.is_disc_path(rel) or detector.is_disc_path(rel + "/")) and not detector.is_iso(rel)
     if is_disc:
-        droot = detector.disc_folder(rel)
+        droot = detector.disc_folder(rel + "/")
         mount_rel, play_name = droot.rsplit("/", 1) if "/" in droot else ("", droot)
     else:
         mount_rel, play_name = folder, basename

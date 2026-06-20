@@ -40,7 +40,10 @@ def _profile_dir() -> str:
 
 
 def _runtime_config_path() -> str:
-    data_dir = _translate("special://profile/addon_data/{}/".format(ADDON_ID))
+    # masterprofile is always <home>/userdata, which is the path pcf_player derives -- so writer and
+    # reader agree even when Kodi is running a NON-master profile (special://profile would point at the
+    # active profile and the external player would never find the published config).
+    data_dir = _translate("special://masterprofile/addon_data/{}/".format(ADDON_ID))
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir, exist_ok=True)
     return os.path.join(data_dir, "runtime_config.json")

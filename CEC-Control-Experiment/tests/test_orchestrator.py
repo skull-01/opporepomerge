@@ -46,3 +46,13 @@ def test_run_no_grab_when_disabled(monkeypatch):
                  path_from="nfs://h/s", path_to="srv")
     assert orchestrator.run(cfg, "nfs://h/s/x.iso") is True
     assert "grab" not in order and "reclaim" not in order
+
+
+def test_run_skips_when_no_oppo_configured(monkeypatch):
+    order = []
+    _wire(monkeypatch, order)
+    monkeypatch.setattr(orchestrator.handoff, "play", lambda *a, **k: order.append("play") or True)
+    # a disc target but an empty config (oppo_ip="") -> not configured -> nothing fires
+    cfg = Config(path_from="nfs://h/s", path_to="srv")
+    assert orchestrator.run(cfg, "nfs://h/s/x.iso") is False
+    assert order == []

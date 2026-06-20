@@ -70,6 +70,38 @@ def test_status_is_idle():
     assert not oh.status_is_idle("PLAY")
 
 
+def test_status_is_idle_unknown_and_falsy_tokens_are_idle():
+    for token in ("NODISC", "STANDBY", "CLOSE", "0", "false", "off", "READY"):
+        assert oh.status_is_idle(token), token
+    assert not oh.status_is_idle("BUFFERING")
+
+
+def test_info_is_playing_false_on_unknown_status():
+    assert not oh.info_is_playing({"is_video_playing": False, "state": "NODISC"})
+    assert not oh.info_is_playing({"status": "STANDBY"})
+    assert oh.info_is_playing({"status": "PLAY"})
+
+
+def test_send_tcp_command_raises_oppoerror_on_mid_send_reset(monkeypatch):
+    class _Conn:
+        def sendall(self, data):
+            raise ConnectionResetError("reset")
+
+        def settimeout(self, t):
+            pass
+
+        def recv(self, n):
+            return b""
+
+        def close(self):
+            pass
+
+    monkeypatch.setattr(oh.socket, "create_connection", lambda addr, timeout=None: _Conn())
+    monkeypatch.setattr(oh.time, "sleep", lambda *a, **k: None)
+    with pytest.raises(oh.OppoError):
+        _client().send_tcp_command("#QPW")
+
+
 def test_info_is_playing_real_fields():
     idle = {"success": True, "is_video_playing": False, "is_audio_playing": False, "activeapp": "scrn_svr"}
     assert not oh.info_is_playing(idle)
