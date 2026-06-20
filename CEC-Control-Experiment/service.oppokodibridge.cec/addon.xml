@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="service.oppokodibridge.cec" name="CEC Control Experiment" version="0.1.0" provider-name="skull-01">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.service" library="service.py"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Experiment: no-blip OPPO playback with pure, spec-legitimate HDMI-CEC switching (no IR, no spoofing).</summary>
+    <description lang="en_GB">CEC Control Experiment is a fork of OppoKodiBridge v3 that keeps v3's playercorefactory handoff (Kodi routes disc content to an external OPPO player, so there is no pre-play "blip") but switches the TV using ONLY legitimate HDMI-CEC. The OPPO grabs its HDMI input via its OWN One-Touch-Play, forced by power-cycling the OPPO (it only asserts active source on a power-ON transition); Kodi reclaims its input by re-asserting its OWN active source. There is deliberately NO IR blaster and NO CEC injection / spoofed initiator (which corrupts the shared bus). The trade-off is the ~20-24s OPPO power-cycle on every handoff, accepted in exchange for zero extra hardware and a clean bus. Installs alongside v2 and v3 (different add-on id) for direct comparison. The OPPO HTTP API is community-reverse-engineered, not an official protocol.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+    <source>https://github.com/skull-01/CEC-Control-Experiment</source>
+    <news>0.1.0 -- PR1: fork of v3 with IR removed. Switching reduced to the legitimate CEC path: OPPO grabs the TV via its own One-Touch-Play (power-cycle), Kodi reclaims by re-asserting its own active source. Power-cycle is gated on grab_tv_on_play (PR2 makes it unconditional); the explicit Kodi reclaim is a stub (PR3). No IR, no CEC spoofing.</news>
+  </extension>
+</addon>
