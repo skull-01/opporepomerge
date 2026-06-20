@@ -18,5 +18,13 @@ commit from each source repository is preserved with its files already namespace
 under the subdirectory above. `git log` and `git blame` work across the full
 timeline of each project.
 
-Only the `main` branch of each source repo was merged. Other branches remain in the
-original repositories linked above.
+### Branches
+
+Every branch from all three source repos is preserved, namespaced as `<subdir>/<branch>`
+(e.g. `script.oppo203.iso.external/release/v2.9.13`, `OppoKodiBridge-v3/ir-blaster-integration`).
+Each repo's `main` is also kept as `<subdir>/main`, and all of them are ancestors of the
+consolidated `main`, so the branches share commit identity with the merged history rather than
+forming parallel lines.
+
+The combined `main` is the consolidation; the per-repo `<subdir>/main` branches are the exact
+original tips of each source repo, relocated under their subdirectory.
