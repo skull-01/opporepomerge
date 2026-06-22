@@ -6,10 +6,14 @@ import types
 from resources.lib import config as config_mod
 
 
-def _fake_xbmcaddon(settings):
+def _fake_xbmcaddon(settings, captured=None):
     mod = types.ModuleType("xbmcaddon")
 
     class Addon:
+        def __init__(self, addon_id=None):  # real Kodi needs the id; a no-arg call fails under RunScript
+            if captured is not None:
+                captured["id"] = addon_id
+
         def getSetting(self, key):  # raw STRING (like real Kodi); '' for an undeclared/unset id
             if key not in settings:
                 return ""
@@ -53,3 +57,13 @@ def test_from_addon_honours_declared_falsy_values(monkeypatch):
     cfg = config_mod.from_addon()
     assert cfg.grab_tv_on_play is False
     assert cfg.handoff_enabled is False
+
+
+def test_from_addon_passes_explicit_addon_id(monkeypatch):
+    # a no-arg xbmcaddon.Addon() raises "No valid addon id" when launched via RunScript (the Setup &
+    # tests buttons) -- from_addon must pass the explicit id so those scripts don't crash.
+    captured = {}
+    monkeypatch.setitem(sys.modules, "xbmcaddon", _fake_xbmcaddon({"oppo_ip": "1.2.3.4"}, captured))
+    cfg = config_mod.from_addon()
+    assert captured["id"] == "service.oppokodibridge.cec"
+    assert cfg.oppo_ip == "1.2.3.4"

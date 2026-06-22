@@ -54,7 +54,9 @@ class Config:
 def from_addon() -> "Config":
     import xbmcaddon
 
-    addon = xbmcaddon.Addon()
+    # Pass the id explicitly: a no-arg xbmcaddon.Addon() raises "No valid addon id could be obtained"
+    # when this runs from a RunScript (the Setup & tests buttons) rather than the background service.
+    addon = xbmcaddon.Addon("service.oppokodibridge.cec")
 
     def s(key: str, default: str = "") -> str:
         try:
