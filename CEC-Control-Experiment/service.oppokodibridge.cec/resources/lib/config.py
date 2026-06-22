@@ -13,6 +13,7 @@ from dataclasses import dataclass
 class Config:
     oppo_ip: str = ""
     oppo_http_port: int = 436
+    oppo_model: str = "M9205"
     oppo_http_broadcast: str = "255.255.255.255"
     socket_timeout: float = 4.0
     handoff_enabled: bool = True
@@ -80,6 +81,7 @@ def from_addon() -> "Config":
     return Config(
         oppo_ip=s("oppo_ip").strip(),
         oppo_http_port=i("oppo_http_port", 436),
+        oppo_model=s("oppo_model", "M9205").strip().upper(),
         socket_timeout=float(i("socket_timeout", 4)),
         handoff_enabled=b("handoff_enabled", True),
         disc_iso_only=b("disc_iso_only", True),

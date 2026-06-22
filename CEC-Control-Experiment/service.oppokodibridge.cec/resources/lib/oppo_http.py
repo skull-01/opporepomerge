@@ -354,12 +354,14 @@ class OppoClient:
 
     def play_bdmv(self, disc_folder_name: str, nfs: bool = True) -> dict:
         """Play a Blu-ray disc FOLDER (one containing BDMV). On this OPPO ``/checkfolderhasBDMV``
-        doesn't just check -- it starts the disc. ``disc_folder_name`` is relative to the mount."""
+        doesn't just check -- it starts the disc. ``disc_folder_name`` is relative to the mount; when
+        the disc structure IS the mount root (a disc folder sitting at the export root) it is empty, so
+        the folderpath is the bare mount (``/mnt/nfs1``) -- never a dangling ``/mnt/nfs1/``."""
         mount_path = "nfs1" if nfs else "cifs1"
-        endpoint = '/checkfolderhasBDMV?{"folderpath":"/mnt/%s/%s"}' % (
-            mount_path,
-            urllib.parse.quote(disc_folder_name),
-        )
+        folderpath = "/mnt/%s" % mount_path
+        if disc_folder_name:
+            folderpath += "/" + urllib.parse.quote(disc_folder_name)
+        endpoint = '/checkfolderhasBDMV?{"folderpath":"%s"}' % folderpath
         return self._get_json(endpoint, timeout=PLAY_TIMEOUT)
 
     def is_playing(self) -> bool:
@@ -461,9 +463,20 @@ class OppoClient:
         return self.send_tcp_command(command, timeout)
 
     def power_cycle(self, delay: float = 5.0) -> None:
-        """Standby then power on -- the power-ON fires CEC One-Touch-Play so the TV switches to the
-        OPPO (it does NOT assert active source on a play-while-already-on). Verified on a TCL Q9L.
+        """Grab the TV by forcing the OPPO's own One-Touch-Play. The command depends on the model:
+
+        * M9205 (and genuine OPPO): a standby -> power-on cycle (#POF -> #PON). The OPPO asserts CEC
+          active source only on the power-ON transition (not on a play-while-already-on), so the cycle
+          is what triggers the switch. Verified on a TCL Q9L.
+        * M9207: a single #EJT (eject) toggle grabs the TV -- no power cycle. Operator-reported for the
+          M9207 clone; on a genuine OPPO #EJT is the disc-tray EJECT command, so this is a
+          clone-specific behaviour validated on the operator's hardware, not by this code.
+
         Uses the configured control transport (network :23 or the RS-232 serial cable)."""
+        model = str(getattr(self.cfg, "oppo_model", "M9205") or "M9205").strip().upper()
+        if model == "M9207":
+            self.send_control_command("#EJT")
+            return
         try:
             self.send_control_command("#POF")
         except OppoError as exc:

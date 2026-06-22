@@ -27,6 +27,18 @@ msgctxt "#30004"
 msgid "Only hand discs & ISO files to the OPPO (else: everything)"
 msgstr ""
 
+msgctxt "#30005"
+msgid "OPPO model"
+msgstr ""
+
+msgctxt "#30006"
+msgid "M9205 - power-cycle (#POF -> #PON)"
+msgstr ""
+
+msgctxt "#30007"
+msgid "M9207 - eject (#EJT)"
+msgstr ""
+
 msgctxt "#30010"
 msgid "NAS path mapping"
 msgstr ""

@@ -26,6 +26,19 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="oppo_model" type="string" label="30005">
+          <level>0</level>
+          <default>M9205</default>
+          <constraints>
+            <options>
+              <option label="30006">M9205</option>
+              <option label="30007">M9207</option>
+            </options>
+          </constraints>
+          <control type="list" format="string">
+            <heading>30005</heading>
+          </control>
+        </setting>
       </group>
     </category>
     <category id="tests" label="30070">

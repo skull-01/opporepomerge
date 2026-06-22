@@ -101,8 +101,8 @@ call `checkfolderhasBDMV` — which on this OPPO **starts the disc**, it doesn't
 ```sh
 # mount the PARENT of the disc folder, e.g. folder "srv/nfs/media/Movies"
 curl "http://192.168.10.10:436/sendremotekey?{\"key\":\"STP\"}"
-# then start the disc folder (relative to the mount):
-curl "http://192.168.10.10:436/checkfolderhasBDMV?{\"folderpath\":\"/mnt/nfs1/Movies/Dune (2021)\"}"
+# then start the disc folder (the disc folder's BARE name, relative to the mount -- NOT "Movies/..."):
+curl "http://192.168.10.10:436/checkfolderhasBDMV?{\"folderpath\":\"/mnt/nfs1/Dune (2021)\"}"
 ```
 (DVD `VIDEO_TS` folders work the same way.)
 
