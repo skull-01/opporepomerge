@@ -32,11 +32,11 @@ msgid "OPPO model"
 msgstr ""
 
 msgctxt "#30006"
-msgid "M9205 - power-cycle (#POF -> #PON)"
+msgid "M9205 - power-cycle (#POF -> #PON) + mount the file's folder"
 msgstr ""
 
 msgctxt "#30007"
-msgid "M9207 - eject (#EJT)"
+msgid "M9207 Plus / UDP-203 - eject (#EJT) + mount the export root"
 msgstr ""
 
 msgctxt "#30010"

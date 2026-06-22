@@ -99,3 +99,34 @@ def test_play_iso_under_a_bdmv_dir_uses_the_file_branch(monkeypatch):
     assert handoff.play(_cfg(), client, "nfs://h/s/Movies/BDMV/backup.iso") is True
     assert ("play_file", "backup.iso") in client.calls
     assert not any(kind == "play_bdmv" for kind, _ in client.calls)
+
+
+def _cfg_model(model):
+    return Config(oppo_ip="x", path_from="nfs://h/s", path_to="srv/nfs/media", oppo_model=model)
+
+
+def test_play_m9205_mounts_file_folder_and_plays_bare_name(monkeypatch):
+    # default M9205: mount the file's folder, play the bare leaf name (/mnt/nfs1/<leaf>).
+    monkeypatch.setattr(handoff, "interruptible_sleep", lambda *a, **k: None)
+    client = _RecordingClient()
+    assert handoff.play(_cfg_model("M9205"), client, "nfs://h/s/06pr0n/clip.mp4") is True
+    assert ("mount", "srv/nfs/media/06pr0n") in client.calls
+    assert ("play_file", "clip.mp4") in client.calls
+
+
+def test_play_m9207_mounts_export_root_and_plays_subpath(monkeypatch):
+    # M9207 Plus / UDP-203: mount the export ROOT, play the full sub-path (hardware-verified).
+    monkeypatch.setattr(handoff, "interruptible_sleep", lambda *a, **k: None)
+    client = _RecordingClient()
+    assert handoff.play(_cfg_model("M9207"), client, "nfs://h/s/06pr0n/clip.mp4") is True
+    assert ("mount", "srv/nfs/media") in client.calls
+    assert ("play_file", "06pr0n/clip.mp4") in client.calls
+
+
+def test_play_m9207_disc_mounts_export_root_and_plays_subpath(monkeypatch):
+    # the disc-folder case follows the same root-mount rule on the M9207 Plus.
+    monkeypatch.setattr(handoff, "interruptible_sleep", lambda *a, **k: None)
+    client = _RecordingClient()
+    assert handoff.play(_cfg_model("M9207"), client, "nfs://h/s/Movies/Dune/BDMV/index.bdmv") is True
+    assert ("mount", "srv/nfs/media") in client.calls
+    assert ("play_bdmv", "Movies/Dune") in client.calls

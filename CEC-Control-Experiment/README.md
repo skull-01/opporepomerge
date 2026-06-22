@@ -69,7 +69,7 @@ bug -- still single-shot, still never re-asserting.
 
 ## Status
 
-Experimental, software-verified only (82 off-box tests: `python -m pytest -q`). Installs alongside v2 and v3
+Experimental, software-verified only (85 off-box tests: `python -m pytest -q`). Installs alongside v2 and v3
 (add-on id `service.oppokodibridge.cec`) for direct A/B/C comparison. Hardware validation pending.
 
 ## License
