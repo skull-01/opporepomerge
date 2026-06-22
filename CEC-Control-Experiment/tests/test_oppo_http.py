@@ -346,26 +346,6 @@ def test_verbose_heartbeat_transient_failure_is_not_a_stop(monkeypatch):
     assert calls["n"] == 3  # ended only on the confirmed 'idle'; the two 'unknown's did not stop it
 
 
-# --- OPPO model selection: M9207 grabs the TV with #EJT, not the #POF/#PON cycle ---
-def test_power_cycle_m9207_sends_ejt(monkeypatch):
-    client = oh.OppoClient(Config(oppo_ip="1.2.3.4", oppo_model="M9207"))
-    sent = []
-    monkeypatch.setattr(client, "send_control_command", lambda cmd, timeout=5.0: sent.append(cmd) or "")
-    monkeypatch.setattr(oh.time, "sleep", lambda *a, **k: None)
-    client.power_cycle(delay=0)
-    assert sent == ["#EJT"]  # single eject toggle, no power cycle
-
-
-def test_power_cycle_default_model_is_pon_cycle(monkeypatch):
-    # default / M9205 keeps the existing #POF -> #PON power cycle.
-    client = oh.OppoClient(Config(oppo_ip="1.2.3.4"))
-    sent = []
-    monkeypatch.setattr(client, "send_control_command", lambda cmd, timeout=5.0: sent.append(cmd) or "")
-    monkeypatch.setattr(oh.time, "sleep", lambda *a, **k: None)
-    client.power_cycle(delay=0)
-    assert sent == ["#POF", "#PON"]
-
-
 def test_play_bdmv_root_disc_no_trailing_slash(monkeypatch):
     # a disc structure at the export root yields an empty name -> the folderpath must be the bare mount
     # (/mnt/nfs1), never a dangling /mnt/nfs1/ (which has no disc-folder identity for the OPPO).

@@ -463,20 +463,14 @@ class OppoClient:
         return self.send_tcp_command(command, timeout)
 
     def power_cycle(self, delay: float = 5.0) -> None:
-        """Grab the TV by forcing the OPPO's own One-Touch-Play. The command depends on the model:
+        """Standby then power on (#POF -> #PON) over the configured control transport. The power-ON
+        is what fires the OPPO's CEC One-Touch-Play, so the TV follows -- on hardware whose network
+        power-on actually boots the unit (genuine OPPO; verified on a TCL Q9L).
 
-        * M9205 (and genuine OPPO): a standby -> power-on cycle (#POF -> #PON). The OPPO asserts CEC
-          active source only on the power-ON transition (not on a play-while-already-on), so the cycle
-          is what triggers the switch. Verified on a TCL Q9L.
-        * M9207: a single #EJT (eject) toggle grabs the TV -- no power cycle. Operator-reported for the
-          M9207 clone; on a genuine OPPO #EJT is the disc-tray EJECT command, so this is a
-          clone-specific behaviour validated on the operator's hardware, not by this code.
-
-        Uses the configured control transport (network :23 or the RS-232 serial cable)."""
-        model = str(getattr(self.cfg, "oppo_model", "M9205") or "M9205").strip().upper()
-        if model == "M9207":
-            self.send_control_command("#EJT")
-            return
+        NOTE: the M9207 Plus / UDP-203 clone does NOT support a network-triggered grab -- its #POF is a
+        sleep and #PON is a no-op (the unit only does a full power-on, and thus One-Touch-Play, from an
+        IR/remote power button). On that hardware the grab is manual/IR; disable it via grab_tv_on_play.
+        The OPPO model (oppo_model) only affects the NFS playback layout, not this grab."""
         try:
             self.send_control_command("#POF")
         except OppoError as exc:

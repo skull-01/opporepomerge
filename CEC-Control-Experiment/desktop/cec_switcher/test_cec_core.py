@@ -188,17 +188,3 @@ def test_ping_oppo_true_when_peer_resets_before_reply():
         assert cec_core.ping_oppo("127.0.0.1", port=port, timeout=1.0) is True
     finally:
         srv.close()
-
-
-def test_oppo_take_tv_m9207_sends_ejt(monkeypatch):
-    # model selection parity: the desktop switcher grabs an M9207 with a single #EJT, no #POF/#PON.
-    sent = []
-
-    def fake_send(ip, command, port=cec_core.OPPO_TCP_PORT, timeout=4.0, read=True):
-        sent.append(command)
-        return ""
-
-    monkeypatch.setattr(cec_core, "_oppo_send", fake_send)
-    msg = cec_core.oppo_take_tv("127.0.0.1", gap=0, sleep=lambda s: None, model="M9207")
-    assert sent == ["#EJT"]
-    assert "eject" in msg.lower()

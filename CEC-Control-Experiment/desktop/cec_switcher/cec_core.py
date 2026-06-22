@@ -54,19 +54,14 @@ def oppo_query_power(ip: str, port: int = OPPO_TCP_PORT, timeout: float = 4.0) -
 
 
 def oppo_take_tv(ip: str, port: int = OPPO_TCP_PORT, gap: float = 3.0, timeout: float = 4.0,
-                 sleep=time.sleep, model: str = "M9205") -> str:
-    """Force the OPPO's own One-Touch-Play so the TV switches to it. The command depends on the model:
+                 sleep=time.sleep) -> str:
+    """Force the OPPO's own One-Touch-Play by power-cycling it (#POF -> wait -> #PON).
 
-    * M9205 (and genuine OPPO): power-cycle (#POF -> wait -> #PON). If the OPPO is already off the #POF
-      is a harmless no-op and #PON alone fires the OTP; if on, the cycle forces the power-ON transition.
-    * M9207: a single #EJT (eject) toggle grabs the TV -- no power cycle (operator-reported, clone-
-      specific; on a genuine OPPO #EJT is the disc-tray EJECT command).
-
-    Returns a short human status string.
+    If the OPPO is already off the ``#POF`` is a harmless no-op and ``#PON`` alone fires the OTP; if it
+    is on, the cycle forces the power-ON transition it needs. Returns a short human status string.
+    (Works where the hardware honours a network power-on; the M9207 Plus clone needs a manual/IR
+    power-on instead -- its #PON is a no-op.)
     """
-    if str(model or "M9205").strip().upper() == "M9207":
-        _oppo_send(ip, "#EJT", port=port, timeout=timeout, read=False)
-        return "OPPO #EJT (eject) sent; the TV follows when its HDMI comes up (~20-24s)."
     try:
         _oppo_send(ip, "#POF", port=port, timeout=timeout, read=False)
     except OSError:
