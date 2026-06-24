@@ -67,6 +67,39 @@ class TPower(unittest.TestCase):
         self.assertIn("#EJT", src)
         self.assertIn("#PON", src)
 
+    def test_model_grabs_tv_on_power_on_helper(self):
+        # M9205 family (#PON power-on grabs CEC) -> True.
+        for m in ("chinoppo_m9205", "chinoppo_m9205c", "M9205-V2", "chinoppo_m9205_v4"):
+            self.assertTrue(self.s._model_grabs_tv_on_power_on(FakeS({"oppo_hardware_model": m})), m)
+        # Stock OPPO and the #EJT clones (incl. M9702-Plus) -> False.
+        for m in ("udp_203", "udp_205", "chinoppo_m9702", "chinoppo_m9702_plus", "chinoppo_m9200"):
+            self.assertFalse(
+                self.s._model_grabs_tv_on_power_on(FakeS({"oppo_hardware_model": m})), m
+            )
+
+    def test_startup_skips_m9205_family_to_avoid_cec_grab(self):
+        # Enabled + M9205 family: the startup wake is skipped before any network
+        # call, so the player isn't powered on (and the TV isn't grabbed) at boot.
+        try:
+            import oppo_control
+        except Exception:
+            from resources.lib import oppo_control
+        with (
+            mock.patch.object(oppo_control, "query_power_status") as qpw,
+            mock.patch.object(oppo_control, "send_commands") as send,
+        ):
+            self.s._kodi_startup_power_on(
+                FakeS(
+                    {
+                        "kodi_startup_power_on": "true",
+                        "oppo_ip": "192.168.1.50",
+                        "oppo_hardware_model": "chinoppo_m9205",
+                    }
+                )
+            )
+        qpw.assert_not_called()
+        send.assert_not_called()
+
 
 class TAuto(unittest.TestCase):
     def setUp(self):

@@ -603,16 +603,39 @@ def _safe_call(fn: Callable[..., Any], *a: Any, **kw: Any) -> Any:
         return None
 
 
+def _model_grabs_tv_on_power_on(settings: Any) -> bool:
+    """True for M9205-family players, where a network #PON power-on also grabs
+    CEC active source (operator hardware-validated).
+
+    Waking these at Kodi startup would switch the TV to the player and away from
+    Kodi at boot, so the startup power-on is SKIPPED for them -- they are woken
+    on play instead, where the start commands (#PON -> #PLA) grab the TV on
+    purpose. "m9205" is a substring unique to that family (covers M9205C). Other
+    clones (#EJT) and stock OPPO keep the existing startup-wake behavior.
+    """
+    model = str(settings.get("oppo_hardware_model", "udp_203") or "").strip().lower()
+    return "m9205" in model
+
+
 def _kodi_startup_power_on(settings: Any) -> None:
     """Wake the configured OPPO-compatible player on Kodi startup when needed.
 
-    Build 8 / v2.5.1 behavior preserved for v2.5.2: query #QPW before
-    wake, skip when already ON, use #PON for stock/safe fallback models, and
-    use #EJT for Chinoppo/M9702/IPUK/GIEC/Magnetar-style clone models.  This
-    function intentionally never imports or calls a missing legacy token helper.
+    Build 8 / v2.5.1 behavior preserved for v2.5.2: query #QPW before wake, skip
+    when already ON, send #PON for stock OPPO and the M9205 family (network power
+    drives CEC), and #EJT for the other Chinoppo/M9702/IPUK/GIEC/Magnetar-style
+    clone models. The M9205 family is the exception: it is SKIPPED here because a
+    #PON power-on grabs the TV (CEC active source) away from Kodi at boot -- it is
+    woken on play instead (see _model_grabs_tv_on_power_on).
     """
     try:
         if not _settings_bool(settings, "kodi_startup_power_on", False):
+            return
+        if _model_grabs_tv_on_power_on(settings):
+            log(
+                "Kodi-startup power-on: skipping wake for an M9205-family player "
+                "-- a #PON power-on grabs the TV (CEC active source) from Kodi at "
+                "boot; it is woken on play instead."
+            )
             return
         host = str(settings.get("oppo_ip", "")).strip()
         if not host:
