@@ -3,7 +3,6 @@ import {
   addonsDirForPlatform,
   buildTransferFiles,
   kodiTargetForPlatform,
-  parseDiscFolders,
   userdataDirForPlatform,
   type KodiPlatform,
 } from "./generate";
@@ -42,10 +41,9 @@ export function buildApplyFileSet(
 ): Record<string, string> {
   const platform: KodiPlatform = state.kodiPlatform ?? "coreelec";
   const target = kodiTargetForPlatform(platform, state.pythonPath);
-  const discFolders = parseDiscFolders(state.oppoDiscFolders);
   return {
-    ...buildTransferFiles(target, true, discFolders),
-    "playercorefactory.xml": mergePlayercorefactory(existingPcf, target, true, discFolders),
+    ...buildTransferFiles(target),
+    "playercorefactory.xml": mergePlayercorefactory(existingPcf, target),
     [ADDON_DATA_SETTINGS_REL]: mergeSettingsXml(existingSettings, wizardStateToAddonSettings(state)),
   };
 }

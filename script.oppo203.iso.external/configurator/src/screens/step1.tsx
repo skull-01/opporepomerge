@@ -3,12 +3,7 @@ import { Icon } from "../icons";
 import { DiagLog, type DiagCheck } from "../shell/DiagLog";
 import { FooterNav } from "../shell/FooterNav";
 import { invoke } from "../ipc";
-import {
-  buildTransferFiles,
-  kodiTargetForPlatform,
-  parseDiscFolders,
-  type KodiPlatform,
-} from "../generate";
+import { buildTransferFiles, kodiTargetForPlatform, type KodiPlatform } from "../generate";
 import { smbUserdataPath } from "../apply";
 import type { ScreenProps } from "./types";
 
@@ -463,9 +458,7 @@ export function Step1TierC({ go, state, set }: ScreenProps) {
     setGenerating(true);
     try {
       const target = kodiTargetForPlatform(platform, state.pythonPath);
-      const dir = await invoke<string>("generate_files", {
-        files: buildTransferFiles(target, true, parseDiscFolders(state.oppoDiscFolders)),
-      });
+      const dir = await invoke<string>("generate_files", { files: buildTransferFiles(target) });
       setSavedDir(dir);
     } catch {
       setSavedDir(null);
@@ -545,20 +538,6 @@ export function Step1TierC({ go, state, set }: ScreenProps) {
           loads them.
         </div>
       </div>
-
-      <h2 className="section-title" style={{ marginTop: 18 }}>Always send these folders to the OPPO</h2>
-      <p className="muted" style={{ fontSize: 12.5, marginTop: -2 }}>
-        Optional. One folder per line. Every disc-style file (ISO, BDMV, playlist) under these
-        folders is forwarded to the OPPO when played — no <code>4K</code>/<code>UHD</code>/
-        <code>2160p</code> tag in the name needed. Use the path as Kodi sees it.
-      </p>
-      <textarea
-        className="input"
-        style={{ minHeight: 64, fontFamily: "var(--font-mono, monospace)", fontSize: 12.5 }}
-        value={state.oppoDiscFolders}
-        placeholder="smb://192.168.1.177/Super3Share/01Movies/01-4kDisc"
-        onChange={(e) => set({ oppoDiscFolders: e.target.value })}
-      />
 
       <h2 className="section-title" style={{ marginTop: 18 }}>Generate for</h2>
       <div className="row" style={{ gap: 8, marginTop: 8 }}>
