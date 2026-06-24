@@ -38,6 +38,24 @@ def _make_xbmcaddon(settings):
     return mod
 
 
+def _make_rw_addon(settings):
+    """Addon stub backed by a live dict: setSetting mutates it, getSetting reads it.
+
+    Used to exercise the model-default auto-apply path (no-op avoidance,
+    re-entrancy guard) which the read-only _make_addon cannot.
+    """
+    addon = mock.MagicMock()
+    addon.getSetting.side_effect = lambda k: settings.get(k, "")
+    addon.setSetting.side_effect = lambda k, v: settings.__setitem__(k, v)
+    return addon
+
+
+def _make_xbmcaddon_rw(settings):
+    mod = mock.MagicMock()
+    mod.Addon.return_value = _make_rw_addon(settings)
+    return mod
+
+
 class _FakeWindow:
     def __init__(self):
         self._props = {}
@@ -269,6 +287,175 @@ class TMonitor(unittest.TestCase):
         ):
             monitor = self.s.Monitor()
             monitor.onSettingsChanged()
+
+
+class TApplyFullModelDefaultsOnDropdownChange(unittest.TestCase):
+    """Selecting a model in oppo_hardware_model auto-applies its full bundle."""
+
+    def setUp(self):
+        self.s = _import_service()
+
+    def _stock_seed(self):
+        # Enum settings (oppo_start_mode, oppo_http_payload_mode) are stored as
+        # their INDEX string in Kodi, like a real install -- "0" == tcp_commands
+        # / raw_path. String/bool keys hold their literal value.
+        return {
+            "oppo_hardware_model": "udp_203",
+            "oppo_start_commands": "#PON\n#PLA",
+            "oppo_stop_commands": "#STP",
+            "oppo_start_mode": "0",
+            "oppo_http_activate": "true",
+            "oppo_http_payload_mode": "0",
+        }
+
+    def _fire_model_change(self, live, new_model):
+        fake_addon = _make_xbmcaddon_rw(live)
+        fake_gui = _make_xbmcgui_with_window(_FakeWindow())
+        with (
+            mock.patch.object(self.s, "xbmcaddon", fake_addon),
+            mock.patch.object(self.s, "xbmcgui", fake_gui),
+        ):
+            monitor = self.s.Monitor()
+            live["oppo_hardware_model"] = new_model
+            monitor.onSettingsChanged()
+        return monitor
+
+    def test_model_change_to_m9205_applies_power_bundle(self):
+        live = self._stock_seed()
+        monitor = self._fire_model_change(live, "chinoppo_m9205")
+        self.assertEqual(live["oppo_start_commands"], "#PON\n#PLA")
+        self.assertEqual(live["oppo_stop_commands"], "#STP\n#POF")  # #POF release
+        self.assertEqual(live["oppo_http_activate"], "false")
+        self.assertEqual(live["oppo_start_mode"], "0")  # tcp_commands (index, no-op)
+        self.assertFalse(monitor._applying_model_defaults)  # guard reset
+
+    def test_model_change_to_m9702_plus_applies_generic_clone_bundle(self):
+        live = self._stock_seed()
+        self._fire_model_change(live, "chinoppo_m9702_plus")
+        self.assertEqual(live["oppo_start_commands"], "#EJT\n#PLA")
+        self.assertEqual(live["oppo_stop_commands"], "#STP")  # NO #POF for M9702-Plus
+        self.assertEqual(live["oppo_http_activate"], "false")
+
+    def test_model_change_back_to_stock_restores_http_and_pon(self):
+        live = {
+            "oppo_hardware_model": "chinoppo_m9205",
+            "oppo_start_commands": "#PON\n#PLA",
+            "oppo_stop_commands": "#STP\n#POF",
+            "oppo_start_mode": "0",
+            "oppo_http_activate": "false",
+            "oppo_http_payload_mode": "0",
+        }
+        self._fire_model_change(live, "udp_203")
+        self.assertEqual(live["oppo_http_activate"], "true")
+        self.assertEqual(live["oppo_start_commands"], "#PON\n#PLA")
+        self.assertEqual(live["oppo_stop_commands"], "#STP")  # #POF cleared
+
+    def test_reavon_model_applies_no_bundle(self):
+        live = self._stock_seed()
+        before = dict(live)
+        self._fire_model_change(live, "reavon_ubrx200")
+        for key in ("oppo_start_commands", "oppo_stop_commands", "oppo_http_activate"):
+            self.assertEqual(live[key], before[key])  # do-not-mutate Reavon
+
+    def test_non_model_change_applies_no_bundle(self):
+        live = self._stock_seed()
+        live["oppo_ip"] = "192.168.1.50"
+        before = dict(live)
+        fake_addon = _make_xbmcaddon_rw(live)
+        fake_gui = _make_xbmcgui_with_window(_FakeWindow())
+        with (
+            mock.patch.object(self.s, "xbmcaddon", fake_addon),
+            mock.patch.object(self.s, "xbmcgui", fake_gui),
+        ):
+            monitor = self.s.Monitor()
+            live["oppo_ip"] = "192.168.1.99"  # not the model dropdown
+            monitor.onSettingsChanged()
+        self.assertEqual(live["oppo_start_commands"], before["oppo_start_commands"])
+        self.assertEqual(live["oppo_stop_commands"], before["oppo_stop_commands"])
+        self.assertEqual(live["oppo_http_activate"], before["oppo_http_activate"])
+
+    def test_reentrancy_guard_blocks_self_refire(self):
+        live = self._stock_seed()
+        calls = {"n": 0}
+        real_apply = self.s._apply_model_defaults
+
+        def counting_apply(model):
+            calls["n"] += 1
+            return real_apply(model)
+
+        fake_addon = _make_xbmcaddon_rw(live)
+        fake_gui = _make_xbmcgui_with_window(_FakeWindow())
+        with (
+            mock.patch.object(self.s, "xbmcaddon", fake_addon),
+            mock.patch.object(self.s, "xbmcgui", fake_gui),
+            mock.patch.object(self.s, "_apply_model_defaults", counting_apply),
+        ):
+            monitor = self.s.Monitor()
+            live["oppo_hardware_model"] = "chinoppo_m9205"
+            monitor.onSettingsChanged()
+            # Simulate the self-induced re-fire that our own writes would trigger
+            # in real Kodi: while the guard is set the callback must be a no-op.
+            monitor._applying_model_defaults = True
+            monitor.onSettingsChanged()
+            monitor._applying_model_defaults = False
+        self.assertEqual(calls["n"], 1)  # applied exactly once, not recursively
+
+    def test_apply_model_defaults_unit_paths(self):
+        # Warning-only models write nothing and return [].
+        live = self._stock_seed()
+        before = dict(live)
+        with mock.patch.object(self.s, "xbmcaddon", _make_xbmcaddon_rw(live)):
+            self.assertEqual(self.s._apply_model_defaults("reavon_ubrx200"), [])
+            self.assertEqual(self.s._apply_model_defaults("magnetar_udp900"), [])
+        self.assertEqual(live, before)
+
+        # No-op avoidance: settings already equal the model bundle -> no writes.
+        # Enum keys are stored as their index ("0"), matching the encoded form.
+        matched = {
+            "oppo_start_commands": "#EJT\n#PLA",
+            "oppo_stop_commands": "#STP",
+            "oppo_start_mode": "0",
+            "oppo_http_activate": "false",
+            "oppo_http_payload_mode": "0",
+        }
+        with mock.patch.object(self.s, "xbmcaddon", _make_xbmcaddon_rw(matched)):
+            self.assertEqual(self.s._apply_model_defaults("chinoppo_m9702"), [])
+
+        # Returns the keys it actually changed.
+        live2 = self._stock_seed()
+        with mock.patch.object(self.s, "xbmcaddon", _make_xbmcaddon_rw(live2)):
+            written = self.s._apply_model_defaults("chinoppo_m9205")
+        self.assertIn("oppo_stop_commands", written)
+        self.assertIn("oppo_http_activate", written)
+
+        # Safe when xbmcaddon is unavailable.
+        with mock.patch.object(self.s, "xbmcaddon", None):
+            self.assertEqual(self.s._apply_model_defaults("chinoppo_m9205"), [])
+
+    def test_apply_model_defaults_decodes_enum_index_model(self):
+        # Kodi's getSetting returns the enum INDEX, not the value string. Index 13
+        # is chinoppo_m9205 -> the M9205 power bundle must apply (not stock).
+        import settings_reader as sr
+
+        self.assertEqual(sr.ENUM_VALUES["oppo_hardware_model"][13], "chinoppo_m9205")
+        live = self._stock_seed()
+        with mock.patch.object(self.s, "xbmcaddon", _make_xbmcaddon_rw(live)):
+            written = self.s._apply_model_defaults("13")  # index, as real Kodi sends
+        self.assertIn("oppo_stop_commands", written)
+        self.assertEqual(live["oppo_stop_commands"], "#STP\n#POF")  # M9205, not stock
+        self.assertEqual(live["oppo_http_activate"], "false")
+
+    def test_apply_model_defaults_writes_enum_values_as_index(self):
+        # An enum bundle value ("tcp_commands"/"raw_path") must be written as its
+        # INDEX string, since Kodi stores values=-style enums by index.
+        live = self._stock_seed()
+        live["oppo_start_mode"] = "1"  # http_api -> must be reset to tcp_commands "0"
+        live["oppo_http_payload_mode"] = "1"  # json_payload -> reset to raw_path "0"
+        with mock.patch.object(self.s, "xbmcaddon", _make_xbmcaddon_rw(live)):
+            written = self.s._apply_model_defaults("chinoppo_m9205")
+        self.assertEqual(live["oppo_start_mode"], "0")  # index, not "tcp_commands"
+        self.assertEqual(live["oppo_http_payload_mode"], "0")
+        self.assertIn("oppo_start_mode", written)
 
 
 class TSettingsXmlAndPo(unittest.TestCase):

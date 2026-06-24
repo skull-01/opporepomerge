@@ -83,6 +83,18 @@ export function playerModelByHw(db: PlayersDb, hw: string): PlayersDbModel | nul
   return db.models.find((m) => m.hw === hw) ?? null;
 }
 
+/**
+ * The wake command to send for a given model, read PER-MODEL from the players DB
+ * (`wake_command`) -- the single source of truth, mirroring the add-on. This is
+ * NOT a brand-level heuristic: within one brand, models differ (e.g. the M9205
+ * family is #PON power-CEC while the M9702/M9702-Plus line is #EJT eject-to-wake).
+ * Warning-only successors (Reavon/Magnetar) carry a null wake_command; an unknown
+ * or null model falls back to the safe stock #PON (which never ejects a disc).
+ */
+export function modelWakeCommand(model: PlayersDbModel | null | undefined): string {
+  return model?.wake_command ?? "#PON";
+}
+
 /** Parse + lightly validate a players DB; returns null on any structural problem. */
 export function parsePlayersDb(value: unknown): PlayersDb | null {
   if (!value || typeof value !== "object") return null;

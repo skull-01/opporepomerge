@@ -7,7 +7,7 @@ import { BrandIcon } from "../shell/BrandIcon";
 import { parseOppoPowerReply, parseOppoVerboseMode, parseSvm3Accepted } from "../probes";
 import { deriveRewrite, parseOppoPlayingPath } from "../nas_path";
 import { PLAYER_BRANDS, hwModelFor, isWakeRewriteBrand } from "../players";
-import { BUNDLED_PLAYERS_DB, playerModelByHw } from "../playersdb";
+import { BUNDLED_PLAYERS_DB, modelWakeCommand, playerModelByHw } from "../playersdb";
 import type { ScreenProps } from "./types";
 
 // ============================================================
@@ -103,8 +103,18 @@ export function Step2Brand({ go, state, set }: ScreenProps) {
               </span>
               <div className="callout-body">
                 <strong>Clone wake quirk handled.</strong> {selected.name} models can be
-                asleep and won't answer until woken. We'll wake with <code>#EJT</code>{" "}
-                (eject-to-wake) before any other command.
+                asleep and won't answer until woken.{" "}
+                {selectedModel ? (
+                  <>
+                    We'll wake with <code>{selectedModel.wake_command}</code>{" "}
+                    {selectedModel.wake_command === "#EJT"
+                      ? "(eject-to-wake)"
+                      : "(power-on — this model drives CEC over the network)"}{" "}
+                    before any other command.
+                  </>
+                ) : (
+                  <>We'll use the right wake command for the model you pick first.</>
+                )}
               </div>
             </div>
           ) : (
@@ -144,7 +154,14 @@ export function Step2Test({ go, state, set }: ScreenProps) {
   const [reply, setReply] = useState("");
   const [svm3Phase, setSvm3Phase] = useState<Svm3Phase>("idle");
   const isClone = isWakeRewriteBrand(state.playerBrand);
-  const wakeCmd = isClone ? "#EJT" : "#PON";
+  // Wake command is PER-MODEL (e.g. M9205 family -> #PON, M9702/M9702-Plus -> #EJT),
+  // not brand-level. This command is actually sent to the player below, so it must
+  // match the selected model -- a brand heuristic would eject-wake an M9205.
+  const selectedModel =
+    state.playerBrand && state.playerModel
+      ? playerModelByHw(BUNDLED_PLAYERS_DB, hwModelFor(state.playerBrand, state.playerModel) ?? "")
+      : null;
+  const wakeCmd = modelWakeCommand(selectedModel);
 
   // Capability probe for OPPO verbose mode 3, reusing the same oppo_query command as the power
   // test (no new Rust command). It queries the current mode (#QVM), tries #SVM 3, then restores

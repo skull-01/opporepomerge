@@ -157,7 +157,7 @@ def test_trigger_invokes_wake_and_playback_clients_by_family():
 
     def wake(settings, command):
         calls.append(("wake", command))
-        return ["@EJT OK"]
+        return ["@PON OK"]
 
     def play(settings, path):
         calls.append(("play", path))
@@ -173,9 +173,10 @@ def test_trigger_invokes_wake_and_playback_clients_by_family():
 
     assert result["success"] is True
     assert result["action"] == "triggered"
-    assert result["wake_result"] == ["@EJT OK"]
+    assert result["wake_result"] == ["@PON OK"]
     assert result["playback_result"] == "play-ok"
-    assert calls == [("wake", "#EJT"), ("play", "/mnt/nas/media/Movies/Clone.iso")]
+    # M9205C is in the M9205 family -> power-CEC wake (#PON), not the clone #EJT.
+    assert calls == [("wake", "#PON"), ("play", "/mnt/nas/media/Movies/Clone.iso")]
 
 
 def test_trigger_blocks_and_strict_raises_for_not_ready():

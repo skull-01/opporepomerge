@@ -696,7 +696,13 @@ HARDWARE_COMPAT: dict[str, dict[str, object]] = {
         "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
     },
     "M9205": {
-        "wake_command": "#EJT",
+        # The M9205 family (base + V1..V4 + M9205C) is operator hardware-validated
+        # (2026-06-24) to drive CEC active source over the network via stock power:
+        # #PON grabs (TV switches to the OPPO on play), #POF releases (CEC returns
+        # to Kodi on stop). So they wake with #PON, NOT the generic clone #EJT --
+        # even though they are still clones (no :436 HTTP API, limited #SRC set).
+        # Only the non-M9205 clones (M9702/M9702-Plus/M9200/etc.) keep #EJT.
+        "wake_command": "#PON",
         "protocol_compatible": True,
         "is_clone": True,
         "is_reavon": False,
@@ -705,7 +711,7 @@ HARDWARE_COMPAT: dict[str, dict[str, object]] = {
         "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
     },
     "M9205-V1": {
-        "wake_command": "#EJT",
+        "wake_command": "#PON",  # M9205 family: power drives CEC (see M9205)
         "protocol_compatible": True,
         "is_clone": True,
         "is_reavon": False,
@@ -714,7 +720,7 @@ HARDWARE_COMPAT: dict[str, dict[str, object]] = {
         "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
     },
     "M9205C": {
-        "wake_command": "#EJT",
+        "wake_command": "#PON",  # M9205 family: power drives CEC (see M9205)
         "protocol_compatible": True,
         "is_clone": True,
         "is_reavon": False,
@@ -815,7 +821,7 @@ HARDWARE_COMPAT: dict[str, dict[str, object]] = {
         "src_unsupported": set(),
     },
     "M9205-V2": {
-        "wake_command": "#EJT",
+        "wake_command": "#PON",  # M9205 family: power drives CEC (see M9205)
         "protocol_compatible": True,
         "is_clone": True,
         "is_reavon": False,
@@ -824,7 +830,7 @@ HARDWARE_COMPAT: dict[str, dict[str, object]] = {
         "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
     },
     "M9205-V3": {
-        "wake_command": "#EJT",
+        "wake_command": "#PON",  # M9205 family: power drives CEC (see M9205)
         "protocol_compatible": True,
         "is_clone": True,
         "is_reavon": False,
@@ -833,7 +839,7 @@ HARDWARE_COMPAT: dict[str, dict[str, object]] = {
         "src_unsupported": {"#SRC 1", "#SRC 2", "#SRC 5", "#SRC 6"},
     },
     "M9205-V4": {
-        "wake_command": "#EJT",
+        "wake_command": "#PON",  # M9205 family: power drives CEC (see M9205)
         "protocol_compatible": True,
         "is_clone": True,
         "is_reavon": False,
@@ -1077,6 +1083,84 @@ def compatibility_preset(model: object, jailbreak: bool = False) -> dict[str, ob
     if jailbreak and profile.get("protocol_compatible") and not profile.get("is_clone"):
         preset["oppo_http_payload_mode"] = "json_payload"
     return preset
+
+
+# Keys written by full_model_defaults(). The bundle pins an explicit value for
+# every one so selecting a model in the dropdown fully reseats the protocol
+# bundle to that model's canonical values (a prior custom value is reset).
+FULL_MODEL_DEFAULT_KEYS = (
+    "oppo_start_commands",
+    "oppo_stop_commands",
+    "oppo_start_mode",
+    "oppo_http_activate",
+    "oppo_http_payload_mode",
+)
+
+# The M9205 family (base + V1..V4 + M9205C) is operator hardware-validated to
+# drive CEC active source over the network via stock power (#PON grab on play,
+# #POF release on stop), so they wake with #PON and get the power bundle. Every
+# other clone (M9702/M9702-Plus/M9200/M9201/M9203/CineUltra/IPUK/GIEC/VenPro)
+# keeps the generic #EJT eject-to-wake bundle.
+M9205_POWER_CEC_MODELS = frozenset(
+    {"M9205", "M9205-V1", "M9205-V2", "M9205-V3", "M9205-V4", "M9205C"}
+)
+
+
+def full_model_defaults(model: object) -> dict[str, object]:
+    """Return the COMPLETE protocol-settings bundle for a hardware model.
+
+    Unlike ``compatibility_preset`` (which returns only the clone *diff* and is
+    never applied at runtime), this returns an explicit value for every key in
+    ``FULL_MODEL_DEFAULT_KEYS`` so a model switch fully reseats the bundle. It is
+    the source of truth the service Monitor applies when the
+    ``oppo_hardware_model`` dropdown changes.
+
+    Warning-only successors (Reavon / Magnetar) return the same
+    ``__reavon_warning__`` / ``__successor_warning__`` sentinel and NO settings,
+    so callers MUST skip writes when a sentinel key is present (do not mutate
+    Reavon/successor settings -- REAVON_WARNING_TEXT).
+
+    Pure function: no I/O, no mutation.
+    """
+    canonical = normalize_hardware_model(model)
+    profile = hardware_profile(model)
+    if profile.get("is_reavon"):
+        return {"__reavon_warning__": True}
+    if profile.get("is_successor"):
+        return {"__successor_warning__": True}
+    if canonical in M9205_POWER_CEC_MODELS:
+        # M9205 family drives CEC active source over the network via stock power
+        # (operator hardware-validated 2026-06-24): #PON grabs the TV on play,
+        # #POF releases it on stop so CEC returns to Kodi. Power-based bundle,
+        # NOT the generic clone #EJT bundle. Still clones -> HTTP stays off.
+        return {
+            "oppo_start_commands": "#PON\n#PLA",
+            "oppo_stop_commands": "#STP\n#POF",
+            "oppo_start_mode": "tcp_commands",
+            "oppo_http_activate": "false",
+            "oppo_http_payload_mode": "raw_path",
+        }
+    if profile.get("is_clone"):
+        # Generic Chinoppo clone (M9702 / M9702-Plus / M9205 variants / etc.):
+        # eject-to-wake, TCP control, no :436 HTTP API. No automated CEC grab
+        # promise (e.g. M9702-Plus needs a manual HDMI switch).
+        return {
+            "oppo_start_commands": "#EJT\n#PLA",
+            "oppo_stop_commands": "#STP",
+            "oppo_start_mode": "tcp_commands",
+            "oppo_http_activate": "false",
+            "oppo_http_payload_mode": "raw_path",
+        }
+    # Stock OPPO (UDP-203 / UDP-205) and the safe UDP-203-like fallback: stock
+    # #PON power wake, HTTP :436 API on, raw-path payload (JSON payload is a
+    # jailbreak-only manual opt-in, never auto-applied here).
+    return {
+        "oppo_start_commands": "#PON\n#PLA",
+        "oppo_stop_commands": "#STP",
+        "oppo_start_mode": "tcp_commands",
+        "oppo_http_activate": "true",
+        "oppo_http_payload_mode": "raw_path",
+    }
 
 
 def is_token_supported_by_hardware(token: object, model: object) -> bool:
