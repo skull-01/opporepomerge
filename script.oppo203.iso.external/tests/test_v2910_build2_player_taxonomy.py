@@ -77,12 +77,20 @@ def test_build2_clone_models_use_eject_wake_and_stock_oppo_stays_passthrough():
     settings_reader = _load("settings_reader_build2_clone", "resources/lib/kodi/settings_reader.py")
     from resources.lib import oppo_remote as remote
 
-    for model in ("M9200", "M9205", "CineUltra-V203", "CineUltra-V204"):
+    for model in ("M9200", "CineUltra-V203", "CineUltra-V204"):
         profile = settings_reader.hardware_profile(model)
         assert profile["is_clone"] is True
         assert profile["wake_command"] == "#EJT"
         assert remote.resolve_power_on_token("#PON", model) == "#EJT"
         assert remote.resolve_power_on_token("#POW", model) == "#EJT"
+    # Base M9205 is a clone but operator-validated to drive CEC via stock power:
+    # it wakes with #PON, so the wake rewrite resolves to #PON (a #POW press also
+    # maps to the #PON wake). The M9205-V1..V4 / M9205C splits stay #EJT.
+    m9205 = settings_reader.hardware_profile("M9205")
+    assert m9205["is_clone"] is True
+    assert m9205["wake_command"] == "#PON"
+    assert remote.resolve_power_on_token("#PON", "M9205") == "#PON"
+    assert remote.resolve_power_on_token("#POW", "M9205") == "#PON"
     assert remote.resolve_power_on_token("#PON", "UDP-203") == "#PON"
     assert remote.resolve_power_on_token("#POW", "UDP-205") == "#POW"
 

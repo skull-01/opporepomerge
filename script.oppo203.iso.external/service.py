@@ -80,6 +80,10 @@ CONFIGURATOR_MANAGED_KEYS = (
 CONFIG_HINT_WINDOW_PROPERTY = "oppo203_config_hint_shown"
 CONFIG_HINT_WINDOW_ID = 10000
 
+# Selecting a different player in this dropdown auto-applies that model's full
+# default protocol bundle (full_model_defaults) via Monitor.onSettingsChanged.
+MODEL_SETTING_KEY = "oppo_hardware_model"
+
 # v0.8.0: Disc path markers used by service interception to detect disc files
 DISC_PATH_MARKERS = [
     "/bdmv/",
@@ -345,6 +349,68 @@ def _changed_managed_keys(baseline: dict[str, Any]) -> list[str]:
     return changed
 
 
+def _apply_model_defaults(model: str) -> list[str]:
+    """Write the selected model's full default bundle via Kodi setSetting.
+
+    Returns the list of keys actually written. Empty when xbmcaddon is
+    unavailable, the model is warning-only (Reavon/Magnetar successor), or every
+    bundle value already matches (no-op avoidance, which also prevents a
+    self-induced onSettingsChanged re-fire).
+
+    Enum handling matters here: oppo_hardware_model and the bundle's enum keys
+    (oppo_start_mode, oppo_http_payload_mode) are ``values=``-style enums, so
+    Kodi's get/setSetting speak the INDEX string ("13"), not the value
+    ("chinoppo_m9205"). We decode the incoming model index and encode each enum
+    value back to its index before writing -- exactly how read_settings()
+    decodes them -- so this works against real Kodi, not just value-string
+    stubs. String/bool keys (start/stop commands, http_activate) pass through.
+    Uses setSetting (the installer's path) so Kodi owns persistence; raw
+    settings.xml writes would be clobbered when the settings dialog closes.
+    """
+    if not xbmcaddon:
+        return []
+    try:
+        from settings_reader import ENUM_VALUES, full_model_defaults
+    except ImportError:  # pragma: no cover - bare-name fallback for sys.path importers
+        try:
+            from resources.lib.kodi.settings_reader import (  # type: ignore[no-redef]
+                ENUM_VALUES,
+                full_model_defaults,
+            )
+        except ImportError:
+            return []
+
+    # Decode an enum INDEX into its model value ("13" -> "chinoppo_m9205").
+    resolved = str(model).strip()
+    model_values = ENUM_VALUES.get(MODEL_SETTING_KEY, [])
+    if resolved.isdigit() and 0 <= int(resolved) < len(model_values):
+        resolved = model_values[int(resolved)]
+
+    bundle = full_model_defaults(resolved)
+    if "__reavon_warning__" in bundle or "__successor_warning__" in bundle:
+        log(f"Model {resolved!r} is warning-only; not auto-applying a default bundle.")
+        return []
+    try:
+        addon = xbmcaddon.Addon(ADDON_ID)
+    except Exception:
+        return []
+    written: list[str] = []
+    for key, value in bundle.items():
+        write_value = str(value)
+        # values=-style enums store the INDEX; write that, not the value string.
+        choices = ENUM_VALUES.get(key)
+        if choices and write_value in choices:
+            write_value = str(choices.index(write_value))
+        try:
+            if addon.getSetting(key) == write_value:
+                continue  # already matches -> skip to avoid a needless write/re-fire
+            addon.setSetting(key, write_value)
+            written.append(key)
+        except Exception:
+            continue
+    return written
+
+
 def _resolve_localized(string_id: int, default: str) -> str:
     """Resolve a localized string via resources.lib.i18n with a hard fallback."""
     try:
@@ -428,14 +494,38 @@ class Monitor(xbmc.Monitor if xbmc else object):  # type: ignore[misc]
             except Exception:
                 pass
         self._managed_baseline = _snapshot_managed_settings()
+        # Re-entrancy guard: our own setSetting writes (below) re-fire
+        # onSettingsChanged; this flag short-circuits that recursive pass.
+        self._applying_model_defaults = False
 
     def onSettingsChanged(self) -> None:
+        if self._applying_model_defaults:
+            return  # ignore the callback re-fired by our own bundle writes
         try:
             _notify_config_hint_once_per_session()
             changed = _changed_managed_keys(self._managed_baseline)
+            # A real model-dropdown change auto-applies that model's full default
+            # bundle. Guarded so the setSetting writes don't recurse.
+            if MODEL_SETTING_KEY in changed:
+                new_model = ""
+                if xbmcaddon:
+                    try:
+                        new_model = xbmcaddon.Addon(ADDON_ID).getSetting(MODEL_SETTING_KEY)
+                    except Exception:
+                        new_model = ""
+                self._applying_model_defaults = True
+                try:
+                    applied = _apply_model_defaults(new_model)
+                finally:
+                    self._applying_model_defaults = False
+                if applied:
+                    log(f"Auto-applied model defaults for {new_model!r}: {applied}")
             if changed:
                 _warn_overwritten_managed_keys(changed)
-                self._managed_baseline = _snapshot_managed_settings()
+            # Always refresh the baseline AFTER any auto-apply so the model +
+            # bundle writes are absorbed and the next callback sees no spurious
+            # change (also covers an async re-fire that escapes the guard).
+            self._managed_baseline = _snapshot_managed_settings()
         except Exception as exc:
             log(f"onSettingsChanged swallowed exception: {exc}")
 
@@ -589,7 +679,12 @@ def _kodi_startup_power_on(settings: Any) -> None:
 
 
 def _startup_wake_token(settings: Any) -> str:
-    model = str(settings.get("oppo_hardware_model", "udp_203") or "").lower()
+    model = str(settings.get("oppo_hardware_model", "udp_203") or "").strip().lower()
+    # Base M9205 wakes with #PON: network power drives CEC active source
+    # (operator hardware-validated), even though it is a clone family. Exact-match
+    # so the M9205-V1..V4 / M9205C splits (still #EJT) are unaffected.
+    if model in ("chinoppo_m9205", "m9205"):
+        return "#PON"
     clone_markers = (
         "chinoppo",
         "m9702",

@@ -52,7 +52,20 @@ def test_variant_normalizes_to_its_own_canonical_key(enum_value, key, base, labe
 
 @pytest.mark.parametrize("enum_value, key, base, label", VARIANTS)
 def test_variant_compat_mirrors_base(enum_value, key, base, label):
-    assert settings_reader.HARDWARE_COMPAT[key] == settings_reader.HARDWARE_COMPAT[base]
+    variant = settings_reader.HARDWARE_COMPAT[key]
+    base_profile = settings_reader.HARDWARE_COMPAT[base]
+    # The variant mirrors its base clone's structure. wake_command is compared
+    # separately: base M9205 is operator-validated to #PON while its V2/V3/V4
+    # splits stay conservative #EJT, so the two diverge only on that field.
+    for field in (
+        "is_clone",
+        "is_reavon",
+        "http_api_436",
+        "protocol_compatible",
+        "src_supported",
+        "src_unsupported",
+    ):
+        assert variant[field] == base_profile[field]
     profile = settings_reader.hardware_profile(key)
     assert profile["wake_command"] == "#EJT"
     assert profile["is_clone"] is True

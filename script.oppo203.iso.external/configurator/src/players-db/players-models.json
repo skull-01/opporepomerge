@@ -664,7 +664,7 @@
       "hardware_class": "chinoppo_clone",
       "protocol_stance": "clone_safe",
       "wake_behavior": "clone_eject_wake",
-      "wake_command": "#EJT",
+      "wake_command": "#PON",
       "protocol_compatible": true,
       "is_clone": true,
       "is_reavon": false,

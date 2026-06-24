@@ -40,8 +40,20 @@ def test_v1_normalizes_to_its_own_canonical_key():
 def test_v1_compatibility_profile_mirrors_m9205():
     v1 = settings_reader.hardware_profile("M9205-V1")
     base = settings_reader.hardware_profile("M9205")
-    assert v1 == base
+    # V1 mirrors the M9205 clone structure but stays a conservative #EJT clone,
+    # while base M9205 was operator-validated to wake via #PON (network power
+    # drives CEC). They diverge only on wake_command.
     assert v1["wake_command"] == "#EJT"
+    assert base["wake_command"] == "#PON"
+    for field in (
+        "is_clone",
+        "is_reavon",
+        "http_api_436",
+        "protocol_compatible",
+        "src_supported",
+        "src_unsupported",
+    ):
+        assert v1[field] == base[field]
     assert v1["is_clone"] is True
     assert v1["http_api_436"] is False
 

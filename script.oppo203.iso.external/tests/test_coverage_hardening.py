@@ -384,6 +384,52 @@ class TSettingsExternalTvRemoteCoverageHardening(unittest.TestCase):
         self.assertFalse(sr.is_token_supported_by_hardware("#SRC 6", "UDP-203"))
         self.assertIn("not supported", sr.warn_if_unsupported("#SRC 6", "UDP-203"))
 
+    def test_full_model_defaults_bundle_per_model(self):
+        import settings_reader as sr
+
+        keys = set(sr.FULL_MODEL_DEFAULT_KEYS)
+
+        # Base M9205: operator-validated power-CEC bundle (#PON grabs on play,
+        # #POF releases on stop). Distinct from the generic clone bundle.
+        m9205 = sr.full_model_defaults("chinoppo_m9205")
+        self.assertEqual(set(m9205), keys)
+        self.assertEqual(m9205["oppo_start_commands"], "#PON\n#PLA")
+        self.assertEqual(m9205["oppo_stop_commands"], "#STP\n#POF")
+        self.assertEqual(m9205["oppo_start_mode"], "tcp_commands")
+        self.assertEqual(m9205["oppo_http_activate"], "false")
+        self.assertEqual(m9205["oppo_http_payload_mode"], "raw_path")
+        self.assertEqual(sr.full_model_defaults("M9205"), m9205)  # canonical alias
+
+        # M9702-Plus (== the operator's "M9207"): generic clone bundle, eject
+        # wake, NO #POF (no automated CEC grab -> manual HDMI), HTTP off.
+        plus = sr.full_model_defaults("chinoppo_m9702_plus")
+        self.assertEqual(set(plus), keys)
+        self.assertEqual(plus["oppo_start_commands"], "#EJT\n#PLA")
+        self.assertEqual(plus["oppo_stop_commands"], "#STP")
+        self.assertEqual(plus["oppo_http_activate"], "false")
+        self.assertEqual(sr.full_model_defaults("M9702"), plus)
+
+        # The M9205 V-splits stay generic #EJT clones (only base M9205 is power-CEC).
+        v2 = sr.full_model_defaults("chinoppo_m9205_v2")
+        self.assertEqual(v2["oppo_start_commands"], "#EJT\n#PLA")
+        self.assertEqual(v2["oppo_stop_commands"], "#STP")
+
+        # Stock OPPO: #PON power wake, HTTP :436 on. Unknown falls back to stock.
+        stock = sr.full_model_defaults("UDP-203")
+        self.assertEqual(set(stock), keys)
+        self.assertEqual(stock["oppo_start_commands"], "#PON\n#PLA")
+        self.assertEqual(stock["oppo_stop_commands"], "#STP")
+        self.assertEqual(stock["oppo_http_activate"], "true")
+        self.assertEqual(sr.full_model_defaults("totally-unknown-model"), stock)
+
+        # Warning-only successors: sentinel only, NO settings keys to apply.
+        reavon = sr.full_model_defaults("Reavon-UBR-X100")
+        self.assertIn("__reavon_warning__", reavon)
+        self.assertEqual(keys & set(reavon), set())
+        magnetar = sr.full_model_defaults("Magnetar-UDP900")
+        self.assertIn("__successor_warning__", magnetar)
+        self.assertEqual(keys & set(magnetar), set())
+
     def test_tv_control_all_backends_with_no_real_tv(self):
         import tv_control
 

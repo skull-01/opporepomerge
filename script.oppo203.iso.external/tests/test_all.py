@@ -2892,7 +2892,15 @@ class TV2Build1(unittest.TestCase):
         self.assertIn("M9200", HARDWARE_COMPAT)
         self.assertIn("M9205", HARDWARE_COMPAT)
         self.assertIn("M9205-V1", HARDWARE_COMPAT)
-        self.assertEqual(HARDWARE_COMPAT["M9205-V1"], HARDWARE_COMPAT["M9205"])
+        # M9205-V1 mirrors the base M9205 clone structure but stays a #EJT clone,
+        # while base M9205 is operator-validated to wake via #PON -- they diverge
+        # only on wake_command.
+        self.assertEqual(HARDWARE_COMPAT["M9205-V1"]["wake_command"], "#EJT")
+        self.assertEqual(HARDWARE_COMPAT["M9205"]["wake_command"], "#PON")
+        for _field in ("is_clone", "is_reavon", "http_api_436", "src_supported", "src_unsupported"):
+            self.assertEqual(
+                HARDWARE_COMPAT["M9205-V1"][_field], HARDWARE_COMPAT["M9205"][_field]
+            )
         self.assertIn("CineUltra-V203", HARDWARE_COMPAT)
         self.assertIn("CineUltra-V204", HARDWARE_COMPAT)
         self.assertIn("Magnetar-UDP900", HARDWARE_COMPAT)
