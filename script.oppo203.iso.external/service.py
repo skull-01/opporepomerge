@@ -680,17 +680,16 @@ def _kodi_startup_power_on(settings: Any) -> None:
 
 def _startup_wake_token(settings: Any) -> str:
     model = str(settings.get("oppo_hardware_model", "udp_203") or "").strip().lower()
-    # Base M9205 wakes with #PON: network power drives CEC active source
-    # (operator hardware-validated), even though it is a clone family. Exact-match
-    # so the M9205-V1..V4 / M9205C splits (still #EJT) are unaffected.
-    if model in ("chinoppo_m9205", "m9205"):
+    # The whole M9205 family (base + V1..V4 + M9205C) wakes with #PON: network
+    # power drives CEC active source (operator hardware-validated). "m9205" is a
+    # substring unique to that family, so this also covers chinoppo_m9205c.
+    if "m9205" in model:
         return "#PON"
     clone_markers = (
         "chinoppo",
         "m9702",
         "m9201",
         "m9203",
-        "m9205c",
         "ipuk",
         "giec",
         "magnetar",

@@ -1,6 +1,6 @@
 """Regression: the five OPPO-clone variants added from the PlayBridge capability summary.
 
-M9205 V2/V3/V4 mirror the M9205 eject-to-wake clone profile; M9702 Plus mirrors M9702;
+M9205 V2/V3/V4 mirror the M9205 power-CEC clone profile (#PON wake); M9702 Plus mirrors M9702;
 VenPro V203 is a new ``venpro``-family optical clone mirroring CineUltra. Each pins its new
 ``oppo_hardware_model`` enum value end-to-end on the add-on side (settings dropdown, alias
 normalization, compatibility profile, registry profile, capability gates) and that it
@@ -52,22 +52,12 @@ def test_variant_normalizes_to_its_own_canonical_key(enum_value, key, base, labe
 
 @pytest.mark.parametrize("enum_value, key, base, label", VARIANTS)
 def test_variant_compat_mirrors_base(enum_value, key, base, label):
-    variant = settings_reader.HARDWARE_COMPAT[key]
-    base_profile = settings_reader.HARDWARE_COMPAT[base]
-    # The variant mirrors its base clone's structure. wake_command is compared
-    # separately: base M9205 is operator-validated to #PON while its V2/V3/V4
-    # splits stay conservative #EJT, so the two diverge only on that field.
-    for field in (
-        "is_clone",
-        "is_reavon",
-        "http_api_436",
-        "protocol_compatible",
-        "src_supported",
-        "src_unsupported",
-    ):
-        assert variant[field] == base_profile[field]
+    # Each variant fully mirrors its base device's compat profile, including
+    # wake_command -- the M9205 family base is #PON (power-CEC) and the other
+    # clone bases are #EJT, and each variant follows its own base.
+    assert settings_reader.HARDWARE_COMPAT[key] == settings_reader.HARDWARE_COMPAT[base]
     profile = settings_reader.hardware_profile(key)
-    assert profile["wake_command"] == "#EJT"
+    assert profile["wake_command"] == settings_reader.HARDWARE_COMPAT[base]["wake_command"]
     assert profile["is_clone"] is True
     assert profile["http_api_436"] is False
 
@@ -86,5 +76,8 @@ def test_variant_capability_gates_match_clone_family(enum_value, key, base, labe
     assert caps.supports_clone_safe_wake(key) is True
     assert caps.allows_automatic_oppo_commands(key) is True
     assert caps.is_chinoppo_style_clone(key) is True
-    assert oppo_remote.resolve_power_on_token("#PON", enum_value) == "#EJT"
-    assert oppo_remote.resolve_power_on_token("#POW", key) == "#EJT"
+    # Wake rewrite resolves to each variant's own wake (M9205 family -> #PON,
+    # other clones -> #EJT), i.e. its base device's wake_command.
+    expected_wake = settings_reader.HARDWARE_COMPAT[base]["wake_command"]
+    assert oppo_remote.resolve_power_on_token("#PON", enum_value) == expected_wake
+    assert oppo_remote.resolve_power_on_token("#POW", key) == expected_wake

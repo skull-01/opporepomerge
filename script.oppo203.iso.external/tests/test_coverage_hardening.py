@@ -409,10 +409,13 @@ class TSettingsExternalTvRemoteCoverageHardening(unittest.TestCase):
         self.assertEqual(plus["oppo_http_activate"], "false")
         self.assertEqual(sr.full_model_defaults("M9702"), plus)
 
-        # The M9205 V-splits stay generic #EJT clones (only base M9205 is power-CEC).
+        # The whole M9205 family (V1..V4 + M9205C) shares the power-CEC bundle.
         v2 = sr.full_model_defaults("chinoppo_m9205_v2")
-        self.assertEqual(v2["oppo_start_commands"], "#EJT\n#PLA")
-        self.assertEqual(v2["oppo_stop_commands"], "#STP")
+        self.assertEqual(v2["oppo_start_commands"], "#PON\n#PLA")
+        self.assertEqual(v2["oppo_stop_commands"], "#STP\n#POF")
+        self.assertEqual(
+            sr.full_model_defaults("chinoppo_m9205c")["oppo_stop_commands"], "#STP\n#POF"
+        )
 
         # Stock OPPO: #PON power wake, HTTP :436 on. Unknown falls back to stock.
         stock = sr.full_model_defaults("UDP-203")

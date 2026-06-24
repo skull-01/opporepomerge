@@ -83,9 +83,9 @@ def test_build2_clone_models_use_eject_wake_and_stock_oppo_stays_passthrough():
         assert profile["wake_command"] == "#EJT"
         assert remote.resolve_power_on_token("#PON", model) == "#EJT"
         assert remote.resolve_power_on_token("#POW", model) == "#EJT"
-    # Base M9205 is a clone but operator-validated to drive CEC via stock power:
-    # it wakes with #PON, so the wake rewrite resolves to #PON (a #POW press also
-    # maps to the #PON wake). The M9205-V1..V4 / M9205C splits stay #EJT.
+    # The M9205 family (base + V1..V4 / M9205C) is operator-validated to drive CEC
+    # via stock power: it wakes with #PON, so the wake rewrite resolves to #PON (a
+    # #POW press also maps to the #PON wake). Other clones keep #EJT.
     m9205 = settings_reader.hardware_profile("M9205")
     assert m9205["is_clone"] is True
     assert m9205["wake_command"] == "#PON"

@@ -1,7 +1,7 @@
 """Regression: Chinoppo M9205 V1 is a distinct hardware model from the plain M9205.
 
 The configurator confirmed M9205 V1 and M9205 are distinct devices that share the
-M9205 eject-to-wake clone control protocol. This pins the new ``chinoppo_m9205_v1``
+M9205 power-CEC clone control protocol (#PON wake). This pins the new ``chinoppo_m9205_v1``
 enum value end-to-end on the add-on side (settings dropdown, alias normalization,
 compatibility profile, registry profile, capability gates) and that it mirrors
 M9205 without collapsing back into it.
@@ -40,20 +40,10 @@ def test_v1_normalizes_to_its_own_canonical_key():
 def test_v1_compatibility_profile_mirrors_m9205():
     v1 = settings_reader.hardware_profile("M9205-V1")
     base = settings_reader.hardware_profile("M9205")
-    # V1 mirrors the M9205 clone structure but stays a conservative #EJT clone,
-    # while base M9205 was operator-validated to wake via #PON (network power
-    # drives CEC). They diverge only on wake_command.
-    assert v1["wake_command"] == "#EJT"
-    assert base["wake_command"] == "#PON"
-    for field in (
-        "is_clone",
-        "is_reavon",
-        "http_api_436",
-        "protocol_compatible",
-        "src_supported",
-        "src_unsupported",
-    ):
-        assert v1[field] == base[field]
+    # V1 fully mirrors base M9205, including its operator-validated #PON wake
+    # (the whole M9205 family drives CEC via network power).
+    assert v1 == base
+    assert v1["wake_command"] == "#PON"
     assert v1["is_clone"] is True
     assert v1["http_api_436"] is False
 
@@ -70,5 +60,5 @@ def test_v1_capability_gates_match_clone_family():
     assert caps.supports_clone_safe_wake("M9205-V1") is True
     assert caps.allows_automatic_oppo_commands("M9205-V1") is True
     assert caps.is_chinoppo_style_clone("M9205-V1") is True
-    assert oppo_remote.resolve_power_on_token("#PON", "chinoppo_m9205_v1") == "#EJT"
-    assert oppo_remote.resolve_power_on_token("#POW", "M9205-V1") == "#EJT"
+    assert oppo_remote.resolve_power_on_token("#PON", "chinoppo_m9205_v1") == "#PON"
+    assert oppo_remote.resolve_power_on_token("#POW", "M9205-V1") == "#PON"

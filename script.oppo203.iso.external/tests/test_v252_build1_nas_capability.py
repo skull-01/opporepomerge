@@ -69,7 +69,7 @@ def test_chinoppo_family_requires_capability_confirmation_not_numeric_firmware()
     confirmed = nas_playback_capability("chinoppo_m9205c", confirmed=True)
     assert confirmed["family"] == "chinoppo_family"
     assert confirmed["warnings"] == []
-    assert confirmed["wake_command"] == "#EJT"
+    assert confirmed["wake_command"] == "#PON"  # M9205 family: power-CEC wake
 
 
 def test_reavon_is_blocked_from_oppo_chinoppo_nas_playback_feature():
