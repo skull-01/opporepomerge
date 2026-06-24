@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PLAYER_BRANDS, brandDef, hwModelFor, isWakeRewriteBrand } from "./players";
 import {
   BUNDLED_PLAYERS_DB,
+  modelWakeCommand,
   modelsForFamily,
   parsePlayersDb,
   playerModelByHw,
@@ -69,6 +70,52 @@ describe("players catalog (derived from players-models.json)", () => {
 
   it("exposes one brand per database family, in order", () => {
     expect(PLAYER_BRANDS.map((b) => b.id)).toEqual(BUNDLED_PLAYERS_DB.families.map((f) => f.id));
+  });
+});
+
+describe("per-model wake command", () => {
+  const wakeFor = (hw: string) => modelWakeCommand(playerModelByHw(BUNDLED_PLAYERS_DB, hw));
+
+  it("the M9205 family wakes with #PON (network power drives CEC)", () => {
+    for (const hw of [
+      "chinoppo_m9205",
+      "chinoppo_m9205_v1",
+      "chinoppo_m9205_v2",
+      "chinoppo_m9205_v3",
+      "chinoppo_m9205_v4",
+      "chinoppo_m9205c",
+    ]) {
+      expect(wakeFor(hw), hw).toBe("#PON");
+    }
+  });
+
+  it("every other clone (incl. M9702-Plus) wakes with #EJT", () => {
+    for (const hw of [
+      "chinoppo_m9702",
+      "chinoppo_m9702_plus",
+      "chinoppo_m9200",
+      "chinoppo_m9201",
+      "chinoppo_m9203",
+      "cineultra_v203",
+      "cineultra_v204",
+      "ipuk_uhd8592",
+      "giec_bdp_g5300",
+      "venpro_v203",
+    ]) {
+      expect(wakeFor(hw), hw).toBe("#EJT");
+    }
+  });
+
+  it("stock OPPO wakes with #PON", () => {
+    expect(wakeFor("udp_203")).toBe("#PON");
+    expect(wakeFor("udp_205")).toBe("#PON");
+  });
+
+  it("warning-only (null wake) and unknown models fall back to safe #PON", () => {
+    // Reavon/Magnetar carry a null wake_command in the DB.
+    expect(wakeFor("reavon_ubrx200")).toBe("#PON");
+    expect(wakeFor("magnetar_udp900")).toBe("#PON");
+    expect(modelWakeCommand(null)).toBe("#PON");
   });
 });
 
