@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import xml.sax.saxutils as xml_escape
 from typing import cast
 
@@ -140,6 +141,44 @@ def _option4_rule(filetype: str) -> str:
     )
 
 
+# Escape only regex metacharacters -- NOT "-" or "/" -- so this matches the configurator's
+# escapeRegex (generate.ts) and both generators emit the same disc-folder rule pattern.
+_REGEX_META = re.compile(r"([.*+?^${}()|\[\]\\])")
+
+
+def _escape_regex(value: str) -> str:
+    return _REGEX_META.sub(r"\\\1", value)
+
+
+def _disc_folder_rule(filetype: str, pattern: str) -> str:
+    safe_pattern = xml_escape.escape(pattern, {'"': "&quot;"})
+    return f'<rule filetypes="{filetype}" filename="{safe_pattern}" player="Oppo203ISO"/>'
+
+
+def disc_folder_rules() -> list[str]:
+    """Per-folder always-route rules from the ``oppo_disc_folders`` setting (B / external_player).
+
+    Every disc-style file (iso/bdmv/mpls) whose full path contains a configured folder routes to
+    the OPPO REGARDLESS of a 4K/UHD/2160p tag -- so untaggable BDMV folder rips and plainly-named
+    ISOs route too. Folders are normalized to forward slashes (Kodi matches the filename rule
+    against the full path) and regex-escaped. Mirrors the configurator's
+    generate.ts ``buildDiscFolderRuleXml`` so both generators agree. Empty setting -> no rules.
+    """
+    raw = get_setting("oppo_disc_folders", "")
+    rules: list[str] = []
+    for line in str(raw or "").replace("\r\n", "\n").split("\n"):
+        folder = line.strip().replace("\\", "/").rstrip("/")
+        if not folder:
+            continue
+        pattern = ".*" + _escape_regex(folder) + ".*"
+        safe = re.sub(r"-{2,}", "-", folder)  # keep "--" out of the XML comment
+        rules.append("")
+        rules.append(f"<!-- Always route disc-style files under: {safe} -->")
+        for filetype in ("iso", "bdmv", "mpls"):
+            rules.append(_disc_folder_rule(filetype, pattern))
+    return rules
+
+
 def build_rule_xml(include_merge_comment: bool = True) -> str:
     rules: list[str] = []
     if include_merge_comment:
@@ -161,6 +200,7 @@ def build_rule_xml(include_merge_comment: bool = True) -> str:
                 _option4_rule("mpls"),
             ]
         )
+    rules.extend(disc_folder_rules())
     return "\n".join(rules).rstrip() + "\n"
 
 

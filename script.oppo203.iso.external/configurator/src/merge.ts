@@ -13,6 +13,17 @@ const PLAYER_NAME = "Oppo203ISO";
 const OUR_RULE_FILETYPES = new Set(["iso", "bdmv", "mpls"]);
 
 /**
+ * True when a rule filename is one WE generate: the 4K/UHD tag pattern OR a configured-folder
+ * pattern. Both are wrapped in `.*...*.`; a literal user-authored filename (or none) is not, so
+ * those are preserved across a re-merge.
+ */
+function isOurGeneratedFilename(filename: string | null): boolean {
+  if (!filename) return false;
+  if (filename === XML_4K_TAG_FILENAME_PATTERN) return true;
+  return filename.startsWith(".*") && filename.endsWith(".*");
+}
+
+/**
  * Merge our <player>/<rule> entries into an existing playercorefactory.xml, preserving the
  * user's other players and rules. Idempotent: re-running replaces our own entries rather than
  * duplicating them. Returns a fresh document when there is no existing file, and REFUSES
@@ -24,9 +35,10 @@ export function mergePlayercorefactory(
   existing: string | null,
   target: KodiTarget,
   includeDiscFolderRules = true,
+  discFolders: readonly string[] = [],
 ): string {
   if (!existing || existing.trim() === "") {
-    return buildPlayercorefactoryXml(target, includeDiscFolderRules);
+    return buildPlayercorefactoryXml(target, includeDiscFolderRules, discFolders);
   }
 
   const doc = new DOMParser().parseFromString(existing, "application/xml");
@@ -57,9 +69,10 @@ export function mergePlayercorefactory(
   }
 
   // Drop our own prior entries so a re-run is idempotent, WITHOUT removing user-authored
-  // players/rules that merely target our player. Our rules are identified by their exact
-  // signature (our filetypes + our 4K filename pattern + our player), so a hand-added rule
-  // like <rule filetypes="img" player="Oppo203ISO"/> is preserved.
+  // players/rules that merely target our player. Our generated rules are disc-filetype rules
+  // for our player whose filename is a wrapped `.*...*.` pattern (the 4K tag pattern OR a
+  // configured-folder pattern). A hand-added rule like <rule filetypes="img" player="..."/>
+  // (non-disc filetype) or one with a literal, non-wildcard filename is therefore preserved.
   Array.from(players.getElementsByTagName("player"))
     .filter((p) => p.getAttribute("name") === PLAYER_NAME)
     .forEach((p) => p.remove());
@@ -67,8 +80,8 @@ export function mergePlayercorefactory(
     .filter(
       (r) =>
         r.getAttribute("player") === PLAYER_NAME &&
-        r.getAttribute("filename") === XML_4K_TAG_FILENAME_PATTERN &&
-        OUR_RULE_FILETYPES.has(r.getAttribute("filetypes") ?? ""),
+        OUR_RULE_FILETYPES.has(r.getAttribute("filetypes") ?? "") &&
+        isOurGeneratedFilename(r.getAttribute("filename")),
     )
     .forEach((r) => r.remove());
 
@@ -76,7 +89,7 @@ export function mergePlayercorefactory(
   players.appendChild(doc.importNode(playerFrag.documentElement, true));
 
   const rulesFrag = new DOMParser().parseFromString(
-    `<rules>${buildRuleXml(includeDiscFolderRules)}</rules>`,
+    `<rules>${buildRuleXml(includeDiscFolderRules, discFolders)}</rules>`,
     "application/xml",
   );
   Array.from(rulesFrag.documentElement.getElementsByTagName("rule")).forEach((r) =>

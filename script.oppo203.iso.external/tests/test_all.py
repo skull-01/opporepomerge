@@ -1075,7 +1075,8 @@ class TSettingsLayout(unittest.TestCase):
         # ENH-#42 added the hidden addon_language preference slot (98 -> 99).
         ids = [s.get("id") for s in self.tree.iter("setting")]
         # Audit M3 added 9 hidden configurator-owned architecture/HDMI/HTTP keys (99 -> 108).
-        self.assertEqual(len(ids), 108)
+        # The oppo_disc_folders always-route routing setting added one more (108 -> 109).
+        self.assertEqual(len(ids), 109)
 
     def test_category_labels_use_new_ids(self):
         cat_label_ids = {c.get("id"): c.get("label") for c in self.tree.findall("category")}

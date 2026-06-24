@@ -183,6 +183,14 @@ msgctxt "#30140"
 msgid "type field in JSON payload: 1=video (default). Only used when payload mode is json_payload."
 msgstr "type field in JSON payload: 1=video (default). Only used when payload mode is json_payload."
 
+msgctxt "#30141"
+msgid "Always send these folders to the OPPO"
+msgstr "Always send these folders to the OPPO"
+
+msgctxt "#30142"
+msgid "One folder per line. Every disc-style file (ISO/BDMV/playlist) under these folders is sent to the OPPO when played, regardless of a 4K/UHD/2160p tag in the name. Use the path as Kodi sees it (e.g. smb://server/share/Movies/Discs)."
+msgstr "One folder per line. Every disc-style file (ISO/BDMV/playlist) under these folders is sent to the OPPO when played, regardless of a 4K/UHD/2160p tag in the name. Use the path as Kodi sees it (e.g. smb://server/share/Movies/Discs)."
+
 msgctxt "#30200"
 msgid "TV input switching"
 msgstr "TV input switching"

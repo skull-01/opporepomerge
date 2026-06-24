@@ -255,6 +255,10 @@ export function wizardStateToAddonSettings(state: WizardState): AddonSettings {
     if (state.oppoPathTo) out.oppo_http_path_to = state.oppoPathTo;
   }
 
+  // Always-route disc folders -> playercorefactory routing rules (external_player). Routing-only,
+  // so it is emitted regardless of the monitor / HTTP mode above.
+  if (state.oppoDiscFolders.trim()) out.oppo_disc_folders = state.oppoDiscFolders.trim();
+
   if (state.tvBackend) {
     out.tv_backend = state.tvBackend;
     if (state.tvIp) out.tv_ip = state.tvIp;
