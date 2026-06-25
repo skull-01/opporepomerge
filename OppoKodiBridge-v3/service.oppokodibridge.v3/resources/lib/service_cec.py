@@ -1,4 +1,4 @@
-"""v3 service: install the playercorefactory.xml and publish the resolved config.
+"""CEC Control Experiment service: install the playercorefactory.xml and publish the resolved config.
 
 Unlike v2 this service does NOT intercept playback -- Kodi's playercorefactory does that. The service
 only:
@@ -40,7 +40,10 @@ def _profile_dir() -> str:
 
 
 def _runtime_config_path() -> str:
-    data_dir = _translate("special://profile/addon_data/{}/".format(ADDON_ID))
+    # masterprofile is always <home>/userdata, which is the path pcf_player derives -- so writer and
+    # reader agree even when Kodi is running a NON-master profile (special://profile would point at the
+    # active profile and the external player would never find the published config).
+    data_dir = _translate("special://masterprofile/addon_data/{}/".format(ADDON_ID))
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir, exist_ok=True)
     return os.path.join(data_dir, "runtime_config.json")
@@ -72,7 +75,7 @@ def _install_pcf() -> None:
 def main() -> None:
     import xbmc
 
-    log("OppoKodiBridge v3 service starting.")
+    log("CEC Control Experiment service starting.")
     _publish_config()
     _install_pcf()
 
@@ -82,6 +85,9 @@ def main() -> None:
             _publish_config()
             _install_pcf()
 
+    # The CEC reclaim is no longer the service's job: the orchestrator triggers it directly via
+    # JSON-RPC (cec.reclaim_kodi -> script.cecreclaim) when the handoff ends. This service only
+    # installs the playercorefactory.xml and publishes the resolved config, then idles.
     monitor = _Monitor()
     while not monitor.abortRequested():
         if monitor.waitForAbort(5):
@@ -90,4 +96,4 @@ def main() -> None:
     # runs, so the file must already be on disk at boot -> it has to persist across restarts. It is
     # removed only when the handoff is turned off (in _install_pcf). After a fresh install, Kodi must
     # be restarted ONCE for the routing to take effect (the file is written too late for that boot).
-    log("OppoKodiBridge v3 service stopping.")
+    log("CEC Control Experiment service stopping.")

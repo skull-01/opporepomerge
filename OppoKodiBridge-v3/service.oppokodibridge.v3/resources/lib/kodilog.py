@@ -5,7 +5,7 @@ pure-logic modules stay importable (and testable) off-box.
 """
 from __future__ import annotations
 
-ADDON_ID = "service.oppokodibridge"
+ADDON_ID = "service.oppokodibridge.v3"
 
 
 def log(message: str, level: object = None) -> None:

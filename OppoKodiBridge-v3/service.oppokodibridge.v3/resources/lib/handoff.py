@@ -1,27 +1,18 @@
-"""v3 playback handoff -- runs in the playercorefactory EXTERNAL-player process.
+"""Hand a disc file to the OPPO over the HTTP app API -- pure OPPO playback.
 
-Key difference from v2: this runs outside Kodi, so there are NO xbmc / CEC APIs. Everything is
-network:
-  * switch the TV to the OPPO -- by Broadlink IR if configured (CEC-free), else an interim OPPO
-    power-cycle (the OPPO's own One-Touch-Play on power-on);
-  * play the file on the OPPO over the HTTP app API (identical to v2);
-  * block until the OPPO goes idle;
-  * switch the TV back to Kodi -- by Broadlink IR if configured, otherwise rely on Kodi re-asserting
-    itself as the active source when this external player exits.
-
-There is deliberately no ``CECActivateSource`` reclaim -- v3 is CEC-free by design.
+No TV/CEC switching (that is ``cec.py``) and no playback monitoring (that is ``monitor.py``); the
+orchestrator wires the three together. The exact device sequence (verified live on the M9205):
+wake (UDP NOTIFY -> :7624) -> init (firmware/setupmenu/signin/globalinfo) -> login the OPPO's own NFS
+server -> mount the FILE'S FOLDER -> play the bare basename (or ``checkfolderhasBDMV`` for a disc
+folder). Mount the file's folder and play the bare name; never mount a non-exported folder.
 """
 from __future__ import annotations
 
-import time
-
-from . import ir
+from . import detector
 from .kodilog import log
+from .monitor import interruptible_sleep
 from .oppo_http import (
-    OppoClient,
     OppoError,
-    disc_folder,
-    is_disc_path,
     local_ip_toward,
     nfs_server_from_devices,
     oppo_mount_folder,
@@ -38,38 +29,40 @@ def _best_effort(fn, label: str):
         return None
 
 
-def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
-    """Hand ``kodi_file`` to the OPPO and block until it stops. Returns True if playback was seen."""
+def _mounts_export_root(config) -> bool:
+    """The M9207 Plus / UDP-203 mounts the NFS export ROOT (path_to) and plays a sub-path under
+    /mnt/nfs1, instead of mounting the file's folder and playing its bare leaf name (the M9205 model)."""
+    return str(getattr(config, "oppo_model", "M9205") or "M9205").strip().upper() == "M9207"
+
+
+def play(config, client, kodi_file: str, should_abort=None) -> bool:
+    """Wake the OPPO, run the init dance, mount the file's folder, and start playback.
+
+    Returns True if the OPPO accepted the file (playback not yet confirmed -- ``monitor`` does that)."""
     if should_abort is None:
         should_abort = lambda: False
 
-    folder, basename = split_share_relative(kodi_file, config.path_from)
+    folder, basename = split_share_relative(kodi_file.rstrip("/"), config.path_from)
     if not basename:
         log("Cannot map {!r} with path_from={!r}".format(kodi_file, config.path_from))
         return False
 
-    # Disc folders (BDMV / VIDEO_TS): mount the disc folder's parent and play the disc folder via
-    # /checkfolderhasBDMV. Single files: mount the file's folder and play the bare basename.
+    # The in-share path to what the OPPO should open: the disc FOLDER (BDMV / VIDEO_TS) for a disc,
+    # else the file itself. Detect on the slash-bearing form too, so a disc FOLDER path (e.g.
+    # .../VIDEO_TS, trailing slash stripped above) is still recognised. An .iso always takes the file
+    # branch, even under a BDMV/VIDEO_TS directory. How that path is split between the NFS mount and
+    # the play name then depends on the OPPO model (see _mounts_export_root).
     rel = (folder + "/" + basename) if folder else basename
-    is_disc = is_disc_path(rel)
-    if is_disc:
-        droot = disc_folder(rel)
-        mount_rel, play_name = droot.rsplit("/", 1) if "/" in droot else ("", droot)
+    is_disc = (detector.is_disc_path(rel) or detector.is_disc_path(rel + "/")) and not detector.is_iso(rel)
+    target = detector.disc_folder(rel + "/") if is_disc else rel
+    if _mounts_export_root(config):
+        # M9207 Plus / UDP-203: mount the export ROOT (path_to) and play the full sub-path under
+        # /mnt/nfs1. Hardware-verified for a single file (mount srv/nfs/media -> play
+        # /mnt/nfs1/06pr0n/<file>); the disc-folder case follows the same root-mount rule.
+        mount_rel, play_name = "", target
     else:
-        mount_rel, play_name = folder, basename
-
-    client = OppoClient(config)
-
-    # --- switch the TV to the OPPO ---
-    if ir.configured(config):
-        log("Switching the TV to the OPPO via Broadlink IR")
-        ir.switch_to_oppo(config)
-    elif config.grab_tv_on_play:
-        log("No IR configured; interim switch via OPPO power-cycle (One-Touch-Play)")
-        try:
-            client.power_cycle()
-        except OppoError as exc:
-            log("TV grab (power-cycle) failed (non-fatal): {}".format(exc))
+        # M9205: mount the target's PARENT folder, play its bare leaf name (/mnt/nfs1/<leaf>).
+        mount_rel, play_name = target.rsplit("/", 1) if "/" in target else ("", target)
 
     if not client.wake_and_wait():
         log("OPPO app API ({}:{}) did not wake".format(config.oppo_ip, config.oppo_http_port))
@@ -89,7 +82,7 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
 
     _best_effort(lambda: client.login_nfs(server), "login")
     _best_effort(client.get_nfs_share_list, "share list")
-    _interruptible_sleep(2.0, should_abort)
+    interruptible_sleep(2.0, should_abort)
     _best_effort(client.get_setup_menu, "setup")
 
     mount_folder = oppo_mount_folder(mount_rel, config.path_to)
@@ -98,86 +91,23 @@ def play_on_oppo(config, kodi_file: str, should_abort=None) -> bool:
     if isinstance(mount, dict) and mount.get("success") is False:
         log("mount failed ({}); re-login and retry".format(mount.get("retInfo") or mount.get("msg")))
         _best_effort(lambda: client.login_nfs(server), "re-login")
-        _interruptible_sleep(2.0, should_abort)
+        interruptible_sleep(2.0, should_abort)
         _best_effort(lambda: client.mount_nfs(server, mount_folder), "mount retry")
 
     if is_disc:
         _best_effort(client.stop, "stop")  # clear any stuck bd_is_playing
-        _interruptible_sleep(2.0, should_abort)
+        interruptible_sleep(2.0, should_abort)
         reply = _best_effort(lambda: client.play_bdmv(play_name), "play-bdmv")
     else:
         reply = _best_effort(lambda: client.play_file(server, play_name), "play")
     log("Play reply: {!r}".format(reply))
+    if reply is None:
+        # the play HTTP call itself failed (OppoError -> _best_effort returned None); don't claim the
+        # OPPO accepted it, or the monitor would poll for ~grace*interval seconds for playback that
+        # will never start.
+        log("OPPO play call failed (no reply); not waiting for playback")
+        return False
     if isinstance(reply, dict) and reply.get("success") is False:
         log("OPPO rejected the file: {}".format(reply.get("retInfo") or reply.get("msg") or ""))
         return False
-
-    started = _watch_playback(config, client, should_abort)
-
-    # --- switch the TV back to Kodi ---
-    if ir.configured(config):
-        log("Switching the TV back to Kodi via Broadlink IR")
-        ir.switch_to_kodi(config)
-    else:
-        log("No IR: relying on Kodi re-asserting active source when this player exits")
-    return started
-
-
-def _watch_playback(config, client, should_abort) -> bool:
-    """Two-phase wait, per the design:
-
-      Phase 1 (pre-playback) -- HTTP /getglobalinfo polling until playback STARTS. Verbose mode only
-        carries useful info once the OPPO is actually playing, and the NFS mount + buffer can take a
-        while, so the latency-tolerant HTTP poll owns the startup window.
-      Phase 2 (playing) -- open a fresh verbose ``#SVM 3`` connection and block until ``@UPL STOP``,
-        which is pushed the instant playback ends (no poll lag). The connection is terminated on stop.
-
-    Returns True if playback was observed.
-    """
-    interval = max(2.0, float(config.poll_interval))
-    grace = max(int(config.idle_confirmations), 10)  # NFS mount + buffer can be slow to start
-    _interruptible_sleep(interval, should_abort)
-    idle = 0
-    while not should_abort():
-        if client.is_playing():
-            break
-        idle += 1
-        if idle >= grace:
-            log("OPPO never reported playback after {} HTTP polls; giving up.".format(idle))
-            return False
-        _interruptible_sleep(interval, should_abort)
-    else:
-        return False
-
-    log("Playback started; opening verbose (#SVM 3) for instant stop detection.")
-    try:
-        client.verbose_watch_until_stop(should_abort)
-    except OppoError as exc:
-        log("verbose watch failed ({}); falling back to HTTP polling".format(exc))
-        _http_watch_until_idle(config, client, should_abort)
     return True
-
-
-def _http_watch_until_idle(config, client, should_abort) -> None:
-    """Fallback for phase 2: poll /getglobalinfo until idle for N consecutive reads."""
-    interval = max(2.0, float(config.poll_interval))
-    needed = max(1, int(config.idle_confirmations))
-    idle = 0
-    while not should_abort():
-        if client.is_playing():
-            idle = 0
-        else:
-            idle += 1
-            if idle >= needed:
-                return
-        _interruptible_sleep(interval, should_abort)
-
-
-def _interruptible_sleep(seconds: float, should_abort) -> None:
-    waited = 0.0
-    step = 0.5
-    while waited < seconds:
-        if should_abort():
-            return
-        time.sleep(min(step, seconds - waited))
-        waited += step
