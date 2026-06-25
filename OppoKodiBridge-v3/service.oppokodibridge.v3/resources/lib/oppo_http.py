@@ -22,6 +22,17 @@ import urllib.parse
 import urllib.request
 from typing import Any, Optional, Tuple
 
+# Disc detection is the single source of truth in detector.py (shared with pcf.py). Re-exported here
+# for backwards-compatible importers/tests (``oppo_http.is_disc_path`` etc.).
+from .detector import (  # noqa: F401
+    disc_folder,
+    is_disc_path,
+    is_handoff_target,
+    is_iso,
+    is_oppo_target,
+)
+from .kodilog import log
+
 MOUNT_TIMEOUT = 25.0
 PLAY_TIMEOUT = 15.0
 OREMOTE_PORT = 7624
@@ -80,7 +91,9 @@ def split_share_relative(media_file: str, path_from: str) -> Tuple[Optional[str]
     if text.lower().startswith(("nfs://", "smb://")):
         text = urllib.parse.unquote(text)
     prefix = (path_from or "").strip().rstrip("/")
-    if not prefix or not text.startswith(prefix):
+    # Require a path boundary after the prefix, so a sibling share whose name EXTENDS the configured
+    # one (e.g. ".../Super3Share-4K" vs path_from ".../Super3Share") is not mis-matched and mis-mapped.
+    if not prefix or not (text == prefix or text.startswith(prefix + "/")):
         return (None, None)
     rel = text[len(prefix):].lstrip("/")
     if not rel:
@@ -99,45 +112,6 @@ def oppo_mount_folder(folder: Optional[str], path_to: str) -> str:
     if base and rel:
         return base + "/" + rel
     return base or rel
-
-
-_DISC_MARKERS = ("/bdmv/", "/video_ts/", "/hvdvd_ts/")
-
-
-def is_disc_path(path: str) -> bool:
-    """True for a Blu-ray / DVD disc-folder path (BDMV/VIDEO_TS structure)."""
-    low = str(path).replace("\\", "/").lower()
-    return low.endswith((".bdmv", ".ifo")) or any(m in low for m in _DISC_MARKERS)
-
-
-def disc_folder(path: str) -> str:
-    """The disc folder (the dir that CONTAINS BDMV/VIDEO_TS) from a disc-structure path.
-
-    ``…/Ant-Man (2015)/BDMV/index.bdmv`` -> ``…/Ant-Man (2015)``.
-    """
-    text = str(path).replace("\\", "/")
-    low = text.lower()
-    for marker in _DISC_MARKERS:
-        idx = low.find(marker)
-        if idx >= 0:
-            return text[:idx]
-    return text
-
-
-def is_iso(path: str) -> bool:
-    """True for a disc-image file (.iso)."""
-    return str(path).strip().lower().endswith(".iso")
-
-
-def is_oppo_target(path: str) -> bool:
-    """The handoff filter. Route to the OPPO ONLY for disc content: disc images (.iso) and disc
-    folders (BDMV / VIDEO_TS / HVDVD_TS). Everything else (MKV, MP4, loose m2ts, ...) stays in
-    Kodi -- this is the only kind of file Kodi will send to the OPPO.
-    """
-    text = str(path)
-    if text.lower().startswith(("nfs://", "smb://")):
-        text = urllib.parse.unquote(text)
-    return is_iso(text) or is_disc_path(text)
 
 
 def local_ip_toward(host: str, port: int = 436) -> str:
@@ -174,10 +148,10 @@ def _containers(info: Any) -> list:
 
 
 def status_is_idle(status: object) -> bool:
-    s = str(status).strip().upper()
-    if s in PLAY_STATUSES:
-        return False
-    return s == "" or s in IDLE_STATUSES
+    # Only an explicit PLAY token counts as "not idle". Everything else -- "", "0"/"false"/"off",
+    # STOP/HOME, and any UNKNOWN / no-disc token (NODISC, STANDBY, CLOSE, ...) -- is idle, so the HTTP
+    # fallback watcher terminates instead of looping forever on a status string it does not recognise.
+    return str(status).strip().upper() not in PLAY_STATUSES
 
 
 def info_is_playing(info: Any) -> bool:
@@ -227,14 +201,27 @@ def serial_command(port: str, baud: int, command: str, read_timeout: float = 2.0
 
     Stdlib only (termios) -- no pyserial dependency. termios is imported lazily so this module still
     imports on non-POSIX hosts (the Windows test runner). Same CR framing as send_tcp_command.
+
+    EVERY failure surfaces as OppoError so callers (grab_oppo, the settings tests) stay non-fatal: a
+    missing termios (serial enabled on a non-POSIX host), absent POSIX open-flags, a bad baud value,
+    or a termios.error (the fd is not a usable tty) -- none of which are OSError -- must not escape as
+    a raw exception that crashes the handoff or the RunScript.
     """
     import os
     import select
-    import termios
 
-    baud_const = getattr(termios, _BAUD_CONSTS.get(int(baud), "B9600"))
     try:
-        fd = os.open(port, os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK)
+        import termios
+    except ImportError as exc:
+        raise OppoError("serial control needs POSIX termios (unavailable here): {}".format(exc)) from exc
+    try:
+        baud_const = getattr(termios, _BAUD_CONSTS.get(int(baud), "B9600"))
+        open_flags = os.O_RDWR | os.O_NOCTTY | os.O_NONBLOCK
+    except (ValueError, AttributeError) as exc:
+        raise OppoError("serial config invalid for {} (baud={!r}): {}".format(port, baud, exc)) from exc
+
+    try:
+        fd = os.open(port, open_flags)
     except OSError as exc:
         raise OppoError("serial open {} failed: {}".format(port, exc)) from exc
     try:
@@ -256,7 +243,7 @@ def serial_command(port: str, baud: int, command: str, read_timeout: float = 2.0
             except OSError:
                 return ""
         return ""
-    except OSError as exc:
+    except (OSError, termios.error) as exc:
         raise OppoError("serial I/O on {} failed: {}".format(port, exc)) from exc
     finally:
         os.close(fd)
@@ -367,12 +354,14 @@ class OppoClient:
 
     def play_bdmv(self, disc_folder_name: str, nfs: bool = True) -> dict:
         """Play a Blu-ray disc FOLDER (one containing BDMV). On this OPPO ``/checkfolderhasBDMV``
-        doesn't just check -- it starts the disc. ``disc_folder_name`` is relative to the mount."""
+        doesn't just check -- it starts the disc. ``disc_folder_name`` is relative to the mount; when
+        the disc structure IS the mount root (a disc folder sitting at the export root) it is empty, so
+        the folderpath is the bare mount (``/mnt/nfs1``) -- never a dangling ``/mnt/nfs1/``."""
         mount_path = "nfs1" if nfs else "cifs1"
-        endpoint = '/checkfolderhasBDMV?{"folderpath":"/mnt/%s/%s"}' % (
-            mount_path,
-            urllib.parse.quote(disc_folder_name),
-        )
+        folderpath = "/mnt/%s" % mount_path
+        if disc_folder_name:
+            folderpath += "/" + urllib.parse.quote(disc_folder_name)
+        endpoint = '/checkfolderhasBDMV?{"folderpath":"%s"}' % folderpath
         return self._get_json(endpoint, timeout=PLAY_TIMEOUT)
 
     def is_playing(self) -> bool:
@@ -380,6 +369,18 @@ class OppoClient:
             return info_is_playing(self.get_global_info())
         except OppoError:
             return False
+
+    def playback_state(self) -> str:
+        """Tri-state playback probe for the stop-watcher: ``"playing"`` / ``"idle"`` / ``"unknown"``.
+
+        Unlike is_playing() (which collapses a transport failure to False), this distinguishes a
+        confirmed-idle read from an unreadable one, so the monitor never mistakes a network blip for a
+        stop (a premature mid-playback reclaim) nor loops forever on an unreachable OPPO."""
+        try:
+            info = self.get_global_info()
+        except OppoError:
+            return "unknown"
+        return "playing" if info_is_playing(info) else "idle"
 
     def verbose_watch_until_stop(self, should_abort=None) -> bool:
         """Hold a verbose-mode (``#SVM 3``) connection on :23 and block until the OPPO reports
@@ -394,28 +395,33 @@ class OppoClient:
         except OSError as exc:
             raise OppoError("verbose :23 connect failed: {}".format(exc)) from exc
         try:
-            conn.sendall(b"#SVM 3\r")
-            conn.settimeout(1.0)
-            buf = ""
-            last_data = time.time()
-            while not should_abort():
-                try:
-                    chunk = conn.recv(512).decode("ascii", errors="replace")
-                except socket.timeout:
-                    if time.time() - last_data > 6.0:  # heartbeat quiet -> confirm via HTTP
-                        if not self.is_playing():
-                            return True
-                        last_data = time.time()
-                    continue
-                if not chunk:
-                    return True  # connection dropped -> treat as ended
+            try:
+                conn.sendall(b"#SVM 3\r")
+                conn.settimeout(1.0)
+                buf = ""
                 last_data = time.time()
-                buf += chunk
-                while "\r" in buf:
-                    line, buf = buf.split("\r", 1)
-                    if upl_means_ended(line):
-                        return True
-            return True
+                while not should_abort():
+                    try:
+                        chunk = conn.recv(512).decode("ascii", errors="replace")
+                    except socket.timeout:
+                        if time.time() - last_data > 6.0:  # heartbeat quiet -> confirm via HTTP
+                            if self.playback_state() == "idle":
+                                return True  # only a CONFIRMED idle read ends the watch
+                            # "playing" or "unknown" (a transient HTTP blip during the stall) -> keep
+                            # watching; never reclaim the TV on an unconfirmed read.
+                            last_data = time.time()
+                        continue
+                    if not chunk:
+                        return True  # connection dropped -> treat as ended
+                    last_data = time.time()
+                    buf += chunk
+                    while "\r" in buf:
+                        line, buf = buf.split("\r", 1)
+                        if upl_means_ended(line):
+                            return True
+                return True
+            except OSError as exc:  # a dropped :23 connection -> OppoError so the monitor's HTTP fallback runs
+                raise OppoError("verbose :23 dropped: {}".format(exc)) from exc
         finally:
             try:
                 conn.sendall(b"#SVM 0\r")
@@ -430,9 +436,12 @@ class OppoClient:
         except OSError as exc:
             raise OppoError("OPPO :23 connect failed: {}".format(exc)) from exc
         try:
-            conn.sendall((command.strip() + "\r").encode("ascii"))
-            time.sleep(0.5)
-            conn.settimeout(2.0)
+            try:
+                conn.sendall((command.strip() + "\r").encode("ascii"))
+                time.sleep(0.5)
+                conn.settimeout(2.0)
+            except OSError as exc:  # a mid-send reset must surface as OppoError (grab_oppo catches it)
+                raise OppoError("OPPO :23 send failed: {}".format(exc)) from exc
             try:
                 return conn.recv(128).decode("ascii", errors="replace")
             except OSError:
@@ -454,9 +463,19 @@ class OppoClient:
         return self.send_tcp_command(command, timeout)
 
     def power_cycle(self, delay: float = 5.0) -> None:
-        """Standby then power on -- the power-ON fires CEC One-Touch-Play so the TV switches to the
-        OPPO (it does NOT assert active source on a play-while-already-on). Verified on a TCL Q9L.
-        Uses the configured control transport (network :23 or the RS-232 serial cable)."""
-        self.send_control_command("#POF")
+        """Standby then power on (#POF -> #PON) over the configured control transport. The power-ON
+        is what fires the OPPO's CEC One-Touch-Play, so the TV follows -- on hardware whose network
+        power-on actually boots the unit (genuine OPPO; verified on a TCL Q9L).
+
+        NOTE: the M9207 Plus / UDP-203 clone does NOT support a network-triggered grab -- its #POF is a
+        sleep and #PON is a no-op (the unit only does a full power-on, and thus One-Touch-Play, from an
+        IR/remote power button). On that hardware the grab is manual/IR; disable it via grab_tv_on_play.
+        The OPPO model (oppo_model) only affects the NFS playback layout, not this grab."""
+        try:
+            self.send_control_command("#POF")
+        except OppoError as exc:
+            # A transient first-send failure must NOT skip #PON -- the power-ON is the leg that fires
+            # the OPPO's One-Touch-Play and grabs the TV. (#PON's own failure still raises.)
+            log("OPPO #POF failed (continuing to #PON): {}".format(exc))
         time.sleep(delay)
         self.send_control_command("#PON")

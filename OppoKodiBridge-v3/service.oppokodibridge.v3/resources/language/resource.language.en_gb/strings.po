@@ -27,6 +27,18 @@ msgctxt "#30004"
 msgid "Only hand discs & ISO files to the OPPO (else: everything)"
 msgstr ""
 
+msgctxt "#30005"
+msgid "OPPO model (NFS playback layout)"
+msgstr ""
+
+msgctxt "#30006"
+msgid "M9205 - mount the file's folder, play the bare name"
+msgstr ""
+
+msgctxt "#30007"
+msgid "M9207 Plus / UDP-203 - mount the export root, play the sub-path"
+msgstr ""
+
 msgctxt "#30010"
 msgid "NAS path mapping"
 msgstr ""
@@ -104,19 +116,7 @@ msgid "TV switching"
 msgstr ""
 
 msgctxt "#30061"
-msgid "Switch when the OPPO is off (power-cycle, interim until IR)"
-msgstr ""
-
-msgctxt "#30062"
-msgid "Broadlink IR blaster IP (CEC-free; leave empty until you have one)"
-msgstr ""
-
-msgctxt "#30063"
-msgid "IR code: switch TV to the OPPO (base64/hex)"
-msgstr ""
-
-msgctxt "#30064"
-msgid "IR code: switch TV back to Kodi (base64/hex)"
+msgid "Switch the TV by power-cycling the OPPO (its own One-Touch-Play)"
 msgstr ""
 
 msgctxt "#30040"
@@ -125,4 +125,32 @@ msgstr ""
 
 msgctxt "#30041"
 msgid "CEC setup guidance already shown"
+msgstr ""
+
+msgctxt "#30065"
+msgid "Kodi JSON-RPC port (for the CEC reclaim; default 8080)"
+msgstr ""
+
+msgctxt "#30066"
+msgid "Kodi JSON-RPC username (only if Kodi web control has a password)"
+msgstr ""
+
+msgctxt "#30067"
+msgid "Kodi JSON-RPC password (only if Kodi web control has a password)"
+msgstr ""
+
+msgctxt "#30070"
+msgid "Setup & tests"
+msgstr ""
+
+msgctxt "#30071"
+msgid "Ping the OPPO (network reachability)"
+msgstr ""
+
+msgctxt "#30072"
+msgid "Control test (query the OPPO's power state)"
+msgstr ""
+
+msgctxt "#30073"
+msgid "CEC switch-over test (grab the OPPO, then reclaim Kodi)"
 msgstr ""

@@ -4,7 +4,7 @@
 Runs OUTSIDE Kodi (its own process, no xbmc). Reads the config the service published to
 ``runtime_config.json``, then hands the file to the OPPO over the network and blocks until playback
 ends. Because Kodi routed the file here *before* playing it, there is no "Kodi blips then hands off"
-moment -- that's the whole point of the v3 fork.
+moment -- that's the whole point of this no-blip fork.
 """
 import json
 import os
@@ -15,7 +15,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 from resources.lib import config as config_mod  # noqa: E402
-from resources.lib import handoff  # noqa: E402
+from resources.lib import orchestrator  # noqa: E402
 from resources.lib.kodilog import log  # noqa: E402
 
 ADDON_ID = "service.oppokodibridge.v3"
@@ -45,9 +45,9 @@ def main(argv) -> int:
     log("pcf_player: handling {!r}".format(kodi_file))
     cfg = _load_config()
     try:
-        handoff.play_on_oppo(cfg, kodi_file)
+        orchestrator.run(cfg, kodi_file)
     except Exception as exc:  # never crash the player process
-        log("pcf_player: handoff error {!r}".format(exc))
+        log("pcf_player: orchestrator error {!r}".format(exc))
         return 1
     return 0
 
