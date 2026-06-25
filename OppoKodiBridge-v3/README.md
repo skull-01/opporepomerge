@@ -1,62 +1,77 @@
-# OppoKodiBridge v3 (playercorefactory)
+# OppoKodiBridge v3
 
-A fork of **[OppoKodiBridge / v2](https://github.com/skull-01/OppoKodiBridge)** that intercepts
-playback with Kodi's **`playercorefactory`** instead of a service monitor — so Kodi never starts the
-file itself, and there is **no "Kodi blips, then hands off"** moment before the OPPO takes over.
+**An experiment: no-blip OPPO playback with pure, spec-legitimate HDMI-CEC switching -- no IR, no spoofing.**
 
-Same one supported chain (Ugoos AM6B+ / M9205 V1 / TCL Q9L Pro), same OPPO HTTP protocol, same NFS
-path mapping. The only thing that changes is *how* Kodi hands a disc to the OPPO — and how the TV is
-switched.
+The playercorefactory no-blip
+variant of [OppoKodiBridge / v2](https://github.com/skull-01/OppoKodiBridge). It keeps v3's external-player
+handoff (so Kodi never starts the file and there is no pre-play "blip") but strips the IR blaster and switches
+the TV using **only legitimate CEC**.
 
-## v2 vs v3 — what's different
+## The hypothesis
 
-| | v2 (OppoKodiBridge) | v3 (this) |
-|---|---|---|
-| Interception | service monitor: Kodi **starts** the file, the add-on stops it and hands off | **playercorefactory** routes the file to an external player *before* Kodi plays it |
-| Pre-play blip | brief (Kodi starts, then cuts to the OPPO) | **none** |
-| Disc filter | runtime check (`disc_iso_only`) | the playercorefactory **match rules** (`.iso` + BDMV/VIDEO_TS) |
-| Stop detection | HTTP `/getglobalinfo` poll every ~5s | HTTP poll until it **starts**, then verbose **`#SVM 3`** push → **instant** stop |
-| TV switch | CEC power-cycle + `CECActivateSource` reclaim | **Broadlink IR** (CEC-free) when configured; interim power-cycle, **no** CEC reclaim |
+Clean two-way TV input switching with **zero extra hardware and zero CEC-bus corruption**, by using CEC the
+way the spec intends -- each device announcing its *own* active source -- and accepting the OPPO power-cycle
+as the cost.
 
-It installs **alongside v2** (different add-on id), so you can A/B the two interception approaches —
-**enable one at a time.**
+| Leg | How |
+|-----|-----|
+| OPPO grabs its HDMI input | the OPPO's **own** One-Touch-Play, forced by power-cycling it (`#POF`->`#PON`). It only asserts active source on a power-**ON** transition, so an already-on OPPO is power-cycled to re-grab. |
+| Kodi reclaims its HDMI input | Kodi re-asserts its **own** active source (libCEC `SetActiveSource`). |
 
-## How it works
+**Never:** an IR blaster, a CEC `<Active Source>` / `<Set Stream Path>` injected with a *foreign* initiator,
+or a second `cec-client` / `cec-ctl` owner -- those corrupt the shared CEC bus (the verified root cause of the
+Mi Box cross-control that motivated this fork).
 
-```
-Kodi play (.iso / BDMV) ─▶ playercorefactory routes it to pcf_player.py (external)
-                                          │  (Kodi never starts the file -> no blip)
-                                          ▼
-  switch TV ─ Broadlink IR (CEC-free) if configured, else interim OPPO power-cycle
-  play     ─ OPPO HTTP app API: wake -> signin -> mount NFS -> /playnormalfile (or /checkfolderhasBDMV)
-  monitor  ─ HTTP poll until playing, then #SVM 3 verbose push until @UPL STOP (instant)
-  switch back ─ Broadlink IR, or Kodi re-asserts the TV when this player exits
-```
+### Assert once per event -- never re-assert
 
-The OPPO control is pure network, so the external player needs no Kodi APIs and v3 is **CEC-free by
-design** (no `CECActivateSource`).
+Each TV-input assertion is **single-shot, tied to an event**: the OPPO grabs HDMI-1 once on play, Kodi
+reclaims once on stop. There is **no standing monitor** re-asserting active source -- that would override a
+manual input change and make the TV un-leaveable (CEC is open-loop; it can't tell "the TV missed my frame"
+from "the user switched away"). So if you manually switch the TV input, your choice **stays**. The orchestrator
+fires the grab once on play and the reclaim once on stop -- and nothing else ever touches the TV.
 
-📐 **Full walkthrough + diagrams:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+### Why this is the *legitimate* path (primary sources)
 
-## Install & configure
+HDMI-CEC has no "give-back" and only two routing primitives: `<Active Source>` (a device announces **its own**
+source) and `<Set Stream Path>` (**TV-only**). So no third party may drive the TV to the OPPO's input -- the
+only in-spec lever is the OPPO's own One-Touch-Play. See the Linux kernel CEC framework docs and libCEC's own
+enforcement (`"only the TV is allowed to send CEC_OPCODE_SET_STREAM_PATH"`).
 
-1. Build the zip: `powershell -File packaging\make_addon_zip.ps1` → `dist/service.oppokodibridge.v3-<ver>.zip`.
-2. Kodi → **Add-ons → Install from zip file** → pick it. (Disable v2 first if it's installed.)
-3. Configure: **OPPO IP**, **Kodi path prefix** (`path_from`), **OPPO path prefix** (`path_to`). The
-   service writes `playercorefactory.xml` on start and removes it on stop.
-4. *(later)* Set the **Broadlink IR** blaster IP + the TV's input IR codes for instant CEC-free
-   switching. Until then it falls back to the OPPO power-cycle.
+## Trade-off
 
-See the shared [Playing ISO & Blu-ray discs over the network](docs/PLAYING_DISCS_FROM_NETWORK.md)
-guide for the underlying protocol.
+The OPPO power-cycle costs **~20-24 s** on every handoff -- the deliberate price for no IR hardware and a clean
+bus. (v2 = CEC but blips; v3 = no blip but needs IR; this = no blip, pure CEC, slow grab.)
+
+## Architecture
+
+Five single-responsibility modules under `resources/lib/`, wired by the orchestrator (which runs in the
+playercorefactory external-player process, so there is still no blip):
+
+| Module | Responsibility |
+|--------|----------------|
+| `detector` | which files qualify for handoff (ISO + BDMV/VIDEO_TS) -- one source of truth; `pcf` builds its routing rules from it |
+| `handoff` | tell the OPPO to play (wake → init → mount → play); pure OPPO HTTP |
+| `cec` | trigger the switch-over -- `grab_oppo` (power-cycle) + `reclaim_kodi` (JSON-RPC → `script.cecreclaim` → `CECActivateSource`) |
+| `monitor` | watch playback state (HTTP poll → playing; `#SVM 3` → stop) |
+| `orchestrator` | the flow: detect → grab → play → watch → reclaim |
+
+The in-Kodi service only installs `playercorefactory.xml` and publishes config. The Kodi reclaim goes
+straight from the orchestrator to Kodi over **localhost JSON-RPC**, so there is no flag and no stale-flag
+bug -- still single-shot, still never re-asserting.
+
+## Setup
+
+1. **OPPO:** enable IP/serial control (TCP `:23`); set the OPPO IP + NAS paths in the add-on settings.
+2. **Kodi:** enable **Settings → Services → Control → Allow remote control via HTTP** (port `8080`), and
+   install the [`script.cecreclaim`](desktop/kodi-helper/script.cecreclaim) helper (the reclaim target).
+3. **Settings → Setup & tests:** **Ping the OPPO**, then **Control test** (`#QPW`), then the guided
+   **CEC switch-over test** — it grabs the OPPO, asks if the TV switched, reclaims Kodi, and asks again.
 
 ## Status
 
-Software-verified (pure logic under `tests/`); the playercorefactory routing, the verbose `#SVM 3`
-stop detection (confirmed live on the M9205), and the OPPO HTTP handoff are the v3-specific pieces.
-The Broadlink IR backend is stubbed until the blaster is in hand. The OPPO HTTP API is
-community-reverse-engineered, not official.
+Experimental, software-verified only (83 off-box tests: `python -m pytest -q`). Installs alongside v2 and v3
+(add-on id `service.oppokodibridge.cec`) for direct A/B/C comparison. Hardware validation pending.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT -- see [LICENSE](LICENSE).

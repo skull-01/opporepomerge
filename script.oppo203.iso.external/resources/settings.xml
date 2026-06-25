@@ -58,6 +58,7 @@
                 <dependency type="visible" setting="oppo_http_activate" operator="is">true</dependency>
             </dependencies>
         </setting>
+        <setting id="oppo_disc_folders" type="string" label="30141" default="" help="30142"/>
         <setting id="reconnect_enabled" type="bool" label="30960" default="true"/>
         <setting id="reconnect_max_retries" type="number" label="30961" default="8" visible="eq(-1,true)">
             <dependencies>

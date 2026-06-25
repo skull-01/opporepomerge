@@ -26,6 +26,44 @@
           <default>true</default>
           <control type="toggle"/>
         </setting>
+        <setting id="oppo_model" type="string" label="30005">
+          <level>0</level>
+          <default>M9205</default>
+          <constraints>
+            <options>
+              <option label="30006">M9205</option>
+              <option label="30007">M9207</option>
+            </options>
+          </constraints>
+          <control type="list" format="string">
+            <heading>30005</heading>
+          </control>
+        </setting>
+      </group>
+    </category>
+    <category id="tests" label="30070">
+      <group id="1">
+        <setting id="test_ping" type="action" label="30071">
+          <level>0</level>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+          <data>RunScript(special://home/addons/service.oppokodibridge.v3/settings_tests.py,ping)</data>
+        </setting>
+        <setting id="test_control" type="action" label="30072">
+          <level>0</level>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+          <data>RunScript(special://home/addons/service.oppokodibridge.v3/settings_tests.py,control)</data>
+        </setting>
+        <setting id="test_cec" type="action" label="30073">
+          <level>0</level>
+          <control type="button" format="action">
+            <close>false</close>
+          </control>
+          <data>RunScript(special://home/addons/service.oppokodibridge.v3/settings_tests.py,cec)</data>
+        </setting>
       </group>
     </category>
     <category id="paths" label="30010">
@@ -48,31 +86,38 @@
     </category>
     <category id="switching" label="30060">
       <group id="1">
-        <setting id="broadlink_ip" type="string" label="30062">
-          <level>0</level>
-          <default></default>
-          <control type="edit" format="string">
-            <heading>30062</heading>
-          </control>
-        </setting>
-        <setting id="ir_code_oppo" type="string" label="30063">
-          <level>0</level>
-          <default></default>
-          <control type="edit" format="string">
-            <heading>30063</heading>
-          </control>
-        </setting>
-        <setting id="ir_code_kodi" type="string" label="30064">
-          <level>0</level>
-          <default></default>
-          <control type="edit" format="string">
-            <heading>30064</heading>
-          </control>
-        </setting>
         <setting id="grab_tv_on_play" type="boolean" label="30061">
           <level>0</level>
           <default>true</default>
           <control type="toggle"/>
+        </setting>
+        <setting id="cec_reclaim_on_stop" type="boolean" label="30022">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+      </group>
+    </category>
+    <category id="serial" label="30050">
+      <group id="1">
+        <setting id="serial_control" type="boolean" label="30051">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="serial_port" type="string" label="30052">
+          <level>0</level>
+          <default>/dev/ttyUSB0</default>
+          <control type="edit" format="string">
+            <heading>30052</heading>
+          </control>
+        </setting>
+        <setting id="serial_baud" type="integer" label="30053">
+          <level>0</level>
+          <default>9600</default>
+          <control type="edit" format="integer">
+            <heading>30053</heading>
+          </control>
         </setting>
       </group>
     </category>
@@ -98,6 +143,31 @@
           </constraints>
           <control type="edit" format="integer">
             <heading>30033</heading>
+          </control>
+        </setting>
+        <setting id="kodi_rpc_port" type="integer" label="30065">
+          <level>0</level>
+          <default>8080</default>
+          <constraints>
+            <minimum>1</minimum>
+            <maximum>65535</maximum>
+          </constraints>
+          <control type="edit" format="integer">
+            <heading>30065</heading>
+          </control>
+        </setting>
+        <setting id="kodi_rpc_user" type="string" label="30066">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string">
+            <heading>30066</heading>
+          </control>
+        </setting>
+        <setting id="kodi_rpc_pass" type="string" label="30067">
+          <level>0</level>
+          <default></default>
+          <control type="edit" format="string">
+            <heading>30067</heading>
           </control>
         </setting>
       </group>

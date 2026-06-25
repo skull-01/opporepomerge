@@ -51,7 +51,7 @@ def kodi_stubs(*extra):
 
 
 @contextlib.contextmanager
-def _installer(include_disc_folder_rules="true"):
+def _installer(include_disc_folder_rules="true", oppo_disc_folders=""):
     with kodi_stubs():
         import xbmcaddon
 
@@ -59,6 +59,7 @@ def _installer(include_disc_folder_rules="true"):
             settings={
                 "include_disc_folder_rules": include_disc_folder_rules,
                 "python_path": "/usr/bin/python3",
+                "oppo_disc_folders": oppo_disc_folders,
             },
             info={"path": str(ROOT), "id": "script.oppo203.iso.external"},
         )
@@ -143,6 +144,30 @@ def test_disc_folder_setting_still_controls_bdmv_mpls_rules():
     assert 'filetypes="bdmv"' not in xml
     assert 'filetypes="mpls"' not in xml
     assert "BDMV" not in xml
+
+
+def test_disc_folder_rules_route_a_configured_folder_without_a_tag():
+    folders = "smb://192.168.1.177/Super3Share/01Movies/01-4kDisc\n\\\\nas\\Discs\\"
+    with _installer("true", folders) as installer:
+        xml = installer.build_rule_xml()
+    # All three disc filetypes routed for the folder; dots regex-escaped, no tag required.
+    assert xml.count(".*smb://192\\.168\\.1\\.177/Super3Share/01Movies/01-4kDisc.*") == 3
+    # UNC normalized to forward slashes, trailing slash dropped.
+    assert ".*//nas/Discs.*" in xml
+    assert "4K|4k|UHD" in xml  # the tag rule is still present alongside
+
+
+def test_disc_folder_rules_absent_when_unset():
+    with _installer("true", "") as installer:
+        xml = installer.build_rule_xml()
+    # Only the three tag-aware rules; no folder rules when oppo_disc_folders is empty.
+    assert xml.count('player="Oppo203ISO"') == 3
+
+
+def test_full_playercorefactory_well_formed_with_disc_folders():
+    with _installer("true", "smb://nas/Movies/Discs\nsmb://nas/Anime--4K") as installer:
+        xml = installer.build_snippet_xml_body()
+    ET.fromstring(xml)  # "--" collapsed in the comment keeps the XML valid
 
 
 def test_installer_preserves_naming_warning_text():
