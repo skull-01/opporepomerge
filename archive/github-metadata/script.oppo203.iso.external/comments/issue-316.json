@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609802302",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/316#issuecomment-4609802302",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/316",
+    "id": 4609802302,
+    "node_id": "IC_kwDOSi3wO88AAAABEsQAPg",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T06:48:08Z",
+    "updated_at": "2026-06-03T06:48:08Z",
+    "body": "﻿Implemented in PR #319 ? merged to `main` as `91564ca`.\n\nKodi upload Browse + validation gate: native picker (`pick_addon_zip` via rfd) + `validate_addon_zip` -> {valid, version, reason} (identity + structure: our addon id, default.py/service.py/resources/lib, parseable version; pure `validate_addon_contents` cargo-tested). Upload + register disabled until a valid OppoKodiAddon zip is selected; reason shown inline. Identity check, not cryptographic (unsigned posture). Gate: tsc + vitest 356 + cargo 53 + vite build; browser-verified Browse + the disabled-until-valid gate.\n\n**Phase-C / operator:** native picker + real-zip validation + SSH upload on the built app / real box. Ships in configurator v0.9.2.\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609802302/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

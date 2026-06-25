@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336302118",
+    "pull_request_review_id": 4403664813,
+    "id": 3336302118,
+    "node_id": "PRRC_kwDOSi3wO87G2-4m",
+    "diff_hunk": "@@ -0,0 +1,46 @@\n+import type { WizardState } from \"./state\";\n+import { planSwitch, type SwitchCommandPlan } from \"./step5_switch\";\n+import { isAvrChain } from \"./steps\";\n+\n+/**\n+ * How Step 5 can auto-find an HDMI input for the current chain/backend:\n+ *   \"sweep\"  - the backend can drive discrete HDMI inputs (Roku ECP / ADB), so the configurator\n+ *              switches to each input in turn and the user says when the OPPO appears — a real,\n+ *              driven detection that resolves an actual HDMI number.\n+ *   \"manual\" - no backend can drive discrete inputs here (SmartThings / LG / Samsung / custom /\n+ *              Sony, the AVR chain, or no TV IP), so the only honest path is manual entry.\n+ * No TV/AVR control protocol reports the active input number, so there is no passive read — the\n+ * sweep is the strongest automation available, and it still needs the user's eyes to confirm.\n+ */\n+export type AutoFindMethod = \"sweep\" | \"manual\";\n+\n+/** The discrete HDMI inputs a driven sweep walks, in order. */\n+export const SWEEP_INPUTS = [1, 2, 3, 4] as const;\n+\n+/**\n+ * Whether a driven sweep is possible: TV chain only (the AVR receiver input is a named string set\n+ * in Step 6, not a 1..4 sweep) on a backend whose switch is a confirmable command for HDMI 1 — i.e.\n+ * Roku ECP or ADB with a TV IP. Everything else returns \"manual\".\n+ */\n+export function autoFindMethod(state: WizardState): AutoFindMethod {\n+  if (isAvrChain(state.topology)) return \"manual\";\n+  if (state.tvBackend !== \"roku_ecp\" && state.tvBackend !== \"adb\") return \"manual\";\n+  return planSwitch(state, \"oppo\", SWEEP_INPUTS[0]).disposition === \"command\" ? \"sweep\" : \"manual\";",
+    "path": "configurator/src/step5_autofind.ts",
+    "commit_id": "d3b939a975c8e82ce825accbc881de3819f7aecc",
+    "original_commit_id": "d3b939a975c8e82ce825accbc881de3819f7aecc",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Keep ADB-weak TVs out of the driven sweep**\n\nWhen Step 4 marks a TV as `tvAdbWeak`, `Step5Intro` routes directly to `step5_fallback`, but this classifier still treats every `adb` backend with a TV IP as sweepable because `planSwitch` can build the same `KEYCODE_TV_INPUT_HDMI_N` command. In that ADB-weak case the fallback now offers/runs the exact discrete-input path that already failed, while the previous CEC/blind-cycle alternatives were removed, so users with ADB-weak TVs no longer get a usable fallback path.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T18:25:25Z",
+    "updated_at": "2026-06-01T18:25:25Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/188#discussion_r3336302118",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/188",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336302118"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/188#discussion_r3336302118"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/188"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336302118/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 27,
+    "original_start_line": 27,
+    "start_side": "RIGHT",
+    "line": 28,
+    "original_line": 28,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 28,
+    "position": 28,
+    "subject_type": "line"
+  }
+]

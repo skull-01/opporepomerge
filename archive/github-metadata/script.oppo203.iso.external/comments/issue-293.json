@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609283602",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/293#issuecomment-4609283602",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/293",
+    "id": 4609283602,
+    "node_id": "IC_kwDOSi3wO88AAAABErwWEg",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T05:12:42Z",
+    "updated_at": "2026-06-03T05:12:42Z",
+    "body": "﻿Implemented in PR #301 ? merged to `main` as `46b474d`.\n\nTV command console: all backends available for experimentation ? Roku ECP (`tv_switch_roku`), ADB (`tv_switch_adb`), Sony Bravia (HDMI-port REST `tv_switch_sony_bravia` + new generic IRCC `tv_sony_bravia_ircc`), LG/Samsung/custom (`tv_switch_external`), SmartThings (`smartthings_switch_request` build-and-display). Each has a preset palette + raw box; shared live transcript (command/response + reachability ? TVs have no telemetry feed). Gate: tsc + vitest 338 + `cargo test` 45 + vite build; browser-verified backend tabs + IRCC firing.\n\n**Phase-C** (operator, real TVs): every backend's control path. Leaving OPEN (only-operator-closes). Ships in configurator v0.9.0.\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609283602/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

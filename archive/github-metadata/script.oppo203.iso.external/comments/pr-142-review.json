@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333749",
+    "pull_request_review_id": 4396993493,
+    "id": 3330333749,
+    "node_id": "PRRC_kwDOSi3wO87GgNw1",
+    "diff_hunk": "@@ -0,0 +1,102 @@\n+import type { StepId } from \"../steps\";\n+\n+/** One captured IPC round-trip, shown in the developer debug view (Ctrl+Shift+D). */\n+export type DebugEntry = {\n+  seq: number;\n+  ts: number;\n+  step: StepId | null;\n+  command: string;\n+  args: unknown;\n+  durationMs: number;\n+  ok: boolean;\n+  result?: unknown;\n+  error?: string;\n+};\n+\n+const MAX_ENTRIES = 500;\n+const MAX_STRING = 2000;\n+// Keys whose values may carry secrets (Sony PSK, SmartThings tokens, passwords, NAS creds).\n+// Matched case-insensitively against the key NAME; the value is replaced wholesale so a secret\n+// never reaches the panel or a copy/paste of it.\n+const SENSITIVE_KEY = /psk|token|password|secret|credential/i;\n+\n+let entries: DebugEntry[] = [];\n+let seq = 0;\n+let currentStep: StepId | null = null;\n+const listeners = new Set<() => void>();\n+\n+/**\n+ * Deep-copy `value`, blanking secret-bearing fields and truncating long strings (generated\n+ * settings.xml / playercorefactory blobs passed to deploy_* commands). Never throws; bounded\n+ * by depth so an unexpected cycle cannot run away.\n+ */\n+export function redact(value: unknown, keyHint = \"\", depth = 0): unknown {\n+  if (SENSITIVE_KEY.test(keyHint)) return \"[redacted]\";\n+  if (depth > 8) return \"[…]\";\n+  if (typeof value === \"string\") {\n+    return value.length > MAX_STRING\n+      ? `${value.slice(0, MAX_STRING)}…[+${value.length - MAX_STRING} chars]`\n+      : value;",
+    "path": "configurator/src/debug/log.ts",
+    "commit_id": "bf06a694b1ab255f7d15e48bfa5f5d123ef2432b",
+    "original_commit_id": "bf06a694b1ab255f7d15e48bfa5f5d123ef2432b",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Redact secrets embedded in settings.xml logs**\n\nWhen a Sony AVR PSK is configured, `buildApplyFileSet()` serializes it into `addon_data/script.oppo203.iso.external/settings.xml` as a plain XML string, and `read_ssh_file` can also return an existing settings.xml string. Because string values are only truncated here and are not scanned/redacted, the debug panel can show or copy the raw PSK whenever these IPC calls are expanded or copied, despite key-based redaction working for `save_wizard_state`.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-31T14:08:04Z",
+    "updated_at": "2026-05-31T14:08:05Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/142#discussion_r3330333749",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/142",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333749"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/142#discussion_r3330333749"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/142"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333749/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 36,
+    "original_start_line": 36,
+    "start_side": "RIGHT",
+    "line": 39,
+    "original_line": 39,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 39,
+    "position": 39,
+    "subject_type": "line"
+  }
+]

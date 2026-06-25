@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3324808798",
+    "pull_request_review_id": 4390138188,
+    "id": 3324808798,
+    "node_id": "PRRC_kwDOSi3wO87GLI5e",
+    "diff_hunk": "@@ -0,0 +1,94 @@\n+#!/usr/bin/env python3\n+\"\"\"Fast local test loop — run only the tests affected by your code changes.\n+\n+Wraps ``pytest --testmon``. The testmon plugin records which tests exercise\n+which code and, on the next run, selects only the tests impacted by the files\n+you changed since the last run (\"if we didn't touch it, we don't re-test it\").\n+\n+This is a developer convenience for tight iteration. It is **not** a substitute\n+for the authoritative gate: the full suite plus the 99% coverage floor\n+(``scripts/verify.sh`` and CI) remain the backstop before a PR leaves draft.\n+\n+The first invocation builds the impact map (``.testmondata``, git-ignored) by\n+running the whole suite once; later invocations run only affected tests.\n+``--full`` drops the map and rebuilds it.\n+\n+Usage (run with the project venv interpreter):\n+\n+    .venv\\\\Scripts\\\\python.exe tools/dev_test.py            # only affected tests\n+    .venv\\\\Scripts\\\\python.exe tools/dev_test.py --full     # rebuild the map\n+    .venv\\\\Scripts\\\\python.exe tools/dev_test.py -k yamaha  # extra args -> pytest\n+\n+Note: do not combine with ``-n`` (xdist) or ``-p no:cacheprovider`` — testmon\n+runs serially and reads the cacheprovider ``lf`` option.\n+\"\"\"\n+\n+from __future__ import annotations\n+\n+import argparse\n+import os\n+import subprocess\n+import sys\n+from pathlib import Path\n+\n+TESTMON_DATA = \".testmondata\"\n+WINDOWS_BASETEMP = \"build/_pt\"\n+\n+\n+def repo_root() -> Path:\n+    return Path(__file__).resolve().parent.parent\n+\n+\n+def build_command(python: str, passthrough: list[str], *, on_windows: bool) -> list[str]:\n+    \"\"\"Assemble the pytest invocation that activates testmon.\n+\n+    Keeps the cacheprovider plugin enabled (testmon reads its ``lf`` option) and,\n+    on Windows, pins ``--basetemp`` to a repo-local scratch dir.\n+    \"\"\"\n+    cmd = [python, \"-m\", \"pytest\", \"--testmon\", *passthrough]\n+    if on_windows:\n+        cmd += [\"--basetemp\", WINDOWS_BASETEMP]\n+    return cmd\n+\n+\n+def testmon_env(base_env: dict[str, str], *, on_windows: bool, scratch_dir: Path) -> dict[str, str]:\n+    \"\"\"Environment for the run; routes the temp dir outside the repo on Windows.\n+\n+    Keeps the pytest temp tree out of the worktree so the release audit walker\n+    cannot trip over OS-locked tmp dirs (see AGENTS.md / handoff gotchas).\n+    \"\"\"\n+    env = dict(base_env)",
+    "path": "tools/dev_test.py",
+    "commit_id": "a68ce5f2e4ee82e384132875ad3f2b152b4a3e44",
+    "original_commit_id": "a68ce5f2e4ee82e384132875ad3f2b152b4a3e44",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Load testmon when plugin autoload is disabled**\n\nIn shells that follow the repo's documented coverage/pre-push workflow, `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1` is left in the environment (`scripts/hooks/pre-push` exports it, and `pytest --help` documents that it disables plugin auto-loading). Copying `os.environ` through here means pytest never auto-loads pytest-testmon, so the wrapper's `--testmon` option is rejected as an unrecognized argument until the user manually unsets the variable. Clear that variable for this subprocess or explicitly load the testmon plugin.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-29T14:00:28Z",
+    "updated_at": "2026-05-29T14:00:28Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/59#discussion_r3324808798",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/59",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3324808798"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/59#discussion_r3324808798"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/59"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3324808798/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 60,
+    "original_line": 60,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 60,
+    "position": 60,
+    "subject_type": "line"
+  }
+]

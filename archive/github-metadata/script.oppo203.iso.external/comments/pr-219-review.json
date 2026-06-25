@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3339969504",
+    "pull_request_review_id": 4408197078,
+    "id": 3339969504,
+    "node_id": "PRRC_kwDOSi3wO87HE-Pg",
+    "diff_hunk": "@@ -0,0 +1,18 @@\n+# Hardware Ecosystem Support Matrix — v2.9.15 Final\n+\n+| Layer | Software status | Hardware validation |\n+|---|---|---|\n+| Player / OPPO / clone profiles | Preserved from v2.9.13 | Not performed / not claimed |\n+| Six-option playback architecture (routing × monitor) | New: `playercorefactory`/`service_interception`/`http_handoff` × `legacy`/`svm3`, one dispatch | Not performed / not claimed |",
+    "path": "docs/release-history/HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v2.9.15.md",
+    "commit_id": "7bf3d6905764350051363407e28bdb8aef90aba9",
+    "original_commit_id": "7bf3d6905764350051363407e28bdb8aef90aba9",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Include the v2.9.15 HTTP paths in the validation matrix**\n\nThis v2.9.15 support matrix is the artifact that tells operators which software paths still need hardware validation, but it only lists the old six-option/SVM3/session-status work and omits the newly advertised `http_handoff_http` preset, HTTP monitor, BDMV HTTP probe, and HDMI sequencing paths from this release. In the hardware-validation context, testers following this matrix would not exercise the new pure-HTTP paths even though `addon.xml` and the release notes present them as v2.9.15 runtime changes.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-02T09:02:52Z",
+    "updated_at": "2026-06-02T09:02:52Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/219#discussion_r3339969504",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/219",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3339969504"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/219#discussion_r3339969504"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/219"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3339969504/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 6,
+    "original_line": 6,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 6,
+    "position": 6,
+    "subject_type": "line"
+  }
+]

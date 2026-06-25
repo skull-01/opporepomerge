@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3289546145",
+    "pull_request_review_id": 4346828730,
+    "id": 3289546145,
+    "node_id": "PRRC_kwDOSi3wO87EEn2h",
+    "diff_hunk": "@@ -0,0 +1,90 @@\n+---\n+description: Cut and publish the next version release (bump, evidence, PR, tag, styled GitHub release)\n+argument-hint: \"[new version e.g. 2.9.14] — optional; defaults to next patch\"\n+---\n+\n+Runbook for cutting a full version-bump release of this Kodi add-on. Target version\n+from arguments (if given): $ARGUMENTS\n+\n+## Target version\n+- If a version is given in the arguments, use it. Otherwise bump the patch of the\n+  current `resources/lib/version.py` `ADDON_VERSION` (e.g. 2.9.13 → 2.9.14).\n+- Always increment `BUILD_NUMBER` by 1. Use BUILD_ID/title text `v<new> Final`.\n+- Decide the release theme from the commits merged since the previous tag\n+  (`git log <prev-tag>..origin/main`). If there are no runtime changes, say so\n+  explicitly (\"No runtime behavior changed\").\n+\n+## Steps\n+1. **Pre-flight**: `git fetch`; `gh pr list` (merge or note any open PRs first);\n+   create branch `release/v<new>` off `origin/main`.\n+2. **Bump active version** (`<prev>` → `<new>`):\n+   - `resources/lib/version.py`: ADDON_VERSION, BUILD_ID, BUILD_NUMBER (+1), RELEASE_LINE.\n+   - `pyproject.toml` `[project] version`.\n+   - `docs/sources.yaml`: version, build_number, build_id, title, source_recommendation.\n+   - Run `tools/sync_version.py --write` (sets addon.xml version attr), then manually\n+     update the addon.xml `<summary>` and PREPEND ONE new `<description>` sentence —\n+     keep the full historical narrative; never strip prior-version sentences.\n+   - `.github/workflows/ci.yml`: `EXPECTED_VERSION` + the two `*-<ver>-ci*.zip` names.\n+   - `scripts/verify.sh`: `EXPECTED_VERSION` default.\n+3. **Bump tests** (wholesale, `tests/` only): replace `<prev>` → `<new>`, and\n+   `BUILD_NUMBER == <N>` → `<N+1>` (also `build_number: <N>` and `build_number\"] == <N>`).\n+   Update any test that pins the addon.xml summary text to the new summary.\n+   NEVER edit frozen evidence: `docs/release-history/`, `release-evidence/`,\n+   `docs/github-readiness/`, `docs/ai-handoff/` keep their historical versions. After a\n+   clean bump there are ~0 active refs to `<prev>` left (one historical line in addon.xml\n+   is expected).\n+4. **Regenerate docs**: `tools/render_docs.py --write` (README/reference/web-references).\n+   Do not hand-edit the generated blocks.\n+5. **New evidence set** in `docs/release-history/` (clone the previous set, rewrite for\n+   CURRENT reality — gate value, formatter, coverage %, what changed):\n+   `BUILD_NOTES_v<new>_FINAL.md`, `RELEASE_MANIFEST_v<new>.md`, `RELEASE_NOTES_v<new>.md`,\n+   `COVERAGE_REPORT_v<new>.md`, `TEST_AUDIT_REPORT_v<new>.md`, `HARDWARE_VALIDATION_v<new>.md`,\n+   `PRE_HARDWARE_AUDIT_REPORT_v<new>.md`, `HARDWARE_ECOSYSTEM_SUPPORT_MATRIX_v<new>.md`;\n+   plus `release-evidence/v<new>-final/MANIFEST.txt` listing all 8.\n+   Required content (checked by `tests/test_v2910_final_release.py`):\n+   - RELEASE_MANIFEST must list the 4 artifact names:\n+     `script.oppo203.iso.external-<new>.zip`, `-<new>-dev-source.zip`,\n+     `-<new>-artifacts-bundle.zip`, `-<new>.sha256`.\n+   - HARDWARE_VALIDATION, RELEASE_NOTES, HARDWARE_ECOSYSTEM_SUPPORT_MATRIX must each\n+     contain \"software-verified\", \"not performed\", and \"not claimed\".\n+6. **Verify** (fast loop): `tools/sync_version.py --check --expected-version <new>`,\n+   `tools/render_docs.py --check`, `tools/audit_release.py --expected-version <new>` (PASS),",
+    "path": ".claude/commands/release.md",
+    "commit_id": "dce3112b283ee5ea21bdf69ebdd998f7278314e4",
+    "original_commit_id": "dce3112b283ee5ea21bdf69ebdd998f7278314e4",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Prefix tool-script invocations with python**\n\nThe runbook tells users to execute `tools/sync_version.py`, `tools/render_docs.py`, and `tools/audit_release.py` directly, but these files are checked in without execute permission (`0644`), so following these commands in a normal shell fails with `Permission denied` and blocks the release flow. This is especially problematic in the verify step, where the first checks cannot run as written; use `python ...` (as CI/docs already do) for reliability.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-22T15:47:49Z",
+    "updated_at": "2026-05-22T15:47:49Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/12#discussion_r3289546145",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/12",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3289546145"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/12#discussion_r3289546145"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/12"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3289546145/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 50,
+    "original_start_line": 50,
+    "start_side": "RIGHT",
+    "line": 51,
+    "original_line": 51,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 51,
+    "position": 51,
+    "subject_type": "line"
+  }
+]

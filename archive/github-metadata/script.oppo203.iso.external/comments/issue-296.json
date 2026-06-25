@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609146070",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/296#issuecomment-4609146070",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/296",
+    "id": 4609146070,
+    "node_id": "IC_kwDOSi3wO88AAAABErn81g",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T04:44:00Z",
+    "updated_at": "2026-06-03T04:44:00Z",
+    "body": "﻿Implemented in PR #298 ? commit `54b51a9`, merged to `main` as `7b92aac`.\n\nDev-tab shell + nav: new `developer` screen, persistent header **Developer?** entry (hidden on the dev screen, mirroring **Reset all?**), 5 sub-section tabs (OPPO/Kodi/TV/AVR/NAS), wired into `steps.ts` (ScreenId + both exhaustive maps) and `App.tsx`, pinned by `steps.test.ts`. Gate: `tsc -b` + **vitest 328/328** + `vite build`; browser-verified the full nav path with no console errors. UI only ? no Phase-C. Ships in configurator v0.9.0.\n\nLeaving OPEN for operator verification + close (only-operator-closes).\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609146070/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

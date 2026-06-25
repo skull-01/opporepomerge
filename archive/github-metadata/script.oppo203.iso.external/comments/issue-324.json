@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4610207179",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/324#issuecomment-4610207179",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/324",
+    "id": 4610207179,
+    "node_id": "IC_kwDOSi3wO88AAAABEsotyw",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T07:51:40Z",
+    "updated_at": "2026-06-03T07:51:40Z",
+    "body": "﻿Implemented in PR #326 ? merged to `main` as `e40cad6`.\n\nConfigurator verifies the build tag: `validate_addon_zip` reads resources/oppokodiaddon.sig + recomputes the SHA-256 content manifest (Rust `addon_manifest_sig`, byte-exact mirror of the add-on `compute_manifest_sig`; dep sha2) -> signed / unsigned (allowed, labeled) / mismatch (blocked). KodiPanel shows the state. Cross-language guard: a cargo test pins `addon_manifest_sig` to the SAME fixture hash as `tests/test_addon_signature.py`. Gate: tsc + vitest 356 + cargo 54 (incl. the cross-language hash) + vite build.\n\n**Phase-C / operator:** signed/unsigned/mismatch display against a real signed add-on zip on the built app. Ships in configurator v0.9.3. **Completes the build-tag initiative (#322).**\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4610207179/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

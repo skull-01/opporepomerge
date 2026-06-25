@@ -1,0 +1,140 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336064113",
+    "pull_request_review_id": 4403389736,
+    "id": 3336064113,
+    "node_id": "PRRC_kwDOSi3wO87G2Exx",
+    "diff_hunk": "@@ -1355,17 +1355,218 @@ fn avr_switch_sony_audio(\n     device_response_ok(&resp)\n }\n \n+// ============================================================\n+// TV input switching (Phase 3.1) -- per-backend builders + fire\n+// ============================================================\n+//\n+// Mirrors resources/lib/tv/. Sony Bravia switches directly over its REST API (X-Auth-PSK\n+// setPlayContent). The command-based backends (adb / lg / samsung / custom) run on the Kodi box\n+// over the existing SSH channel exactly as the add-on's tv_control does on-device. SmartThings\n+// builds its cloud request for display/confirmation -- HTTPS firing is out of scope (no TLS crate).\n+// Builders are unit-tested; the fire commands are best-effort + hardware-pending.\n+\n+const SONY_BRAVIA_PORT: u16 = 80;\n+\n+/// The Sony Bravia `setPlayContent` body selecting an HDMI port (`extInput:hdmi?port=N`).\n+fn sony_bravia_set_input_body(port: u32) -> String {\n+    serde_json::json!({\n+        \"method\": \"setPlayContent\",\n+        \"version\": \"1.0\",\n+        \"id\": 1,\n+        \"params\": [{\"uri\": format!(\"extInput:hdmi?port={port}\")}]\n+    })\n+    .to_string()\n+}\n+\n+/// Switch a Sony Bravia TV to an HDMI port over its REST API (POST /sony/avContent, X-Auth-PSK),\n+/// mirroring _sony_set_hdmi in tv_control.py. Best-effort + hardware-pending.\n+#[tauri::command]\n+fn tv_switch_sony_bravia(\n+    host: String,\n+    psk: String,\n+    port: u32,\n+    timeout_ms: Option<u64>,\n+) -> Result<String, String> {\n+    validate_ssh_component(\"host\", &host)?;\n+    if psk.trim().is_empty() {\n+        return Err(\"Sony Bravia PSK is required\".to_string());\n+    }\n+    let body = sony_bravia_set_input_body(port);\n+    let extra = format!(\"X-Auth-PSK: {}\\r\\n\", psk.trim());\n+    let request = json_post_request(&host, SONY_BRAVIA_PORT, \"/sony/avContent\", &body, &extra);\n+    let resp = socket_exchange(\n+        &host,\n+        SONY_BRAVIA_PORT,\n+        request.as_bytes(),\n+        timeout_ms.unwrap_or(5000),\n+    )?;\n+    device_response_ok(&resp)\n+}\n+\n+/// Substitute `{tv_ip}` into a user-configured TV command template (lg / samsung / custom),\n+/// mirroring tv_control._run_external's `command.format(tv_ip=...)`.\n+fn format_external_command(template: &str, tv_ip: &str) -> Result<String, String> {\n+    let cmd = template.trim();\n+    if cmd.is_empty() {\n+        return Err(\"TV command is empty\".to_string());\n+    }\n+    Ok(cmd.replace(\"{tv_ip}\", tv_ip))",
+    "path": "configurator/src-tauri/src/lib.rs",
+    "commit_id": "9aa9e1c41053b49a3da47be5add806c67c415ef5",
+    "original_commit_id": "9aa9e1c41053b49a3da47be5add806c67c415ef5",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve escaped braces in external commands**\n\nFor LG/Samsung/custom command templates that include literal JSON or other brace syntax, this no longer mirrors the add-on's `command.format(tv_ip=...)` behavior. Templates that work on-device must escape literal braces as `{{`/`}}`; this replacement only substitutes `{tv_ip}` and leaves the doubled braces in the command, so a common command like `curl -d '{{\"input\":\"HDMI1\"}}' http://{tv_ip}/...` is sent with invalid doubled braces during the configurator switch test.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T17:41:37Z",
+    "updated_at": "2026-06-01T17:41:38Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/179#discussion_r3336064113",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/179",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336064113"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/179#discussion_r3336064113"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/179"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336064113/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 1413,
+    "original_line": 1413,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 59,
+    "position": 59,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336064121",
+    "pull_request_review_id": 4403389736,
+    "id": 3336064121,
+    "node_id": "PRRC_kwDOSi3wO87G2Ex5",
+    "diff_hunk": "@@ -1355,17 +1355,218 @@ fn avr_switch_sony_audio(\n     device_response_ok(&resp)\n }\n \n+// ============================================================\n+// TV input switching (Phase 3.1) -- per-backend builders + fire\n+// ============================================================\n+//\n+// Mirrors resources/lib/tv/. Sony Bravia switches directly over its REST API (X-Auth-PSK\n+// setPlayContent). The command-based backends (adb / lg / samsung / custom) run on the Kodi box\n+// over the existing SSH channel exactly as the add-on's tv_control does on-device. SmartThings\n+// builds its cloud request for display/confirmation -- HTTPS firing is out of scope (no TLS crate).\n+// Builders are unit-tested; the fire commands are best-effort + hardware-pending.\n+\n+const SONY_BRAVIA_PORT: u16 = 80;\n+\n+/// The Sony Bravia `setPlayContent` body selecting an HDMI port (`extInput:hdmi?port=N`).\n+fn sony_bravia_set_input_body(port: u32) -> String {\n+    serde_json::json!({\n+        \"method\": \"setPlayContent\",\n+        \"version\": \"1.0\",\n+        \"id\": 1,\n+        \"params\": [{\"uri\": format!(\"extInput:hdmi?port={port}\")}]\n+    })\n+    .to_string()\n+}\n+\n+/// Switch a Sony Bravia TV to an HDMI port over its REST API (POST /sony/avContent, X-Auth-PSK),\n+/// mirroring _sony_set_hdmi in tv_control.py. Best-effort + hardware-pending.\n+#[tauri::command]\n+fn tv_switch_sony_bravia(\n+    host: String,\n+    psk: String,\n+    port: u32,\n+    timeout_ms: Option<u64>,\n+) -> Result<String, String> {\n+    validate_ssh_component(\"host\", &host)?;\n+    if psk.trim().is_empty() {\n+        return Err(\"Sony Bravia PSK is required\".to_string());\n+    }\n+    let body = sony_bravia_set_input_body(port);\n+    let extra = format!(\"X-Auth-PSK: {}\\r\\n\", psk.trim());\n+    let request = json_post_request(&host, SONY_BRAVIA_PORT, \"/sony/avContent\", &body, &extra);\n+    let resp = socket_exchange(\n+        &host,\n+        SONY_BRAVIA_PORT,\n+        request.as_bytes(),\n+        timeout_ms.unwrap_or(5000),\n+    )?;\n+    device_response_ok(&resp)\n+}\n+\n+/// Substitute `{tv_ip}` into a user-configured TV command template (lg / samsung / custom),\n+/// mirroring tv_control._run_external's `command.format(tv_ip=...)`.\n+fn format_external_command(template: &str, tv_ip: &str) -> Result<String, String> {\n+    let cmd = template.trim();\n+    if cmd.is_empty() {\n+        return Err(\"TV command is empty\".to_string());\n+    }\n+    Ok(cmd.replace(\"{tv_ip}\", tv_ip))\n+}\n+\n+/// Build the on-box adb shell line that selects a TV input, mirroring tv_adb_control: connect, then\n+/// `adb -s host:port shell <command>`. Run on the Kodi box over SSH, where adb lives.\n+fn adb_switch_command_line(\n+    adb_path: &str,\n+    host: &str,\n+    port: u16,\n+    command: &str,\n+) -> Result<String, String> {\n+    let cmd = command.trim();\n+    if cmd.is_empty() {\n+        return Err(\"adb shell command is empty\".to_string());\n+    }\n+    let adb = adb_path.trim();\n+    let adb = if adb.is_empty() { \"adb\" } else { adb };\n+    Ok(format!(\n+        \"{adb} connect {host}:{port} >/dev/null 2>&1; {adb} -s {host}:{port} shell {cmd}\"\n+    ))",
+    "path": "configurator/src-tauri/src/lib.rs",
+    "commit_id": "9aa9e1c41053b49a3da47be5add806c67c415ef5",
+    "original_commit_id": "9aa9e1c41053b49a3da47be5add806c67c415ef5",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Quote ADB shell commands before sending over SSH**\n\nWhen the user-configured ADB command contains shell metacharacters needed by Android shell commands, this string is interpreted first by the Kodi box's remote shell instead of being passed to `adb shell` like the add-on's `subprocess.run([...]+shlex.split(command))` path. For example, a compound command such as `input keyevent 3; input keyevent 22` runs the second half on Kodi rather than the TV, so the configurator test can fail or execute unintended commands for valid editable ADB presets.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T17:41:38Z",
+    "updated_at": "2026-06-01T17:41:38Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/179#discussion_r3336064121",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/179",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336064121"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/179#discussion_r3336064121"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/179"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336064121/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 1430,
+    "original_start_line": 1430,
+    "start_side": "RIGHT",
+    "line": 1432,
+    "original_line": 1432,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 78,
+    "position": 78,
+    "subject_type": "line"
+  }
+]

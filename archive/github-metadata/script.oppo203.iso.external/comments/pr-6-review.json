@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287755636",
+    "pull_request_review_id": 4344721335,
+    "id": 3287755636,
+    "node_id": "PRRC_kwDOSi3wO87D9yt0",
+    "diff_hunk": "@@ -104,6 +104,6 @@ def test_sync_version_write_only_changes_addon_attribute_in_copy(tmp_path):\n     (sandbox / \"resources\" / \"lib\" / \"version.py\").write_text('ADDON_VERSION = \"2.9.10\"\\n', encoding=\"utf-8\")\n \n     written = tool.write_addon_xml_version(sandbox)\n-    assert written == \"2.9.10\"\n-    assert ET.parse(sandbox / \"addon.xml\").getroot().attrib[\"version\"] == \"2.9.10\"\n+    assert written == \"2.9.11\"\n+    assert ET.parse(sandbox / \"addon.xml\").getroot().attrib[\"version\"] == \"2.9.11\"",
+    "path": "tests/test_v291_build5_version_source.py",
+    "commit_id": "5f597a70a1afac353582bfbb03c165bc175c55bd",
+    "original_commit_id": "5f597a70a1afac353582bfbb03c165bc175c55bd",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve sandbox-version assertion in sync-version copy test**\n\nThis test sets up a sandbox `resources/lib/version.py` with `ADDON_VERSION = \"2.9.10\"` but now asserts that `write_addon_xml_version` returns/writes `2.9.11`, so it no longer verifies that the function respects the sandbox copy it is supposed to operate on. In practice this can mask path/import leakage (e.g., reading the repo’s global version instead of the sandbox file), which weakens the safety of the version-sync checks in release tooling.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-22T10:36:31Z",
+    "updated_at": "2026-05-22T10:36:31Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/6#discussion_r3287755636",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/6",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287755636"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/6#discussion_r3287755636"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/6"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287755636/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 107,
+    "original_start_line": 107,
+    "start_side": "RIGHT",
+    "line": 108,
+    "original_line": 108,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 59,
+    "position": 59,
+    "subject_type": "line"
+  }
+]

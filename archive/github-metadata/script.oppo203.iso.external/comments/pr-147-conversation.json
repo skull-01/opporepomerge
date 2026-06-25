@@ -1,0 +1,48 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4588539810",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/147#issuecomment-4588539810",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/147",
+    "id": 4588539810,
+    "node_id": "IC_kwDOSi3wO88AAAABEX-Pog",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-05-31T23:21:27Z",
+    "updated_at": "2026-05-31T23:21:27Z",
+    "body": "Merged to `main` as part of the configurator SVM3 wizard stack: code commit `5d24d5f` landed via merge commit `f06e1de` (`Merge PR #147`). Shows **Closed rather than Merged** -- same stacked-local-merge artifact as #144/#145: the stack was merged locally in order #146 -> #147 -> #148 -> #149, and once the commits are on `main` GitHub refuses to retarget a PR base to `main` (it reports no new commits between base and head), so deleting the base branch closes the PR. The code is on `main` and passed the configurator gate there (155 vitest + `tsc -b` + `vite build`). Phase-A/C row in `docs/MANUAL_VERIFICATION_CHECKLIST.md`; pairs with addon reader #143.",
+    "author_association": "OWNER",
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4588539810/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4625288754",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/345#issuecomment-4625288754",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/345",
+    "id": 4625288754,
+    "node_id": "IC_kwDOSi3wO88AAAABE7BOMg",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-04T19:09:01Z",
+    "updated_at": "2026-06-04T19:09:01Z",
+    "body": "Implemented end-to-end (go-local CI/release + handoff prune), all merged to `main`:\n\n- **PR #346** `c2c784f` — `scripts/ci-local.sh` (clean-room WSL gate: full add-on gate on 3.12 + compat-smoke on 3.9/3.10; pinned by `tests/test_ci_local_gate.py`).\n- **PR #347** `d78009a` — `scripts/release-addon-local.ps1` + `scripts/release-configurator-local.ps1` (local publish; pinned by `tests/test_release_scripts.py`).\n- **PR #348** `7601c71` — norms flip (AGENTS.md \"CI runs locally — cloud CI is disabled\", ci.md, release-process.md, handoff §4/§2a).\n- **PR #349** `dde859f` — handoff prune (resume-read ~2450 → ~1510 lines; older §3a/§3b → `docs/ai-handoff/WIP_ARCHIVE.md`).\n\n**Cloud CI disabled** (`gh workflow disable`): `CI`, `Configurator CI`, `Package Installable ZIP` are now `disabled_manually` (files kept, pinned by g6; re-enable with `gh workflow enable`). claude-review + Claude Code were already off; **Dependabot stays active**.\n\nVerified locally: `ci-local.sh` green (1217 passed / 3 skipped, coverage 99%, smoke 3.9/3.10), add-on release `-DryRun` green, configurator release logic verified (`-DryRun -SkipBuild`; the real `npm run dist` publish is exercised at the next release — see the checklist). Left **OPEN** per only-operator-closes; a verification row is in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4625288754/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

@@ -1,0 +1,48 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4579761678",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/68#issuecomment-4579761678",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/68",
+    "id": 4579761678,
+    "node_id": "IC_kwDOSi3wO88AAAABEPmeDg",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-05-29T20:51:54Z",
+    "updated_at": "2026-05-29T20:51:54Z",
+    "body": "## Code review summary - 16 issues filed\n\nStatic/software review of this PR (configurator wizard wiring, slices 1-7). Method: a 7-angle finder pass plus manual verification of each finding against the code and the Python originals it reimplements (`playercorefactory_merge.py`, `installer.py`, `settings.xml`). Not built, not run in the app, no hardware exercised.\n\nEach finding is tracked as its own `type:bug` / `area:configurator` issue:\n\n### High - recommend resolving before this leaves draft\n- **#78** IP-control test reports success on any non-empty / OFF / error reply\n- **#72** SSH IP/username fields allow ssh option/command injection\n- **#79** `merge.ts` overwrites a malformed `playercorefactory.xml` instead of refusing\n- **#80** Tier A (SSH) apply blind-overwrites `playercorefactory.xml` instead of merging\n\n### Medium-high\n- **#81** Apply overwrites `settings.xml` wholesale; unmapped add-on settings reset\n- **#73** `merge.ts` deletes user-authored rules targeting `Oppo203ISO`\n- **#82** SMB write-test validates a different directory than the deploy target\n- **#83** persisted screen id is not validated, causing a white-screen crash loop\n\n### Medium\n- **#74** `oppo_query` does a single read with no read-until-CR (truncation + full-timeout hang)\n- **#75** `deploy_ssh` masks remote backup failure and reports empty `backed_up`\n- **#84** Tier C generates a different file set in step1 vs the end-of-wizard Apply (settings.xml missing)\n\n### Low / cleanup\n- **#85** `xmlEscape` duplicated and diverged across `settings_xml.ts` and `generate.ts`\n- **#76** `deploy_to_userdata` write is non-atomic (no temp-then-rename / rollback)\n- **#77** `tvdb.isNewer` compares `db_version` as strings (version-format fragility)\n- **#86** `tv_switching_enabled` written `true` even when no TV backend is configured\n- **#87** player brand/model lists duplicated across `mapping.ts` and `step3.tsx` (also folds in the M9205 V1 question and TV-probe backend coverage)\n\n**Themes:** several merge/deploy paths lose user data where the conservative Python original protects it (#79 / #80 / #73 / #81), and the IP-control test can report success without two-way control actually being confirmed (#78). The wiring itself is solid - pure, unit-tested functions; std-only Rust; backups taken before writes.\n\n_Each linked issue carries the file:line, the failure scenario, and a suggested fix._\n",
+    "author_association": "OWNER",
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4579761678/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

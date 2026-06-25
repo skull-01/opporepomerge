@@ -1,0 +1,48 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4588475942",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/145#issuecomment-4588475942",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/145",
+    "id": 4588475942,
+    "node_id": "IC_kwDOSi3wO88AAAABEX6WJg",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-05-31T22:54:16Z",
+    "updated_at": "2026-05-31T22:54:16Z",
+    "body": "Merged to `main` as part of the SVM3 stack: code commit `d5ba5ab` landed via merge commit `421c2f0` (`Merge PR #145: shared run_playback_session engine`). Like #144 this shows **Closed rather than Merged** -- the stacked PR base branch was deleted during cleanup, which closes the PR rather than marking it *Merged*. The code is on `main` and passed the full gate there. Tracked by ENH #152 + a Phase-A/C row in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.",
+    "author_association": "OWNER",
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4588475942/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

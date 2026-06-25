@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3320191948",
+    "pull_request_review_id": 4384099247,
+    "id": 3320191948,
+    "node_id": "PRRC_kwDOSi3wO87F5hvM",
+    "diff_hunk": "@@ -554,14 +554,73 @@ def _maybe_generate_transfer_files(addon):\n         return \"\"\n     if not paths:\n         return \"\"\n-    lines = [\"\", \"\", \"Setup files written (copy into your Kodi userdata folder):\"]\n+    _wizard_log(f\"transfer files written: {paths}\")\n+    try:\n+        pcf_dest, keymap_dest = installer.userdata_targets()\n+    except Exception:  # pragma: no cover - destination lookup is best-effort\n+        pcf_dest = keymap_dest = \"\"\n+    lines = [\n+        \"\",\n+        \"\",\n+        \"Setup files written. Copy each FROM the generated folder TO its Kodi\",\n+        \"destination, then restart Kodi:\",\n+    ]\n     if \"playercorefactory\" in paths:\n-        lines.append(\"- \" + str(paths[\"playercorefactory\"]))\n+        lines += [\n+            \"\",\n+            \"playercorefactory.xml\",\n+            \"  from: \" + str(paths[\"playercorefactory\"]),\n+            \"  to:   \" + (pcf_dest or \"<Kodi userdata>/playercorefactory.xml\"),\n+        ]\n     if \"keymap\" in paths:\n-        lines.append(\"- \" + str(paths[\"keymap\"]))\n+        lines += [\n+            \"\",\n+            \"remote keymap (oppo203iso.xml)\",\n+            \"  from: \" + str(paths[\"keymap\"]),\n+            \"  to:   \" + (keymap_dest or \"<Kodi userdata>/keymaps/oppo203iso.xml\"),\n+        ]\n     return \"\\n\".join(lines)\n \n \n+def _finish_setup_files(addon):\n+    \"\"\"Offer to install the setup files into Kodi; otherwise show where they were generated.\"\"\"\n+    if xbmc is None:  # pragma: no cover - Kodi-only guard (tests stub xbmc)\n+        return\n+    try:\n+        import installer\n+    except Exception as exc:  # pragma: no cover - only when Kodi libs are absent\n+        _wizard_log(f\"setup-file finish skipped: {exc!r}\")\n+        return\n+    try:\n+        do_install = bool(\n+            _yn(\n+                \"Install setup files into Kodi?\",\n+                \"Install the OPPO playercorefactory and remote keymap straight into Kodi now?\\n\\n\"\n+                \"- Any existing playercorefactory.xml is backed up first, then the OPPO rules \"\n+                \"are merged in (your other players are kept).\\n\"\n+                \"- The keymap reloads immediately; playercorefactory needs a Kodi restart.\\n\\n\"\n+                \"Choose No to just generate the files for manual copying.\",\n+            )\n+        )\n+    except Exception:  # prompt unavailable in this context; default to safe no-install\n+        do_install = False\n+    if do_install:\n+        try:\n+            installer.install_setup_files(announce=True)",
+    "path": "resources/lib/wizard.py",
+    "commit_id": "9d633def95ed290f1a6635650a5af6c110220e71",
+    "original_commit_id": "9d633def95ed290f1a6635650a5af6c110220e71",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Respect the service-interception architecture choice**\n\nWhen a Full wizard user selects service interception, `playback_architecture` is set to `service_interception`, but this new direct-install path still calls `install_setup_files()`, whose implementation always writes/merges `playercorefactory.xml`. In that scenario the wizard re-enables external-player routing immediately after the user chose not to use it; the manual fallback already avoids this by passing `include_playercorefactory=False` for service interception. Please gate this call on the selected architecture or install only the keymap in service-interception mode.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-28T19:29:53Z",
+    "updated_at": "2026-05-28T19:29:53Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/39#discussion_r3320191948",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/39",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3320191948"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/39#discussion_r3320191948"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/39"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3320191948/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 609,
+    "original_line": 609,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 59,
+    "position": 59,
+    "subject_type": "line"
+  }
+]

@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333907",
+    "pull_request_review_id": 4396993614,
+    "id": 3330333907,
+    "node_id": "PRRC_kwDOSi3wO87GgNzT",
+    "diff_hunk": "@@ -110,30 +110,21 @@ function avrSettings(state: WizardState): AddonSettings {\n   // In the AVR chain the receiver is the input switcher: it powers on and selects the\n   // player input on handoff, and restores the Kodi input on exit. The add-on reads these\n   // (avr_control.py: avr_settings_summary / validate_avr_settings); we only emit them when\n-  // control is actually enabled, and we reuse the Kodi return target captured in Step 4 as\n-  // the receiver restore input. Only enabled for native (non-Sony) drivers here; Sony\n-  // returned above.\n+  // control is actually enabled. The restore target is the receiver input the Kodi box is\n+  // plugged into, captured in Step 5 (avrKodiInput) - distinct from kodiInput, which is the\n+  // TV's HDMI input used by the TV-chain switcher. A blank avrKodiInput emits no restore\n+  // input, which the add-on treats as a non-fatal skip (avr_sequence.py). Native (non-Sony)\n+  // drivers only; Sony returned above.\n   if (enable && isAvrChain(state.topology)) {\n     out.avr_power_on_enabled = \"true\";\n-    const restore = describeReceiverInput(state.kodiInput);\n-    if (restore) {\n+    if (state.avrKodiInput) {\n       out.avr_restore_enabled = \"true\";\n-      out.avr_restore_input = restore;\n+      out.avr_restore_input = state.avrKodiInput;\n     }",
+    "path": "configurator/src/mapping.ts",
+    "commit_id": "90bd36b85853e329d169079623b0e109cfac8ca2",
+    "original_commit_id": "90bd36b85853e329d169079623b0e109cfac8ca2",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Clear stale AVR restore settings when input is blank**\n\nWhen an AVR-chain user leaves the new receiver Kodi input blank to skip restore, this branch simply omits `avr_restore_enabled` and `avr_restore_input`. However `buildApplyFileSet` merges through `mergeSettingsXml`, which preserves existing setting IDs that are not present in `ours`, so a previously-applied restore value (including the old reused TV HDMI number) remains active instead of being cleared. In the blank-input scenario, emit `avr_restore_enabled: \"false\"` and/or an empty `avr_restore_input` so re-applying actually disables the stale restore target.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-31T14:08:11Z",
+    "updated_at": "2026-05-31T14:08:11Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/139#discussion_r3330333907",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/139",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333907"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/139#discussion_r3330333907"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/139"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333907/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 120,
+    "original_start_line": 120,
+    "start_side": "RIGHT",
+    "line": 123,
+    "original_line": 123,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 20,
+    "position": 20,
+    "subject_type": "line"
+  }
+]

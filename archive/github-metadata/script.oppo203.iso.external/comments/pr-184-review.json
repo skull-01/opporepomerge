@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336282332",
+    "pull_request_review_id": 4403642831,
+    "id": 3336282332,
+    "node_id": "PRRC_kwDOSi3wO87G26Dc",
+    "diff_hunk": "@@ -132,48 +184,178 @@ export function Step5Ask({ go, state, set }: ScreenProps) {\n           <button className=\"btn outline\" onClick={() => go(\"step5_fallback\")}>\n             <Icon name=\"search\" size={14} /> Not sure — find it for me\n           </button>\n+\n+          {state.tvBackend === \"sony_bravia\" && !avr && (\n+            <div className=\"field\">\n+              <label className=\"field-label\">Sony TV Pre-Shared Key</label>\n+              <input\n+                className=\"input\"\n+                type=\"password\"\n+                value={state.tvSonyPsk}\n+                onChange={(e) => {\n+                  set({ tvSonyPsk: e.target.value });",
+    "path": "configurator/src/screens/step5.tsx",
+    "commit_id": "1cdc7bf389973d9d5e9ecda7d3f17ba2c45f1ad3",
+    "original_commit_id": "1cdc7bf389973d9d5e9ecda7d3f17ba2c45f1ad3",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Persist the Sony PSK into generated add-on settings**\n\nWhen a Sony Bravia user enters the PSK here and the Step 5 switch test succeeds, the value is only saved as `tvSonyPsk`; `wizardStateToAddonSettings()` emits the Sony HDMI ports but never writes `sony_psk`, while the add-on's Sony backend requires that setting before switching. That means the configurator can validate the switch during setup, then deploy a config where `tv_switching_enabled` is true but runtime handoff fails with a missing PSK.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T18:21:38Z",
+    "updated_at": "2026-06-01T18:21:38Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/184#discussion_r3336282332",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/184",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336282332"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/184#discussion_r3336282332"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/184"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336282332/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 196,
+    "original_line": 196,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 115,
+    "position": 115,
+    "subject_type": "line"
+  }
+]

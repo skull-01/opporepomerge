@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4624101200",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/341#issuecomment-4624101200",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/341",
+    "id": 4624101200,
+    "node_id": "IC_kwDOSi3wO88AAAABE54vUA",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-04T16:23:35Z",
+    "updated_at": "2026-06-04T16:23:35Z",
+    "body": "Shipped in **add-on v2.9.17 Final** + **configurator v0.9.7**.\n\n- Feature (5 OPPO-clone variants — M9205 V2/V3/V4, M9702 Plus, VenPro V203 — + cross-area Dolby Vision data layer) merged in #342: `4d3ca13` (variants), `b34930f` (Dolby Vision), `1c92872` (docs).\n- Add-on release **v2.9.17**: #343 (`82938be` bump + `ac2ea48` README front-page guard) → merge `4a23f16` → tag `v2.9.17` (published).\n- Configurator **v0.9.7**: #344 → merge `4d553d8` → tag `configurator-v0.9.7` (bundles the v2.9.17 add-on; the 5 new models surface in the Step-2 picker).\n\nSoftware-verified only; the clone-variant rows and Dolby Vision stances are research-sourced (capability summary S1–S9) and remain `validated: false` — hardware validation not performed/claimed. Phase-C steps in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. Leaving **open** for operator verification + close.",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4624101200/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

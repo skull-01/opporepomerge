@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336479512",
+    "pull_request_review_id": 4403860716,
+    "id": 3336479512,
+    "node_id": "PRRC_kwDOSi3wO87G3qMY",
+    "diff_hunk": "@@ -48,6 +49,70 @@ function hdmiInputSettings(\n   return out;\n }\n \n+/** The adb keyevent that selects discrete HDMI N — mirrors step5_switch adbHdmiCommand and the\n+ * add-on's tv_adb_control default. */\n+function adbHdmiShell(hdmi: number): string {\n+  return `input keyevent KEYCODE_TV_INPUT_HDMI_${hdmi}`;\n+}\n+\n+/**\n+ * The runtime config the add-on needs to actually drive the selected TV backend, beyond the bare\n+ * HDMI ports in hdmiInputSettings. Each branch writes only its own keys, and only when the values\n+ * are present, so a half-filled or switched backend never leaks stale config from another:\n+ *   - sony_bravia: the Pre-Shared Key the Sony API authenticates with (the HDMI ports come from\n+ *     hdmiInputSettings).\n+ *   - adb: the two HDMI keyevent shells, derived from the captured HDMI numbers (KEYCODE_TV_INPUT_\n+ *     HDMI_<n>) — no extra UI, mirroring step5_switch.\n+ *   - lg/samsung/custom_command: the user's raw {tv_ip}-templated OPPO/Kodi command strings,\n+ *     written verbatim; the add-on substitutes {tv_ip} at runtime (tv_control._run_external).\n+ *   - smartthings: the bearer token, device id, and OPPO/Kodi input ids; the experimental\n+ *     acknowledgement is set true only once all four are present, matching the add-on's own gate\n+ *     (tv_smartthings_control.is_acknowledged / validation_metadata).\n+ * The token is a secret like the AVR Sony PSK: it must reach settings.xml for the add-on, and the\n+ * debug redactor (debug/log.ts SENSITIVE_KEY) masks it in the panel.\n+ */\n+function tvControlSettings(state: WizardState): AddonSettings {\n+  const out: AddonSettings = {};\n+  const oppo = hdmiNumber(state.playerInput);\n+  const kodi = hdmiNumber(state.kodiInput);\n+  switch (state.tvBackend) {\n+    case \"sony_bravia\":\n+      if (state.tvSonyPsk) out.sony_psk = state.tvSonyPsk;\n+      break;\n+    case \"adb\":\n+      if (oppo != null) out.oppo_input_adb_shell = adbHdmiShell(oppo);\n+      if (kodi != null) out.kodi_input_adb_shell = adbHdmiShell(kodi);\n+      break;\n+    case \"lg_command\":\n+      if (state.tvOppoCommand) out.lg_oppo_command = state.tvOppoCommand;\n+      if (state.tvKodiCommand) out.lg_kodi_command = state.tvKodiCommand;\n+      break;\n+    case \"samsung_command\":\n+      if (state.tvOppoCommand) out.samsung_oppo_command = state.tvOppoCommand;\n+      if (state.tvKodiCommand) out.samsung_kodi_command = state.tvKodiCommand;\n+      break;\n+    case \"custom_command\":\n+      if (state.tvOppoCommand) out.custom_oppo_command = state.tvOppoCommand;\n+      if (state.tvKodiCommand) out.custom_kodi_command = state.tvKodiCommand;\n+      break;\n+    case \"smartthings\": {\n+      const token = state.tvSmartThingsToken;\n+      const device = state.tvSmartThingsDeviceId;\n+      const oppoInput = state.tvSmartThingsOppoInputId;\n+      const kodiInput = state.tvSmartThingsKodiInputId;\n+      if (token) out.smartthings_token = token;\n+      if (device) out.smartthings_device_id = device;\n+      if (oppoInput) out.smartthings_oppo_input_id = oppoInput;\n+      if (kodiInput) out.smartthings_kodi_input_id = kodiInput;\n+      if (token && device && oppoInput && kodiInput) {\n+        out.smartthings_experimental_acknowledged = \"true\";",
+    "path": "configurator/src/mapping.ts",
+    "commit_id": "5dd68839bd471ae83ab653f8097d2d59bfb69a8a",
+    "original_commit_id": "5dd68839bd471ae83ab653f8097d2d59bfb69a8a",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Require explicit SmartThings acknowledgement before enabling**\n\nWhen a user selects the SmartThings backend and fills the token/device/input fields in Step 5, this marks `smartthings_experimental_acknowledged` as true even though the configurator has no separate acknowledgement control. The add-on treats this setting as the explicit consent gate before making live SmartThings API calls (`resources/lib/tv/tv_smartthings_control.py:is_acknowledged`, and the preset metadata requires explicit acknowledgement), so deriving it from credentials silently bypasses the experimental safety gate. Please only emit this flag from an explicit user acknowledgement.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T18:58:22Z",
+    "updated_at": "2026-06-01T18:58:23Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/198#discussion_r3336479512",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/198",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336479512"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/198#discussion_r3336479512"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/198"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336479512/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 107,
+    "original_start_line": 107,
+    "start_side": "RIGHT",
+    "line": 108,
+    "original_line": 108,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 74,
+    "position": 74,
+    "subject_type": "line"
+  }
+]

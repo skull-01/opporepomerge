@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609756519",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/315#issuecomment-4609756519",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/315",
+    "id": 4609756519,
+    "node_id": "IC_kwDOSi3wO88AAAABEsNNZw",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T06:40:18Z",
+    "updated_at": "2026-06-03T06:40:18Z",
+    "body": "﻿Implemented in PR #318 ? merged to `main` as `c19deee`.\n\nSide-by-side live transcript: new responsive `.dev-split` 2-column layout (controls left, transcript in a tall sticky right column, collapsing to 1 column under 900px) applied to the OPPO/TV/AVR/NAS/AutoScript panels ? the live screen is now visible beside the controls instead of stacked at the bottom. Gate: tsc + vitest 356 + vite build; browser-verified the 2-col geometry on OPPO + TV, no console errors. UI only. Ships in configurator v0.9.2.\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609756519/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

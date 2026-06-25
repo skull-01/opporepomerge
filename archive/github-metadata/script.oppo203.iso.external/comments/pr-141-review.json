@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333531",
+    "pull_request_review_id": 4396993312,
+    "id": 3330333531,
+    "node_id": "PRRC_kwDOSi3wO87GgNtb",
+    "diff_hunk": "@@ -4,7 +4,7 @@\n   \"scope\": {\n     \"years\": [\n       2018,\n-      2025\n+      2026",
+    "path": "configurator/src/tv-db/tv-models.json",
+    "commit_id": "15cc176cdf6c1022505d20f498aca2913b45f63a",
+    "original_commit_id": "15cc176cdf6c1022505d20f498aca2913b45f63a",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Bump the TV DB version with the 2026 rows**\n\nBecause this data change leaves `db_version` at the parent value `2026.05.31` while adding 28 models, installed configurators that already bundle the prior 296-row DB will ignore the refreshed docs copy: Step 3 only replaces the local DB when `isNewer(db, remote)` is true, and equal versions return false. In that same-day update scenario, clicking \"Update list\" never exposes the new 2026 rows until a rebuilt app is installed, so this DB expansion should carry a strictly newer version or the comparison needs another monotonic key.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-31T14:07:54Z",
+    "updated_at": "2026-05-31T14:07:54Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/141#discussion_r3330333531",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/141",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333531"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/141#discussion_r3330333531"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/141"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330333531/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 7,
+    "original_line": 7,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 5,
+    "position": 5,
+    "subject_type": "line"
+  }
+]
