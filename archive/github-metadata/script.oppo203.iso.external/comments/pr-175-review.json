@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3335934938",
+    "pull_request_review_id": 4403238687,
+    "id": 3335934938,
+    "node_id": "PRRC_kwDOSi3wO87G1lPa",
+    "diff_hunk": "@@ -129,9 +129,22 @@ export async function installAddonToKodi(state: WizardState): Promise<InstallRes\n         addonsPath: addonsDirForPlatform(platform),\n         restart: true,\n       });\n+      // D-3: enable via JSON-RPC; fall back to a manual restart message if that doesn't take.",
+    "path": "configurator/src/apply.ts",
+    "commit_id": "9f924700da05082bc8b7505208fd028825aea1f4",
+    "original_commit_id": "1f4a3537d7a31a11c0a4d95c2722222e9e3e4126",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Remove the task-specific inline comment**\n\nThe repo instructions in `/workspace/script.oppo203.iso.external/AGENTS.md` say to default to no inline code comments and to never reference the current task or PR in comments. This added `D-3` comment repeats what the nearby code already does and embeds task tracking into source, so it should be removed or moved to the PR/issue notes.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T17:18:05Z",
+    "updated_at": "2026-06-01T17:18:05Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/175#discussion_r3335934938",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/175",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3335934938"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/175#discussion_r3335934938"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/175"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3335934938/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 132,
+    "original_line": 132,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 4,
+    "position": 4,
+    "subject_type": "line"
+  }
+]

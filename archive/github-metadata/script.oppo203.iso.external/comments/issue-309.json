@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609606446",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/309#issuecomment-4609606446",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/309",
+    "id": 4609606446,
+    "node_id": "IC_kwDOSi3wO88AAAABEsEDLg",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T06:12:58Z",
+    "updated_at": "2026-06-03T06:12:58Z",
+    "body": "﻿Implemented in PR #312 ? merged to `main` as `fd34621`.\n\nAutoScript telnet: an Install-over-telnet card ? `autoscript_telnet_check` (probe the busybox telnetd on 2323 for a live shell) + confirm-gated `autoscript_push_telnet` (push the generated autoexec.sh via a quoted heredoc + chmod). New `telnet_push_command` builder cargo-tested. USB export (PR 2) stays primary for a fresh player; telnet push updates once a shell is up. Gate: tsc + vitest 356 + cargo 51 + vite build; browser-verified the card + confirm-push gate.\n\n**Phase-C:** telnet I/O against a real JB/clone OPPO with telnetd running. Leaving OPEN (only-operator-closes). Ships in configurator v0.9.1. **Completes the AutoScript helper (#306).**\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609606446/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

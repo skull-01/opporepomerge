@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4605263554",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/266#issuecomment-4605263554",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/266",
+    "id": 4605263554,
+    "node_id": "IC_kwDOSi3wO88AAAABEn6-wg",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-02T17:36:30Z",
+    "updated_at": "2026-06-02T17:36:30Z",
+    "body": "Implemented + shipped in **configurator-v0.8.5**.\n\n- **Fix:** PR #267 (`511e3b0`, merged to `main` in `3d7cbe7`) — `reset_box_ssh` does a fast SSH-port-22 reachability pre-probe (`connect_timeout` 2.5s) and `reset_box_userdata` probes the SMB share (port 445) for a UNC target, so Reset-all fails in ~2.5s with a clear message instead of grinding through ~40s of `ssh` timeouts (or dead-SMB filesystem timeouts). The box and local resets now run as **separate stages**, so an unreachable box no longer blocks the local reset (start-over always works). `ResetAllCard` renders a live step list driven by the orchestrator plus a granular `reset-progress` event from Rust, so the main window shows what the reset is doing.\n- **Bump:** PR #268 (`4176d0c`).\n- **Release:** [configurator-v0.8.5](https://github.com/skull-01/script.oppo203.iso.external/releases/tag/configurator-v0.8.5) (holds the repo \"Latest\"; bundles add-on v2.9.15).\n\nGates: `cargo test` 43 (+1 `unc_host`) · `tsc -b` 0 · 311 vitest (+7) · `vite build`; browser-verified the step-list UI renders + does not freeze. **Software-verified only** — the destructive on-box deletion + Kodi restart and the real fast-fail timing against a powered-off box are Phase-C and unchanged from v0.8.2. Phase-C steps are in `docs/MANUAL_VERIFICATION_CHECKLIST.md`. Leaving this open per the only-operator-closes norm.\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4605263554/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

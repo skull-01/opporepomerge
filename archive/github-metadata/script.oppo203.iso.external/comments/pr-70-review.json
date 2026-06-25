@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3326470995",
+    "pull_request_review_id": 4392270058,
+    "id": 3326470995,
+    "node_id": "PRRC_kwDOSi3wO87GRetT",
+    "diff_hunk": "@@ -217,14 +223,24 @@ ruff clean).\n   queued for #40/#42/#46–#49/#52/#53/#56/#57 in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.\n \n - **Candidate themes for next addon session** (pick one, per §4):\n-  1. **ENH-#51 PR 8 (optional finish):** gate `playercorefactory_merge` + the top-level\n-     `service.py` / `default.py` — the last ungated source. Closes the rollout.\n-  2. **Phase A/C on-device verification** of the merged work — operator action on real\n+  1. **Phase A/C on-device verification** of the merged work — operator action on real\n      hardware, no agent code.\n-  3. **ENH-#44 hardware-validation testing** solicitation (community/operator; not started).\n+  2. **ENH-#44 hardware-validation testing** solicitation (community/operator; not started).\n+  3. **A net-new addon enhancement** — the type-hardening arc (ruff #38 → mypy #51) is now\n+     complete, so the addon is at a clean baseline for a fresh feature/bug theme.\n \n ## §3b Configurator work — in progress\n \n+> **2026-05-30 PM note (no configurator work this session, but two state changes worth flagging):**\n+> (1) **PR [#68](https://github.com/skull-01/script.oppo203.iso.external/pull/68)\n+> \"configurator: map wizard state to add-on setting IDs (slice 1)\" is OPEN** (draft, base `main`,\n+> +2858/−155 across 22 files, all CI green). The operator's \"merge everything\" directive this\n+> session was scoped to **the ENH-#51 stack only** — #68 was deliberately **left open** for a\n+> dedicated configurator session where it can be reviewed/verified in-area (it's unverified by\n+> any agent this session). It is a strong lead theme for the next configurator session.",
+    "path": "AI_RESUME_HANDOFF.md",
+    "commit_id": "a9a36147201fa7eee55872739b94b01b5e4e23f6",
+    "original_commit_id": "a9a36147201fa7eee55872739b94b01b5e4e23f6",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Reconcile the configurator handoff state**\n\nThis new note correctly says PR #68 is open and should lead the next configurator session, but the same §3b subsection below still says there are “no open configurator PRs”/“No `area:configurator` issues open” and lists the old icon/side-effect themes first. Since `resume` explicitly reads §3b first, an agent resuming configurator work can follow the stale body and miss the open #68 review/verification path; update the subsection’s main state and candidate themes instead of only adding a prefatory note.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-29T19:26:19Z",
+    "updated_at": "2026-05-29T19:26:19Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/70#discussion_r3326470995",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/70",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3326470995"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/70#discussion_r3326470995"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/70"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3326470995/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 236,
+    "original_start_line": 236,
+    "start_side": "RIGHT",
+    "line": 240,
+    "original_line": 240,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 93,
+    "position": 93,
+    "subject_type": "line"
+  }
+]

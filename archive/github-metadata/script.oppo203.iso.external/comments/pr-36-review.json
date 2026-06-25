@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3319880096",
+    "pull_request_review_id": 4383616444,
+    "id": 3319880096,
+    "node_id": "PRRC_kwDOSi3wO87F4Vmg",
+    "diff_hunk": "@@ -333,6 +353,20 @@ _Meta-log of changes to this handoff itself. Dated, newest-last. Maintained by\n   (`build\\_tmp` Windows-locked tmpdirs vs. `audit_release.py`); updated the header\n   \"Last sync\" / \"Tests on `main`\" to `4e54c5d` / 987 passed, 3 skipped. PR #30 unchanged.\n   §17a still empty (no issues opened/closed/retitled).\n+- **2026-05-29 (mid-day, post-EOD continuation)** — Heavy `resume` session, four\n+  configurator-follow-up PRs opened as drafts ([#32](https://github.com/skull-01/script.oppo203.iso.external/pull/32)\n+  docs, [#33](https://github.com/skull-01/script.oppo203.iso.external/pull/33) window-control\n+  IPC, [#34](https://github.com/skull-01/script.oppo203.iso.external/pull/34) state\n+  persistence, [#35](https://github.com/skull-01/script.oppo203.iso.external/pull/35) first-time\n+  cargo unblock + §2a auto-install promotion). PR #30 merged to main at `394f9fc`. Operator\n+  authorized installing the full Tauri 2 toolchain — Rust 1.95 + MSVC 14.44 BuildTools went\n+  in via winget; `cargo build` verified end-to-end (36.62s); §2a rows 10/12 promoted to\n+  **auto** (row 11 split out for WebView2 as manual check). Issue #22 closed by operator.",
+    "path": "AI_RESUME_HANDOFF.md",
+    "commit_id": "b1b5355950dd4d2bde9255cf14df795b315dd163",
+    "original_commit_id": "b1b5355950dd4d2bde9255cf14df795b315dd163",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Keep §2a status consistent with the actual table**\n\nThis entry says §2a rows 10/12 were promoted to auto, but this commit leaves §2a with row 10 as `manual`, row 11 as the combined WebView2/MSVC manual check, and no row 12 at all. If this handoff merges before (or without) PR #35, future `resume` agents get conflicting readiness instructions and may not auto-install the Tauri toolchain when the document says they should; either include the §2a table update here or describe it only as pending in PR #35.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-28T18:25:23Z",
+    "updated_at": "2026-05-28T18:25:23Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/36#discussion_r3319880096",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/36",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3319880096"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/36#discussion_r3319880096"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/36"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3319880096/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 363,
+    "original_start_line": 363,
+    "start_side": "RIGHT",
+    "line": 364,
+    "original_line": 364,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 136,
+    "position": 136,
+    "subject_type": "line"
+  }
+]

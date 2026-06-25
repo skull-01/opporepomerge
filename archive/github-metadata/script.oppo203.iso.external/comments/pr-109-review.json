@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3328821857",
+    "pull_request_review_id": 4395456116,
+    "id": 3328821857,
+    "node_id": "PRRC_kwDOSi3wO87Gacph",
+    "diff_hunk": "@@ -0,0 +1,291 @@\n+import { useState } from \"react\";\n+import { Icon } from \"../icons\";\n+import { FooterNav } from \"../shell/FooterNav\";\n+import { BrandIcon } from \"../shell/BrandIcon\";\n+import {\n+  AVR_REGIONS,\n+  BUNDLED_AVR_DB,\n+  fetchRemoteAvrDb,\n+  isNewer,\n+  modelsForBrand,\n+  modelsForRegion,\n+  resolveBackend,\n+  resolvePlatform,\n+  type AvrDb,\n+  type AvrDbModel,\n+  type AvrRegion,\n+} from \"../avrdb\";\n+import type { ScreenProps } from \"./types\";\n+\n+// ============================================================\n+// STEP 5 — AV receiver (optional). The AVR DB is the TV DB's twin: candidate control-path\n+// mappings (validated:false) surfaced advisorily. The whole step is skippable — AV-receiver\n+// automation is off by default in the add-on, so the chain works without one.\n+// ============================================================\n+const AVR_BRANDS = [\n+  { id: \"denon\",   name: \"Denon\",   ch: \"D\",    color: \"#0B0B0C\", hint: \"AVR-X · HEOS\" },\n+  { id: \"marantz\", name: \"Marantz\", ch: \"M\",    color: \"#16110B\", hint: \"Cinema · HEOS\" },\n+  { id: \"yamaha\",  name: \"Yamaha\",  ch: \"Y\",    color: \"#5B1A8B\", hint: \"MusicCast · YXC\" },\n+  { id: \"onkyo\",   name: \"Onkyo\",   ch: \"O\",    color: \"#7A2230\", hint: \"eISCP\" },\n+  { id: \"pioneer\", name: \"Pioneer\", ch: \"P\",    color: \"#C8102E\", hint: \"Elite · eISCP\" },\n+  { id: \"integra\", name: \"Integra\", ch: \"INT\",  color: \"#1F2937\", hint: \"eISCP\" },\n+  { id: \"sony\",    name: \"Sony\",    ch: \"SONY\", color: \"#0B0B0C\", hint: \"ES · Audio API\" },\n+  { id: \"anthem\",  name: \"Anthem\",  ch: \"A\",    color: \"#B0883B\", hint: \"MRX · custom\" },\n+  { id: \"arcam\",   name: \"Arcam\",   ch: \"AR\",   color: \"#1F3A5F\", hint: \"custom IP\" },\n+  { id: \"nad\",     name: \"NAD\",     ch: \"NAD\",  color: \"#374151\", hint: \"BluOS · custom\" },\n+] as const;\n+\n+const AVR_YEARS = [\"2025\", \"2024\", \"2023\", \"2022\", \"2021\", \"2020\", \"2019\", \"2018\"];\n+\n+// ============================================================\n+// STEP 5 — Ask: do you have a receiver at all?\n+// ============================================================\n+export function Step5Ask({ go, set }: ScreenProps) {\n+  return (\n+    <div className=\"screen\">\n+      <div className=\"screen-header\">\n+        <div className=\"screen-num\">5</div>\n+        <h1 className=\"screen-title\">Do you use an AV receiver?</h1>\n+        <p className=\"screen-subtitle\">\n+          If your sound runs through an AV receiver or processor (player → receiver → TV), pick\n+          it here so we can note the right control path. No receiver? Skip — the chain works\n+          without one, and receiver automation is off by default.\n+        </p>\n+      </div>\n+      <div className=\"grid-2\">\n+        <button className=\"tile\" onClick={() => go(\"step5_brand\")}>\n+          <div className=\"tile-icon\">\n+            <Icon name=\"avr\" size={20} />\n+          </div>\n+          <div className=\"tile-body\">\n+            <div className=\"tile-title\">Yes — pick my receiver</div>\n+            <div className=\"tile-desc\">\n+              Choose your brand and model. We'll show the candidate control backend for it\n+              (Denon/Marantz IP, Yamaha YXC, Onkyo/Pioneer/Integra eISCP, Sony Audio API).\n+            </div>\n+          </div>\n+          <Icon name=\"chevR\" size={16} />\n+        </button>\n+        <button\n+          className=\"tile\"\n+          onClick={() => {\n+            set({ avrBrand: null, avrModel: null, avrBackend: null, avrReceiverType: null });\n+            go(\"test_setup\");\n+          }}\n+        >\n+          <div className=\"tile-icon\">\n+            <Icon name=\"cross\" size={20} />\n+          </div>\n+          <div className=\"tile-body\">\n+            <div className=\"tile-title\">No receiver — skip this step</div>\n+            <div className=\"tile-desc\">\n+              Audio goes straight from the player to the TV (or the player handles it). Nothing\n+              to configure here.\n+            </div>\n+          </div>\n+          <Icon name=\"chevR\" size={16} />\n+        </button>\n+      </div>\n+      <div className=\"callout info\" style={{ marginTop: 18 }}>\n+        <span className=\"callout-icon\">\n+          <Icon name=\"info\" size={13} stroke={2.2} />\n+        </span>\n+        <div className=\"callout-body\">\n+          These are <strong>candidate mappings</strong>, not hardware-validated. Most receivers\n+          need Network Standby / IP Control enabled for reliable control after standby.\n+        </div>\n+      </div>\n+      <FooterNav go={go} back=\"step4_done\" />\n+    </div>\n+  );\n+}\n+\n+// ============================================================\n+// STEP 5 — Brand\n+// ============================================================\n+export function Step5Brand({ go, state, set }: ScreenProps) {\n+  return (\n+    <div className=\"screen\">\n+      <div className=\"screen-header\">\n+        <h1 className=\"screen-title\">Your AV receiver</h1>\n+        <p className=\"screen-subtitle\">\n+          Pick the brand. The control path comes from the brand's protocol family — your exact\n+          model just narrows the list and confirms the candidate backend.\n+        </p>\n+      </div>\n+      <div className=\"brand-grid\">\n+        {AVR_BRANDS.map((b) => (\n+          <button\n+            key={b.id}\n+            className={`brand-pill ${state.avrBrand === b.id ? \"selected\" : \"\"}`.trim()}\n+            onClick={() => {\n+              set({ avrBrand: b.id });",
+    "path": "configurator/src/screens/step5.tsx",
+    "commit_id": "f026aec662125bbdee8c5af6636879b6c26aa1d9",
+    "original_commit_id": "f026aec662125bbdee8c5af6636879b6c26aa1d9",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Clear stale AVR model when changing receiver brand**\n\nIf a user selects a receiver model, goes back to the brand screen, and chooses a different brand, this only updates `avrBrand`; the previous `avrModel`/`avrBackend` remain set. On the new brand's model screen, `FooterNav` enables “Continue to test” whenever `state.avrModel` is truthy, so the user can continue with a mismatched brand/model/backend (for example Yamaha brand with a Denon backend) without selecting a Yamaha model. Clear the model/backend fields when the brand changes, as the player brand picker already does for `playerModel`.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-30T13:43:49Z",
+    "updated_at": "2026-05-30T13:43:49Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/109#discussion_r3328821857",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/109",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3328821857"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/109#discussion_r3328821857"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/109"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3328821857/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 122,
+    "original_line": 122,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 122,
+    "position": 122,
+    "subject_type": "line"
+  }
+]

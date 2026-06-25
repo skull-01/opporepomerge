@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330013869",
+    "pull_request_review_id": 4396672316,
+    "id": 3330013869,
+    "node_id": "PRRC_kwDOSi3wO87Ge_qt",
+    "diff_hunk": "@@ -370,6 +411,27 @@ function AvrControlCard({ state, set }: Pick<ScreenProps, \"state\" | \"set\">) {\n               </div>\n             </div>\n           </div>\n+          {probePort != null && (\n+            <div className=\"row\" style={{ gap: 10, alignItems: \"center\", marginTop: 4 }}>\n+              <button\n+                className=\"btn ghost sm\"\n+                onClick={runProbe}\n+                disabled={probing || !state.avrIp}\n+              >\n+                <Icon name=\"search\" size={13} /> {probing ? \"Probing…\" : \"Test reachability\"}\n+              </button>\n+              {reach && (\n+                <span\n+                  className={reach.open ? \"success-text\" : \"muted\"}\n+                  style={{ fontSize: 12.5 }}\n+                >\n+                  {reach.open\n+                    ? `Port ${probePort} answered — the receiver looks reachable.`\n+                    : `Port ${probePort} didn't answer — check the IP, that the receiver is powered on, and that Network Standby / IP Control is on.`}",
+    "path": "configurator/src/screens/step5.tsx",
+    "commit_id": "e4daa8e2686668ca9af6cfb9329f6fee237dd2dc",
+    "original_commit_id": "839f06d781f1c2dc1a84b0ac22d7365286b586a3",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Clear stale probe results when the target changes**\n\nWhen the user successfully probes one receiver, then edits the Receiver IP or selects another AVR backend/model in the same Step 5 screen, this `reach` result is still rendered even though it belongs to the old host/port. Because the message interpolates the current `probePort`, a prior success on Denon `:23` can be shown as “Port 80 answered” after switching to Yamaha before any new probe runs, which can mislead the operator into enabling control for an unverified receiver. Clear the result on `avrIp`/`probePort` changes or store and compare the probed target before displaying it.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-31T09:47:02Z",
+    "updated_at": "2026-05-31T09:47:02Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/135#discussion_r3330013869",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/135",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330013869"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/135#discussion_r3330013869"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/135"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3330013869/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 423,
+    "original_start_line": 423,
+    "start_side": "RIGHT",
+    "line": 430,
+    "original_line": 430,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 82,
+    "position": 82,
+    "subject_type": "line"
+  }
+]

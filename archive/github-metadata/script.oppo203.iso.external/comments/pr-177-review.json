@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336021635",
+    "pull_request_review_id": 4403341434,
+    "id": 3336021635,
+    "node_id": "PRRC_kwDOSi3wO87G16aD",
+    "diff_hunk": "@@ -1101,15 +1101,356 @@ fn tv_switch_roku(host: String, key: String, timeout_ms: Option<u64>) -> Result<\n     }\n }\n \n+// ============================================================\n+// AVR input switching (Phase 3.1) -- per-brand builders + best-effort fire\n+// ============================================================\n+//\n+// Mirrors the add-on's AVR drivers (resources/lib/avr/): Denon/Marantz telnet `SI<input>` on :23,\n+// Onkyo/Integra/Pioneer eISCP `!1SLI<hh>` framed on :60128, Yamaha MusicCast/YXC HTTP `setInput`\n+// on :80, and the experimental Sony Audio Control API JSON-RPC `setPlayContent` POST. The builders\n+// are pure (unit-tested against the add-on's wire format); the fire commands open one short-lived\n+// socket like tv_switch_roku and are best-effort -- hardware-pending, not validated in-session.\n+\n+const DENON_PORT: u16 = 23;\n+const EISCP_PORT: u16 = 60128;\n+const YAMAHA_PORT: u16 = 80;\n+const SONY_AUDIO_PORT: u16 = 80;\n+\n+/// Build a Denon/Marantz input-select command (`SI<INPUT>`), validating like the add-on's\n+/// VALID_DENON_INPUT_RE (`^[A-Za-z0-9_/-]{1,32}$`, upper-cased). The wire frame appends CR.\n+fn denon_input_command(input: &str) -> Result<String, String> {\n+    let text = input.trim().to_ascii_uppercase();\n+    let n = text.chars().count();\n+    let ok = (1..=32).contains(&n)\n+        && text\n+            .chars()\n+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | '-'));\n+    if !ok {\n+        return Err(format!(\"invalid Denon/Marantz input '{input}'\"));\n+    }\n+    Ok(format!(\"SI{text}\"))\n+}\n+\n+/// Build an Onkyo/Pioneer eISCP input-select payload (`!1SLI<HH>`) from a 2-hex-digit code.\n+fn eiscp_input_payload(code: &str) -> Result<String, String> {\n+    let text = code.trim().to_ascii_uppercase();\n+    if text.len() != 2 || !text.chars().all(|c| c.is_ascii_hexdigit()) {\n+        return Err(format!(\n+            \"invalid eISCP input '{code}' (expected 2 hex digits)\"\n+        ));\n+    }\n+    Ok(format!(\"!1SLI{text}\"))\n+}\n+\n+/// Frame an eISCP payload: `ISCP` magic + big-endian header/data sizes + version, the payload\n+/// terminated with CR. Mirrors build_eiscp_frame in avr_onkyo_eiscp.py.\n+fn eiscp_frame(payload: &str) -> Vec<u8> {\n+    let body = format!(\"{payload}\\r\");\n+    let body_bytes = body.as_bytes();\n+    let mut frame = Vec::with_capacity(16 + body_bytes.len());\n+    frame.extend_from_slice(b\"ISCP\");\n+    frame.extend_from_slice(&16u32.to_be_bytes());\n+    frame.extend_from_slice(&(body_bytes.len() as u32).to_be_bytes());\n+    frame.extend_from_slice(&[1, 0, 0, 0]);\n+    frame.extend_from_slice(body_bytes);\n+    frame\n+}\n+\n+/// Build the Yamaha MusicCast/YXC `setInput` path+query for a validated input\n+/// (`^[A-Za-z0-9_/-]{1,64}$`). Fired as a raw HTTP GET.\n+fn yamaha_input_path(input: &str) -> Result<String, String> {\n+    let text = input.trim();\n+    let n = text.chars().count();\n+    let ok = (1..=64).contains(&n)\n+        && text\n+            .chars()\n+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '/' | '-'));\n+    if !ok {\n+        return Err(format!(\"invalid Yamaha input '{input}'\"));\n+    }\n+    Ok(format!(\n+        \"/YamahaExtendedControl/v1/main/setInput?input={}\",\n+        percent_encode(text)\n+    ))\n+}\n+\n+/// Compact, key-sorted Sony Audio Control API JSON-RPC body (matches build_sony_audio_payload:\n+/// serde_json's default Map is a BTreeMap, so keys serialize sorted like Python's sort_keys=True).\n+fn sony_audio_payload(method: &str, params: serde_json::Value) -> String {\n+    serde_json::json!({\"method\": method, \"params\": params, \"id\": 1, \"version\": \"1.0\"}).to_string()\n+}\n+\n+/// The Sony Audio Control API `setPlayContent` body for an input URI.\n+fn sony_audio_set_input_payload(uri: &str) -> String {\n+    sony_audio_payload(\"setPlayContent\", serde_json::json!([{\"uri\": uri}]))\n+}\n+\n+/// Raw HTTP/1.0 GET request for host:port + an absolute path/query.\n+fn http_get_request(host: &str, port: u16, path_query: &str) -> String {\n+    format!(\"GET {path_query} HTTP/1.0\\r\\nHost: {host}:{port}\\r\\nConnection: close\\r\\n\\r\\n\")\n+}\n+\n+/// Raw HTTP/1.0 JSON POST request. `extra_headers` (each `Name: value\\r\\n`) is inserted verbatim.\n+fn json_post_request(host: &str, port: u16, path: &str, body: &str, extra_headers: &str) -> String {\n+    format!(\n+        \"POST {path} HTTP/1.0\\r\\nHost: {host}:{port}\\r\\nContent-Type: application/json; charset=UTF-8\\r\\nContent-Length: {len}\\r\\n{extra_headers}Connection: close\\r\\n\\r\\n{body}\",\n+        len = body.len()\n+    )\n+}\n+\n+/// Interpret a device reply: HTTP 2xx (or a non-HTTP raw echo) is Ok, other HTTP codes are Err.\n+fn device_response_ok(resp: &str) -> Result<String, String> {\n+    let first = resp.lines().next().unwrap_or(\"\").trim().to_string();\n+    if first.is_empty() {\n+        return Err(\"no response from the device\".to_string());\n+    }\n+    match first\n+        .split_whitespace()\n+        .nth(1)\n+        .and_then(|c| c.parse::<u16>().ok())\n+    {\n+        Some(c) if (200..300).contains(&c) => Ok(first),",
+    "path": "configurator/src-tauri/src/lib.rs",
+    "commit_id": "2bf0663f1d7d8cff2fdd0d57fef5570f06c3d7df",
+    "original_commit_id": "2bf0663f1d7d8cff2fdd0d57fef5570f06c3d7df",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Parse AVR API bodies before reporting success**\n\nWhen a Yamaha or Sony receiver returns HTTP 200 with an application-level failure, this helper reports success because it only checks the status line. The add-on paths this mirrors do parse those bodies (`resources/lib/avr/avr_yamaha.py` treats nonzero `response_code` as failure, and `resources/lib/avr/avr_sony_audio.py` treats JSON `error`/unexpected bodies as failure), so a real unsupported Yamaha input or Sony API error would be shown as a successful switch in the configurator. Please inspect the response body for the Yamaha/Sony commands before returning `Ok`.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T17:34:08Z",
+    "updated_at": "2026-06-01T17:34:08Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/177#discussion_r3336021635",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/177",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336021635"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/177#discussion_r3336021635"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/177"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336021635/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 1212,
+    "original_line": 1212,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 112,
+    "position": 112,
+    "subject_type": "line"
+  }
+]

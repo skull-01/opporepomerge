@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3322376330",
+    "pull_request_review_id": 4386914588,
+    "id": 3322376330,
+    "node_id": "PRRC_kwDOSi3wO87GB3CK",
+    "diff_hunk": "@@ -259,8 +312,139 @@ def onAVStarted(self):\n             log(f\"onAVStarted swallowed exception: {exc}\")\n \n \n+def _snapshot_managed_settings():\n+    \"\"\"Return {key: value} for every CONFIGURATOR_MANAGED_KEYS entry.\n+\n+    Used at service start to capture the configurator-written baseline so\n+    later `onSettingsChanged` callbacks can detect overwrites via Kodi's UI.\n+    Safe in headless tests: returns {} when xbmcaddon is unavailable.\n+    \"\"\"\n+    snapshot = {}\n+    if not xbmcaddon:\n+        return snapshot\n+    try:\n+        addon = xbmcaddon.Addon(ADDON_ID)\n+    except Exception:\n+        return snapshot\n+    for key in CONFIGURATOR_MANAGED_KEYS:\n+        try:\n+            snapshot[key] = addon.getSetting(key)\n+        except Exception:\n+            snapshot[key] = \"\"\n+    return snapshot\n+\n+\n+def _changed_managed_keys(baseline):\n+    \"\"\"Return CONFIGURATOR_MANAGED_KEYS whose current value differs from baseline.\"\"\"\n+    if not xbmcaddon:\n+        return []\n+    try:\n+        addon = xbmcaddon.Addon(ADDON_ID)\n+    except Exception:\n+        return []\n+    changed = []\n+    for key in CONFIGURATOR_MANAGED_KEYS:\n+        try:\n+            current = addon.getSetting(key)\n+        except Exception:\n+            continue\n+        if current != baseline.get(key, \"\"):\n+            changed.append(key)\n+    return changed\n+\n+\n+def _resolve_localized(string_id, default):\n+    \"\"\"Resolve a localized string via resources.lib.i18n with a hard fallback.\"\"\"\n+    try:\n+        from i18n import L\n+    except Exception:\n+        try:\n+            from resources.lib.i18n import L\n+        except Exception:\n+            return default\n+    try:\n+        return L(string_id, default)\n+    except Exception:\n+        return default\n+\n+\n+def _notify_config_hint_once_per_session():\n+    \"\"\"Show the Part B 'use the configurator' hint at most once per Kodi session.\n+\n+    First call sets a window property on the home window (id 10000); subsequent\n+    calls in the same Kodi process see the property and skip. The property\n+    clears on Kodi restart by design. Returns True iff the notification fired.\n+    \"\"\"\n+    if not xbmcgui:\n+        return False\n+    try:\n+        window = xbmcgui.Window(CONFIG_HINT_WINDOW_ID)\n+        if window.getProperty(CONFIG_HINT_WINDOW_PROPERTY) == \"1\":\n+            return False\n+        window.setProperty(CONFIG_HINT_WINDOW_PROPERTY, \"1\")\n+    except Exception:\n+        return False\n+    title = _resolve_localized(30293, \"OPPO 203 ISO External\")\n+    body = _resolve_localized(\n+        30291,\n+        \"Most settings are managed by the configurator. Changes here may be overwritten.\",\n+    )\n+    try:\n+        xbmcgui.Dialog().notification(title, body, time=8000)\n+    except Exception:\n+        return False\n+    log(\"Configurator hint: shown once per session on first settings change.\")\n+    return True\n+\n+\n+def _warn_overwritten_managed_keys(changed_keys):\n+    \"\"\"Log + notify a Part C warning for each configurator-managed key that changed.\"\"\"\n+    if not changed_keys:\n+        return\n+    title = _resolve_localized(30293, \"OPPO 203 ISO External\")\n+    template = _resolve_localized(\n+        30292,\n+        \"Setting '{key}' is managed by the configurator. Re-run the configurator to make this change permanent.\",\n+    )\n+    warn_level = xbmc.LOGWARNING if xbmc else None\n+    for key in changed_keys:\n+        msg = template.replace(\"{key}\", key)\n+        log(f\"Configurator-managed key '{key}' was overwritten via Kodi UI.\", warn_level)\n+        if not xbmcgui:\n+            continue\n+        try:\n+            xbmcgui.Dialog().notification(title, msg, time=6000)\n+        except Exception:\n+            pass\n+\n+\n class Monitor(xbmc.Monitor if xbmc else object):\n-    \"\"\"Kodi service monitor (lifecycle only; abortRequested/waitForAbort inherited).\"\"\"\n+    \"\"\"Kodi service monitor.\n+\n+    Lifecycle (abortRequested/waitForAbort inherited) plus a passive\n+    `onSettingsChanged` hook that (a) shows a once-per-session generic\n+    configurator-hint notification, and (b) warns per key when an entry in\n+    `CONFIGURATOR_MANAGED_KEYS` was overwritten via Kodi's settings UI. The\n+    hook is logging/notification-only — it never mutates add-on state.\n+    \"\"\"\n+\n+    def __init__(self):\n+        if xbmc:\n+            try:\n+                super().__init__()\n+            except Exception:\n+                pass\n+        self._managed_baseline = _snapshot_managed_settings()\n+\n+    def onSettingsChanged(self):\n+        try:\n+            _notify_config_hint_once_per_session()\n+            changed = _changed_managed_keys(self._managed_baseline)\n+            if changed:\n+                _warn_overwritten_managed_keys(changed)\n+                self._managed_baseline = _snapshot_managed_settings()",
+    "path": "service.py",
+    "commit_id": "126bac970118aaf89abc5d5013012b87ba3d3fe1",
+    "original_commit_id": "126bac970118aaf89abc5d5013012b87ba3d3fe1",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Avoid warning on add-on-initiated setting writes**\n\nWhen a user accepts existing in-add-on helpers that persist settings, such as OPPO discovery applying `oppo_ip`/`oppo_port` or TCL presets applying ADB shell commands in `resources/lib/kodi/installer.py`, those `ADDON.setSetting(...)` calls can trigger this same `onSettingsChanged` path. Because the new hook unconditionally diffs every configurator-managed key, it will log/show the “overwritten via Kodi UI” / “Re-run the configurator” warning even though the change came from an existing add-on flow that just saved it permanently, which makes those helpers look broken or non-persistent. Consider suppressing this warning around known add-on writes or otherwise distinguishing settings-dialog edits from programmatic updates.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-29T05:42:10Z",
+    "updated_at": "2026-05-29T05:42:10Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/46#discussion_r3322376330",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/46",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3322376330"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/46#discussion_r3322376330"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/46"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3322376330/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 441,
+    "original_start_line": 441,
+    "start_side": "RIGHT",
+    "line": 445,
+    "original_line": 445,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 195,
+    "position": 195,
+    "subject_type": "line"
+  }
+]

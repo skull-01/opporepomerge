@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3320023441",
+    "pull_request_review_id": 4383818693,
+    "id": 3320023441,
+    "node_id": "PRRC_kwDOSi3wO87F44mR",
+    "diff_hunk": "@@ -1,35 +1,61 @@\n ---\n-description: Resume work — read the handoff doc, report recent PRs, suggest next steps\n+description: Resume work — read the handoff doc, report addon + configurator activity, suggest next steps per area\n ---\n \n-The maintainer typed `resume`. Read `AI_RESUME_HANDOFF.md` (especially \"Work in progress\")\n-and the repo instruction files (`AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`). Then give a\n-short, scannable briefing — do NOT change code until the maintainer chooses a direction:\n-\n-1. **Environment preflight — make the machine ready to build/test the app BEFORE briefing.**\n-   The readiness checklist (requirements, why, check, fix) is `AI_RESUME_HANDOFF.md` §2. Run\n-   the checks below, print a small readiness table (Requirement | Status), then:\n-   - **All green** → one line `Environment: ready ✓` and continue.\n-   - **An *auto* row missing** (`.venv`, a dev dependency, or paramiko) → **install it\n-     automatically** (idempotent): `python -m venv .venv` (only if absent), then\n-     `.venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt paramiko`; re-check and\n-     report what was installed.\n-   - **A *manual* row missing/unauthenticated** (Python ≥3.9, git, gh) → do NOT auto-install\n-     a system/auth change; print the exact fix command and STOP for the maintainer.\n-   Checks (Windows paths; on POSIX use `.venv/bin/python`):\n-   - `python --version` (need ≥3.9) · `git --version` · `gh auth status`\n-   - `.venv\\Scripts\\python.exe --version`\n-   - `.venv\\Scripts\\python.exe -c \"import pytest, xdist, coverage, yaml, ruff, mypy, paramiko\"`\n-2. **Refresh:** `git fetch --all --quiet`.\n-3. **Last 5 PRs created:**\n-   `gh pr list --state all --limit 5 --json number,title,state,createdAt` — one line each.\n-   **Last 5 PRs completed (merged):**\n-   `gh pr list --state merged --limit 5 --json number,title,mergedAt` — one line each.\n-   (This repo tracks work as PRs, not GitHub Issues. If Issues are ever adopted, also run\n-   `gh issue list --state all --limit 5`.)\n-4. **In flight:** `gh pr list --state open`, `git branch -r --no-merged origin/main`,\n-   `gh release list --limit 1`.\n-5. **Suggest what to work on next:** if \"Work in progress\" in `AI_RESUME_HANDOFF.md` has an\n-   unfinished task, list it FIRST as the priority; then 1–2 more from \"Open issues &\n-   recommended next steps\", each with a one-line rationale.\n-6. STOP and ask which direction to take. Keep it concise.\n+The operator typed `resume`. Authoritative spec is `AI_RESUME_HANDOFF.md` §1; this file is\n+the runnable checklist. Read the handoff (especially **§3a Addon WIP** and **§3b\n+Configurator WIP**) and the repo instruction files (`AGENTS.md`, `CLAUDE.md`,\n+`CONTRIBUTING.md`). Then give a short, scannable briefing — do NOT change code until the\n+operator picks **one area and one theme**:\n+\n+1. **Environment preflight for BOTH areas — run §2a of the handoff.** Print a small\n+   readiness table (`Row | Prereq | Status | Tier`). The single Windows env serves both\n+   areas; install anything missing per its tier:\n+\n+   - **`auto-repo`** missing (`.venv`, dev deps, `node_modules`, area labels, icon stub) →\n+     install idempotently, re-check, report. Concretely:\n+     - `python -m venv .venv` (if absent), then\n+       `.venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt paramiko`\n+     - `cd configurator; npm install` (if `configurator\\node_modules` absent), then `cd ..`\n+     - `gh label create area:addon --color 0E8A16 --description \"Kodi add-on (Python)\" --force`\n+     - `gh label create area:configurator --color 5319E7 --description \"Windows configurator (Tauri 2)\" --force`\n+   - **`auto-system`** missing (git, Python, Node, Rust, MSVC Build Tools, WebView2) →\n+     attempt `winget install --id <pkg> -e --silent --accept-source-agreements\n+     --accept-package-agreements` (PowerShell). On success, re-check and continue. On\n+     failure (no winget, package needs admin, network), print the manual fix from §2a\n+     and **STOP**.\n+   - **`manual`** missing (`gh auth status` failed, etc.) → print the exact fix and STOP.\n+\n+   All green → one line `Environment: ready ✓ (addon + configurator)` and continue.\n+\n+2. **Refresh state.** `git fetch --all --quiet`.\n+\n+3. **Report recent activity per area — two parallel blocks.**\n+\n+   **Addon area:**\n+   - *Last 5 issues created:* `gh issue list --label area:addon --limit 5 --state all --sort created --json number,title,state,createdAt` — one line each as `#N <title snippet>`.\n+   - *Last 5 issues closed:* `gh issue list --label area:addon --limit 5 --state closed --sort updated --json number,title,closedAt` — same formatting.",
+    "path": ".claude/commands/resume.md",
+    "commit_id": "393cea089a645e0523b3674275dc23244ea6cf9f",
+    "original_commit_id": "9f4f6eb20d2576b36330afda6ef3f647ac411142",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Drop unsupported --sort from gh issue list**\n\nWhen `resume` reaches these issue-list commands, `gh issue list` will reject `--sort` before returning any issues. I checked the GitHub CLI manual for `gh issue list`: its options include `--label`, `--limit`, `--search`, and `--state`, but no `--sort`; sorting is only available through search qualifiers like `--search \"sort:created-asc\"` or by post-processing the JSON. Because the same unsupported flag is repeated for both areas, the new per-area briefing path will fail in normal use.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-28T18:53:14Z",
+    "updated_at": "2026-05-28T18:53:15Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/37#discussion_r3320023441",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/37",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3320023441"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/37#discussion_r3320023441"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/37"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3320023441/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 36,
+    "original_start_line": 36,
+    "start_side": "RIGHT",
+    "line": 37,
+    "original_line": 37,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 69,
+    "position": 69,
+    "subject_type": "line"
+  }
+]

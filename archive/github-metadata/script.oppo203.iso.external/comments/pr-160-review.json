@@ -1,0 +1,140 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3331821049",
+    "pull_request_review_id": 4398623160,
+    "id": 3331821049,
+    "node_id": "PRRC_kwDOSi3wO87Gl435",
+    "diff_hunk": "@@ -40,43 +64,172 @@ async function probeTarget(t: LivenessTarget): Promise<LiveStatus> {\n   }\n }\n \n+function ConfirmFlag({ on, label }: { on: boolean; label: string }) {\n+  return (\n+    <span className=\"row\" style={{ gap: 5, alignItems: \"center\" }}>\n+      <Icon name={on ? \"check\" : \"cross\"} size={13} style={{ color: on ? \"#16A34A\" : \"#9CA3AF\" }} />\n+      <span className=\"muted\" style={{ fontSize: 12 }}>{label}</span>\n+    </span>\n+  );\n+}\n+\n+function SessionCard({ result }: { result: StatusReadResult | null }) {\n+  let body: JSX.Element;\n+  if (result == null) {\n+    body = <span className=\"muted\" style={{ fontSize: 12 }}>checking…</span>;\n+  } else if (!result.supported || result.status == null) {\n+    body = <span className=\"muted\" style={{ fontSize: 12 }}>{result.note ?? \"No session recorded yet.\"}</span>;\n+  } else {\n+    const s: OppoSessionStatus = result.status;\n+    const badge = stateBadge(s.sessionState);\n+    body = (\n+      <div className=\"stack-sm\">\n+        <div className=\"row\" style={{ gap: 8, alignItems: \"center\" }}>\n+          <span\n+            style={{\n+              fontSize: 11,\n+              fontWeight: 600,\n+              color: badge.color,\n+              border: `1px solid ${badge.color}`,\n+              borderRadius: 6,\n+              padding: \"1px 7px\",\n+            }}\n+          >\n+            {badge.label}\n+          </span>\n+          <span style={{ fontSize: 13 }}>{baseName(s.mediaFile) || \"(no media)\"}</span>\n+        </div>\n+        <span className=\"muted\" style={{ fontSize: 11.5, fontFamily: \"var(--font-mono)\" }}>\n+          {s.architecturePreset} · {s.routingMode} · monitor {s.monitorMode}\n+        </span>\n+        <div className=\"row\" style={{ gap: 16 }}>\n+          <ConfirmFlag on={s.confirmedPlayback} label=\"playback confirmed\" />\n+          <ConfirmFlag on={s.confirmedProgress} label=\"progress confirmed\" />\n+        </div>\n+        {(s.oppoPlaybackState || s.utcTickCount != null || s.stopReason) && (\n+          <span className=\"muted\" style={{ fontSize: 11.5, fontFamily: \"var(--font-mono)\" }}>\n+            {s.oppoPlaybackState ? `state ${s.oppoPlaybackState}` : \"\"}\n+            {s.utcTickCount != null ? ` · ${s.utcTickCount} ticks` : \"\"}\n+            {s.stopReason ? ` · ${s.stopReason}` : \"\"}\n+          </span>\n+        )}\n+      </div>\n+    );\n+  }\n+  return (\n+    <div className=\"card\">\n+      <h2 className=\"section-title\">Current session</h2>\n+      <div className=\"divider\" />\n+      {body}\n+      <div className=\"muted\" style={{ fontSize: 11, marginTop: 10 }}>\n+        The add-on writes this at session start and end, so it is a last/current-session summary,\n+        not a live progress feed.\n+      </div>\n+    </div>\n+  );\n+}\n+\n export function Dashboard({ go, state }: ScreenProps) {\n   const targets = livenessTargets(state);\n-  // Re-run the poller whenever a probed address changes; the effect reads state fresh.\n+  // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.\n   const targetsKey = targets.map((t) => `${t.id}:${t.host}:${t.port}:${t.kind}`).join(\"|\");\n   const [statuses, setStatuses] = useState<Record<string, LiveStatus>>({});\n+  const [session, setSession] = useState<StatusReadResult | null>(null);\n   const [lastChecked, setLastChecked] = useState<string | null>(null);\n   const [checking, setChecking] = useState(false);\n   const [nonce, setNonce] = useState(0);\n \n+  const [streaming, setStreaming] = useState(false);\n+  const [frames, setFrames] = useState<LiveFrame[]>([]);\n+  const [streamErr, setStreamErr] = useState<string | null>(null);\n+  const streamingRef = useRef(false);\n+  useEffect(() => {\n+    streamingRef.current = streaming;\n+  }, [streaming]);\n+\n   useEffect(() => {\n     let alive = true;\n     const list = livenessTargets(state);\n     const runAll = async () => {\n       setChecking(true);\n-      const entries = await Promise.all(\n-        list.map(async (t) => [t.id, await probeTarget(t)] as const)\n-      );\n+      const [entries, sess] = await Promise.all([\n+        Promise.all(list.map(async (t) => [t.id, await probeTarget(t)] as const)),\n+        readOppoStatus(state),\n+      ]);\n       if (!alive) return;\n       setStatuses(Object.fromEntries(entries));\n+      setSession(sess);\n       setLastChecked(new Date().toLocaleTimeString());\n       setChecking(false);\n+      // Safety: if the add-on starts a session while we're streaming, drop our verbose\n+      // connection so the two don't fight over the player's device-global verbose mode.\n+      if (streamingRef.current && sess.status?.sessionState === \"starting\") {\n+        streamingRef.current = false;\n+        void invoke(\"stop_oppo_live_monitor\").catch(() => {});\n+        setStreaming(false);\n+        setStreamErr(\"Stopped: the add-on started a playback session.\");\n+      }\n     };\n     void runAll();\n     const h = setInterval(() => void runAll(), POLL_MS);\n     return () => {\n       alive = false;\n       clearInterval(h);\n     };\n-  }, [targetsKey, nonce]);\n+  }, [targetsKey, state.tier, state.sshUser, state.kodiPlatform, state.smbSharePath, nonce]);\n+\n+  // Subscribe to the Rust live stream once; stop the monitor on unmount (restores verbose mode).\n+  useEffect(() => {\n+    let alive = true;\n+    let unlisten: (() => void) | undefined;\n+    void listen<LiveFrame>(\"oppo-live\", (e) => {\n+      setFrames((f) => [...f.slice(-99), e.payload]);\n+    }).then((u) => {\n+      if (alive) unlisten = u;\n+      else u();\n+    });\n+    return () => {\n+      alive = false;\n+      if (unlisten) unlisten();\n+      void invoke(\"stop_oppo_live_monitor\").catch(() => {});\n+    };\n+  }, []);\n+\n+  const gate = canStartLiveStream(session?.status ?? null);",
+    "path": "configurator/src/screens/dashboard.tsx",
+    "commit_id": "c69b904375ae3200773372d50de2c9c9a44b8828",
+    "original_commit_id": "c69b904375ae3200773372d50de2c9c9a44b8828",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Block live stream when session status is unreadable**\n\nIn manual mode, or whenever the SSH/SMB status read fails, `readOppoStatus` returns `status: null`; passing only `session?.status ?? null` into the gate makes that indistinguishable from a genuinely idle/no-record state, so the Start button remains enabled even though the dashboard cannot know whether the add-on is mid-session. That defeats the dual-subscriber safety gate in exactly those contexts and can let the configurator send `#SVM 3` while the add-on's SVM monitor is active; include `supported`/read-error state in the gate and fail closed when the status source is unavailable.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T05:18:56Z",
+    "updated_at": "2026-06-01T05:18:56Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/160#discussion_r3331821049",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/160",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3331821049"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/160#discussion_r3331821049"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/160"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3331821049/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 198,
+    "original_line": 198,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 197,
+    "position": 197,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3331821052",
+    "pull_request_review_id": 4398623160,
+    "id": 3331821052,
+    "node_id": "PRRC_kwDOSi3wO87Gl438",
+    "diff_hunk": "@@ -40,43 +64,172 @@ async function probeTarget(t: LivenessTarget): Promise<LiveStatus> {\n   }\n }\n \n+function ConfirmFlag({ on, label }: { on: boolean; label: string }) {\n+  return (\n+    <span className=\"row\" style={{ gap: 5, alignItems: \"center\" }}>\n+      <Icon name={on ? \"check\" : \"cross\"} size={13} style={{ color: on ? \"#16A34A\" : \"#9CA3AF\" }} />\n+      <span className=\"muted\" style={{ fontSize: 12 }}>{label}</span>\n+    </span>\n+  );\n+}\n+\n+function SessionCard({ result }: { result: StatusReadResult | null }) {\n+  let body: JSX.Element;\n+  if (result == null) {\n+    body = <span className=\"muted\" style={{ fontSize: 12 }}>checking…</span>;\n+  } else if (!result.supported || result.status == null) {\n+    body = <span className=\"muted\" style={{ fontSize: 12 }}>{result.note ?? \"No session recorded yet.\"}</span>;\n+  } else {\n+    const s: OppoSessionStatus = result.status;\n+    const badge = stateBadge(s.sessionState);\n+    body = (\n+      <div className=\"stack-sm\">\n+        <div className=\"row\" style={{ gap: 8, alignItems: \"center\" }}>\n+          <span\n+            style={{\n+              fontSize: 11,\n+              fontWeight: 600,\n+              color: badge.color,\n+              border: `1px solid ${badge.color}`,\n+              borderRadius: 6,\n+              padding: \"1px 7px\",\n+            }}\n+          >\n+            {badge.label}\n+          </span>\n+          <span style={{ fontSize: 13 }}>{baseName(s.mediaFile) || \"(no media)\"}</span>\n+        </div>\n+        <span className=\"muted\" style={{ fontSize: 11.5, fontFamily: \"var(--font-mono)\" }}>\n+          {s.architecturePreset} · {s.routingMode} · monitor {s.monitorMode}\n+        </span>\n+        <div className=\"row\" style={{ gap: 16 }}>\n+          <ConfirmFlag on={s.confirmedPlayback} label=\"playback confirmed\" />\n+          <ConfirmFlag on={s.confirmedProgress} label=\"progress confirmed\" />\n+        </div>\n+        {(s.oppoPlaybackState || s.utcTickCount != null || s.stopReason) && (\n+          <span className=\"muted\" style={{ fontSize: 11.5, fontFamily: \"var(--font-mono)\" }}>\n+            {s.oppoPlaybackState ? `state ${s.oppoPlaybackState}` : \"\"}\n+            {s.utcTickCount != null ? ` · ${s.utcTickCount} ticks` : \"\"}\n+            {s.stopReason ? ` · ${s.stopReason}` : \"\"}\n+          </span>\n+        )}\n+      </div>\n+    );\n+  }\n+  return (\n+    <div className=\"card\">\n+      <h2 className=\"section-title\">Current session</h2>\n+      <div className=\"divider\" />\n+      {body}\n+      <div className=\"muted\" style={{ fontSize: 11, marginTop: 10 }}>\n+        The add-on writes this at session start and end, so it is a last/current-session summary,\n+        not a live progress feed.\n+      </div>\n+    </div>\n+  );\n+}\n+\n export function Dashboard({ go, state }: ScreenProps) {\n   const targets = livenessTargets(state);\n-  // Re-run the poller whenever a probed address changes; the effect reads state fresh.\n+  // Re-run the poller whenever a probed address or the read tier changes; the effect reads fresh.\n   const targetsKey = targets.map((t) => `${t.id}:${t.host}:${t.port}:${t.kind}`).join(\"|\");\n   const [statuses, setStatuses] = useState<Record<string, LiveStatus>>({});\n+  const [session, setSession] = useState<StatusReadResult | null>(null);\n   const [lastChecked, setLastChecked] = useState<string | null>(null);\n   const [checking, setChecking] = useState(false);\n   const [nonce, setNonce] = useState(0);\n \n+  const [streaming, setStreaming] = useState(false);\n+  const [frames, setFrames] = useState<LiveFrame[]>([]);\n+  const [streamErr, setStreamErr] = useState<string | null>(null);\n+  const streamingRef = useRef(false);\n+  useEffect(() => {\n+    streamingRef.current = streaming;\n+  }, [streaming]);\n+\n   useEffect(() => {\n     let alive = true;\n     const list = livenessTargets(state);\n     const runAll = async () => {\n       setChecking(true);\n-      const entries = await Promise.all(\n-        list.map(async (t) => [t.id, await probeTarget(t)] as const)\n-      );\n+      const [entries, sess] = await Promise.all([\n+        Promise.all(list.map(async (t) => [t.id, await probeTarget(t)] as const)),\n+        readOppoStatus(state),\n+      ]);\n       if (!alive) return;\n       setStatuses(Object.fromEntries(entries));\n+      setSession(sess);\n       setLastChecked(new Date().toLocaleTimeString());\n       setChecking(false);\n+      // Safety: if the add-on starts a session while we're streaming, drop our verbose\n+      // connection so the two don't fight over the player's device-global verbose mode.\n+      if (streamingRef.current && sess.status?.sessionState === \"starting\") {\n+        streamingRef.current = false;\n+        void invoke(\"stop_oppo_live_monitor\").catch(() => {});\n+        setStreaming(false);\n+        setStreamErr(\"Stopped: the add-on started a playback session.\");\n+      }\n     };\n     void runAll();\n     const h = setInterval(() => void runAll(), POLL_MS);\n     return () => {\n       alive = false;\n       clearInterval(h);\n     };\n-  }, [targetsKey, nonce]);\n+  }, [targetsKey, state.tier, state.sshUser, state.kodiPlatform, state.smbSharePath, nonce]);\n+\n+  // Subscribe to the Rust live stream once; stop the monitor on unmount (restores verbose mode).\n+  useEffect(() => {\n+    let alive = true;\n+    let unlisten: (() => void) | undefined;\n+    void listen<LiveFrame>(\"oppo-live\", (e) => {\n+      setFrames((f) => [...f.slice(-99), e.payload]);\n+    }).then((u) => {\n+      if (alive) unlisten = u;\n+      else u();\n+    });\n+    return () => {\n+      alive = false;\n+      if (unlisten) unlisten();\n+      void invoke(\"stop_oppo_live_monitor\").catch(() => {});\n+    };\n+  }, []);\n+\n+  const gate = canStartLiveStream(session?.status ?? null);\n+\n+  const startStream = async () => {\n+    if (!gate.allowed) {\n+      setStreamErr(gate.reason);\n+      return;\n+    }\n+    setStreamErr(null);\n+    setFrames([]);\n+    try {\n+      await invoke(\"start_oppo_live_monitor\", { host: state.playerIp, port: 23 });\n+      setStreaming(true);",
+    "path": "configurator/src/screens/dashboard.tsx",
+    "commit_id": "c69b904375ae3200773372d50de2c9c9a44b8828",
+    "original_commit_id": "c69b904375ae3200773372d50de2c9c9a44b8828",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Disable Start while a start request is pending**\n\nIf the user double-clicks Start, both handlers can pass the `streaming === false` render state and issue `start_oppo_live_monitor`; the Rust side accepts one and rejects the other as already running, and the rejected call can run last and set `streaming` back to false while the monitor thread is still active. The UI then shows Start instead of Stop, and subsequent starts only report “already running” until the screen is unmounted; track a pending state or set the UI to streaming before awaiting the command.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T05:18:56Z",
+    "updated_at": "2026-06-01T05:18:56Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/160#discussion_r3331821052",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/160",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3331821052"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/160#discussion_r3331821052"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/160"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3331821052/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 208,
+    "original_start_line": 208,
+    "start_side": "RIGHT",
+    "line": 209,
+    "original_line": 209,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 208,
+    "position": 208,
+    "subject_type": "line"
+  }
+]

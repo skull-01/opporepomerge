@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3325838933",
+    "pull_request_review_id": 4391450087,
+    "id": 3325838933,
+    "node_id": "PRRC_kwDOSi3wO87GPEZV",
+    "diff_hunk": "@@ -167,74 +167,61 @@ satisfied by PR #35 merging the icon stub at `12e5b18`.)\n \n ## §3a Addon work — in progress\n \n-**As of 2026-05-29 (EOD — ENH-#57 fast-test-loop + README credits session):**\n-**clean stopping point — no uncommitted addon code, no open addon PRs.** `main`\n-is `2fdf869`, fully green (all six CI jobs, incl. the 3.9/3.10/3.12 compat smokes).\n-\n-- **MERGED this session (4 PRs):**\n-  - **ENH-#57 — change-scoped fast local test loop**\n-    ([PR #59](https://github.com/skull-01/script.oppo203.iso.external/pull/59) `9f102a3`):\n-    `tools/dev_test.py` wraps `pytest --testmon` so a local run executes only the tests\n-    affected by changed code; `pytest-testmon` added to `requirements-dev.txt`;\n-    `.testmondata` git-ignored; 5 guard tests. **Local-only** — CI, `scripts/verify.sh`,\n-    and the 99% coverage floor are unchanged (testmon is dormant unless `--testmon` is\n-    passed). Usage: `.venv\\Scripts\\python.exe tools/dev_test.py [--full]`.\n-  - **README Credits section**\n-    ([PR #58](https://github.com/skull-01/script.oppo203.iso.external/pull/58) `61999e3`):\n-    community attributions (theAxleDentalDJ, keebhubhk, Moremodey1 [AVForums], tocinillo,\n-    Xnoppo/siberian-git). Docs-only; placed before the legacy build notes.\n-  - **Close-out + fix:**\n-    [PR #60](https://github.com/skull-01/script.oppo203.iso.external/pull/60) `343aff2`\n-    (Phase C verify entry for #57) and\n-    **[PR #61](https://github.com/skull-01/script.oppo203.iso.external/pull/61) `2fdf869`**\n-    — gate `pytest-testmon` to `python_version >= \"3.10\"`.\n-\n-- **CI lesson (recorded in memory `dev-build-iteration-loop`):** the first testmon merge\n-  (#59) **reddened the Python 3.9 compat-smoke** — testmon 2.2+ dropped py3.9, but the\n-  add-on floor is 3.9, so `pip install -r requirements-dev.txt` failed there. Repaired\n-  forward with the env marker (#61); CI re-confirmed green on all six jobs. **Rule: any\n-  dev dep that drops 3.9 needs `; python_version >= \"3.10\"`.** (Merged on local-3.12\n-  verification before CI finished — the 3.9 matrix was the gap; wait for CI green next.)\n-\n-- **Operator: verify + close** —\n-  **ENH-[#57](https://github.com/skull-01/script.oppo203.iso.external/issues/57)** is new\n-  this session (SHA `9f102a3` commented; Phase C software check queued in\n-  `docs/MANUAL_VERIFICATION_CHECKLIST.md`) and stays **open** for operator\n-  verification/close. Prior close-out queue unchanged:\n-  [#38](https://github.com/skull-01/script.oppo203.iso.external/issues/38) (ruff — #50),\n-  [#42](https://github.com/skull-01/script.oppo203.iso.external/issues/42) (#48/#49),\n-  [#43](https://github.com/skull-01/script.oppo203.iso.external/issues/43) (#47 `3ba5009`),\n-  addon side of\n-  [#41](https://github.com/skull-01/script.oppo203.iso.external/issues/41) (Parts A/B/C\n-  merged; configurator side of Part C still pending),\n-  [#51](https://github.com/skull-01/script.oppo203.iso.external/issues/51) (multi-PR strict\n-  rollout, PR 1–3 merged, stays open). Phase A/C on-device verification queued for\n-  #40/#42/#46–#49/#52/#53/#56 in `docs/MANUAL_VERIFICATION_CHECKLIST.md`.\n+**As of 2026-05-30 (EOD — ENH-#51 mypy `--strict` PRs 4–7: leaves, hubs, cascade, idiom modules):**\n+**4 stacked draft PRs open, awaiting operator review/merge.** `main` is unchanged\n+(`c48bb43`); all of this session's rollout work lives on the four PR branches. Each PR was\n+verified green locally (`mypy --gate` 0 errors, `pytest -n auto` 938/3, coverage 99.04–99.05%,\n+ruff clean).\n+\n+- **Shipped this session — the ENH-#51 idiom + cascade scope, gate 28 → 46 modules.** On\n+  `resume` the operator picked ENH-#51, said \"do all of these\" (the no-redef idiom modules +\n+  the cascade group), then chose \"everything now (PR 6+7)\" at the mid-session checkpoint. Four\n+  **stacked** drafts — **merge in order #63 → #64 → #65 → #66:**\n+  - **PR 4** [#63](https://github.com/skull-01/script.oppo203.iso.external/pull/63) `7568f89`\n+    (base `main`): import-fallback **leaf** modules `__init__` / `intercept` / `tv_diagnostics`\n+    / `avr_control` / `oppo_tcp_client` (28→33). Settled the **`no-redef` strategy** =\n+    `# type: ignore[no-redef]` on the except-branch (bare) import only.\n+  - **PR 5** [#64](https://github.com/skull-01/script.oppo203.iso.external/pull/64) `8b06744`\n+    (base #63): the **two hubs** `settings_reader` + `oppo_control` (33→35). `Settings.get` /\n+    `__getitem__` typed `-> Any` (raw accessors; get_str/get_int/get_bool keep concrete types).\n+  - **PR 6** [#65](https://github.com/skull-01/script.oppo203.iso.external/pull/65) `8406b43`\n+    (base #64): the **cascade group** discovery / hardware_presets /\n+    hardware_validation_readiness / nas_playback_adapter / diagnostics / diagnostic_summary /\n+    logging_v116 (35→42). nas_playback_adapter needed **zero code change** post-hubs.\n+  - **PR 7** [#66](https://github.com/skull-01/script.oppo203.iso.external/pull/66) `6fed436`\n+    (base #65): the larger hub-dependent idiom modules oppo_remote / external_player /\n+    installer / preset_manager (42→46).\n+  - All four are **annotations / casts / `# type: ignore` only — no behavior change** (every\n+    diff reviewed; PRs 6–7's mechanical per-module annotation was delegated to parallel\n+    general-purpose sub-agents, then verified by the combined gate + full suite + coverage).\n+    SHAs commented on #51; a Phase-A entry per PR added to\n+    `docs/MANUAL_VERIFICATION_CHECKLIST.md` (those entries ride the PR branches and land on\n+    `main` when each PR merges).\n+\n+- **Resume here next:**\n+  1. **Operator merges #63 → #64 → #65 → #66 in order.** They are stacked (each based on the\n+     prior branch), so only `claude-review` runs on #64–#66 until the base merges and GitHub\n+     retargets to `main`; the full test/types/coverage CI then appears per PR. The full gate",
+    "path": "AI_RESUME_HANDOFF.md",
+    "commit_id": "81f5f68fccf107fe49ecc09c52d0c2c07fd1fced",
+    "original_commit_id": "81f5f68fccf107fe49ecc09c52d0c2c07fd1fced",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Retarget child PRs before deleting parent branches**\n\nThis resume recipe says GitHub will retarget #64–#66 to `main` after the prior stacked base merges, but the same handoff records that deleting a stacked PR's base branch auto-closed #55 and that #49 had to be retargeted before deleting #48's branch. If the operator follows this step with the normal merge-and-delete flow for #63, the child PRs can be closed instead of becoming mergeable, forcing branch/PR recreation for the remaining stack.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-29T17:06:53Z",
+    "updated_at": "2026-05-29T17:06:54Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/67#discussion_r3325838933",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/67",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3325838933"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/67#discussion_r3325838933"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/67"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3325838933/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 204,
+    "original_line": 204,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 90,
+    "position": 90,
+    "subject_type": "line"
+  }
+]

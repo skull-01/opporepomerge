@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3292224832",
+    "pull_request_review_id": 4349943764,
+    "id": 3292224832,
+    "node_id": "PRRC_kwDOSi3wO87EO11A",
+    "diff_hunk": "@@ -65,7 +65,10 @@ from arguments (if given): $ARGUMENTS\n    release. Watch that run, then set the title and styled body:\n    `gh release edit v<new> --title \"v<new> Final\" --notes-file <file>` (use `--notes-file`\n    to avoid shell-quoting issues — bodies often contain apostrophes).\n-9. **Update memory** and report the published release URL.\n+9. **Update the handoff guide & memory.** Refresh `docs/ai-handoff/AI_RESUME_GUIDE.md` so\n+   it never goes stale — update the \"Latest release\" facts (§0, §1), the \"Development\n+   journey\" list (§8) with this release, and \"Current state & next steps\" (§9). Update the\n+   maintainer memory with the new latest version. Then report the published release URL.",
+    "path": ".claude/commands/release.md",
+    "commit_id": "051a829b9a462525d05c4e935393072a01d33637",
+    "original_commit_id": "051a829b9a462525d05c4e935393072a01d33637",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Add a commit path for handoff-guide refresh**\n\nThis step now requires editing `docs/ai-handoff/AI_RESUME_GUIDE.md` after publishing, but the runbook has no follow-up instruction to commit and merge that edit, so the \"never goes stale\" guarantee can silently fail in normal use. The same file is also treated earlier as part of the frozen `docs/ai-handoff/` set, which increases the chance the update is skipped. Please make the release flow explicit about how this post-release doc change is persisted (or move it to a dedicated follow-up PR step).\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-23T06:16:47Z",
+    "updated_at": "2026-05-23T06:16:47Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/13#discussion_r3292224832",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/13",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3292224832"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/13#discussion_r3292224832"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/13"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3292224832/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 68,
+    "original_start_line": 68,
+    "start_side": "RIGHT",
+    "line": 71,
+    "original_line": 71,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 8,
+    "position": 8,
+    "subject_type": "line"
+  }
+]

@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609324090",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/295#issuecomment-4609324090",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/295",
+    "id": 4609324090,
+    "node_id": "IC_kwDOSi3wO88AAAABEry0Og",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T05:21:19Z",
+    "updated_at": "2026-06-03T05:21:19Z",
+    "body": "﻿Implemented in PR #303 ? merged to `main` as `468a6be`.\n\nNAS panel: LAN scan (`scan_nas_hosts` ? parallel /24 sweep of 445/139 SMB, 2049 NFS, 548 AFP, 21 FTP, protocol-detected by which port answers; auto subnet or base-IP override), share test-login (`nas_test_login` ? SMB net-use auth + list, or NFS reachability), and a live message panel. Credentials never persisted; the transcript logs only that a password was supplied (never its value). Shared subnet sweep helpers reused by PR E. Gate: tsc + vitest 338 + `cargo test` 47 + vite build; browser-verified the panel + the password-redaction.\n\n**Phase-C** (operator, real LAN/NAS): scan + share login. Leaving OPEN (only-operator-closes). Ships in configurator v0.9.0.\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609324090/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

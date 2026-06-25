@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336127180",
+    "pull_request_review_id": 4403462248,
+    "id": 3336127180,
+    "node_id": "PRRC_kwDOSi3wO87G2ULM",
+    "diff_hunk": "@@ -138,6 +138,23 @@ def test_legacy_status_reports_no_confirmation(monkeypatch, tmp_path):\n     assert status[\"session_state\"] == \"stopped\"\n \n \n+def test_status_carries_session_identity_and_phases(monkeypatch, tmp_path):\n+    writes = []\n+    real_write = ps._write_status\n+    monkeypatch.setattr(ps, \"_write_status\", lambda s, st: writes.append(st) or real_write(s, st))\n+    _patch_ep(monkeypatch, [])\n+    ps.run_playback_session(_settings(tmp_path), \"/m.iso\", \"playercorefactory\")\n+    # three writes -- launching -> monitoring -> ended -- sharing one session_id + started_at.\n+    assert [w[\"phase\"] for w in writes] == [\"launching\", \"monitoring\", \"ended\"]\n+    assert len({w[\"session_id\"] for w in writes}) == 1\n+    assert next(iter({w[\"session_id\"] for w in writes}))  # non-empty id",
+    "path": "tests/test_playback_session_modes.py",
+    "commit_id": "332c0ba601bfbd839d919254d701c466500e02c0",
+    "original_commit_id": "332c0ba601bfbd839d919254d701c466500e02c0",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Remove the explanatory test comments**\n\nThe repo-level `/workspace/script.oppo203.iso.external/AGENTS.md` norm says “No inline code comments by default” and “Never explain WHAT”; these comments just restate the assertions below rather than documenting a non-obvious invariant. In this repository context they should be removed or converted into clearer assertion names/structure so the new test stays aligned with the documented style rule.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T17:53:19Z",
+    "updated_at": "2026-06-01T17:53:19Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/183#discussion_r3336127180",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/183",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336127180"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/183#discussion_r3336127180"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/183"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3336127180/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 147,
+    "original_start_line": 147,
+    "start_side": "RIGHT",
+    "line": 150,
+    "original_line": 150,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 13,
+    "position": 13,
+    "subject_type": "line"
+  }
+]

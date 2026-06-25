@@ -1,0 +1,49 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609249040",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/issues/292#issuecomment-4609249040",
+    "issue_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/292",
+    "id": 4609249040,
+    "node_id": "IC_kwDOSi3wO88AAAABEruPEA",
+    "user": {
+      "login": "skull-01",
+      "id": 65386639,
+      "node_id": "MDQ6VXNlcjY1Mzg2NjM5",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65386639?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/skull-01",
+      "html_url": "https://github.com/skull-01",
+      "followers_url": "https://api.github.com/users/skull-01/followers",
+      "following_url": "https://api.github.com/users/skull-01/following{/other_user}",
+      "gists_url": "https://api.github.com/users/skull-01/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/skull-01/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/skull-01/subscriptions",
+      "organizations_url": "https://api.github.com/users/skull-01/orgs",
+      "repos_url": "https://api.github.com/users/skull-01/repos",
+      "events_url": "https://api.github.com/users/skull-01/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/skull-01/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "created_at": "2026-06-03T05:04:59Z",
+    "updated_at": "2026-06-03T05:04:59Z",
+    "body": "﻿Implemented in PR #300 ? merged to `main` as `f6c6006`.\n\nKodi dev tools: installed-vs-bundled add-on version (`bundled_addon_info` + box addon.xml over SSH), live settings table (reuses parseSettingsXml + sanitizeSettings), and box operations ? register-without-restart (`kodi_set_addon_enabled`), remote restart (new `kodi_restart`), upload-any-version (new `install_addon_zip`: deploy a user .zip + backup + re-register, no restart). Restart and zip-upload are confirm-gated. Gate: tsc + vitest 336 + `cargo test` 44 + vite build; browser-verified the cards + the restart confirm gate.\n\n**Phase-C** (operator, real Kodi box over SSH): version read, settings read, register, restart, zip upload. Leaving OPEN (only-operator-closes). Ships in configurator v0.9.0.\r\n",
+    "author_association": "OWNER",
+    "pin": null,
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/issues/comments/4609249040/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "performed_via_github_app": null,
+    "minimized": null
+  }
+]

@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3338584499",
+    "pull_request_review_id": 4406391736,
+    "id": 3338584499,
+    "node_id": "PRRC_kwDOSi3wO87G_sGz",
+    "diff_hunk": "@@ -19,7 +19,7 @@ def test_pyproject_declares_non_runtime_tooling_baseline() -> None:\n     text = _read(\"pyproject.toml\")\n     assert \"[project]\" in text\n     assert 'name = \"script-oppo203-iso-external\"' in text\n-    assert 'version = \"2.9.13\"' in text\n+    assert 'version = \"2.9.14\"' in text",
+    "path": "tests/test_github_readiness_g5_tooling_config.py",
+    "commit_id": "00dfb82a79bab13cf7059339aec5be4121fdbf27",
+    "original_commit_id": "00dfb82a79bab13cf7059339aec5be4121fdbf27",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Stop locking 2.9.14 to non-runtime metadata**\n\nFor the 2.9.14 release path, this updated version assertion still sits in `test_pyproject_declares_non_runtime_tooling_baseline`, which continues to require `runtime_behavior_changed = false` in `pyproject.toml`. This commit's release metadata and notes explicitly mark 2.9.14 as runtime-changing (new playback presets/default hold-mode behavior), so the test now protects stale tooling metadata and lets release/readiness consumers classify a runtime-changing package as a no-runtime cleanup.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-02T03:57:06Z",
+    "updated_at": "2026-06-02T03:57:06Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/205#discussion_r3338584499",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/205",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3338584499"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/205#discussion_r3338584499"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/205"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3338584499/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 22,
+    "original_line": 22,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 5,
+    "position": 5,
+    "subject_type": "line"
+  }
+]

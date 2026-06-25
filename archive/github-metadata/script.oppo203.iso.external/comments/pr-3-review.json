@@ -1,0 +1,140 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287010759",
+    "pull_request_review_id": 4343865634,
+    "id": 3287010759,
+    "node_id": "PRRC_kwDOSi3wO87D683H",
+    "diff_hunk": "@@ -0,0 +1,50 @@\n+name: Claude Code\n+\n+on:\n+  issue_comment:\n+    types: [created]\n+  pull_request_review_comment:\n+    types: [created]\n+  issues:\n+    types: [opened, assigned]\n+  pull_request_review:\n+    types: [submitted]\n+\n+jobs:\n+  claude:\n+    if: |\n+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||\n+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||\n+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||\n+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))\n+    runs-on: ubuntu-latest\n+    permissions:\n+      contents: read\n+      pull-requests: read\n+      issues: read",
+    "path": ".github/workflows/claude.yml",
+    "commit_id": "9deafec2cdd45b4e7bc93e849216bada268eb652",
+    "original_commit_id": "9deafec2cdd45b4e7bc93e849216bada268eb652",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Grant write scopes required for @claude responses**\n\nThis workflow only grants `read` on `contents`, `pull-requests`, and `issues`, but the Claude action is expected to post tracking/reply comments and potentially open/update PR artifacts when invoked via `@claude`. In that scenario, GitHub API calls that write to issues/PRs will be rejected (`Resource not accessible by integration`), so the assistant can be triggered but cannot complete its core interaction loop.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-22T08:26:59Z",
+    "updated_at": "2026-05-22T08:27:00Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/3#discussion_r3287010759",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/3",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287010759"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/3#discussion_r3287010759"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/3"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287010759/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 22,
+    "original_start_line": 22,
+    "start_side": "RIGHT",
+    "line": 24,
+    "original_line": 24,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 24,
+    "position": 24,
+    "subject_type": "line"
+  },
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287010763",
+    "pull_request_review_id": 4343865634,
+    "id": 3287010763,
+    "node_id": "PRRC_kwDOSi3wO87D683L",
+    "diff_hunk": "@@ -0,0 +1,44 @@\n+name: Claude Code Review\n+\n+on:\n+  pull_request:\n+    types: [opened, synchronize, ready_for_review, reopened]\n+    # Optional: Only run on specific file changes\n+    # paths:\n+    #   - \"src/**/*.ts\"\n+    #   - \"src/**/*.tsx\"\n+    #   - \"src/**/*.js\"\n+    #   - \"src/**/*.jsx\"\n+\n+jobs:\n+  claude-review:\n+    # Optional: Filter by PR author\n+    # if: |\n+    #   github.event.pull_request.user.login == 'external-contributor' ||\n+    #   github.event.pull_request.user.login == 'new-developer' ||\n+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'\n+\n+    runs-on: ubuntu-latest\n+    permissions:\n+      contents: read\n+      pull-requests: read\n+      issues: read",
+    "path": ".github/workflows/claude-code-review.yml",
+    "commit_id": "9deafec2cdd45b4e7bc93e849216bada268eb652",
+    "original_commit_id": "9deafec2cdd45b4e7bc93e849216bada268eb652",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Permit PR/issue writes for automated code review output**\n\nThe review job is configured with read-only PR/issue permissions, but automated review mode needs to publish findings back to the pull request (inline comments/summary or tracking comment). With `pull-requests: read` and `issues: read`, the review can run but cannot post results to the PR, which breaks the purpose of this workflow.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-05-22T08:26:59Z",
+    "updated_at": "2026-05-22T08:27:00Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/3#discussion_r3287010763",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/3",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287010763"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/3#discussion_r3287010763"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/3"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3287010763/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": 24,
+    "original_start_line": 24,
+    "start_side": "RIGHT",
+    "line": 25,
+    "original_line": 25,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 25,
+    "position": 25,
+    "subject_type": "line"
+  }
+]

@@ -1,0 +1,71 @@
+[
+  {
+    "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3332062297",
+    "pull_request_review_id": 4398881697,
+    "id": 3332062297,
+    "node_id": "PRRC_kwDOSi3wO87GmzxZ",
+    "diff_hunk": "@@ -0,0 +1,51 @@\n+# Addon SVM3 + verify-played audit + Phase-C runbook\n+\n+**Scope:** the SVM3 four-option enhancement issues (#150 / #151 / #152) and the verify-played\n+enhancement (#113), whose code is merged to `main`. As with the robustness audit, this confirms\n+each fix at a `file:line` pinned by a passing test, then gives the on-device **Phase-C** steps the\n+operator runs to verify and close.\n+\n+**\"Confirmed fixed in code\" ≠ hardware-validated.** SVM3 in particular asserts a hardware protocol\n+contract (`#QVM` / `#SVM 3` / `@UPL` / `@UTC`) that **cannot** be proven without a real OPPO. The\n+Phase-C steps below are the only thing that validates that contract.\n+\n+**Audited from `main` (this session re-ran the tests):** `pytest tests/test_architecture_presets.py\n+tests/test_svm3_playback_monitor.py tests/test_playback_session_modes.py` → **69 passed**. No\n+`resources/` code was changed by this audit (docs only).\n+\n+## Summary\n+\n+| Issue | What | Merged | Code anchor | Pinned by | Status |\n+|---|---|---|---|---|---|\n+| #150 | `playback_monitor_mode` + four-option preset mapping | #143 `fadd8c9` | `architecture_preset` / `normalize_architecture` ([settings_reader.py:248](../../resources/lib/kodi/settings_reader.py#L248)) | `test_architecture_presets.py` | ✅ fixed in code |\n+| #151 | SVM3 OPPO playback monitor | #144 `ccf3638` | `OppoSvm3PlaybackMonitor` ([playback_monitor_svm3.py:243](../../resources/lib/oppo/playback_monitor_svm3.py#L243)) | `test_svm3_playback_monitor.py` | ✅ fixed in code |\n+| #152 | shared `run_playback_session` engine | #145 `421c2f0` | `run_playback_session` ([playback_session.py:143](../../resources/lib/kodi/playback_session.py#L143)) | `test_playback_session_modes.py` | ✅ fixed in code |\n+| #113 | verify playback actually started | #144/#145 (via SVM3) | `confirmed_playback` / `confirmed_progress` ([playback_monitor_svm3.py:248](../../resources/lib/oppo/playback_monitor_svm3.py#L248), [:267](../../resources/lib/oppo/playback_monitor_svm3.py#L267)) | `test_svm3_playback_monitor.py` | ⚠️ realized for SVM3; **partial** for legacy |\n+\n+**Audit conclusion:** #150/#151/#152 are genuinely addressed in code. **#113 is the one to read\n+carefully** — SVM3 fully realizes positive playback confirmation, but the legacy hold path still\n+only *holds* (no positive confirmation). See its note before deciding whether to close #113 or keep\n+it open for the legacy path. All remain **open** pending Phase C.\n+\n+---\n+\n+## #150 — `playback_monitor_mode` + four-option preset mapping\n+\n+- **Fix (`#143` `fadd8c9`):** adds the monitor axis `playback_monitor_mode` (`legacy`|`svm3`) and the pure resolvers `architecture_preset(routing, monitor)` + `normalize_architecture(settings)` — [settings_reader.py:248-263](../../resources/lib/kodi/settings_reader.py#L248) — producing the four combined presets. Reader-only; the combined `playback_architecture_preset` is the configurator-written source of truth **when present** and is deliberately **not** in `DEFAULTS` (so it can't mask a pre-existing `service_interception` install — it's derived from the legacy fields when absent).\n+- **Phase C (on the box):** deploy a config from the wizard with a known Playback mode, then inspect the resolved values in the add-on log / settings. **Expect:** an existing `external_player` install resolves to `playercorefactory_legacy`, `service_interception` → `service_interception_legacy`, and an SVM3 config → the matching `*_svm3` preset; nothing acts differently at runtime from the preset alone (it selects the monitor in #152). **Record:** the resolved `playback_architecture_preset` + `playback_monitor_mode` for each config tried.\n+\n+## #151 — SVM3 OPPO playback monitor\n+\n+- **Fix (`#144` `ccf3638`):** `OppoSvm3PlaybackMonitor` — a persistent `#SVM 3` client that confirms playback **only** from OPPO events: `@UPL PLAY` → `confirmed_playback` ([playback_monitor_svm3.py:248](../../resources/lib/oppo/playback_monitor_svm3.py#L248)), an *advancing* `@UTC` → `confirmed_progress` ([:267](../../resources/lib/oppo/playback_monitor_svm3.py#L267)) — never from a sent command; restores the prior verbose mode on exit.\n+- **Phase C (on a real OPPO UDP-203/205):** during an SVM3-mode playback, confirm `#QVM` returns the current mode, `#SVM 3` is **accepted**, `@UPL`/`@UTC` frames arrive during playback, and the previous verbose mode is **restored** on exit. On **Chinoppo clones**, confirm `#SVM 3` is either accepted or **fails honestly** (the monitor falls back — see #152). **Record:** the `#QVM`/`#SVM 3` replies, whether `@UPL`/`@UTC` arrived, and the restored mode.",
+    "path": "docs/audit/addon_svm3_audit.md",
+    "commit_id": "e1b8becf991657296b61cc7151e1d67787ca8626",
+    "original_commit_id": "e1b8becf991657296b61cc7151e1d67787ca8626",
+    "user": {
+      "login": "chatgpt-codex-connector[bot]",
+      "id": 199175422,
+      "node_id": "BOT_kgDOC98s_g",
+      "avatar_url": "https://avatars.githubusercontent.com/in/1144995?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D",
+      "html_url": "https://github.com/apps/chatgpt-codex-connector",
+      "followers_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/followers",
+      "following_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/following{/other_user}",
+      "gists_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/subscriptions",
+      "organizations_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/orgs",
+      "repos_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/repos",
+      "events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/chatgpt-codex-connector%5Bbot%5D/received_events",
+      "type": "Bot",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "body": "**<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Correct the SVM3 fallback expectation**\n\nIn the Chinoppo / unsupported-`#SVM 3` scenario described here, the code does not fall back just because the command is rejected: `_run_svm3_monitor` only returns `None` for the legacy fallback when `monitor.connect()` raises `OSError`, while `OppoSvm3PlaybackMonitor.enable()` ignores the `#SVM 3` acknowledgement and proceeds to the listen loop. This Phase-C runbook would therefore tell the operator to expect a fallback that will not occur when TCP connects but verbose mode 3 is unsupported, which can misclassify hardware validation results.\n\nUseful? React with 👍 / 👎.",
+    "created_at": "2026-06-01T06:30:10Z",
+    "updated_at": "2026-06-01T06:30:10Z",
+    "html_url": "https://github.com/skull-01/script.oppo203.iso.external/pull/162#discussion_r3332062297",
+    "pull_request_url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/162",
+    "_links": {
+      "self": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3332062297"
+      },
+      "html": {
+        "href": "https://github.com/skull-01/script.oppo203.iso.external/pull/162#discussion_r3332062297"
+      },
+      "pull_request": {
+        "href": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/162"
+      }
+    },
+    "reactions": {
+      "url": "https://api.github.com/repos/skull-01/script.oppo203.iso.external/pulls/comments/3332062297/reactions",
+      "total_count": 0,
+      "+1": 0,
+      "-1": 0,
+      "laugh": 0,
+      "hooray": 0,
+      "confused": 0,
+      "heart": 0,
+      "rocket": 0,
+      "eyes": 0
+    },
+    "start_line": null,
+    "original_start_line": null,
+    "start_side": null,
+    "line": 40,
+    "original_line": 40,
+    "side": "RIGHT",
+    "author_association": "NONE",
+    "original_position": 40,
+    "position": 40,
+    "subject_type": "line"
+  }
+]
