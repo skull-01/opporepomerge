@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="script.cecreclaim" name="CEC Reclaim (Kodi active source)" version="0.1.0" provider-name="skull-01">
+  <requires>
+    <import addon="xbmc.python" version="3.0.0"/>
+  </requires>
+  <extension point="xbmc.python.script" library="default.py"/>
+  <extension point="xbmc.addon.metadata">
+    <summary lang="en_GB">Run CECActivateSource so Kodi takes the TV (its own HDMI input).</summary>
+    <description lang="en_GB">A one-shot helper for the CEC Control Experiment desktop switcher. When launched (e.g. via JSON-RPC Addons.ExecuteAddon from the CEC Switcher app), it runs the CECActivateSource builtin so the Kodi box re-asserts its OWN active source and the TV switches to Kodi's HDMI input. Legitimate CEC -- Kodi announces only its own source; no injection or spoofing.</description>
+    <platform>all</platform>
+    <license>MIT</license>
+  </extension>
+</addon>
